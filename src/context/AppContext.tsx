@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { Team, TeamMember, WorkTopic, Absence, Handover } from "@/types";
 import {
   teams as seedTeams,
@@ -7,6 +7,19 @@ import {
   absences as seedAbsences,
   handovers as seedHandovers,
 } from "@/data/mock-data";
+
+const STORAGE_KEY = "teamflow-data";
+
+function loadFromStorage<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return fallback;
+    const data = JSON.parse(raw);
+    return data[key] ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 interface AppState {
   teams: Team[];
@@ -34,11 +47,16 @@ let uid = 100;
 const genId = (prefix: string) => `${prefix}-${++uid}`;
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [teams, setTeams] = useState<Team[]>(seedTeams);
-  const [members, setMembers] = useState<TeamMember[]>(seedMembers);
-  const [workTopics, setWorkTopics] = useState<WorkTopic[]>(seedTopics);
-  const [absences, setAbsences] = useState<Absence[]>(seedAbsences);
-  const [handovers, setHandovers] = useState<Handover[]>(seedHandovers);
+  const [teams, setTeams] = useState<Team[]>(() => loadFromStorage("teams", seedTeams));
+  const [members, setMembers] = useState<TeamMember[]>(() => loadFromStorage("members", seedMembers));
+  const [workTopics, setWorkTopics] = useState<WorkTopic[]>(() => loadFromStorage("workTopics", seedTopics));
+  const [absences, setAbsences] = useState<Absence[]>(() => loadFromStorage("absences", seedAbsences));
+  const [handovers, setHandovers] = useState<Handover[]>(() => loadFromStorage("handovers", seedHandovers));
+
+  // Persist to localStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ teams, members, workTopics, absences, handovers }));
+  }, [teams, members, workTopics, absences, handovers]);
 
   const getMemberStatus = useCallback(
     (memberId: string): "available" | "vacation" | "sick-leave" => {
