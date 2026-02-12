@@ -50,7 +50,7 @@ const Index = () => {
   return (
     <motion.div className="space-y-8" variants={container} initial="hidden" animate="show">
       <motion.div variants={item}>
-        <h1 className="text-3xl font-display font-bold tracking-tight">{t.dashboard}</h1>
+        <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight">{t.dashboard}</h1>
         <p className="text-muted-foreground mt-1">{t.dashboardDesc}</p>
       </motion.div>
 
@@ -85,7 +85,7 @@ const Index = () => {
         )}
       </motion.div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
         {teams.map((team) => {
           const stats = teamStats(team.id);
           return (

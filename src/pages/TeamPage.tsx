@@ -90,9 +90,9 @@ export default function TeamPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-display font-bold tracking-tight">{team.name}</h1>
+          <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight">{team.name}</h1>
           <p className="text-muted-foreground mt-1">{teamMembers.length} {t.members.toLowerCase()}</p>
         </div>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
@@ -110,8 +110,8 @@ export default function TeamPage() {
         </Dialog>
       </div>
 
-      <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder={t.search} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card shadow-sm" />
         </div>
