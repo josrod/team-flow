@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useApp } from "@/context/AppContext";
+import { useLang } from "@/context/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StatusBadge, TopicStatusBadge } from "@/components/StatusBadge";
@@ -19,7 +20,7 @@ const container = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.04 } },
 };
-const item = {
+const itemAnim = {
   hidden: { opacity: 0, scale: 0.96 },
   show: { opacity: 1, scale: 1, transition: { duration: 0.25 } },
 };
@@ -27,8 +28,9 @@ const item = {
 export default function TeamPage() {
   const { teamId } = useParams<{ teamId: string }>();
   const { teams, members, workTopics, getMemberStatus, addMember, updateMember, deleteMember, addWorkTopic, updateWorkTopic, deleteWorkTopic } = useApp();
+  const { t } = useLang();
 
-  const team = teams.find((t) => t.id === teamId);
+  const team = teams.find((tm) => tm.id === teamId);
   const teamMembers = members.filter((m) => m.teamId === teamId);
 
   const [search, setSearch] = useState("");
@@ -64,11 +66,11 @@ export default function TeamPage() {
     setTopicFormOpen(true);
   };
 
-  const openEditTopic = (t: WorkTopic) => {
-    setEditingTopic(t);
-    setTopicName(t.name);
-    setTopicDesc(t.description);
-    setTopicStatus(t.status);
+  const openEditTopic = (tp: WorkTopic) => {
+    setEditingTopic(tp);
+    setTopicName(tp.name);
+    setTopicDesc(tp.description);
+    setTopicStatus(tp.status);
     setTopicFormOpen(true);
   };
 
@@ -82,27 +84,27 @@ export default function TeamPage() {
     setTopicFormOpen(false);
   };
 
-  if (!team) return <p className="text-muted-foreground">Equipo no encontrado</p>;
+  if (!team) return <p className="text-muted-foreground">{t.teamNotFound}</p>;
 
-  const memberTopics = selectedMember ? workTopics.filter((t) => t.memberId === selectedMember.id) : [];
+  const memberTopics = selectedMember ? workTopics.filter((tp) => tp.memberId === selectedMember.id) : [];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-display font-bold tracking-tight">{team.name}</h1>
-          <p className="text-muted-foreground mt-1">{teamMembers.length} miembros</p>
+          <p className="text-muted-foreground mt-1">{teamMembers.length} {t.members.toLowerCase()}</p>
         </div>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> Añadir</Button>
+            <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> {t.add}</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle className="font-display">Nuevo miembro</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle className="font-display">{t.newMember}</DialogTitle></DialogHeader>
             <div className="space-y-3">
-              <div><Label>Nombre</Label><Input value={newName} onChange={(e) => setNewName(e.target.value)} /></div>
-              <div><Label>Rol</Label><Input value={newRole} onChange={(e) => setNewRole(e.target.value)} /></div>
-              <Button onClick={handleAdd} className="w-full">Añadir</Button>
+              <div><Label>{t.name}</Label><Input value={newName} onChange={(e) => setNewName(e.target.value)} /></div>
+              <div><Label>{t.role}</Label><Input value={newRole} onChange={(e) => setNewRole(e.target.value)} /></div>
+              <Button onClick={handleAdd} className="w-full">{t.add}</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -111,22 +113,22 @@ export default function TeamPage() {
       <div className="flex gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card shadow-sm" />
+          <Input placeholder={t.search} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card shadow-sm" />
         </div>
         <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
           <SelectTrigger className="w-[160px] bg-card shadow-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="available">Disponibles</SelectItem>
-            <SelectItem value="vacation">Vacaciones</SelectItem>
-            <SelectItem value="sick-leave">Baja</SelectItem>
+            <SelectItem value="all">{t.all}</SelectItem>
+            <SelectItem value="available">{t.available}</SelectItem>
+            <SelectItem value="vacation">{t.vacation}</SelectItem>
+            <SelectItem value="sick-leave">{t.sickLeave}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <motion.div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" variants={container} initial="hidden" animate="show">
         {filtered.map((m) => (
-          <motion.div key={m.id} variants={item}>
+          <motion.div key={m.id} variants={itemAnim}>
             <Card className="cursor-pointer hover:shadow-lg hover:border-primary/20 transition-all duration-200" onClick={() => setSelectedMember(m)}>
               <CardContent className="p-4 flex items-center gap-3">
                 <Avatar className="h-10 w-10 ring-2 ring-background shadow-sm">
@@ -164,9 +166,9 @@ export default function TeamPage() {
 
               <div className="mt-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-display font-semibold text-sm">Temas de trabajo</h3>
+                  <h3 className="font-display font-semibold text-sm">{t.workTopics}</h3>
                   <Button variant="outline" size="sm" onClick={openNewTopic} className="rounded-lg">
-                    <Plus className="h-3 w-3 mr-1" /> Añadir tema
+                    <Plus className="h-3 w-3 mr-1" /> {t.addTopic}
                   </Button>
                 </div>
 
@@ -175,28 +177,28 @@ export default function TeamPage() {
                     <Card className="border-primary/30 shadow-sm">
                       <CardContent className="p-3 space-y-3">
                         <div>
-                          <Label className="text-xs">Nombre</Label>
-                          <Input value={topicName} onChange={(e) => setTopicName(e.target.value)} placeholder="Nombre del tema..." className="h-8 text-sm" />
+                          <Label className="text-xs">{t.name}</Label>
+                          <Input value={topicName} onChange={(e) => setTopicName(e.target.value)} placeholder={t.topicName} className="h-8 text-sm" />
                         </div>
                         <div>
-                          <Label className="text-xs">Descripción</Label>
-                          <Textarea value={topicDesc} onChange={(e) => setTopicDesc(e.target.value)} placeholder="Descripción..." className="min-h-[60px] text-sm" />
+                          <Label className="text-xs">{t.description}</Label>
+                          <Textarea value={topicDesc} onChange={(e) => setTopicDesc(e.target.value)} placeholder={t.descPlaceholder} className="min-h-[60px] text-sm" />
                         </div>
                         <div>
-                          <Label className="text-xs">Estado</Label>
+                          <Label className="text-xs">{t.status}</Label>
                           <Select value={topicStatus} onValueChange={(v) => setTopicStatus(v as WorkTopicStatus)}>
                             <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="pending">Pendiente</SelectItem>
-                              <SelectItem value="in-progress">En progreso</SelectItem>
-                              <SelectItem value="blocked">Bloqueado</SelectItem>
-                              <SelectItem value="completed">Completado</SelectItem>
+                              <SelectItem value="pending">{t.pending}</SelectItem>
+                              <SelectItem value="in-progress">{t.inProgress}</SelectItem>
+                              <SelectItem value="blocked">{t.blocked}</SelectItem>
+                              <SelectItem value="completed">{t.completed}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div className="flex gap-2">
                           <Button size="sm" onClick={saveTopic} className="flex-1">
-                            <Check className="h-3 w-3 mr-1" /> {editingTopic ? "Guardar" : "Crear"}
+                            <Check className="h-3 w-3 mr-1" /> {editingTopic ? t.save : t.create}
                           </Button>
                           <Button size="sm" variant="outline" onClick={() => setTopicFormOpen(false)}>
                             <X className="h-3 w-3" />
@@ -208,24 +210,24 @@ export default function TeamPage() {
                 )}
 
                 {memberTopics.length === 0 && !topicFormOpen ? (
-                  <p className="text-sm text-muted-foreground">Sin temas asignados</p>
+                  <p className="text-sm text-muted-foreground">{t.noTopics}</p>
                 ) : (
-                  memberTopics.map((t) => (
-                    <Card key={t.id} className="hover:shadow-sm transition-shadow">
+                  memberTopics.map((tp) => (
+                    <Card key={tp.id} className="hover:shadow-sm transition-shadow">
                       <CardContent className="p-3">
                         <div className="flex items-center justify-between">
-                          <p className="font-medium text-sm">{t.name}</p>
+                          <p className="font-medium text-sm">{tp.name}</p>
                           <div className="flex items-center gap-1">
-                            <TopicStatusBadge status={t.status} />
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditTopic(t)}>
+                            <TopicStatusBadge status={tp.status} />
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditTopic(tp)}>
                               <Pencil className="h-3 w-3" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteWorkTopic(t.id)}>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteWorkTopic(tp.id)}>
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{tp.description}</p>
                       </CardContent>
                     </Card>
                   ))
@@ -234,7 +236,7 @@ export default function TeamPage() {
 
               <div className="mt-6 flex gap-2">
                 <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => { deleteMember(selectedMember.id); setSelectedMember(null); }}>
-                  <Trash2 className="h-4 w-4 mr-1" /> Eliminar miembro
+                  <Trash2 className="h-4 w-4 mr-1" /> {t.deleteMember}
                 </Button>
               </div>
             </>

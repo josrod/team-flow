@@ -1,6 +1,7 @@
 import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, Zap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useApp } from "@/context/AppContext";
+import { useLang } from "@/context/LanguageContext";
 import {
   Sidebar,
   SidebarContent,
@@ -15,13 +16,14 @@ import {
 
 export function AppSidebar() {
   const { teams } = useApp();
+  const { t } = useLang();
 
   const navItems = [
-    { title: "Dashboard", url: "/", icon: LayoutDashboard },
-    { title: teams[0]?.name || "Equipo 1", url: "/team/team-1", icon: Users },
-    { title: teams[1]?.name || "Equipo 2", url: "/team/team-2", icon: Users },
-    { title: "Ausencias", url: "/absences", icon: CalendarDays },
-    { title: "Handovers", url: "/handovers", icon: ArrowRightLeft },
+    { title: t.dashboard, url: "/", icon: LayoutDashboard },
+    { title: teams[0]?.name || `${t.team} 1`, url: "/team/team-1", icon: Users },
+    { title: teams[1]?.name || `${t.team} 2`, url: "/team/team-2", icon: Users },
+    { title: t.absences, url: "/absences", icon: CalendarDays },
+    { title: t.handovers, url: "/handovers", icon: ArrowRightLeft },
   ];
 
   return (
@@ -39,7 +41,7 @@ export function AppSidebar() {
       <SidebarContent className="pt-4">
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/50 uppercase text-[10px] tracking-widest font-semibold">
-            Navegación
+            {t.navigation}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>

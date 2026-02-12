@@ -1,10 +1,11 @@
 import { useApp } from "@/context/AppContext";
+import { useLang } from "@/context/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowRightLeft, Search, Users, Pencil, Check, X, TrendingUp, UserMinus, CalendarClock } from "lucide-react";
+import { ArrowRightLeft, Search, Users, Pencil, Check, X, UserMinus, CalendarClock } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -20,6 +21,7 @@ const item = {
 
 const Index = () => {
   const { teams, members, absences, handovers, getMemberStatus, updateTeamName } = useApp();
+  const { t } = useLang();
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
@@ -48,15 +50,14 @@ const Index = () => {
   return (
     <motion.div className="space-y-8" variants={container} initial="hidden" animate="show">
       <motion.div variants={item}>
-        <h1 className="text-3xl font-display font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Resumen general de tus equipos</p>
+        <h1 className="text-3xl font-display font-bold tracking-tight">{t.dashboard}</h1>
+        <p className="text-muted-foreground mt-1">{t.dashboardDesc}</p>
       </motion.div>
 
-      {/* Search */}
       <motion.div className="relative max-w-md" variants={item}>
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar personas..."
+          placeholder={t.searchPeople}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-9 bg-card shadow-sm"
@@ -84,9 +85,8 @@ const Index = () => {
         )}
       </motion.div>
 
-      {/* Team panels */}
       <div className="grid gap-6 md:grid-cols-2">
-        {teams.map((team, idx) => {
+        {teams.map((team) => {
           const stats = teamStats(team.id);
           return (
             <motion.div key={team.id} variants={item}>
@@ -132,9 +132,9 @@ const Index = () => {
                 <CardContent className="cursor-pointer" onClick={() => navigate(`/team/${team.id}`)}>
                   <div className="grid grid-cols-3 gap-4">
                     {[
-                      { value: stats.total, label: "Miembros", icon: Users, color: "text-primary" },
-                      { value: stats.absent, label: "Ausentes", icon: UserMinus, color: "text-status-vacation" },
-                      { value: stats.upcoming, label: "Próximas", icon: CalendarClock, color: "text-status-info" },
+                      { value: stats.total, label: t.members, icon: Users, color: "text-primary" },
+                      { value: stats.absent, label: t.absent, icon: UserMinus, color: "text-status-vacation" },
+                      { value: stats.upcoming, label: t.upcoming, icon: CalendarClock, color: "text-status-info" },
                     ].map((s) => (
                       <div key={s.label} className="text-center space-y-1">
                         <s.icon className={`h-4 w-4 mx-auto ${s.color} opacity-60`} />
@@ -150,18 +150,17 @@ const Index = () => {
         })}
       </div>
 
-      {/* Active handovers */}
       <motion.div variants={item}>
         <h2 className="text-xl font-display font-semibold mb-4 flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center">
             <ArrowRightLeft className="h-4 w-4 text-accent-foreground" />
           </div>
-          Handovers activos
+          {t.activeHandovers}
         </h2>
         {activeHandovers.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="p-6 text-center text-muted-foreground text-sm">
-              No hay handovers activos en este momento.
+              {t.noActiveHandovers}
             </CardContent>
           </Card>
         ) : (
