@@ -1,7 +1,8 @@
-import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, Zap } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, Zap, RotateCcw } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -12,10 +13,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 
 export function AppSidebar() {
-  const { teams } = useApp();
+  const { teams, resetData } = useApp();
   const { t } = useLang();
 
   const navItems = [
@@ -64,6 +66,17 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="p-3 border-t border-sidebar-border">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={resetData}
+          className="w-full justify-start gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs"
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+          <span>Reset data</span>
+        </Button>
+      </SidebarFooter>
     </Sidebar>
   );
 }

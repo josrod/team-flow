@@ -40,6 +40,7 @@ interface AppState {
   deleteWorkTopic: (id: string) => void;
   updateTeamName: (id: string, name: string) => void;
   getMemberStatus: (memberId: string) => "available" | "vacation" | "sick-leave";
+  resetData: () => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -129,6 +130,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const name = workTopics.find((x) => x.id === id)?.name;
       setWorkTopics((prev) => prev.filter((x) => x.id !== id));
       toast.success("🗑️", { description: `Topic "${name}" deleted` });
+    },
+    resetData: () => {
+      setTeams(seedTeams);
+      setMembers(seedMembers);
+      setWorkTopics(seedTopics);
+      setAbsences(seedAbsences);
+      setHandovers(seedHandovers);
+      localStorage.removeItem(STORAGE_KEY);
+      toast.success("🔄", { description: "Data reset to defaults" });
     },
   };
 
