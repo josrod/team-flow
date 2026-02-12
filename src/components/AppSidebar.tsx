@@ -36,7 +36,7 @@ export function AppSidebar() {
             <Zap className="h-4 w-4 text-sidebar-primary-foreground" />
           </div>
           <h2 className="text-lg font-display font-bold tracking-tight text-sidebar-primary-foreground">
-            Team Flow
+            ROSEN CUSW Team Flow
           </h2>
         </div>
       </SidebarHeader>
