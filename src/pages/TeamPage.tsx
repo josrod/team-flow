@@ -13,6 +13,16 @@ import { Search, Plus, Pencil, Trash2, X, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { motion } from "framer-motion";
+
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.04 } },
+};
+const item = {
+  hidden: { opacity: 0, scale: 0.96 },
+  show: { opacity: 1, scale: 1, transition: { duration: 0.25 } },
+};
 
 export default function TeamPage() {
   const { teamId } = useParams<{ teamId: string }>();
@@ -28,7 +38,6 @@ export default function TeamPage() {
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
 
-  // Topic form state
   const [topicFormOpen, setTopicFormOpen] = useState(false);
   const [editingTopic, setEditingTopic] = useState<WorkTopic | null>(null);
   const [topicName, setTopicName] = useState("");
@@ -81,15 +90,15 @@ export default function TeamPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{team.name}</h1>
-          <p className="text-muted-foreground">{teamMembers.length} miembros</p>
+          <h1 className="text-3xl font-display font-bold tracking-tight">{team.name}</h1>
+          <p className="text-muted-foreground mt-1">{teamMembers.length} miembros</p>
         </div>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
-            <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Añadir</Button>
+            <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> Añadir</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Nuevo miembro</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle className="font-display">Nuevo miembro</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div><Label>Nombre</Label><Input value={newName} onChange={(e) => setNewName(e.target.value)} /></div>
               <div><Label>Rol</Label><Input value={newRole} onChange={(e) => setNewRole(e.target.value)} /></div>
@@ -102,10 +111,10 @@ export default function TeamPage() {
       <div className="flex gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card shadow-sm" />
         </div>
         <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-          <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[160px] bg-card shadow-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="available">Disponibles</SelectItem>
@@ -115,85 +124,94 @@ export default function TeamPage() {
         </Select>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <motion.div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" variants={container} initial="hidden" animate="show">
         {filtered.map((m) => (
-          <Card key={m.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedMember(m)}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <Avatar>
-                <AvatarFallback>{m.name.slice(0, 2)}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{m.name}</p>
-                <p className="text-xs text-muted-foreground">{m.role}</p>
-              </div>
-              <StatusBadge status={getMemberStatus(m.id)} />
-            </CardContent>
-          </Card>
+          <motion.div key={m.id} variants={item}>
+            <Card className="cursor-pointer hover:shadow-lg hover:border-primary/20 transition-all duration-200" onClick={() => setSelectedMember(m)}>
+              <CardContent className="p-4 flex items-center gap-3">
+                <Avatar className="h-10 w-10 ring-2 ring-background shadow-sm">
+                  <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">{m.name.slice(0, 2)}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">{m.name}</p>
+                  <p className="text-xs text-muted-foreground">{m.role}</p>
+                </div>
+                <StatusBadge status={getMemberStatus(m.id)} />
+              </CardContent>
+            </Card>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
-      {/* Member detail sheet */}
       <Sheet open={!!selectedMember} onOpenChange={(o) => { if (!o) { setSelectedMember(null); setTopicFormOpen(false); } }}>
         <SheetContent className="overflow-auto">
           {selectedMember && (
             <>
               <SheetHeader>
-                <SheetTitle className="flex items-center gap-2">
-                  {selectedMember.name}
-                  <StatusBadge status={getMemberStatus(selectedMember.id)} />
-                </SheetTitle>
-                <p className="text-sm text-muted-foreground">{selectedMember.role}</p>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12 ring-2 ring-primary/20">
+                    <AvatarFallback className="bg-primary/10 text-primary font-bold">{selectedMember.name.slice(0, 2)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <SheetTitle className="flex items-center gap-2 font-display">
+                      {selectedMember.name}
+                      <StatusBadge status={getMemberStatus(selectedMember.id)} />
+                    </SheetTitle>
+                    <p className="text-sm text-muted-foreground">{selectedMember.role}</p>
+                  </div>
+                </div>
               </SheetHeader>
 
               <div className="mt-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-sm">Temas de trabajo</h3>
-                  <Button variant="outline" size="sm" onClick={openNewTopic}>
+                  <h3 className="font-display font-semibold text-sm">Temas de trabajo</h3>
+                  <Button variant="outline" size="sm" onClick={openNewTopic} className="rounded-lg">
                     <Plus className="h-3 w-3 mr-1" /> Añadir tema
                   </Button>
                 </div>
 
-                {/* Topic form */}
                 {topicFormOpen && (
-                  <Card className="border-primary/30">
-                    <CardContent className="p-3 space-y-3">
-                      <div>
-                        <Label className="text-xs">Nombre</Label>
-                        <Input value={topicName} onChange={(e) => setTopicName(e.target.value)} placeholder="Nombre del tema..." className="h-8 text-sm" />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Descripción</Label>
-                        <Textarea value={topicDesc} onChange={(e) => setTopicDesc(e.target.value)} placeholder="Descripción..." className="min-h-[60px] text-sm" />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Estado</Label>
-                        <Select value={topicStatus} onValueChange={(v) => setTopicStatus(v as WorkTopicStatus)}>
-                          <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pendiente</SelectItem>
-                            <SelectItem value="in-progress">En progreso</SelectItem>
-                            <SelectItem value="blocked">Bloqueado</SelectItem>
-                            <SelectItem value="completed">Completado</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={saveTopic} className="flex-1">
-                          <Check className="h-3 w-3 mr-1" /> {editingTopic ? "Guardar" : "Crear"}
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => setTopicFormOpen(false)}>
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+                    <Card className="border-primary/30 shadow-sm">
+                      <CardContent className="p-3 space-y-3">
+                        <div>
+                          <Label className="text-xs">Nombre</Label>
+                          <Input value={topicName} onChange={(e) => setTopicName(e.target.value)} placeholder="Nombre del tema..." className="h-8 text-sm" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Descripción</Label>
+                          <Textarea value={topicDesc} onChange={(e) => setTopicDesc(e.target.value)} placeholder="Descripción..." className="min-h-[60px] text-sm" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Estado</Label>
+                          <Select value={topicStatus} onValueChange={(v) => setTopicStatus(v as WorkTopicStatus)}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pendiente</SelectItem>
+                              <SelectItem value="in-progress">En progreso</SelectItem>
+                              <SelectItem value="blocked">Bloqueado</SelectItem>
+                              <SelectItem value="completed">Completado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={saveTopic} className="flex-1">
+                            <Check className="h-3 w-3 mr-1" /> {editingTopic ? "Guardar" : "Crear"}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setTopicFormOpen(false)}>
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 )}
 
                 {memberTopics.length === 0 && !topicFormOpen ? (
                   <p className="text-sm text-muted-foreground">Sin temas asignados</p>
                 ) : (
                   memberTopics.map((t) => (
-                    <Card key={t.id}>
+                    <Card key={t.id} className="hover:shadow-sm transition-shadow">
                       <CardContent className="p-3">
                         <div className="flex items-center justify-between">
                           <p className="font-medium text-sm">{t.name}</p>
@@ -215,7 +233,7 @@ export default function TeamPage() {
               </div>
 
               <div className="mt-6 flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => { deleteMember(selectedMember.id); setSelectedMember(null); }}>
+                <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => { deleteMember(selectedMember.id); setSelectedMember(null); }}>
                   <Trash2 className="h-4 w-4 mr-1" /> Eliminar miembro
                 </Button>
               </div>

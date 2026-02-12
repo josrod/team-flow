@@ -1,23 +1,24 @@
 import { cn } from "@/lib/utils";
 import { MemberStatus, WorkTopicStatus } from "@/types";
 
-export const statusConfig: Record<MemberStatus, { label: string; className: string }> = {
-  available: { label: "Disponible", className: "bg-green-500/15 text-green-700 border-green-300" },
-  vacation: { label: "Vacaciones", className: "bg-yellow-500/15 text-yellow-700 border-yellow-300" },
-  "sick-leave": { label: "Baja", className: "bg-red-500/15 text-red-700 border-red-300" },
+export const statusConfig: Record<MemberStatus, { label: string; className: string; dot: string }> = {
+  available: { label: "Disponible", className: "bg-status-available/10 text-status-available border-status-available/30", dot: "bg-status-available" },
+  vacation: { label: "Vacaciones", className: "bg-status-vacation/10 text-status-vacation border-status-vacation/30", dot: "bg-status-vacation" },
+  "sick-leave": { label: "Baja", className: "bg-status-sick/10 text-status-sick border-status-sick/30", dot: "bg-status-sick" },
 };
 
 export const topicStatusConfig: Record<WorkTopicStatus, { label: string; className: string }> = {
-  "in-progress": { label: "En progreso", className: "bg-blue-500/15 text-blue-700" },
-  pending: { label: "Pendiente", className: "bg-yellow-500/15 text-yellow-700" },
-  blocked: { label: "Bloqueado", className: "bg-red-500/15 text-red-700" },
-  completed: { label: "Completado", className: "bg-green-500/15 text-green-700" },
+  "in-progress": { label: "En progreso", className: "bg-status-info/10 text-status-info" },
+  pending: { label: "Pendiente", className: "bg-status-vacation/10 text-status-vacation" },
+  blocked: { label: "Bloqueado", className: "bg-status-sick/10 text-status-sick" },
+  completed: { label: "Completado", className: "bg-status-available/10 text-status-available" },
 };
 
 export function StatusBadge({ status }: { status: MemberStatus }) {
   const cfg = statusConfig[status];
   return (
-    <span className={cn("inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium", cfg.className)}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors", cfg.className)}>
+      <span className={cn("h-1.5 w-1.5 rounded-full", cfg.dot)} />
       {cfg.label}
     </span>
   );
