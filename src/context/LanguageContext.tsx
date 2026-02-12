@@ -1,0 +1,180 @@
+import React, { createContext, useContext, useState } from "react";
+
+type Lang = "es" | "en";
+
+const translations = {
+  es: {
+    dashboard: "Dashboard",
+    dashboardDesc: "Resumen general de tus equipos",
+    searchPeople: "Buscar personas...",
+    members: "Miembros",
+    absent: "Ausentes",
+    upcoming: "Próximas",
+    activeHandovers: "Handovers activos",
+    noActiveHandovers: "No hay handovers activos en este momento.",
+    navigation: "Navegación",
+    absences: "Ausencias",
+    handovers: "Handovers",
+    team: "Equipo",
+    // Team page
+    teamNotFound: "Equipo no encontrado",
+    add: "Añadir",
+    newMember: "Nuevo miembro",
+    name: "Nombre",
+    role: "Rol",
+    search: "Buscar...",
+    all: "Todos",
+    available: "Disponibles",
+    vacation: "Vacaciones",
+    sickLeave: "Baja",
+    workTopics: "Temas de trabajo",
+    addTopic: "Añadir tema",
+    topicName: "Nombre del tema...",
+    description: "Descripción",
+    descPlaceholder: "Descripción...",
+    status: "Estado",
+    pending: "Pendiente",
+    inProgress: "En progreso",
+    blocked: "Bloqueado",
+    completed: "Completado",
+    save: "Guardar",
+    create: "Crear",
+    noTopics: "Sin temas asignados",
+    deleteMember: "Eliminar miembro",
+    // Absences page
+    absencesDesc: "Gestión de vacaciones y bajas",
+    newAbsence: "Nueva ausencia",
+    registerAbsence: "Registrar ausencia",
+    person: "Persona",
+    select: "Seleccionar...",
+    type: "Tipo",
+    start: "Inicio",
+    end: "Fin",
+    date: "Fecha",
+    register: "Registrar",
+    timeline: "Timeline",
+    list: "Lista",
+    noAbsencesMonth: "Sin ausencias este mes",
+    noAbsences: "No hay ausencias registradas.",
+    days: "días",
+    // Handovers page
+    handoversDesc: "Gestión de traspasos de trabajo",
+    createHandover: "Crear handover",
+    newHandover: "Nuevo handover",
+    absentPerson: "Persona ausente",
+    covers: "Cubre",
+    topicsToTransfer: "Temas a traspasar",
+    notes: "Notas",
+    notesPlaceholder: "Instrucciones para el handover...",
+    noHandovers: "No hay handovers creados.",
+    created: "Creado",
+    // Not found
+    pageNotFound: "Oops! Página no encontrada",
+    returnHome: "Volver al inicio",
+  },
+  en: {
+    dashboard: "Dashboard",
+    dashboardDesc: "General overview of your teams",
+    searchPeople: "Search people...",
+    members: "Members",
+    absent: "Absent",
+    upcoming: "Upcoming",
+    activeHandovers: "Active handovers",
+    noActiveHandovers: "No active handovers at this time.",
+    navigation: "Navigation",
+    absences: "Absences",
+    handovers: "Handovers",
+    team: "Team",
+    // Team page
+    teamNotFound: "Team not found",
+    add: "Add",
+    newMember: "New member",
+    name: "Name",
+    role: "Role",
+    search: "Search...",
+    all: "All",
+    available: "Available",
+    vacation: "Vacation",
+    sickLeave: "Sick leave",
+    workTopics: "Work topics",
+    addTopic: "Add topic",
+    topicName: "Topic name...",
+    description: "Description",
+    descPlaceholder: "Description...",
+    status: "Status",
+    pending: "Pending",
+    inProgress: "In progress",
+    blocked: "Blocked",
+    completed: "Completed",
+    save: "Save",
+    create: "Create",
+    noTopics: "No assigned topics",
+    deleteMember: "Delete member",
+    // Absences page
+    absencesDesc: "Vacation and leave management",
+    newAbsence: "New absence",
+    registerAbsence: "Register absence",
+    person: "Person",
+    select: "Select...",
+    type: "Type",
+    start: "Start",
+    end: "End",
+    date: "Date",
+    register: "Register",
+    timeline: "Timeline",
+    list: "List",
+    noAbsencesMonth: "No absences this month",
+    noAbsences: "No absences registered.",
+    days: "days",
+    // Handovers page
+    handoversDesc: "Work handover management",
+    createHandover: "Create handover",
+    newHandover: "New handover",
+    absentPerson: "Absent person",
+    covers: "Covers",
+    topicsToTransfer: "Topics to transfer",
+    notes: "Notes",
+    notesPlaceholder: "Instructions for the handover...",
+    noHandovers: "No handovers created.",
+    created: "Created",
+    // Not found
+    pageNotFound: "Oops! Page not found",
+    returnHome: "Return to Home",
+  },
+} as const;
+
+type Translations = Record<keyof (typeof translations)["es"], string>;
+
+interface LangState {
+  lang: Lang;
+  toggleLang: () => void;
+  t: Translations;
+}
+
+const LanguageContext = createContext<LangState | null>(null);
+
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const [lang, setLang] = useState<Lang>(() => {
+    const saved = localStorage.getItem("teamflow-lang");
+    return saved === "en" ? "en" : "es";
+  });
+
+  const toggleLang = () =>
+    setLang((l) => {
+      const next = l === "es" ? "en" : "es";
+      localStorage.setItem("teamflow-lang", next);
+      return next;
+    });
+
+  return (
+    <LanguageContext.Provider value={{ lang, toggleLang, t: translations[lang] }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+export function useLang() {
+  const ctx = useContext(LanguageContext);
+  if (!ctx) throw new Error("useLang must be used within LanguageProvider");
+  return ctx;
+}

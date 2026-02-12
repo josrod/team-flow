@@ -1,4 +1,5 @@
 import { useApp } from "@/context/AppContext";
+import { useLang } from "@/context/LanguageContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format, differenceInDays, eachDayOfInterval, startOfMonth, endOfMonth, parseISO, addMonths, subMonths } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, enUS } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { AbsenceType } from "@/types";
@@ -18,6 +19,9 @@ import { motion } from "framer-motion";
 
 export default function AbsencesPage() {
   const { members, absences, addAbsence } = useApp();
+  const { t, lang } = useLang();
+  const dateLoc = lang === "es" ? es : enUS;
+
   const [addOpen, setAddOpen] = useState(false);
   const [selMember, setSelMember] = useState("");
   const [selType, setSelType] = useState<AbsenceType>("vacation");
@@ -63,20 +67,20 @@ export default function AbsencesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-display font-bold tracking-tight">Ausencias</h1>
-          <p className="text-muted-foreground mt-1">Gestión de vacaciones y bajas</p>
+          <h1 className="text-3xl font-display font-bold tracking-tight">{t.absences}</h1>
+          <p className="text-muted-foreground mt-1">{t.absencesDesc}</p>
         </div>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> Nueva ausencia</Button>
+            <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> {t.newAbsence}</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle className="font-display">Registrar ausencia</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle className="font-display">{t.registerAbsence}</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>Persona</Label>
+                <Label>{t.person}</Label>
                 <Select value={selMember} onValueChange={setSelMember}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t.select} /></SelectTrigger>
                   <SelectContent>
                     {members.map((m) => (
                       <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
@@ -85,42 +89,42 @@ export default function AbsencesPage() {
                 </Select>
               </div>
               <div>
-                <Label>Tipo</Label>
+                <Label>{t.type}</Label>
                 <Select value={selType} onValueChange={(v) => setSelType(v as AbsenceType)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="vacation">Vacaciones</SelectItem>
-                    <SelectItem value="sick-leave">Baja</SelectItem>
+                    <SelectItem value="vacation">{t.vacation}</SelectItem>
+                    <SelectItem value="sick-leave">{t.sickLeave}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Inicio</Label>
+                  <Label>{t.start}</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className={cn("w-full justify-start text-left", !startDate && "text-muted-foreground")}>
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {startDate ? format(startDate, "dd/MM/yyyy") : "Fecha"}
+                        {startDate ? format(startDate, "dd/MM/yyyy") : t.date}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={startDate} onSelect={setStartDate} className="pointer-events-auto" /></PopoverContent>
                   </Popover>
                 </div>
                 <div>
-                  <Label>Fin</Label>
+                  <Label>{t.end}</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className={cn("w-full justify-start text-left", !endDate && "text-muted-foreground")}>
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {endDate ? format(endDate, "dd/MM/yyyy") : "Fecha"}
+                        {endDate ? format(endDate, "dd/MM/yyyy") : t.date}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={endDate} onSelect={setEndDate} className="pointer-events-auto" /></PopoverContent>
                   </Popover>
                 </div>
               </div>
-              <Button onClick={handleAdd} className="w-full">Registrar</Button>
+              <Button onClick={handleAdd} className="w-full">{t.register}</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -128,8 +132,8 @@ export default function AbsencesPage() {
 
       <Tabs defaultValue="timeline">
         <TabsList className="bg-card shadow-sm">
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-          <TabsTrigger value="list">Lista</TabsTrigger>
+          <TabsTrigger value="timeline">{t.timeline}</TabsTrigger>
+          <TabsTrigger value="list">{t.list}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="timeline">
@@ -138,7 +142,7 @@ export default function AbsencesPage() {
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="font-display font-medium min-w-[160px] text-center capitalize">
-              {format(viewMonth, "MMMM yyyy", { locale: es })}
+              {format(viewMonth, "MMMM yyyy", { locale: dateLoc })}
             </span>
             <Button variant="outline" size="icon" className="rounded-lg" onClick={() => setViewMonth(addMonths(viewMonth, 1))}>
               <ChevronRight className="h-4 w-4" />
@@ -149,7 +153,7 @@ export default function AbsencesPage() {
             <CardContent className="p-4 overflow-x-auto">
               <div className="min-w-[800px]">
                 <div className="flex border-b pb-2 mb-2">
-                  <div className="w-[140px] shrink-0 text-xs font-semibold text-muted-foreground">Persona</div>
+                  <div className="w-[140px] shrink-0 text-xs font-semibold text-muted-foreground">{t.person}</div>
                   <div className="flex-1 flex">
                     {daysInMonth.map((day) => (
                       <div
@@ -166,7 +170,7 @@ export default function AbsencesPage() {
                 </div>
 
                 {timelineMembers.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-6 text-center">Sin ausencias este mes</p>
+                  <p className="text-sm text-muted-foreground py-6 text-center">{t.noAbsencesMonth}</p>
                 ) : (
                   timelineMembers.map((member) => {
                     const memberAbsences = timelineAbsences.filter((a) => a.memberId === member.id);
@@ -207,7 +211,7 @@ export default function AbsencesPage() {
             variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } }}
           >
             {upcomingAbsences.length === 0 ? (
-              <p className="text-muted-foreground text-sm col-span-2">No hay ausencias registradas.</p>
+              <p className="text-muted-foreground text-sm col-span-2">{t.noAbsences}</p>
             ) : (
               upcomingAbsences.map((a) => {
                 const member = members.find((m) => m.id === a.memberId);
@@ -221,8 +225,8 @@ export default function AbsencesPage() {
                           <StatusBadge status={a.type} />
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
-                          {format(parseISO(a.startDate), "dd MMM", { locale: es })} — {format(parseISO(a.endDate), "dd MMM", { locale: es })}
-                          <span className="ml-2 text-xs font-medium">({days} días)</span>
+                          {format(parseISO(a.startDate), "dd MMM", { locale: dateLoc })} — {format(parseISO(a.endDate), "dd MMM", { locale: dateLoc })}
+                          <span className="ml-2 text-xs font-medium">({days} {t.days})</span>
                         </p>
                       </CardContent>
                     </Card>
