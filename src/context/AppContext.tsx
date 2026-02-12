@@ -7,6 +7,7 @@ import {
   absences as seedAbsences,
   handovers as seedHandovers,
 } from "@/data/mock-data";
+import { toast } from "sonner";
 
 const STORAGE_KEY = "teamflow-data";
 
@@ -53,7 +54,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [absences, setAbsences] = useState<Absence[]>(() => loadFromStorage("absences", seedAbsences));
   const [handovers, setHandovers] = useState<Handover[]>(() => loadFromStorage("handovers", seedHandovers));
 
-  // Persist to localStorage
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ teams, members, workTopics, absences, handovers }));
   }, [teams, members, workTopics, absences, handovers]);
@@ -76,25 +76,60 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     absences,
     handovers,
     getMemberStatus,
-    updateTeamName: (id, name) => setTeams((t) => t.map((x) => (x.id === id ? { ...x, name } : x))),
-    addMember: (m) => setMembers((prev) => [...prev, { ...m, id: genId("member") }]),
-    updateMember: (m) => setMembers((prev) => prev.map((x) => (x.id === m.id ? m : x))),
+    updateTeamName: (id, name) => {
+      setTeams((t) => t.map((x) => (x.id === id ? { ...x, name } : x)));
+      toast.success("✏️", { description: `Team renamed to "${name}"` });
+    },
+    addMember: (m) => {
+      setMembers((prev) => [...prev, { ...m, id: genId("member") }]);
+      toast.success("👤", { description: `${m.name} added` });
+    },
+    updateMember: (m) => {
+      setMembers((prev) => prev.map((x) => (x.id === m.id ? m : x)));
+      toast.success("✏️", { description: `${m.name} updated` });
+    },
     deleteMember: (id) => {
+      const name = members.find((x) => x.id === id)?.name;
       setMembers((prev) => prev.filter((x) => x.id !== id));
       setWorkTopics((prev) => prev.filter((x) => x.memberId !== id));
       setAbsences((prev) => prev.filter((x) => x.memberId !== id));
+      toast.success("🗑️", { description: `${name} removed` });
     },
-    addAbsence: (a) => setAbsences((prev) => [...prev, { ...a, id: genId("abs") }]),
-    deleteAbsence: (id) => setAbsences((prev) => prev.filter((x) => x.id !== id)),
-    addHandover: (h) =>
+    addAbsence: (a) => {
+      setAbsences((prev) => [...prev, { ...a, id: genId("abs") }]);
+      const name = members.find((x) => x.id === a.memberId)?.name;
+      toast.success("📅", { description: `Absence registered for ${name}` });
+    },
+    deleteAbsence: (id) => {
+      setAbsences((prev) => prev.filter((x) => x.id !== id));
+      toast.success("🗑️", { description: "Absence deleted" });
+    },
+    addHandover: (h) => {
       setHandovers((prev) => [
         ...prev,
         { ...h, id: genId("ho"), createdAt: new Date().toISOString().split("T")[0] },
-      ]),
-    deleteHandover: (id) => setHandovers((prev) => prev.filter((x) => x.id !== id)),
-    addWorkTopic: (t) => setWorkTopics((prev) => [...prev, { ...t, id: genId("topic") }]),
-    updateWorkTopic: (t) => setWorkTopics((prev) => prev.map((x) => (x.id === t.id ? t : x))),
-    deleteWorkTopic: (id) => setWorkTopics((prev) => prev.filter((x) => x.id !== id)),
+      ]);
+      const from = members.find((x) => x.id === h.fromMemberId)?.name;
+      const to = members.find((x) => x.id === h.toMemberId)?.name;
+      toast.success("🔄", { description: `Handover: ${from} → ${to}` });
+    },
+    deleteHandover: (id) => {
+      setHandovers((prev) => prev.filter((x) => x.id !== id));
+      toast.success("🗑️", { description: "Handover deleted" });
+    },
+    addWorkTopic: (t) => {
+      setWorkTopics((prev) => [...prev, { ...t, id: genId("topic") }]);
+      toast.success("📌", { description: `Topic "${t.name}" created` });
+    },
+    updateWorkTopic: (t) => {
+      setWorkTopics((prev) => prev.map((x) => (x.id === t.id ? t : x)));
+      toast.success("✏️", { description: `Topic "${t.name}" updated` });
+    },
+    deleteWorkTopic: (id) => {
+      const name = workTopics.find((x) => x.id === id)?.name;
+      setWorkTopics((prev) => prev.filter((x) => x.id !== id));
+      toast.success("🗑️", { description: `Topic "${name}" deleted` });
+    },
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
