@@ -1,16 +1,19 @@
 import { useApp } from "@/context/AppContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowRightLeft, Search, Users, CalendarDays } from "lucide-react";
+import { ArrowRightLeft, Search, Users, Pencil, Check, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Index = () => {
-  const { teams, members, absences, handovers, getMemberStatus } = useApp();
+  const { teams, members, absences, handovers, getMemberStatus, updateTeamName } = useApp();
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
+  const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -77,12 +80,42 @@ const Index = () => {
           return (
             <Card
               key={team.id}
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => navigate(`/team/${team.id}`)}
+              className="group hover:shadow-md transition-shadow"
             >
               <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
                 <Users className="h-5 w-5 text-muted-foreground" />
-                <CardTitle className="text-xl">{team.name}</CardTitle>
+                {editingTeamId === team.id ? (
+                  <div className="flex items-center gap-1 flex-1" onClick={(e) => e.stopPropagation()}>
+                    <Input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="h-7 text-lg font-semibold"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") { updateTeamName(team.id, editName); setEditingTeamId(null); }
+                        if (e.key === "Escape") setEditingTeamId(null);
+                      }}
+                    />
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { updateTeamName(team.id, editName); setEditingTeamId(null); }}>
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingTeamId(null)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 flex-1 cursor-pointer" onClick={() => navigate(`/team/${team.id}`)}>
+                    <CardTitle className="text-xl">{team.name}</CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 opacity-0 group-hover:opacity-100"
+                      onClick={(e) => { e.stopPropagation(); setEditingTeamId(team.id); setEditName(team.name); }}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-3 gap-4 text-center">
