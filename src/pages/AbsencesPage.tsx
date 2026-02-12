@@ -7,14 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus } from "lucide-react";
+import { CalendarIcon, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
-import { format, differenceInDays, eachDayOfInterval, startOfMonth, endOfMonth, isWithinInterval, parseISO, addMonths, subMonths } from "date-fns";
+import { format, differenceInDays, eachDayOfInterval, startOfMonth, endOfMonth, parseISO, addMonths, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { AbsenceType } from "@/types";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function AbsencesPage() {
   const { members, absences, addAbsence } = useApp();
@@ -41,7 +41,6 @@ export default function AbsencesPage() {
     setEndDate(undefined);
   };
 
-  // Timeline data
   const monthStart = startOfMonth(viewMonth);
   const monthEnd = endOfMonth(viewMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -56,7 +55,6 @@ export default function AbsencesPage() {
     (id) => members.find((m) => m.id === id)!
   ).filter(Boolean);
 
-  // List data
   const upcomingAbsences = [...absences]
     .filter((a) => a.endDate >= today)
     .sort((a, b) => a.startDate.localeCompare(b.startDate));
@@ -65,15 +63,15 @@ export default function AbsencesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Ausencias</h1>
-          <p className="text-muted-foreground">Gestión de vacaciones y bajas</p>
+          <h1 className="text-3xl font-display font-bold tracking-tight">Ausencias</h1>
+          <p className="text-muted-foreground mt-1">Gestión de vacaciones y bajas</p>
         </div>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
-            <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Nueva ausencia</Button>
+            <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> Nueva ausencia</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Registrar ausencia</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle className="font-display">Registrar ausencia</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div>
                 <Label>Persona</Label>
@@ -129,79 +127,85 @@ export default function AbsencesPage() {
       </div>
 
       <Tabs defaultValue="timeline">
-        <TabsList>
+        <TabsList className="bg-card shadow-sm">
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
           <TabsTrigger value="list">Lista</TabsTrigger>
         </TabsList>
 
         <TabsContent value="timeline">
           <div className="flex items-center gap-2 mb-4">
-            <Button variant="outline" size="icon" onClick={() => setViewMonth(subMonths(viewMonth, 1))}>
+            <Button variant="outline" size="icon" className="rounded-lg" onClick={() => setViewMonth(subMonths(viewMonth, 1))}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="font-medium min-w-[140px] text-center">
+            <span className="font-display font-medium min-w-[160px] text-center capitalize">
               {format(viewMonth, "MMMM yyyy", { locale: es })}
             </span>
-            <Button variant="outline" size="icon" onClick={() => setViewMonth(addMonths(viewMonth, 1))}>
+            <Button variant="outline" size="icon" className="rounded-lg" onClick={() => setViewMonth(addMonths(viewMonth, 1))}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
 
-          <div className="overflow-x-auto">
-            <div className="min-w-[800px]">
-              {/* Header row */}
-              <div className="flex border-b pb-1 mb-2">
-                <div className="w-[140px] shrink-0 text-xs font-medium text-muted-foreground">Persona</div>
-                <div className="flex-1 flex">
-                  {daysInMonth.map((day) => (
-                    <div
-                      key={day.toISOString()}
-                      className={cn(
-                        "flex-1 text-center text-xs text-muted-foreground",
-                        format(day, "yyyy-MM-dd") === today && "font-bold text-foreground"
-                      )}
-                    >
-                      {format(day, "d")}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {timelineMembers.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">Sin ausencias este mes</p>
-              ) : (
-                timelineMembers.map((member) => {
-                  const memberAbsences = timelineAbsences.filter((a) => a.memberId === member.id);
-                  return (
-                    <div key={member.id} className="flex items-center py-1.5">
-                      <div className="w-[140px] shrink-0 text-sm truncate">{member.name}</div>
-                      <div className="flex-1 flex relative h-6">
-                        {daysInMonth.map((day) => {
-                          const dayStr = format(day, "yyyy-MM-dd");
-                          const absence = memberAbsences.find((a) => a.startDate <= dayStr && a.endDate >= dayStr);
-                          return (
-                            <div
-                              key={day.toISOString()}
-                              className={cn(
-                                "flex-1 mx-px rounded-sm",
-                                absence?.type === "vacation" && "bg-yellow-400/60",
-                                absence?.type === "sick-leave" && "bg-red-400/60",
-                                !absence && "bg-muted/30"
-                              )}
-                            />
-                          );
-                        })}
+          <Card className="overflow-hidden">
+            <CardContent className="p-4 overflow-x-auto">
+              <div className="min-w-[800px]">
+                <div className="flex border-b pb-2 mb-2">
+                  <div className="w-[140px] shrink-0 text-xs font-semibold text-muted-foreground">Persona</div>
+                  <div className="flex-1 flex">
+                    {daysInMonth.map((day) => (
+                      <div
+                        key={day.toISOString()}
+                        className={cn(
+                          "flex-1 text-center text-xs text-muted-foreground",
+                          format(day, "yyyy-MM-dd") === today && "font-bold text-primary"
+                        )}
+                      >
+                        {format(day, "d")}
                       </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
+                    ))}
+                  </div>
+                </div>
+
+                {timelineMembers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-6 text-center">Sin ausencias este mes</p>
+                ) : (
+                  timelineMembers.map((member) => {
+                    const memberAbsences = timelineAbsences.filter((a) => a.memberId === member.id);
+                    return (
+                      <div key={member.id} className="flex items-center py-2 hover:bg-accent/30 rounded transition-colors">
+                        <div className="w-[140px] shrink-0 text-sm font-medium truncate">{member.name}</div>
+                        <div className="flex-1 flex relative h-7">
+                          {daysInMonth.map((day) => {
+                            const dayStr = format(day, "yyyy-MM-dd");
+                            const absence = memberAbsences.find((a) => a.startDate <= dayStr && a.endDate >= dayStr);
+                            return (
+                              <div
+                                key={day.toISOString()}
+                                className={cn(
+                                  "flex-1 mx-px rounded-sm transition-colors",
+                                  absence?.type === "vacation" && "bg-status-vacation/40",
+                                  absence?.type === "sick-leave" && "bg-status-sick/40",
+                                  !absence && "bg-muted/20"
+                                )}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="list">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <motion.div
+            className="grid gap-3 sm:grid-cols-2"
+            initial="hidden"
+            animate="show"
+            variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } }}
+          >
             {upcomingAbsences.length === 0 ? (
               <p className="text-muted-foreground text-sm col-span-2">No hay ausencias registradas.</p>
             ) : (
@@ -209,22 +213,24 @@ export default function AbsencesPage() {
                 const member = members.find((m) => m.id === a.memberId);
                 const days = differenceInDays(parseISO(a.endDate), parseISO(a.startDate)) + 1;
                 return (
-                  <Card key={a.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{member?.name}</span>
-                        <StatusBadge status={a.type} />
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {format(parseISO(a.startDate), "dd MMM", { locale: es })} — {format(parseISO(a.endDate), "dd MMM", { locale: es })}
-                        <span className="ml-2 text-xs">({days} días)</span>
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <motion.div key={a.id} variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}>
+                    <Card className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{member?.name}</span>
+                          <StatusBadge status={a.type} />
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {format(parseISO(a.startDate), "dd MMM", { locale: es })} — {format(parseISO(a.endDate), "dd MMM", { locale: es })}
+                          <span className="ml-2 text-xs font-medium">({days} días)</span>
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 );
               })
             )}
-          </div>
+          </motion.div>
         </TabsContent>
       </Tabs>
     </div>
