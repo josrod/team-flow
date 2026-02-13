@@ -24,9 +24,11 @@ export function AppSidebar() {
     const json = exportData();
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
+    const now = new Date();
+    const ts = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}-${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}${String(now.getSeconds()).padStart(2,"0")}`;
     const a = document.createElement("a");
     a.href = url;
-    a.download = `teamflow-backup-${new Date().toISOString().split("T")[0]}.json`;
+    a.download = `teamflow-backup-${ts}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
