@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowRightLeft, Search, Users, Pencil, Check, X, UserMinus, CalendarClock, Shield, Cpu } from "lucide-react";
-import { useState } from "react";
+import { ArrowRightLeft, Search, Users, Pencil, Check, X, UserMinus, CalendarClock, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, ChevronDown, type LucideIcon } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { teamNameSchema } from "@/lib/validation";
@@ -21,6 +21,21 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
 };
 
+const TEAM_ICONS: { key: string; icon: LucideIcon; label: string }[] = [
+  { key: "shield", icon: Shield, label: "Shield" },
+  { key: "cpu", icon: Cpu, label: "CPU" },
+  { key: "rocket", icon: Rocket, label: "Rocket" },
+  { key: "globe", icon: Globe, label: "Globe" },
+  { key: "wrench", icon: Wrench, label: "Wrench" },
+  { key: "database", icon: Database, label: "Database" },
+  { key: "server", icon: Server, label: "Server" },
+  { key: "users", icon: Users, label: "Users" },
+];
+
+const getTeamIcon = (iconKey?: string): LucideIcon => {
+  return TEAM_ICONS.find((i) => i.key === iconKey)?.icon || Users;
+};
+
 const Index = () => {
   const { teams, members, absences, handovers, getMemberStatus, updateTeamName } = useApp();
   const { t } = useLang();
@@ -28,6 +43,19 @@ const Index = () => {
   const navigate = useNavigate();
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [editIcon, setEditIcon] = useState("");
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
+  const iconPickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (iconPickerRef.current && !iconPickerRef.current.contains(e.target as Node)) {
+        setIconPickerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -90,15 +118,49 @@ const Index = () => {
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
         {teams.map((team) => {
           const stats = teamStats(team.id);
-          const TeamIcon = team.icon === "shield" ? Shield : team.icon === "cpu" ? Cpu : Users;
+          const TeamIcon = getTeamIcon(team.icon);
+          const saveEdit = () => {
+            const result = teamNameSchema.safeParse(editName);
+            if (!result.success) { toast.error(result.error.errors[0].message); return; }
+            updateTeamName(team.id, result.data, editIcon);
+            setEditingTeamId(null);
+            setIconPickerOpen(false);
+          };
           return (
             <motion.div key={team.id} variants={item}>
               <Card className="group hover:shadow-lg transition-all duration-300 border-transparent hover:border-primary/20 overflow-hidden">
                 <div className="h-1 bg-gradient-to-r from-primary/60 to-primary/20" />
                 <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <TeamIcon className="h-5 w-5 text-primary" />
-                  </div>
+                  {editingTeamId === team.id ? (
+                    <div className="relative" ref={iconPickerRef} onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+                        onClick={() => setIconPickerOpen((v) => !v)}
+                      >
+                        {(() => { const I = getTeamIcon(editIcon); return <I className="h-5 w-5 text-primary" />; })()}
+                      </button>
+                      {iconPickerOpen && (
+                        <div className="absolute top-12 left-0 z-50 bg-popover border border-border rounded-lg shadow-lg p-2 grid grid-cols-4 gap-1 w-40">
+                          {TEAM_ICONS.map((ti) => (
+                            <button
+                              key={ti.key}
+                              type="button"
+                              className={`h-8 w-8 rounded-md flex items-center justify-center transition-colors ${editIcon === ti.key ? "bg-primary/20 text-primary" : "hover:bg-accent text-muted-foreground"}`}
+                              onClick={() => { setEditIcon(ti.key); setIconPickerOpen(false); }}
+                              title={ti.label}
+                            >
+                              <ti.icon className="h-4 w-4" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <TeamIcon className="h-5 w-5 text-primary" />
+                    </div>
+                  )}
                   {editingTeamId === team.id ? (
                     <div className="flex items-center gap-1 flex-1" onClick={(e) => e.stopPropagation()}>
                         <Input
@@ -108,18 +170,14 @@ const Index = () => {
                           autoFocus
                           maxLength={100}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              const result = teamNameSchema.safeParse(editName);
-                              if (!result.success) { toast.error(result.error.errors[0].message); return; }
-                              updateTeamName(team.id, result.data); setEditingTeamId(null);
-                            }
-                            if (e.key === "Escape") setEditingTeamId(null);
+                            if (e.key === "Enter") saveEdit();
+                            if (e.key === "Escape") { setEditingTeamId(null); setIconPickerOpen(false); }
                           }}
                         />
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { const result = teamNameSchema.safeParse(editName); if (!result.success) { toast.error(result.error.errors[0].message); return; } updateTeamName(team.id, result.data); setEditingTeamId(null); }}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={saveEdit}>
                         <Check className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingTeamId(null)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingTeamId(null); setIconPickerOpen(false); }}>
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
@@ -130,7 +188,7 @@ const Index = () => {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => { e.stopPropagation(); setEditingTeamId(team.id); setEditName(team.name); }}
+                        onClick={(e) => { e.stopPropagation(); setEditingTeamId(team.id); setEditName(team.name); setEditIcon(team.icon || "users"); }}
                       >
                         <Pencil className="h-3 w-3" />
                       </Button>
