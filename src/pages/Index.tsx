@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowRightLeft, Search, Users, Pencil, Check, X, UserMinus, CalendarClock } from "lucide-react";
+import { ArrowRightLeft, Search, Users, Pencil, Check, X, UserMinus, CalendarClock, Shield, Cpu } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -90,13 +90,14 @@ const Index = () => {
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
         {teams.map((team) => {
           const stats = teamStats(team.id);
+          const TeamIcon = team.icon === "shield" ? Shield : team.icon === "cpu" ? Cpu : Users;
           return (
             <motion.div key={team.id} variants={item}>
               <Card className="group hover:shadow-lg transition-all duration-300 border-transparent hover:border-primary/20 overflow-hidden">
                 <div className="h-1 bg-gradient-to-r from-primary/60 to-primary/20" />
                 <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
                   <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-primary" />
+                    <TeamIcon className="h-5 w-5 text-primary" />
                   </div>
                   {editingTeamId === team.id ? (
                     <div className="flex items-center gap-1 flex-1" onClick={(e) => e.stopPropagation()}>

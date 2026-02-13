@@ -39,4 +39,5 @@ export interface Handover {
 export interface Team {
   id: string;
   name: string;
+  icon?: string;
 }

@@ -1,8 +1,8 @@
 import { Team, TeamMember, WorkTopic, Absence, Handover } from "@/types";
 
 export const teams: Team[] = [
-  { id: "team-1", name: "Equipo Alpha" },
-  { id: "team-2", name: "Equipo Beta" },
+  { id: "team-1", name: "RODAT", icon: "shield" },
+  { id: "team-2", name: "Processing", icon: "cpu" },
 ];
 
 const firstNames = [
