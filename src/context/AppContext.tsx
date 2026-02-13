@@ -38,7 +38,7 @@ interface AppState {
   addWorkTopic: (t: Omit<WorkTopic, "id">) => void;
   updateWorkTopic: (t: WorkTopic) => void;
   deleteWorkTopic: (id: string) => void;
-  updateTeamName: (id: string, name: string) => void;
+  updateTeamName: (id: string, name: string, icon?: string) => void;
   getMemberStatus: (memberId: string) => "available" | "vacation" | "sick-leave";
   resetData: () => void;
 }
@@ -77,8 +77,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     absences,
     handovers,
     getMemberStatus,
-    updateTeamName: (id, name) => {
-      setTeams((t) => t.map((x) => (x.id === id ? { ...x, name } : x)));
+    updateTeamName: (id, name, icon?) => {
+      setTeams((t) => t.map((x) => (x.id === id ? { ...x, name, ...(icon !== undefined && { icon }) } : x)));
       toast.success("✏️", { description: `Team renamed to "${name}"` });
     },
     addMember: (m) => {
