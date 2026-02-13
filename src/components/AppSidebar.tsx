@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, Zap, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, Zap, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Download, Upload, type LucideIcon } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
@@ -17,8 +17,39 @@ import {
 } from "@/components/ui/sidebar";
 
 export function AppSidebar() {
-  const { teams, resetData } = useApp();
+  const { teams, resetData, exportData, importData } = useApp();
   const { t } = useLang();
+
+  const handleExport = () => {
+    const json = exportData();
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `teamflow-backup-${new Date().toISOString().split("T")[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          importData(ev.target?.result as string);
+        } catch {
+          // toast handled inside importData
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
 
   const iconMap: Record<string, LucideIcon> = { shield: Shield, cpu: Cpu, rocket: Rocket, globe: Globe, wrench: Wrench, database: Database, server: Server, users: Users };
   const getIcon = (key?: string) => iconMap[key || ""] || Users;
@@ -68,7 +99,25 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-3 border-t border-sidebar-border">
+      <SidebarFooter className="p-3 border-t border-sidebar-border space-y-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleExport}
+          className="w-full justify-start gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs"
+        >
+          <Download className="h-3.5 w-3.5" />
+          <span>Exportar JSON</span>
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleImport}
+          className="w-full justify-start gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs"
+        >
+          <Upload className="h-3.5 w-3.5" />
+          <span>Importar JSON</span>
+        </Button>
         <Button
           variant="ghost"
           size="sm"

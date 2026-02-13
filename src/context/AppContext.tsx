@@ -41,6 +41,8 @@ interface AppState {
   updateTeamName: (id: string, name: string, icon?: string) => void;
   getMemberStatus: (memberId: string) => "available" | "vacation" | "sick-leave";
   resetData: () => void;
+  exportData: () => string;
+  importData: (json: string) => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -139,6 +141,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setHandovers(seedHandovers);
       localStorage.removeItem(STORAGE_KEY);
       toast.success("🔄", { description: "Data reset to defaults" });
+    },
+    exportData: () => {
+      return JSON.stringify({ teams, members, workTopics, absences, handovers }, null, 2);
+    },
+    importData: (json: string) => {
+      try {
+        const data = JSON.parse(json);
+        if (data.teams) setTeams(data.teams);
+        if (data.members) setMembers(data.members);
+        if (data.workTopics) setWorkTopics(data.workTopics);
+        if (data.absences) setAbsences(data.absences);
+        if (data.handovers) setHandovers(data.handovers);
+        toast.success("📥", { description: "Datos importados correctamente" });
+      } catch {
+        toast.error("Error al importar: archivo JSON inválido");
+      }
     },
   };
 
