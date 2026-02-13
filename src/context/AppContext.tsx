@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { importDataSchema } from "@/lib/validation";
 import { Team, TeamMember, WorkTopic, Absence, Handover } from "@/types";
 import {
   teams as seedTeams,
@@ -147,12 +148,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     },
     importData: (json: string) => {
       try {
-        const data = JSON.parse(json);
-        if (data.teams) setTeams(data.teams);
-        if (data.members) setMembers(data.members);
-        if (data.workTopics) setWorkTopics(data.workTopics);
-        if (data.absences) setAbsences(data.absences);
-        if (data.handovers) setHandovers(data.handovers);
+        const raw = JSON.parse(json);
+        const result = importDataSchema.safeParse(raw);
+        if (!result.success) {
+          const msg = result.error.errors.map((e) => e.message).join(", ");
+          toast.error(`Esquema inválido: ${msg}`);
+          return;
+        }
+        const data = result.data;
+        if (data.teams) setTeams(data.teams as Team[]);
+        if (data.members) setMembers(data.members as TeamMember[]);
+        if (data.workTopics) setWorkTopics(data.workTopics as WorkTopic[]);
+        if (data.absences) setAbsences(data.absences as Absence[]);
+        if (data.handovers) setHandovers(data.handovers as Handover[]);
         toast.success("📥", { description: "Datos importados correctamente" });
       } catch {
         toast.error("Error al importar: archivo JSON inválido");
