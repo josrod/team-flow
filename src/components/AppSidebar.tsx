@@ -40,6 +40,7 @@ export function AppSidebar() {
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
+      if (!window.confirm("¿Estás seguro? Esto sobrescribirá todos los datos actuales con los del archivo seleccionado.")) return;
       const reader = new FileReader();
       reader.onload = (ev) => {
         try {
