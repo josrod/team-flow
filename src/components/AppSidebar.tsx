@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, Zap, RotateCcw } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, Zap, RotateCcw, Shield, Cpu } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
@@ -20,10 +20,12 @@ export function AppSidebar() {
   const { teams, resetData } = useApp();
   const { t } = useLang();
 
+  const teamIcons: Record<string, typeof Users> = { shield: Shield, cpu: Cpu };
+
   const navItems = [
     { title: t.dashboard, url: "/", icon: LayoutDashboard },
-    { title: teams[0]?.name || `${t.team} 1`, url: "/team/team-1", icon: Users },
-    { title: teams[1]?.name || `${t.team} 2`, url: "/team/team-2", icon: Users },
+    { title: teams[0]?.name || `${t.team} 1`, url: "/team/team-1", icon: teamIcons[teams[0]?.icon || ""] || Users },
+    { title: teams[1]?.name || `${t.team} 2`, url: "/team/team-2", icon: teamIcons[teams[1]?.icon || ""] || Users },
     { title: t.absences, url: "/absences", icon: CalendarDays },
     { title: t.handovers, url: "/handovers", icon: ArrowRightLeft },
   ];
