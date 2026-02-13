@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowRightLeft, Search, Users, Pencil, Check, X, UserMinus, CalendarClock, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, ChevronDown, type LucideIcon } from "lucide-react";
+import { ArrowRightLeft, Search, Users, Pencil, Check, X, UserMinus, CalendarClock, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Plus, Trash2, type LucideIcon } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -37,7 +37,7 @@ const getTeamIcon = (iconKey?: string): LucideIcon => {
 };
 
 const Index = () => {
-  const { teams, members, absences, handovers, getMemberStatus, updateTeamName } = useApp();
+  const { teams, members, absences, handovers, getMemberStatus, updateTeamName, addTeam, deleteTeam } = useApp();
   const { t } = useLang();
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
@@ -45,12 +45,20 @@ const Index = () => {
   const [editName, setEditName] = useState("");
   const [editIcon, setEditIcon] = useState("");
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
+  const [showNewTeam, setShowNewTeam] = useState(false);
+  const [newTeamName, setNewTeamName] = useState("");
+  const [newTeamIcon, setNewTeamIcon] = useState("users");
+  const [newIconPickerOpen, setNewIconPickerOpen] = useState(false);
   const iconPickerRef = useRef<HTMLDivElement>(null);
+  const newIconPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (iconPickerRef.current && !iconPickerRef.current.contains(e.target as Node)) {
         setIconPickerOpen(false);
+      }
+      if (newIconPickerRef.current && !newIconPickerRef.current.contains(e.target as Node)) {
+        setNewIconPickerOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClick);
@@ -192,6 +200,14 @@ const Index = () => {
                       >
                         <Pencil className="h-3 w-3" />
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                        onClick={(e) => { e.stopPropagation(); if (window.confirm(`¿Eliminar equipo "${team.name}" y todos sus miembros?`)) deleteTeam(team.id); }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
                   )}
                 </CardHeader>
@@ -214,6 +230,83 @@ const Index = () => {
             </motion.div>
           );
         })}
+
+        {/* Add new team card */}
+        <motion.div variants={item}>
+          {showNewTeam ? (
+            <Card className="overflow-hidden">
+              <div className="h-1 bg-gradient-to-r from-primary/40 to-primary/10" />
+              <CardContent className="p-5 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="relative" ref={newIconPickerRef} onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+                      onClick={() => setNewIconPickerOpen((v) => !v)}
+                    >
+                      {(() => { const I = getTeamIcon(newTeamIcon); return <I className="h-5 w-5 text-primary" />; })()}
+                    </button>
+                    {newIconPickerOpen && (
+                      <div className="absolute top-12 left-0 z-50 bg-popover border border-border rounded-lg shadow-lg p-2 grid grid-cols-4 gap-1 w-40">
+                        {TEAM_ICONS.map((ti) => (
+                          <button
+                            key={ti.key}
+                            type="button"
+                            className={`h-8 w-8 rounded-md flex items-center justify-center transition-colors ${newTeamIcon === ti.key ? "bg-primary/20 text-primary" : "hover:bg-accent text-muted-foreground"}`}
+                            onClick={() => { setNewTeamIcon(ti.key); setNewIconPickerOpen(false); }}
+                            title={ti.label}
+                          >
+                            <ti.icon className="h-4 w-4" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <Input
+                    placeholder="Nombre del equipo"
+                    value={newTeamName}
+                    onChange={(e) => setNewTeamName(e.target.value)}
+                    className="h-10 text-lg font-display font-semibold"
+                    autoFocus
+                    maxLength={100}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const result = teamNameSchema.safeParse(newTeamName);
+                        if (!result.success) { toast.error(result.error.errors[0].message); return; }
+                        addTeam(result.data, newTeamIcon);
+                        setNewTeamName(""); setNewTeamIcon("users"); setShowNewTeam(false);
+                      }
+                      if (e.key === "Escape") { setShowNewTeam(false); setNewTeamName(""); }
+                    }}
+                  />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="ghost" size="sm" onClick={() => { setShowNewTeam(false); setNewTeamName(""); }}>
+                    <X className="h-4 w-4 mr-1" /> Cancelar
+                  </Button>
+                  <Button size="sm" onClick={() => {
+                    const result = teamNameSchema.safeParse(newTeamName);
+                    if (!result.success) { toast.error(result.error.errors[0].message); return; }
+                    addTeam(result.data, newTeamIcon);
+                    setNewTeamName(""); setNewTeamIcon("users"); setShowNewTeam(false);
+                  }}>
+                    <Check className="h-4 w-4 mr-1" /> Crear
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card
+              className="border-dashed cursor-pointer hover:border-primary/40 hover:shadow-md transition-all duration-300 flex items-center justify-center min-h-[160px]"
+              onClick={() => setShowNewTeam(true)}
+            >
+              <CardContent className="p-6 text-center">
+                <Plus className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                <p className="text-sm text-muted-foreground">Añadir equipo</p>
+              </CardContent>
+            </Card>
+          )}
+        </motion.div>
       </div>
 
       <motion.div variants={item}>

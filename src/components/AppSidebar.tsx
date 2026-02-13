@@ -58,8 +58,11 @@ export function AppSidebar() {
   const getIcon = (key?: string) => iconMap[key || ""] || Users;
   const navItems = [
     { title: t.dashboard, url: "/", icon: LayoutDashboard },
-    { title: teams[0]?.name || `${t.team} 1`, url: "/team/team-1", icon: getIcon(teams[0]?.icon) },
-    { title: teams[1]?.name || `${t.team} 2`, url: "/team/team-2", icon: getIcon(teams[1]?.icon) },
+    ...teams.map((team) => ({
+      title: team.name,
+      url: `/team/${team.id}`,
+      icon: getIcon(team.icon),
+    })),
     { title: t.absences, url: "/absences", icon: CalendarDays },
     { title: t.handovers, url: "/handovers", icon: ArrowRightLeft },
   ];

@@ -29,6 +29,8 @@ interface AppState {
   workTopics: WorkTopic[];
   absences: Absence[];
   handovers: Handover[];
+  addTeam: (name: string, icon?: string) => void;
+  deleteTeam: (id: string) => void;
   addMember: (m: Omit<TeamMember, "id">) => void;
   updateMember: (m: TeamMember) => void;
   deleteMember: (id: string) => void;
@@ -83,6 +85,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateTeamName: (id, name, icon?) => {
       setTeams((t) => t.map((x) => (x.id === id ? { ...x, name, ...(icon !== undefined && { icon }) } : x)));
       toast.success("✏️", { description: `Team renamed to "${name}"` });
+    },
+    addTeam: (name, icon?) => {
+      const id = genId("team");
+      setTeams((prev) => [...prev, { id, name, icon: icon || "users" }]);
+      toast.success("🏢", { description: `Equipo "${name}" creado` });
+    },
+    deleteTeam: (id) => {
+      const team = teams.find((x) => x.id === id);
+      const teamMemberIds = members.filter((m) => m.teamId === id).map((m) => m.id);
+      setTeams((prev) => prev.filter((x) => x.id !== id));
+      setMembers((prev) => prev.filter((x) => x.teamId !== id));
+      setWorkTopics((prev) => prev.filter((x) => !teamMemberIds.includes(x.memberId)));
+      setAbsences((prev) => prev.filter((x) => !teamMemberIds.includes(x.memberId)));
+      toast.success("🗑️", { description: `Equipo "${team?.name}" eliminado` });
     },
     addMember: (m) => {
       setMembers((prev) => [...prev, { ...m, id: genId("member") }]);
