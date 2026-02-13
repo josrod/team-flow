@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState } from "react";
 import { MemberStatus, TeamMember, WorkTopic, WorkTopicStatus } from "@/types";
 import { Search, Plus, Pencil, Trash2, X, Check } from "lucide-react";
+import { memberSchema, topicSchema } from "@/lib/validation";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -51,8 +53,13 @@ export default function TeamPage() {
     .filter((m) => m.name.toLowerCase().includes(search.toLowerCase()));
 
   const handleAdd = () => {
-    if (!newName || !newRole || !teamId) return;
-    addMember({ name: newName, role: newRole, teamId });
+    if (!teamId) return;
+    const result = memberSchema.safeParse({ name: newName, role: newRole, teamId });
+    if (!result.success) {
+      toast.error(result.error.errors[0].message);
+      return;
+    }
+    addMember({ name: result.data.name, role: result.data.role, teamId });
     setNewName("");
     setNewRole("");
     setAddOpen(false);
@@ -75,11 +82,16 @@ export default function TeamPage() {
   };
 
   const saveTopic = () => {
-    if (!topicName || !selectedMember) return;
+    if (!selectedMember) return;
+    const result = topicSchema.safeParse({ name: topicName, description: topicDesc, status: topicStatus });
+    if (!result.success) {
+      toast.error(result.error.errors[0].message);
+      return;
+    }
     if (editingTopic) {
-      updateWorkTopic({ ...editingTopic, name: topicName, description: topicDesc, status: topicStatus });
+      updateWorkTopic({ ...editingTopic, name: result.data.name, description: result.data.description, status: result.data.status });
     } else {
-      addWorkTopic({ memberId: selectedMember.id, name: topicName, description: topicDesc, status: topicStatus });
+      addWorkTopic({ memberId: selectedMember.id, name: result.data.name, description: result.data.description, status: result.data.status });
     }
     setTopicFormOpen(false);
   };
@@ -102,8 +114,8 @@ export default function TeamPage() {
           <DialogContent>
             <DialogHeader><DialogTitle className="font-display">{t.newMember}</DialogTitle></DialogHeader>
             <div className="space-y-3">
-              <div><Label>{t.name}</Label><Input value={newName} onChange={(e) => setNewName(e.target.value)} /></div>
-              <div><Label>{t.role}</Label><Input value={newRole} onChange={(e) => setNewRole(e.target.value)} /></div>
+              <div><Label>{t.name}</Label><Input value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={100} /></div>
+              <div><Label>{t.role}</Label><Input value={newRole} onChange={(e) => setNewRole(e.target.value)} maxLength={50} /></div>
               <Button onClick={handleAdd} className="w-full">{t.add}</Button>
             </div>
           </DialogContent>
@@ -178,11 +190,11 @@ export default function TeamPage() {
                       <CardContent className="p-3 space-y-3">
                         <div>
                           <Label className="text-xs">{t.name}</Label>
-                          <Input value={topicName} onChange={(e) => setTopicName(e.target.value)} placeholder={t.topicName} className="h-8 text-sm" />
+                          <Input value={topicName} onChange={(e) => setTopicName(e.target.value)} placeholder={t.topicName} className="h-8 text-sm" maxLength={100} />
                         </div>
                         <div>
                           <Label className="text-xs">{t.description}</Label>
-                          <Textarea value={topicDesc} onChange={(e) => setTopicDesc(e.target.value)} placeholder={t.descPlaceholder} className="min-h-[60px] text-sm" />
+                          <Textarea value={topicDesc} onChange={(e) => setTopicDesc(e.target.value)} placeholder={t.descPlaceholder} className="min-h-[60px] text-sm" maxLength={500} />
                         </div>
                         <div>
                           <Label className="text-xs">{t.status}</Label>

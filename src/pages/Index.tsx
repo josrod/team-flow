@@ -9,6 +9,8 @@ import { ArrowRightLeft, Search, Users, Pencil, Check, X, UserMinus, CalendarClo
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { teamNameSchema } from "@/lib/validation";
+import { toast } from "sonner";
 
 const container = {
   hidden: { opacity: 0 },
@@ -98,17 +100,22 @@ const Index = () => {
                   </div>
                   {editingTeamId === team.id ? (
                     <div className="flex items-center gap-1 flex-1" onClick={(e) => e.stopPropagation()}>
-                      <Input
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="h-8 text-lg font-display font-semibold"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") { updateTeamName(team.id, editName); setEditingTeamId(null); }
-                          if (e.key === "Escape") setEditingTeamId(null);
-                        }}
-                      />
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { updateTeamName(team.id, editName); setEditingTeamId(null); }}>
+                        <Input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="h-8 text-lg font-display font-semibold"
+                          autoFocus
+                          maxLength={100}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const result = teamNameSchema.safeParse(editName);
+                              if (!result.success) { toast.error(result.error.errors[0].message); return; }
+                              updateTeamName(team.id, result.data); setEditingTeamId(null);
+                            }
+                            if (e.key === "Escape") setEditingTeamId(null);
+                          }}
+                        />
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { const result = teamNameSchema.safeParse(editName); if (!result.success) { toast.error(result.error.errors[0].message); return; } updateTeamName(team.id, result.data); setEditingTeamId(null); }}>
                         <Check className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingTeamId(null)}>
