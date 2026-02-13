@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ArrowRightLeft, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { handoverNotesSchema } from "@/lib/validation";
+import { toast } from "sonner";
 
 const container = {
   hidden: { opacity: 0 },
@@ -44,12 +46,17 @@ export default function HandoversPage() {
 
   const handleAdd = () => {
     if (!fromMember || !toMember || !fromMemberAbsence || selectedTopics.length === 0) return;
+    const notesResult = handoverNotesSchema.safeParse(notes);
+    if (!notesResult.success) {
+      toast.error(notesResult.error.errors[0].message);
+      return;
+    }
     addHandover({
       fromMemberId: fromMember,
       toMemberId: toMember,
       absenceId: fromMemberAbsence.id,
       topicIds: selectedTopics,
-      notes,
+      notes: notesResult.data,
     });
     setAddOpen(false);
     setFromMember("");
@@ -118,7 +125,7 @@ export default function HandoversPage() {
               )}
               <div>
                 <Label>{t.notes}</Label>
-                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t.notesPlaceholder} />
+                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t.notesPlaceholder} maxLength={1000} />
               </div>
               <Button onClick={handleAdd} className="w-full">{t.createHandover}</Button>
             </div>
