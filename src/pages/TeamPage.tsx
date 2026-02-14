@@ -41,6 +41,10 @@ export default function TeamPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
+  const [editingName, setEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState("");
+  const [editingRole, setEditingRole] = useState(false);
+  const [editRoleValue, setEditRoleValue] = useState("");
 
   const [topicFormOpen, setTopicFormOpen] = useState(false);
   const [editingTopic, setEditingTopic] = useState<WorkTopic | null>(null);
@@ -157,7 +161,7 @@ export default function TeamPage() {
         ))}
       </motion.div>
 
-      <Sheet open={!!selectedMember} onOpenChange={(o) => { if (!o) { setSelectedMember(null); setTopicFormOpen(false); } }}>
+      <Sheet open={!!selectedMember} onOpenChange={(o) => { if (!o) { setSelectedMember(null); setTopicFormOpen(false); setEditingName(false); setEditingRole(false); } }}>
         <SheetContent className="overflow-auto">
           {selectedMember && (
             <>
@@ -166,12 +170,80 @@ export default function TeamPage() {
                   <Avatar className="h-12 w-12 ring-2 ring-primary/20">
                     <AvatarFallback className="bg-primary/10 text-primary font-bold">{selectedMember.name.slice(0, 2)}</AvatarFallback>
                   </Avatar>
-                  <div>
-                    <SheetTitle className="flex items-center gap-2 font-display">
-                      {selectedMember.name}
-                      <StatusBadge status={getMemberStatus(selectedMember.id)} />
-                    </SheetTitle>
-                    <p className="text-sm text-muted-foreground">{selectedMember.role}</p>
+                  <div className="flex-1 min-w-0">
+                    {editingName ? (
+                      <div className="flex items-center gap-1">
+                        <Input
+                          value={editNameValue}
+                          onChange={(e) => setEditNameValue(e.target.value)}
+                          className="h-8 text-base font-display font-semibold"
+                          autoFocus
+                          maxLength={100}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              if (editNameValue.trim().length < 2) { toast.error("El nombre debe tener al menos 2 caracteres"); return; }
+                              const updated = { ...selectedMember, name: editNameValue.trim() };
+                              updateMember(updated);
+                              setSelectedMember(updated);
+                              setEditingName(false);
+                            }
+                            if (e.key === "Escape") setEditingName(false);
+                          }}
+                        />
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                          if (editNameValue.trim().length < 2) { toast.error("El nombre debe tener al menos 2 caracteres"); return; }
+                          const updated = { ...selectedMember, name: editNameValue.trim() };
+                          updateMember(updated);
+                          setSelectedMember(updated);
+                          setEditingName(false);
+                        }}><Check className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingName(false)}><X className="h-4 w-4" /></Button>
+                      </div>
+                    ) : (
+                      <SheetTitle className="flex items-center gap-2 font-display">
+                        {selectedMember.name}
+                        <StatusBadge status={getMemberStatus(selectedMember.id)} />
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditNameValue(selectedMember.name); setEditingName(true); }}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      </SheetTitle>
+                    )}
+                    {editingRole ? (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Input
+                          value={editRoleValue}
+                          onChange={(e) => setEditRoleValue(e.target.value)}
+                          className="h-7 text-sm"
+                          autoFocus
+                          maxLength={50}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              if (editRoleValue.trim().length < 2) { toast.error("El rol debe tener al menos 2 caracteres"); return; }
+                              const updated = { ...selectedMember, role: editRoleValue.trim() };
+                              updateMember(updated);
+                              setSelectedMember(updated);
+                              setEditingRole(false);
+                            }
+                            if (e.key === "Escape") setEditingRole(false);
+                          }}
+                        />
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+                          if (editRoleValue.trim().length < 2) { toast.error("El rol debe tener al menos 2 caracteres"); return; }
+                          const updated = { ...selectedMember, role: editRoleValue.trim() };
+                          updateMember(updated);
+                          setSelectedMember(updated);
+                          setEditingRole(false);
+                        }}><Check className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingRole(false)}><X className="h-3 w-3" /></Button>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        {selectedMember.role}
+                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => { setEditRoleValue(selectedMember.role); setEditingRole(true); }}>
+                          <Pencil className="h-2.5 w-2.5" />
+                        </Button>
+                      </p>
+                    )}
                   </div>
                 </div>
               </SheetHeader>
