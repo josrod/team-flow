@@ -51,6 +51,7 @@ export default function TeamPage() {
   const [topicName, setTopicName] = useState("");
   const [topicDesc, setTopicDesc] = useState("");
   const [topicStatus, setTopicStatus] = useState<WorkTopicStatus>("pending");
+  const [topicAssignee, setTopicAssignee] = useState("");
 
   const filtered = teamMembers
     .filter((m) => (filter === "all" ? true : getMemberStatus(m.id) === filter))
@@ -74,6 +75,7 @@ export default function TeamPage() {
     setTopicName("");
     setTopicDesc("");
     setTopicStatus("pending");
+    setTopicAssignee(selectedMember?.id || "");
     setTopicFormOpen(true);
   };
 
@@ -82,6 +84,7 @@ export default function TeamPage() {
     setTopicName(tp.name);
     setTopicDesc(tp.description);
     setTopicStatus(tp.status);
+    setTopicAssignee(tp.memberId);
     setTopicFormOpen(true);
   };
 
@@ -93,7 +96,7 @@ export default function TeamPage() {
       return;
     }
     if (editingTopic) {
-      updateWorkTopic({ ...editingTopic, name: result.data.name, description: result.data.description, status: result.data.status });
+      updateWorkTopic({ ...editingTopic, name: result.data.name, description: result.data.description, status: result.data.status, memberId: topicAssignee || editingTopic.memberId });
     } else {
       addWorkTopic({ memberId: selectedMember.id, name: result.data.name, description: result.data.description, status: result.data.status });
     }
@@ -280,6 +283,21 @@ export default function TeamPage() {
                             </SelectContent>
                           </Select>
                         </div>
+                        {editingTopic && (
+                          <div>
+                            <Label className="text-xs">Reassign to</Label>
+                            <Select value={topicAssignee} onValueChange={setTopicAssignee}>
+                              <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {members.map((m) => (
+                                  <SelectItem key={m.id} value={m.id}>
+                                    {m.name} <span className="text-muted-foreground ml-1">({teams.find(t => t.id === m.teamId)?.name})</span>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
                         <div className="flex gap-2">
                           <Button size="sm" onClick={saveTopic} className="flex-1">
                             <Check className="h-3 w-3 mr-1" /> {editingTopic ? t.save : t.create}
