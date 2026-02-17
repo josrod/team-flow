@@ -10,8 +10,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { MemberStatus, TeamMember, WorkTopic, WorkTopicStatus } from "@/types";
-import { Search, Plus, Pencil, Trash2, X, Check } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, X, Check, ArrowRightLeft } from "lucide-react";
 import { memberSchema, topicSchema } from "@/lib/validation";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -96,7 +97,15 @@ export default function TeamPage() {
       return;
     }
     if (editingTopic) {
-      updateWorkTopic({ ...editingTopic, name: result.data.name, description: result.data.description, status: result.data.status, memberId: topicAssignee || editingTopic.memberId });
+      const wasReassigned = topicAssignee && topicAssignee !== editingTopic.memberId;
+      updateWorkTopic({
+        ...editingTopic,
+        name: result.data.name,
+        description: result.data.description,
+        status: result.data.status,
+        memberId: topicAssignee || editingTopic.memberId,
+        reassignedFrom: wasReassigned ? editingTopic.memberId : editingTopic.reassignedFrom,
+      });
     } else {
       addWorkTopic({ memberId: selectedMember.id, name: result.data.name, description: result.data.description, status: result.data.status });
     }
@@ -315,11 +324,19 @@ export default function TeamPage() {
                   <p className="text-sm text-muted-foreground">{t.noTopics}</p>
                 ) : (
                   memberTopics.map((tp) => (
-                    <Card key={tp.id} className="hover:shadow-sm transition-shadow">
+                    <Card key={tp.id} className={cn("hover:shadow-sm transition-shadow", tp.reassignedFrom && "border-accent ring-1 ring-accent/30")}>
                       <CardContent className="p-3">
                         <div className="flex items-center justify-between">
-                          <p className="font-medium text-sm">{tp.name}</p>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            {tp.reassignedFrom && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 text-accent-foreground px-1.5 py-0.5 text-[10px] font-medium shrink-0" title={`Reassigned from ${members.find(m => m.id === tp.reassignedFrom)?.name}`}>
+                                <ArrowRightLeft className="h-2.5 w-2.5" />
+                                {members.find(m => m.id === tp.reassignedFrom)?.name}
+                              </span>
+                            )}
+                            <p className="font-medium text-sm truncate">{tp.name}</p>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
                             <TopicStatusBadge status={tp.status} />
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditTopic(tp)}>
                               <Pencil className="h-3 w-3" />
