@@ -16,6 +16,7 @@ export interface WorkTopic {
   name: string;
   description: string;
   status: WorkTopicStatus;
+  reassignedFrom?: string; // memberId of previous owner
 }
 
 export interface Absence {
