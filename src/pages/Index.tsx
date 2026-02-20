@@ -3,7 +3,7 @@ import { useLang } from "@/context/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { StatusBadge } from "@/components/StatusBadge";
+import { StatusBadge, TopicStatusBadge } from "@/components/StatusBadge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ArrowRightLeft, Search, Users, Pencil, Check, X, UserMinus, CalendarClock, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Plus, Trash2, type LucideIcon } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
@@ -37,7 +37,7 @@ const getTeamIcon = (iconKey?: string): LucideIcon => {
 };
 
 const Index = () => {
-  const { teams, members, absences, handovers, getMemberStatus, updateTeamName, addTeam, deleteTeam } = useApp();
+  const { teams, members, workTopics, absences, handovers, getMemberStatus, updateTeamName, updateWorkTopic, addTeam, deleteTeam } = useApp();
   const { t } = useLang();
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
@@ -84,6 +84,15 @@ const Index = () => {
     const absence = absences.find((a) => a.id === h.absenceId);
     return absence && absence.endDate >= today;
   });
+
+  const reassignedTopics = workTopics
+    .filter((tp) => !!tp.reassignedFrom)
+    .map((tp) => ({
+      topic: tp,
+      assignee: members.find((m) => m.id === tp.memberId),
+      previousOwner: members.find((m) => m.id === tp.reassignedFrom),
+      team: teams.find((tm) => tm.id === members.find((m) => m.id === tp.memberId)?.teamId),
+    }));
 
   return (
     <motion.div className="space-y-8" variants={container} initial="hidden" animate="show">
@@ -308,6 +317,67 @@ const Index = () => {
           )}
         </motion.div>
       </div>
+
+      {/* Reassigned Tasks Widget */}
+      {reassignedTopics.length > 0 && (
+        <motion.div variants={item}>
+          <h2 className="text-xl font-display font-semibold mb-4 flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center">
+              <ArrowRightLeft className="h-4 w-4 text-accent-foreground" />
+            </div>
+            Reassigned Tasks
+            <span className="ml-1 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-accent text-accent-foreground text-[10px] font-bold">
+              {reassignedTopics.length}
+            </span>
+          </h2>
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {reassignedTopics.map(({ topic, assignee, previousOwner, team }) => (
+              <motion.div
+                key={topic.id}
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.25 }}
+              >
+                <Card className="border-accent ring-1 ring-accent/30 hover:shadow-md transition-shadow">
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-medium text-sm leading-tight line-clamp-2">{topic.name}</p>
+                      <TopicStatusBadge status={topic.status} />
+                    </div>
+                    {topic.description && (
+                      <p className="text-xs text-muted-foreground line-clamp-2">{topic.description}</p>
+                    )}
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1 border-t border-border/50">
+                      <Avatar className="h-5 w-5">
+                        <AvatarFallback className="text-[9px] bg-muted">{previousOwner?.name.slice(0, 2)}</AvatarFallback>
+                      </Avatar>
+                      <span className="line-through opacity-60">{previousOwner?.name}</span>
+                      <ArrowRightLeft className="h-3 w-3 shrink-0" />
+                      <Avatar className="h-5 w-5">
+                        <AvatarFallback className="text-[9px] bg-primary/10 text-primary">{assignee?.name.slice(0, 2)}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium text-foreground">{assignee?.name}</span>
+                      {team && <span className="ml-auto text-[10px] text-muted-foreground/70 shrink-0">{team.name}</span>}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full h-6 text-[10px] gap-1 text-accent-foreground border-accent/40 hover:bg-accent/10 hover:border-accent mt-1"
+                      onClick={() => {
+                        updateWorkTopic({ ...topic, reassignedFrom: undefined });
+                        toast.success("✅", { description: `"${topic.name}" acknowledged` });
+                      }}
+                    >
+                      <Check className="h-2.5 w-2.5" />
+                      Acknowledge
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       <motion.div variants={item}>
         <h2 className="text-xl font-display font-semibold mb-4 flex items-center gap-2">
