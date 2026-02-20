@@ -1,4 +1,5 @@
-import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, Zap, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Download, Upload, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Download, Upload, type LucideIcon } from "lucide-react";
+import cuswLogo from "@/assets/cusw-logo.png";
 import { NavLink } from "@/components/NavLink";
 import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
@@ -69,13 +70,12 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="p-5 border-b border-sidebar-border">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
-            <Zap className="h-4 w-4 text-sidebar-primary-foreground" />
-          </div>
-          <h2 className="text-lg font-display font-bold tracking-tight text-sidebar-primary-foreground">
-            ROSEN CUSW Team Flow
+      <SidebarHeader className="p-4 border-b border-sidebar-border">
+        <div className="flex items-center gap-3">
+          <img src={cuswLogo} alt="CUSW Logo" className="h-9 w-9 rounded-lg object-cover shrink-0" />
+          <h2 className="text-sm font-display font-bold tracking-tight text-sidebar-primary-foreground leading-tight">
+            ROSEN CUSW<br />
+            <span className="text-[10px] font-normal text-sidebar-foreground/60 tracking-widest uppercase">Team Flow</span>
           </h2>
         </div>
       </SidebarHeader>
