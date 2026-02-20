@@ -347,6 +347,22 @@ export default function TeamPage() {
                           </div>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">{tp.description}</p>
+                        {tp.reassignedFrom && (
+                          <div className="mt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-6 text-[10px] px-2 gap-1 text-accent-foreground border-accent/40 hover:bg-accent/10 hover:border-accent"
+                              onClick={() => {
+                                updateWorkTopic({ ...tp, reassignedFrom: undefined });
+                                toast.success("✅", { description: `"${tp.name}" acknowledged` });
+                              }}
+                            >
+                              <Check className="h-2.5 w-2.5" />
+                              Acknowledge
+                            </Button>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))
