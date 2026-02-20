@@ -1,6 +1,7 @@
 import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Download, Upload, type LucideIcon } from "lucide-react";
 import cuswLogo from "@/assets/cusw-logo.png";
 import { NavLink } from "@/components/NavLink";
+import { cn } from "@/lib/utils";
 import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
 import { Button } from "@/components/ui/button";
@@ -115,28 +116,31 @@ export function AppSidebar() {
           variant="ghost"
           size="sm"
           onClick={handleExport}
-          className="w-full justify-start gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs"
+          title="Exportar JSON"
+          className={cn("w-full gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs", isCollapsed ? "justify-center px-0" : "justify-start")}
         >
-          <Download className="h-3.5 w-3.5" />
-          <span>Exportar JSON</span>
+          <Download className="h-3.5 w-3.5 shrink-0" />
+          {!isCollapsed && <span>Exportar JSON</span>}
         </Button>
         <Button
           variant="ghost"
           size="sm"
           onClick={handleImport}
-          className="w-full justify-start gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs"
+          title="Importar JSON"
+          className={cn("w-full gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs", isCollapsed ? "justify-center px-0" : "justify-start")}
         >
-          <Upload className="h-3.5 w-3.5" />
-          <span>Importar JSON</span>
+          <Upload className="h-3.5 w-3.5 shrink-0" />
+          {!isCollapsed && <span>Importar JSON</span>}
         </Button>
         <Button
           variant="ghost"
           size="sm"
           onClick={resetData}
-          className="w-full justify-start gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs"
+          title="Reset data"
+          className={cn("w-full gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs", isCollapsed ? "justify-center px-0" : "justify-start")}
         >
-          <RotateCcw className="h-3.5 w-3.5" />
-          <span>Reset data</span>
+          <RotateCcw className="h-3.5 w-3.5 shrink-0" />
+          {!isCollapsed && <span>Reset data</span>}
         </Button>
       </SidebarFooter>
     </Sidebar>
