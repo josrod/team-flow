@@ -15,11 +15,14 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 export function AppSidebar() {
   const { teams, resetData, exportData, importData } = useApp();
   const { t } = useLang();
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
 
   const handleExport = () => {
     const json = exportData();
@@ -73,10 +76,12 @@ export function AppSidebar() {
       <SidebarHeader className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
           <img src={cuswLogo} alt="CUSW Logo" className="h-9 w-9 rounded-lg object-cover shrink-0" />
-          <h2 className="text-sm font-display font-bold tracking-tight text-sidebar-primary-foreground leading-tight">
-            ROSEN CUSW<br />
-            <span className="text-[10px] font-normal text-sidebar-foreground/60 tracking-widest uppercase">Team Flow</span>
-          </h2>
+          {!isCollapsed && (
+            <h2 className="text-sm font-display font-bold tracking-tight text-sidebar-primary-foreground leading-tight">
+              ROSEN CUSW<br />
+              <span className="text-[10px] font-normal text-sidebar-foreground/60 tracking-widest uppercase">Team Flow</span>
+            </h2>
+          )}
         </div>
       </SidebarHeader>
       <SidebarContent className="pt-4">
