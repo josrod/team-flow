@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { importDataSchema } from "@/lib/validation";
 import { Team, TeamMember, WorkTopic, Absence, Handover } from "@/types";
 import {
@@ -11,6 +11,7 @@ import {
 import { toast } from "sonner";
 
 const STORAGE_KEY = "teamflow-data";
+const todayIso = new Date().toISOString().split("T")[0];
 
 function loadFromStorage<T>(key: string, fallback: T): T {
   try {
@@ -21,6 +22,14 @@ function loadFromStorage<T>(key: string, fallback: T): T {
   } catch {
     return fallback;
   }
+}
+
+function hasUpcomingAbsences(absenceList: Absence[]) {
+  return absenceList.some((absence) => absence.endDate >= todayIso);
+}
+
+function matchesSeedIds<T extends { id: string }>(items: T[], seedItems: T[]) {
+  return items.length === seedItems.length && items.every((item, index) => item.id === seedItems[index]?.id);
 }
 
 interface AppState {
@@ -54,11 +63,33 @@ let uid = 100;
 const genId = (prefix: string) => `${prefix}-${++uid}`;
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [teams, setTeams] = useState<Team[]>(() => loadFromStorage("teams", seedTeams));
-  const [members, setMembers] = useState<TeamMember[]>(() => loadFromStorage("members", seedMembers));
-  const [workTopics, setWorkTopics] = useState<WorkTopic[]>(() => loadFromStorage("workTopics", seedTopics));
-  const [absences, setAbsences] = useState<Absence[]>(() => loadFromStorage("absences", seedAbsences));
-  const [handovers, setHandovers] = useState<Handover[]>(() => loadFromStorage("handovers", seedHandovers));
+  const initialData = useMemo(() => {
+    const storedTeams = loadFromStorage("teams", seedTeams);
+    const storedMembers = loadFromStorage("members", seedMembers);
+    const storedWorkTopics = loadFromStorage("workTopics", seedTopics);
+    const storedAbsences = loadFromStorage("absences", seedAbsences);
+    const storedHandovers = loadFromStorage("handovers", seedHandovers);
+
+    const shouldRefreshSeedSchedule =
+      !hasUpcomingAbsences(storedAbsences) &&
+      hasUpcomingAbsences(seedAbsences) &&
+      matchesSeedIds(storedAbsences, seedAbsences) &&
+      matchesSeedIds(storedHandovers, seedHandovers);
+
+    return {
+      teams: storedTeams,
+      members: storedMembers,
+      workTopics: storedWorkTopics,
+      absences: shouldRefreshSeedSchedule ? seedAbsences : storedAbsences,
+      handovers: shouldRefreshSeedSchedule ? seedHandovers : storedHandovers,
+    };
+  }, []);
+
+  const [teams, setTeams] = useState<Team[]>(initialData.teams);
+  const [members, setMembers] = useState<TeamMember[]>(initialData.members);
+  const [workTopics, setWorkTopics] = useState<WorkTopic[]>(initialData.workTopics);
+  const [absences, setAbsences] = useState<Absence[]>(initialData.absences);
+  const [handovers, setHandovers] = useState<Handover[]>(initialData.handovers);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ teams, members, workTopics, absences, handovers }));
