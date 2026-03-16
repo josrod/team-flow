@@ -70,6 +70,10 @@ const translations = {
     editHandover: "Editar handover",
     updateHandover: "Actualizar handover",
     created: "Creado",
+    deleteHandoverTitle: "¿Eliminar handover?",
+    deleteHandoverDesc: "Esta acción no se puede deshacer. El handover será eliminado permanentemente.",
+    cancel: "Cancelar",
+    confirmDelete: "Eliminar",
     // Not found
     pageNotFound: "Oops! Página no encontrada",
     returnHome: "Volver al inicio",
@@ -141,6 +145,10 @@ const translations = {
     editHandover: "Edit handover",
     updateHandover: "Update handover",
     created: "Created",
+    deleteHandoverTitle: "Delete handover?",
+    deleteHandoverDesc: "This action cannot be undone. The handover will be permanently deleted.",
+    cancel: "Cancel",
+    confirmDelete: "Delete",
     // Not found
     pageNotFound: "Oops! Page not found",
     returnHome: "Return to Home",
