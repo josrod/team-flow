@@ -138,6 +138,8 @@ const translations = {
     notes: "Notes",
     notesPlaceholder: "Instructions for the handover...",
     noHandovers: "No handovers created.",
+    editHandover: "Edit handover",
+    updateHandover: "Update handover",
     created: "Created",
     // Not found
     pageNotFound: "Oops! Page not found",

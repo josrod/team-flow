@@ -165,6 +165,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const to = members.find((x) => x.id === h.toMemberId)?.name;
       toast.success("🔄", { description: `Handover: ${from} → ${to}` });
     },
+    updateHandover: (h) => {
+      setHandovers((prev) => prev.map((x) => (x.id === h.id ? h : x)));
+      const from = members.find((x) => x.id === h.fromMemberId)?.name;
+      const to = members.find((x) => x.id === h.toMemberId)?.name;
+      toast.success("✏️", { description: `Handover ${from} → ${to} updated` });
+    },
     deleteHandover: (id) => {
       setHandovers((prev) => prev.filter((x) => x.id !== id));
       toast.success("🗑️", { description: "Handover deleted" });
