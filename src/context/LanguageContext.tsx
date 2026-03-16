@@ -67,6 +67,8 @@ const translations = {
     notes: "Notas",
     notesPlaceholder: "Instrucciones para el handover...",
     noHandovers: "No hay handovers creados.",
+    editHandover: "Editar handover",
+    updateHandover: "Actualizar handover",
     created: "Creado",
     // Not found
     pageNotFound: "Oops! Página no encontrada",
@@ -136,6 +138,8 @@ const translations = {
     notes: "Notes",
     notesPlaceholder: "Instructions for the handover...",
     noHandovers: "No handovers created.",
+    editHandover: "Edit handover",
+    updateHandover: "Update handover",
     created: "Created",
     // Not found
     pageNotFound: "Oops! Page not found",

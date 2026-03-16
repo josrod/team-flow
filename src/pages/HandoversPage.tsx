@@ -8,11 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowRightLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowRightLeft, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { handoverNotesSchema } from "@/lib/validation";
 import { toast } from "sonner";
+import type { Handover } from "@/types";
 
 const container = {
   hidden: { opacity: 0 },
@@ -24,9 +25,11 @@ const item = {
 };
 
 export default function HandoversPage() {
-  const { members, absences, workTopics, handovers, addHandover, deleteHandover } = useApp();
+  const { members, absences, workTopics, handovers, addHandover, updateHandover, deleteHandover } = useApp();
   const { t } = useLang();
   const [addOpen, setAddOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingHandover, setEditingHandover] = useState<Handover | null>(null);
   const [fromMember, setFromMember] = useState("");
   const [toMember, setToMember] = useState("");
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
@@ -44,6 +47,14 @@ export default function HandoversPage() {
 
   const fromMemberTopics = workTopics.filter((tp) => tp.memberId === fromMember);
 
+  const resetForm = () => {
+    setFromMember("");
+    setToMember("");
+    setSelectedTopics([]);
+    setNotes("");
+    setEditingHandover(null);
+  };
+
   const handleAdd = () => {
     if (!fromMember || !toMember || !fromMemberAbsence || selectedTopics.length === 0) return;
     const notesResult = handoverNotesSchema.safeParse(notes);
@@ -59,15 +70,113 @@ export default function HandoversPage() {
       notes: notesResult.data,
     });
     setAddOpen(false);
-    setFromMember("");
-    setToMember("");
-    setSelectedTopics([]);
-    setNotes("");
+    resetForm();
+  };
+
+  const openEdit = (h: Handover) => {
+    setEditingHandover(h);
+    setFromMember(h.fromMemberId);
+    setToMember(h.toMemberId);
+    setSelectedTopics([...h.topicIds]);
+    setNotes(h.notes);
+    setEditOpen(true);
+  };
+
+  const handleEdit = () => {
+    if (!editingHandover || !toMember || selectedTopics.length === 0) return;
+    const notesResult = handoverNotesSchema.safeParse(notes);
+    if (!notesResult.success) {
+      toast.error(notesResult.error.errors[0].message);
+      return;
+    }
+    updateHandover({
+      ...editingHandover,
+      toMemberId: toMember,
+      topicIds: selectedTopics,
+      notes: notesResult.data,
+    });
+    setEditOpen(false);
+    resetForm();
   };
 
   const toggleTopic = (id: string) => {
     setSelectedTopics((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const renderFormFields = (isEdit: boolean) => {
+    const editFromTopics = isEdit && editingHandover
+      ? workTopics.filter((tp) => tp.memberId === editingHandover.fromMemberId)
+      : fromMemberTopics;
+    const editFromMember = isEdit && editingHandover
+      ? members.find((m) => m.id === editingHandover.fromMemberId)
+      : null;
+
+    return (
+      <div className="space-y-4">
+        {isEdit ? (
+          <div>
+            <Label>{t.absentPerson}</Label>
+            <div className="mt-1 flex items-center gap-2 rounded-md border border-input bg-muted/50 px-3 py-2 text-sm">
+              <Avatar className="h-6 w-6">
+                <AvatarFallback className="text-[10px] bg-status-sick/10 text-status-sick font-semibold">
+                  {editFromMember?.name.slice(0, 2)}
+                </AvatarFallback>
+              </Avatar>
+              {editFromMember?.name}
+            </div>
+          </div>
+        ) : (
+          <div>
+            <Label>{t.absentPerson}</Label>
+            <Select value={fromMember} onValueChange={(v) => { setFromMember(v); setSelectedTopics([]); }}>
+              <SelectTrigger><SelectValue placeholder={t.select} /></SelectTrigger>
+              <SelectContent>
+                {membersWithAbsence.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        <div>
+          <Label>{t.covers}</Label>
+          <Select value={toMember} onValueChange={setToMember}>
+            <SelectTrigger><SelectValue placeholder={t.select} /></SelectTrigger>
+            <SelectContent>
+              {members
+                .filter((m) => m.id !== (isEdit ? editingHandover?.fromMemberId : fromMember))
+                .map((m) => (
+                  <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {editFromTopics.length > 0 && (
+          <div>
+            <Label>{t.topicsToTransfer}</Label>
+            <div className="space-y-2 mt-2">
+              {editFromTopics.map((tp) => (
+                <div key={tp.id} className="flex items-center gap-2">
+                  <Checkbox
+                    checked={selectedTopics.includes(tp.id)}
+                    onCheckedChange={() => toggleTopic(tp.id)}
+                  />
+                  <span className="text-sm">{tp.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        <div>
+          <Label>{t.notes}</Label>
+          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t.notesPlaceholder} maxLength={1000} />
+        </div>
+        <Button onClick={isEdit ? handleEdit : handleAdd} className="w-full">
+          {isEdit ? t.updateHandover : t.createHandover}
+        </Button>
+      </div>
     );
   };
 
@@ -78,60 +187,24 @@ export default function HandoversPage() {
           <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight">{t.handovers}</h1>
           <p className="text-muted-foreground mt-1">{t.handoversDesc}</p>
         </div>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
             <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> {t.createHandover}</Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader><DialogTitle className="font-display">{t.newHandover}</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>{t.absentPerson}</Label>
-                <Select value={fromMember} onValueChange={(v) => { setFromMember(v); setSelectedTopics([]); }}>
-                  <SelectTrigger><SelectValue placeholder={t.select} /></SelectTrigger>
-                  <SelectContent>
-                    {membersWithAbsence.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>{t.covers}</Label>
-                <Select value={toMember} onValueChange={setToMember}>
-                  <SelectTrigger><SelectValue placeholder={t.select} /></SelectTrigger>
-                  <SelectContent>
-                    {members.filter((m) => m.id !== fromMember).map((m) => (
-                      <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {fromMember && fromMemberTopics.length > 0 && (
-                <div>
-                  <Label>{t.topicsToTransfer}</Label>
-                  <div className="space-y-2 mt-2">
-                    {fromMemberTopics.map((tp) => (
-                      <div key={tp.id} className="flex items-center gap-2">
-                        <Checkbox
-                          checked={selectedTopics.includes(tp.id)}
-                          onCheckedChange={() => toggleTopic(tp.id)}
-                        />
-                        <span className="text-sm">{tp.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div>
-                <Label>{t.notes}</Label>
-                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t.notesPlaceholder} maxLength={1000} />
-              </div>
-              <Button onClick={handleAdd} className="w-full">{t.createHandover}</Button>
-            </div>
+            {renderFormFields(false)}
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Edit dialog */}
+      <Dialog open={editOpen} onOpenChange={(open) => { setEditOpen(open); if (!open) resetForm(); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle className="font-display">{t.editHandover}</DialogTitle></DialogHeader>
+          {renderFormFields(true)}
+        </DialogContent>
+      </Dialog>
 
       <motion.div className="grid gap-3 sm:grid-cols-2" variants={container} initial="hidden" animate="show">
         {handovers.length === 0 ? (
@@ -161,9 +234,14 @@ export default function HandoversPage() {
                         </Avatar>
                         <span className="font-medium">{to?.name}</span>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => deleteHandover(h.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-0.5">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => openEdit(h)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => deleteHandover(h.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                     {topics.length > 0 && (
                       <div className="flex flex-wrap gap-1.5">

@@ -46,6 +46,7 @@ interface AppState {
   addAbsence: (a: Omit<Absence, "id">) => void;
   deleteAbsence: (id: string) => void;
   addHandover: (h: Omit<Handover, "id" | "createdAt">) => void;
+  updateHandover: (h: Handover) => void;
   deleteHandover: (id: string) => void;
   addWorkTopic: (t: Omit<WorkTopic, "id">) => void;
   updateWorkTopic: (t: WorkTopic) => void;
@@ -163,6 +164,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const from = members.find((x) => x.id === h.fromMemberId)?.name;
       const to = members.find((x) => x.id === h.toMemberId)?.name;
       toast.success("🔄", { description: `Handover: ${from} → ${to}` });
+    },
+    updateHandover: (h) => {
+      setHandovers((prev) => prev.map((x) => (x.id === h.id ? h : x)));
+      const from = members.find((x) => x.id === h.fromMemberId)?.name;
+      const to = members.find((x) => x.id === h.toMemberId)?.name;
+      toast.success("✏️", { description: `Handover ${from} → ${to} updated` });
     },
     deleteHandover: (id) => {
       setHandovers((prev) => prev.filter((x) => x.id !== id));
