@@ -145,6 +145,10 @@ const translations = {
     editHandover: "Edit handover",
     updateHandover: "Update handover",
     created: "Created",
+    deleteHandoverTitle: "Delete handover?",
+    deleteHandoverDesc: "This action cannot be undone. The handover will be permanently deleted.",
+    cancel: "Cancel",
+    confirmDelete: "Delete",
     // Not found
     pageNotFound: "Oops! Page not found",
     returnHome: "Return to Home",
