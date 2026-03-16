@@ -70,6 +70,10 @@ const translations = {
     editHandover: "Editar handover",
     updateHandover: "Actualizar handover",
     created: "Creado",
+    deleteHandoverTitle: "¿Eliminar handover?",
+    deleteHandoverDesc: "Esta acción no se puede deshacer. El handover será eliminado permanentemente.",
+    cancel: "Cancelar",
+    confirmDelete: "Eliminar",
     // Not found
     pageNotFound: "Oops! Página no encontrada",
     returnHome: "Volver al inicio",
