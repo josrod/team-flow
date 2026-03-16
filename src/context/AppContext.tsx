@@ -46,6 +46,7 @@ interface AppState {
   addAbsence: (a: Omit<Absence, "id">) => void;
   deleteAbsence: (id: string) => void;
   addHandover: (h: Omit<Handover, "id" | "createdAt">) => void;
+  updateHandover: (h: Handover) => void;
   deleteHandover: (id: string) => void;
   addWorkTopic: (t: Omit<WorkTopic, "id">) => void;
   updateWorkTopic: (t: WorkTopic) => void;
