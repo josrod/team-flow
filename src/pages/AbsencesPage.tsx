@@ -204,7 +204,7 @@ export default function AbsencesPage() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="min-w-0">
           <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
             <div className="rounded-lg bg-status-sick/10 p-2">
               <Stethoscope className="h-4 w-4 sm:h-5 sm:w-5 text-status-sick" />
