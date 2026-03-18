@@ -153,6 +153,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const name = members.find((x) => x.id === a.memberId)?.name;
       toast.success("📅", { description: `Absence registered for ${name}` });
     },
+    updateAbsence: (a) => {
+      setAbsences((prev) => prev.map((x) => (x.id === a.id ? a : x)));
+      const name = members.find((x) => x.id === a.memberId)?.name;
+      toast.success("✏️", { description: `Absence updated for ${name}` });
+    },
     deleteAbsence: (id) => {
       setAbsences((prev) => prev.filter((x) => x.id !== id));
       toast.success("🗑️", { description: "Absence deleted" });
