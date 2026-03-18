@@ -193,7 +193,7 @@ export default function AbsencesPage() {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Card className="min-w-0">
+        <Card className="min-w-0 flex-1 basis-[calc(50%-6px)] sm:basis-0">
           <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
             <div className="rounded-lg bg-status-vacation/10 p-2">
               <Palmtree className="h-4 w-4 sm:h-5 sm:w-5 text-status-vacation" />
