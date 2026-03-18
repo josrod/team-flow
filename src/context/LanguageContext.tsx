@@ -74,6 +74,8 @@ const translations = {
     created: "Creado",
     deleteHandoverTitle: "¿Eliminar handover?",
     deleteHandoverDesc: "Esta acción no se puede deshacer. El handover será eliminado permanentemente.",
+    deleteAbsenceTitle: "¿Eliminar ausencia?",
+    deleteAbsenceDesc: "Esta acción no se puede deshacer. La ausencia será eliminada permanentemente.",
     cancel: "Cancelar",
     confirmDelete: "Eliminar",
     // Not found
