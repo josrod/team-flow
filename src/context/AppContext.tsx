@@ -44,6 +44,7 @@ interface AppState {
   updateMember: (m: TeamMember) => void;
   deleteMember: (id: string) => void;
   addAbsence: (a: Omit<Absence, "id">) => void;
+  updateAbsence: (a: Absence) => void;
   deleteAbsence: (id: string) => void;
   addHandover: (h: Omit<Handover, "id" | "createdAt">) => void;
   updateHandover: (h: Handover) => void;
@@ -151,6 +152,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setAbsences((prev) => [...prev, { ...a, id: genId("abs") }]);
       const name = members.find((x) => x.id === a.memberId)?.name;
       toast.success("📅", { description: `Absence registered for ${name}` });
+    },
+    updateAbsence: (a) => {
+      setAbsences((prev) => prev.map((x) => (x.id === a.id ? a : x)));
+      const name = members.find((x) => x.id === a.memberId)?.name;
+      toast.success("✏️", { description: `Absence updated for ${name}` });
     },
     deleteAbsence: (id) => {
       setAbsences((prev) => prev.filter((x) => x.id !== id));

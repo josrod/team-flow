@@ -45,6 +45,8 @@ const translations = {
     // Absences page
     absencesDesc: "Gestión de vacaciones y bajas",
     newAbsence: "Nueva ausencia",
+    editAbsence: "Editar ausencia",
+    updateAbsence: "Actualizar ausencia",
     registerAbsence: "Registrar ausencia",
     person: "Persona",
     select: "Seleccionar...",
@@ -124,6 +126,8 @@ const translations = {
     // Absences page
     absencesDesc: "Vacation and leave management",
     newAbsence: "New absence",
+    editAbsence: "Edit absence",
+    updateAbsence: "Update absence",
     registerAbsence: "Register absence",
     person: "Person",
     select: "Select...",

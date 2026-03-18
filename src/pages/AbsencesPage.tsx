@@ -9,17 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Palmtree, Stethoscope, Trash2 } from "lucide-react";
+import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Palmtree, Pencil, Stethoscope, Trash2 } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format, differenceInDays, eachDayOfInterval, startOfMonth, endOfMonth, parseISO, addMonths, subMonths } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
-import { AbsenceType } from "@/types";
+import { AbsenceType, Absence } from "@/types";
 import { motion } from "framer-motion";
 
 export default function AbsencesPage() {
-  const { teams, members, absences, addAbsence, deleteAbsence } = useApp();
+  const { teams, members, absences, addAbsence, updateAbsence, deleteAbsence } = useApp();
   const { t, lang } = useLang();
   const dateLoc = lang === "es" ? es : enUS;
 
@@ -30,6 +30,8 @@ export default function AbsencesPage() {
   const [endDate, setEndDate] = useState<Date>();
   const [viewMonth, setViewMonth] = useState(new Date());
   const [selectedTeam, setSelectedTeam] = useState("all");
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null);
 
   const filteredMemberIds = useMemo(() => {
     if (selectedTeam === "all") return members.map((m) => m.id);
@@ -63,6 +65,30 @@ export default function AbsencesPage() {
       endDate: format(endDate, "yyyy-MM-dd"),
     });
     setAddOpen(false);
+    setSelMember("");
+    setStartDate(undefined);
+    setEndDate(undefined);
+  };
+
+  const openEdit = (a: Absence) => {
+    setEditingAbsence(a);
+    setSelMember(a.memberId);
+    setSelType(a.type);
+    setStartDate(parseISO(a.startDate));
+    setEndDate(parseISO(a.endDate));
+    setEditOpen(true);
+  };
+
+  const handleEdit = () => {
+    if (!editingAbsence || !startDate || !endDate) return;
+    updateAbsence({
+      ...editingAbsence,
+      type: selType,
+      startDate: format(startDate, "yyyy-MM-dd"),
+      endDate: format(endDate, "yyyy-MM-dd"),
+    });
+    setEditOpen(false);
+    setEditingAbsence(null);
     setSelMember("");
     setStartDate(undefined);
     setEndDate(undefined);
@@ -202,6 +228,58 @@ export default function AbsencesPage() {
         </Card>
       </div>
 
+      {/* Edit dialog */}
+      <Dialog open={editOpen} onOpenChange={(open) => { setEditOpen(open); if (!open) { setEditingAbsence(null); setSelMember(""); setStartDate(undefined); setEndDate(undefined); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-display">{t.editAbsence}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>{t.person}</Label>
+              <div className="mt-1 rounded-md border border-input bg-muted/50 px-3 py-2 text-sm">
+                {members.find((m) => m.id === editingAbsence?.memberId)?.name}
+              </div>
+            </div>
+            <div>
+              <Label>{t.type}</Label>
+              <Select value={selType} onValueChange={(v) => setSelType(v as AbsenceType)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="vacation">{t.vacation}</SelectItem>
+                  <SelectItem value="sick-leave">{t.sickLeave}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>{t.start}</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left", !startDate && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {startDate ? format(startDate, "dd/MM/yyyy") : t.date}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={startDate} onSelect={setStartDate} className="pointer-events-auto" /></PopoverContent>
+                </Popover>
+              </div>
+              <div>
+                <Label>{t.end}</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left", !endDate && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {endDate ? format(endDate, "dd/MM/yyyy") : t.date}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={endDate} onSelect={setEndDate} className="pointer-events-auto" /></PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            <Button onClick={handleEdit} className="w-full">{t.updateAbsence}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Tabs defaultValue="timeline">
         <TabsList className="bg-card shadow-sm">
           <TabsTrigger value="timeline">{t.timeline}</TabsTrigger>
@@ -294,8 +372,11 @@ export default function AbsencesPage() {
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <span className="font-medium">{member?.name}</span>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-0.5">
                             <StatusBadge status={a.type} />
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => openEdit(a)}>
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
