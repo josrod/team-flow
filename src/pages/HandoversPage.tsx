@@ -232,7 +232,7 @@ export default function HandoversPage() {
       </Dialog>
 
       <motion.div className="grid gap-3 sm:grid-cols-2" variants={container} initial="hidden" animate="show">
-        {handovers.length === 0 ? (
+        {filteredHandovers.length === 0 ? (
           <Card className="col-span-2 border-dashed">
             <CardContent className="p-6 text-center text-muted-foreground text-sm">
               {t.noHandovers}
