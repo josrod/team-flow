@@ -4,11 +4,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Palmtree, Stethoscope } from "lucide-react";
+import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Palmtree, Stethoscope, Trash2 } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format, differenceInDays, eachDayOfInterval, startOfMonth, endOfMonth, parseISO, addMonths, subMonths } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -18,7 +19,7 @@ import { AbsenceType } from "@/types";
 import { motion } from "framer-motion";
 
 export default function AbsencesPage() {
-  const { teams, members, absences, addAbsence } = useApp();
+  const { teams, members, absences, addAbsence, deleteAbsence } = useApp();
   const { t, lang } = useLang();
   const dateLoc = lang === "es" ? es : enUS;
 
@@ -293,7 +294,28 @@ export default function AbsencesPage() {
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <span className="font-medium">{member?.name}</span>
-                          <StatusBadge status={a.type} />
+                          <div className="flex items-center gap-1">
+                            <StatusBadge status={a.type} />
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>{t.deleteAbsenceTitle}</AlertDialogTitle>
+                                  <AlertDialogDescription>{t.deleteAbsenceDesc}</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deleteAbsence(a.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                    {t.confirmDelete}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
                           {format(parseISO(a.startDate), "dd MMM", { locale: dateLoc })} — {format(parseISO(a.endDate), "dd MMM", { locale: dateLoc })}

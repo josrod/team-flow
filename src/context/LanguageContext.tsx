@@ -74,6 +74,8 @@ const translations = {
     created: "Creado",
     deleteHandoverTitle: "¿Eliminar handover?",
     deleteHandoverDesc: "Esta acción no se puede deshacer. El handover será eliminado permanentemente.",
+    deleteAbsenceTitle: "¿Eliminar ausencia?",
+    deleteAbsenceDesc: "Esta acción no se puede deshacer. La ausencia será eliminada permanentemente.",
     cancel: "Cancelar",
     confirmDelete: "Eliminar",
     // Not found
@@ -151,6 +153,8 @@ const translations = {
     created: "Created",
     deleteHandoverTitle: "Delete handover?",
     deleteHandoverDesc: "This action cannot be undone. The handover will be permanently deleted.",
+    deleteAbsenceTitle: "Delete absence?",
+    deleteAbsenceDesc: "This action cannot be undone. The absence will be permanently deleted.",
     cancel: "Cancel",
     confirmDelete: "Delete",
     // Not found
