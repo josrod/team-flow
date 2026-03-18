@@ -57,6 +57,7 @@ const translations = {
     list: "Lista",
     noAbsencesMonth: "Sin ausencias este mes",
     noAbsences: "No hay ausencias registradas.",
+    totalDays: "días totales",
     days: "días",
     // Handovers page
     handoversDesc: "Gestión de traspasos de trabajo",
