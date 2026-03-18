@@ -165,6 +165,42 @@ export default function AbsencesPage() {
         </div>
       </div>
 
+      <div className="grid grid-cols-3 gap-3">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="rounded-lg bg-status-vacation/10 p-2">
+              <Palmtree className="h-5 w-5 text-status-vacation" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{summary.vacationDays}</p>
+              <p className="text-xs text-muted-foreground">{t.vacation}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="rounded-lg bg-status-sick/10 p-2">
+              <Stethoscope className="h-5 w-5 text-status-sick" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{summary.sickDays}</p>
+              <p className="text-xs text-muted-foreground">{t.sickLeave}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="rounded-lg bg-primary/10 p-2">
+              <CalendarIcon className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{summary.totalDays}</p>
+              <p className="text-xs text-muted-foreground">{t.totalDays}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Tabs defaultValue="timeline">
         <TabsList className="bg-card shadow-sm">
           <TabsTrigger value="timeline">{t.timeline}</TabsTrigger>
