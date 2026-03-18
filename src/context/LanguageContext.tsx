@@ -100,6 +100,7 @@ const translations = {
     role: "Role",
     search: "Search...",
     all: "All",
+    allTeams: "All teams",
     available: "Available",
     vacation: "Vacation",
     sickLeave: "Sick leave",

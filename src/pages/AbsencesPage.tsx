@@ -13,12 +13,12 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { format, differenceInDays, eachDayOfInterval, startOfMonth, endOfMonth, parseISO, addMonths, subMonths } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { AbsenceType } from "@/types";
 import { motion } from "framer-motion";
 
 export default function AbsencesPage() {
-  const { members, absences, addAbsence } = useApp();
+  const { teams, members, absences, addAbsence } = useApp();
   const { t, lang } = useLang();
   const dateLoc = lang === "es" ? es : enUS;
 
@@ -28,6 +28,7 @@ export default function AbsencesPage() {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [viewMonth, setViewMonth] = useState(new Date());
+  const [selectedTeam, setSelectedTeam] = useState("all");
 
   const today = new Date().toISOString().split("T")[0];
 
