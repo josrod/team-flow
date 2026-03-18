@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ArrowRightLeft, Pencil, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { handoverNotesSchema } from "@/lib/validation";
 import { toast } from "sonner";
@@ -26,8 +26,9 @@ const item = {
 };
 
 export default function HandoversPage() {
-  const { members, absences, workTopics, handovers, addHandover, updateHandover, deleteHandover } = useApp();
+  const { teams, members, absences, workTopics, handovers, addHandover, updateHandover, deleteHandover } = useApp();
   const { t } = useLang();
+  const [selectedTeam, setSelectedTeam] = useState("all");
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingHandover, setEditingHandover] = useState<Handover | null>(null);
@@ -37,6 +38,16 @@ export default function HandoversPage() {
   const [notes, setNotes] = useState("");
 
   const today = new Date().toISOString().split("T")[0];
+
+  const filteredMemberIds = useMemo(() => {
+    if (selectedTeam === "all") return members.map((m) => m.id);
+    return members.filter((m) => m.teamId === selectedTeam).map((m) => m.id);
+  }, [members, selectedTeam]);
+
+  const filteredHandovers = useMemo(
+    () => handovers.filter((h) => filteredMemberIds.includes(h.fromMemberId)),
+    [handovers, filteredMemberIds]
+  );
 
   const membersWithAbsence = members.filter((m) =>
     absences.some((a) => a.memberId === m.id && a.endDate >= today)
@@ -188,15 +199,28 @@ export default function HandoversPage() {
           <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight">{t.handovers}</h1>
           <p className="text-muted-foreground mt-1">{t.handoversDesc}</p>
         </div>
-        <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> {t.createHandover}</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle className="font-display">{t.newHandover}</DialogTitle></DialogHeader>
-            {renderFormFields(false)}
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t.allTeams}</SelectItem>
+              {teams.map((team) => (
+                <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) resetForm(); }}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> {t.createHandover}</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader><DialogTitle className="font-display">{t.newHandover}</DialogTitle></DialogHeader>
+              {renderFormFields(false)}
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Edit dialog */}
@@ -208,14 +232,14 @@ export default function HandoversPage() {
       </Dialog>
 
       <motion.div className="grid gap-3 sm:grid-cols-2" variants={container} initial="hidden" animate="show">
-        {handovers.length === 0 ? (
+        {filteredHandovers.length === 0 ? (
           <Card className="col-span-2 border-dashed">
             <CardContent className="p-6 text-center text-muted-foreground text-sm">
               {t.noHandovers}
             </CardContent>
           </Card>
         ) : (
-          handovers.map((h) => {
+          filteredHandovers.map((h) => {
             const from = members.find((m) => m.id === h.fromMemberId);
             const to = members.find((m) => m.id === h.toMemberId);
             const topics = workTopics.filter((tp) => h.topicIds.includes(tp.id));
