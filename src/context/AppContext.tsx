@@ -44,6 +44,7 @@ interface AppState {
   updateMember: (m: TeamMember) => void;
   deleteMember: (id: string) => void;
   addAbsence: (a: Omit<Absence, "id">) => void;
+  updateAbsence: (a: Absence) => void;
   deleteAbsence: (id: string) => void;
   addHandover: (h: Omit<Handover, "id" | "createdAt">) => void;
   updateHandover: (h: Handover) => void;
