@@ -113,7 +113,7 @@ export default function AbsencesPage() {
     .sort((a, b) => a.startDate.localeCompare(b.startDate));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight">{t.absences}</h1>
@@ -192,36 +192,36 @@ export default function AbsencesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
+      <div className="flex flex-wrap gap-3 max-w-[100vw]">
+        <Card className="min-w-0 flex-1 basis-[calc(50%-6px)] sm:basis-0">
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
             <div className="rounded-lg bg-status-vacation/10 p-2">
-              <Palmtree className="h-5 w-5 text-status-vacation" />
+              <Palmtree className="h-4 w-4 sm:h-5 sm:w-5 text-status-vacation" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{summary.vacationDays}</p>
+              <p className="text-xl sm:text-2xl font-bold">{summary.vacationDays}</p>
               <p className="text-xs text-muted-foreground">{t.vacation}</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
+        <Card className="min-w-0 flex-1 basis-[calc(50%-6px)] sm:basis-0">
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
             <div className="rounded-lg bg-status-sick/10 p-2">
-              <Stethoscope className="h-5 w-5 text-status-sick" />
+              <Stethoscope className="h-4 w-4 sm:h-5 sm:w-5 text-status-sick" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{summary.sickDays}</p>
+              <p className="text-xl sm:text-2xl font-bold">{summary.sickDays}</p>
               <p className="text-xs text-muted-foreground">{t.sickLeave}</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
+        <Card className="min-w-0 flex-1 basis-full sm:basis-0">
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
             <div className="rounded-lg bg-primary/10 p-2">
-              <CalendarIcon className="h-5 w-5 text-primary" />
+              <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{summary.totalDays}</p>
+              <p className="text-xl sm:text-2xl font-bold">{summary.totalDays}</p>
               <p className="text-xs text-muted-foreground">{t.totalDays}</p>
             </div>
           </CardContent>
