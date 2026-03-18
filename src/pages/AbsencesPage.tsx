@@ -194,12 +194,12 @@ export default function AbsencesPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <Card>
-          <CardContent className="p-4 flex items-center gap-3">
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
             <div className="rounded-lg bg-status-vacation/10 p-2">
-              <Palmtree className="h-5 w-5 text-status-vacation" />
+              <Palmtree className="h-4 w-4 sm:h-5 sm:w-5 text-status-vacation" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{summary.vacationDays}</p>
+              <p className="text-xl sm:text-2xl font-bold">{summary.vacationDays}</p>
               <p className="text-xs text-muted-foreground">{t.vacation}</p>
             </div>
           </CardContent>
