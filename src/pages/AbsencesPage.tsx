@@ -19,7 +19,7 @@ import { AbsenceType, Absence } from "@/types";
 import { motion } from "framer-motion";
 
 export default function AbsencesPage() {
-  const { teams, members, absences, addAbsence, deleteAbsence } = useApp();
+  const { teams, members, absences, addAbsence, updateAbsence, deleteAbsence } = useApp();
   const { t, lang } = useLang();
   const dateLoc = lang === "es" ? es : enUS;
 
