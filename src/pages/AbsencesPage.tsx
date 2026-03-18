@@ -228,6 +228,58 @@ export default function AbsencesPage() {
         </Card>
       </div>
 
+      {/* Edit dialog */}
+      <Dialog open={editOpen} onOpenChange={(open) => { setEditOpen(open); if (!open) { setEditingAbsence(null); setSelMember(""); setStartDate(undefined); setEndDate(undefined); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-display">{t.editAbsence}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>{t.person}</Label>
+              <div className="mt-1 rounded-md border border-input bg-muted/50 px-3 py-2 text-sm">
+                {members.find((m) => m.id === editingAbsence?.memberId)?.name}
+              </div>
+            </div>
+            <div>
+              <Label>{t.type}</Label>
+              <Select value={selType} onValueChange={(v) => setSelType(v as AbsenceType)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="vacation">{t.vacation}</SelectItem>
+                  <SelectItem value="sick-leave">{t.sickLeave}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>{t.start}</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left", !startDate && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {startDate ? format(startDate, "dd/MM/yyyy") : t.date}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={startDate} onSelect={setStartDate} className="pointer-events-auto" /></PopoverContent>
+                </Popover>
+              </div>
+              <div>
+                <Label>{t.end}</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left", !endDate && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {endDate ? format(endDate, "dd/MM/yyyy") : t.date}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={endDate} onSelect={setEndDate} className="pointer-events-auto" /></PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            <Button onClick={handleEdit} className="w-full">{t.updateAbsence}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Tabs defaultValue="timeline">
         <TabsList className="bg-card shadow-sm">
           <TabsTrigger value="timeline">{t.timeline}</TabsTrigger>
