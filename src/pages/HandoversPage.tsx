@@ -26,8 +26,9 @@ const item = {
 };
 
 export default function HandoversPage() {
-  const { members, absences, workTopics, handovers, addHandover, updateHandover, deleteHandover } = useApp();
+  const { teams, members, absences, workTopics, handovers, addHandover, updateHandover, deleteHandover } = useApp();
   const { t } = useLang();
+  const [selectedTeam, setSelectedTeam] = useState("all");
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingHandover, setEditingHandover] = useState<Handover | null>(null);
