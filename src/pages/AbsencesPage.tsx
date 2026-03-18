@@ -30,6 +30,16 @@ export default function AbsencesPage() {
   const [viewMonth, setViewMonth] = useState(new Date());
   const [selectedTeam, setSelectedTeam] = useState("all");
 
+  const filteredMemberIds = useMemo(() => {
+    if (selectedTeam === "all") return members.map((m) => m.id);
+    return members.filter((m) => m.teamId === selectedTeam).map((m) => m.id);
+  }, [members, selectedTeam]);
+
+  const filteredAbsences = useMemo(
+    () => absences.filter((a) => filteredMemberIds.includes(a.memberId)),
+    [absences, filteredMemberIds]
+  );
+
   const today = new Date().toISOString().split("T")[0];
 
   const handleAdd = () => {
