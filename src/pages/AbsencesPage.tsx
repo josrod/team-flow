@@ -372,8 +372,11 @@ export default function AbsencesPage() {
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <span className="font-medium">{member?.name}</span>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-0.5">
                             <StatusBadge status={a.type} />
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => openEdit(a)}>
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
