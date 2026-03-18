@@ -70,7 +70,7 @@ export default function AbsencesPage() {
     (id) => members.find((m) => m.id === id)!
   ).filter(Boolean);
 
-  const upcomingAbsences = [...absences]
+  const upcomingAbsences = [...filteredAbsences]
     .filter((a) => a.endDate >= today)
     .sort((a, b) => a.startDate.localeCompare(b.startDate));
 
