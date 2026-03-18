@@ -215,7 +215,7 @@ export default function AbsencesPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="col-span-2 sm:col-span-1">
+        <Card className="min-w-0 flex-1 basis-full sm:basis-0">
           <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
             <div className="rounded-lg bg-primary/10 p-2">
               <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
