@@ -192,7 +192,7 @@ export default function AbsencesPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3" style={{ maxWidth: '100vw' }}>
+      <div className="flex flex-wrap gap-3 max-w-[100vw]">
         <Card className="min-w-0 flex-1 basis-[calc(50%-6px)] sm:basis-0">
           <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
             <div className="rounded-lg bg-status-vacation/10 p-2">
