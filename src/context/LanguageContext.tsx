@@ -126,6 +126,7 @@ const translations = {
     deleteMember: "Delete member",
     // Absences page
     absencesDesc: "Vacation and leave management",
+    exportCsv: "Export CSV",
     newAbsence: "New absence",
     editAbsence: "Edit absence",
     updateAbsence: "Update absence",
