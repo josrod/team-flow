@@ -239,7 +239,7 @@ export default function HandoversPage() {
             </CardContent>
           </Card>
         ) : (
-          handovers.map((h) => {
+          filteredHandovers.map((h) => {
             const from = members.find((m) => m.id === h.fromMemberId);
             const to = members.find((m) => m.id === h.toMemberId);
             const topics = workTopics.filter((tp) => h.topicIds.includes(tp.id));
