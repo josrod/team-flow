@@ -44,6 +44,7 @@ const translations = {
     deleteMember: "Eliminar miembro",
     // Absences page
     absencesDesc: "Gestión de vacaciones y bajas",
+    exportCsv: "Exportar CSV",
     newAbsence: "Nueva ausencia",
     editAbsence: "Editar ausencia",
     updateAbsence: "Actualizar ausencia",
