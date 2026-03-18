@@ -70,6 +70,30 @@ export default function AbsencesPage() {
     setEndDate(undefined);
   };
 
+  const openEdit = (a: Absence) => {
+    setEditingAbsence(a);
+    setSelMember(a.memberId);
+    setSelType(a.type);
+    setStartDate(parseISO(a.startDate));
+    setEndDate(parseISO(a.endDate));
+    setEditOpen(true);
+  };
+
+  const handleEdit = () => {
+    if (!editingAbsence || !startDate || !endDate) return;
+    updateAbsence({
+      ...editingAbsence,
+      type: selType,
+      startDate: format(startDate, "yyyy-MM-dd"),
+      endDate: format(endDate, "yyyy-MM-dd"),
+    });
+    setEditOpen(false);
+    setEditingAbsence(null);
+    setSelMember("");
+    setStartDate(undefined);
+    setEndDate(undefined);
+  };
+
   const monthStart = startOfMonth(viewMonth);
   const monthEnd = endOfMonth(viewMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
