@@ -216,12 +216,12 @@ export default function AbsencesPage() {
           </CardContent>
         </Card>
         <Card className="col-span-2 sm:col-span-1">
-          <CardContent className="p-4 flex items-center gap-3">
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
             <div className="rounded-lg bg-primary/10 p-2">
-              <CalendarIcon className="h-5 w-5 text-primary" />
+              <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{summary.totalDays}</p>
+              <p className="text-xl sm:text-2xl font-bold">{summary.totalDays}</p>
               <p className="text-xs text-muted-foreground">{t.totalDays}</p>
             </div>
           </CardContent>
