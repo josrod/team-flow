@@ -39,6 +39,16 @@ export default function HandoversPage() {
 
   const today = new Date().toISOString().split("T")[0];
 
+  const filteredMemberIds = useMemo(() => {
+    if (selectedTeam === "all") return members.map((m) => m.id);
+    return members.filter((m) => m.teamId === selectedTeam).map((m) => m.id);
+  }, [members, selectedTeam]);
+
+  const filteredHandovers = useMemo(
+    () => handovers.filter((h) => filteredMemberIds.includes(h.fromMemberId)),
+    [handovers, filteredMemberIds]
+  );
+
   const membersWithAbsence = members.filter((m) =>
     absences.some((a) => a.memberId === m.id && a.endDate >= today)
   );
