@@ -13,12 +13,12 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { format, differenceInDays, eachDayOfInterval, startOfMonth, endOfMonth, parseISO, addMonths, subMonths } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { AbsenceType } from "@/types";
 import { motion } from "framer-motion";
 
 export default function AbsencesPage() {
-  const { members, absences, addAbsence } = useApp();
+  const { teams, members, absences, addAbsence } = useApp();
   const { t, lang } = useLang();
   const dateLoc = lang === "es" ? es : enUS;
 
@@ -28,6 +28,17 @@ export default function AbsencesPage() {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [viewMonth, setViewMonth] = useState(new Date());
+  const [selectedTeam, setSelectedTeam] = useState("all");
+
+  const filteredMemberIds = useMemo(() => {
+    if (selectedTeam === "all") return members.map((m) => m.id);
+    return members.filter((m) => m.teamId === selectedTeam).map((m) => m.id);
+  }, [members, selectedTeam]);
+
+  const filteredAbsences = useMemo(
+    () => absences.filter((a) => filteredMemberIds.includes(a.memberId)),
+    [absences, filteredMemberIds]
+  );
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -49,7 +60,7 @@ export default function AbsencesPage() {
   const monthEnd = endOfMonth(viewMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-  const timelineAbsences = absences.filter((a) => {
+  const timelineAbsences = filteredAbsences.filter((a) => {
     const s = parseISO(a.startDate);
     const e = parseISO(a.endDate);
     return s <= monthEnd && e >= monthStart;
@@ -59,7 +70,7 @@ export default function AbsencesPage() {
     (id) => members.find((m) => m.id === id)!
   ).filter(Boolean);
 
-  const upcomingAbsences = [...absences]
+  const upcomingAbsences = [...filteredAbsences]
     .filter((a) => a.endDate >= today)
     .sort((a, b) => a.startDate.localeCompare(b.startDate));
 
@@ -70,64 +81,77 @@ export default function AbsencesPage() {
           <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight">{t.absences}</h1>
           <p className="text-muted-foreground mt-1">{t.absencesDesc}</p>
         </div>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> {t.newAbsence}</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle className="font-display">{t.registerAbsence}</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>{t.person}</Label>
-                <Select value={selMember} onValueChange={setSelMember}>
-                  <SelectTrigger><SelectValue placeholder={t.select} /></SelectTrigger>
-                  <SelectContent>
-                    {members.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>{t.type}</Label>
-                <Select value={selType} onValueChange={(v) => setSelType(v as AbsenceType)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="vacation">{t.vacation}</SelectItem>
-                    <SelectItem value="sick-leave">{t.sickLeave}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+        <div className="flex items-center gap-2">
+          <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t.allTeams}</SelectItem>
+              {teams.map((team) => (
+                <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Dialog open={addOpen} onOpenChange={setAddOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> {t.newAbsence}</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle className="font-display">{t.registerAbsence}</DialogTitle></DialogHeader>
+              <div className="space-y-4">
                 <div>
-                  <Label>{t.start}</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-full justify-start text-left", !startDate && "text-muted-foreground")}>
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {startDate ? format(startDate, "dd/MM/yyyy") : t.date}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={startDate} onSelect={setStartDate} className="pointer-events-auto" /></PopoverContent>
-                  </Popover>
+                  <Label>{t.person}</Label>
+                  <Select value={selMember} onValueChange={setSelMember}>
+                    <SelectTrigger><SelectValue placeholder={t.select} /></SelectTrigger>
+                    <SelectContent>
+                      {members.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
-                  <Label>{t.end}</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-full justify-start text-left", !endDate && "text-muted-foreground")}>
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {endDate ? format(endDate, "dd/MM/yyyy") : t.date}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={endDate} onSelect={setEndDate} className="pointer-events-auto" /></PopoverContent>
-                  </Popover>
+                  <Label>{t.type}</Label>
+                  <Select value={selType} onValueChange={(v) => setSelType(v as AbsenceType)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="vacation">{t.vacation}</SelectItem>
+                      <SelectItem value="sick-leave">{t.sickLeave}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>{t.start}</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("w-full justify-start text-left", !startDate && "text-muted-foreground")}>
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {startDate ? format(startDate, "dd/MM/yyyy") : t.date}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={startDate} onSelect={setStartDate} className="pointer-events-auto" /></PopoverContent>
+                    </Popover>
+                  </div>
+                  <div>
+                    <Label>{t.end}</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("w-full justify-start text-left", !endDate && "text-muted-foreground")}>
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {endDate ? format(endDate, "dd/MM/yyyy") : t.date}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={endDate} onSelect={setEndDate} className="pointer-events-auto" /></PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+                <Button onClick={handleAdd} className="w-full">{t.register}</Button>
               </div>
-              <Button onClick={handleAdd} className="w-full">{t.register}</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Tabs defaultValue="timeline">
