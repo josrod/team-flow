@@ -205,12 +205,12 @@ export default function AbsencesPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4 flex items-center gap-3">
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
             <div className="rounded-lg bg-status-sick/10 p-2">
-              <Stethoscope className="h-5 w-5 text-status-sick" />
+              <Stethoscope className="h-4 w-4 sm:h-5 sm:w-5 text-status-sick" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{summary.sickDays}</p>
+              <p className="text-xl sm:text-2xl font-bold">{summary.sickDays}</p>
               <p className="text-xs text-muted-foreground">{t.sickLeave}</p>
             </div>
           </CardContent>
