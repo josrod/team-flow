@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Palmtree, Pencil, Stethoscope, Trash2 } from "lucide-react";
+import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Download, Palmtree, Pencil, Stethoscope, Trash2 } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format, differenceInDays, eachDayOfInterval, startOfMonth, endOfMonth, parseISO, addMonths, subMonths } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -112,6 +112,25 @@ export default function AbsencesPage() {
     .filter((a) => a.endDate >= today)
     .sort((a, b) => a.startDate.localeCompare(b.startDate));
 
+  const handleExportCsv = () => {
+    const header = `${t.person},${t.team},${t.type},${t.start},${t.end},${t.days}`;
+    const rows = filteredAbsences.map((a) => {
+      const member = members.find((m) => m.id === a.memberId);
+      const team = teams.find((tm) => tm.id === member?.teamId);
+      const days = differenceInDays(parseISO(a.endDate), parseISO(a.startDate)) + 1;
+      const typeLabel = a.type === "vacation" ? t.vacation : t.sickLeave;
+      return `${member?.name},${team?.name ?? ""},${typeLabel},${a.startDate},${a.endDate},${days}`;
+    });
+    const csv = [header, ...rows].join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `absences_${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6 w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -131,6 +150,9 @@ export default function AbsencesPage() {
               ))}
             </SelectContent>
           </Select>
+          <Button size="sm" variant="outline" className="rounded-xl" onClick={handleExportCsv}>
+            <Download className="h-4 w-4 mr-1" /> {t.exportCsv}
+          </Button>
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> {t.newAbsence}</Button>
