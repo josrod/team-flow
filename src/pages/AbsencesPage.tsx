@@ -40,6 +40,17 @@ export default function AbsencesPage() {
     [absences, filteredMemberIds]
   );
 
+  const summary = useMemo(() => {
+    let vacationDays = 0;
+    let sickDays = 0;
+    for (const a of filteredAbsences) {
+      const days = differenceInDays(parseISO(a.endDate), parseISO(a.startDate)) + 1;
+      if (a.type === "vacation") vacationDays += days;
+      else sickDays += days;
+    }
+    return { vacationDays, sickDays, totalDays: vacationDays + sickDays };
+  }, [filteredAbsences]);
+
   const today = new Date().toISOString().split("T")[0];
 
   const handleAdd = () => {
