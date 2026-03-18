@@ -150,7 +150,9 @@ export default function AbsencesPage() {
               ))}
             </SelectContent>
           </Select>
-          <Dialog open={addOpen} onOpenChange={setAddOpen}>
+          <Button size="sm" variant="outline" className="rounded-xl" onClick={handleExportCsv}>
+            <Download className="h-4 w-4 mr-1" /> {t.exportCsv}
+          </Button>
             <DialogTrigger asChild>
               <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> {t.newAbsence}</Button>
             </DialogTrigger>
