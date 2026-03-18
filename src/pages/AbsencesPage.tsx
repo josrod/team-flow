@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Palmtree, Stethoscope } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format, differenceInDays, eachDayOfInterval, startOfMonth, endOfMonth, parseISO, addMonths, subMonths } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -39,6 +39,17 @@ export default function AbsencesPage() {
     () => absences.filter((a) => filteredMemberIds.includes(a.memberId)),
     [absences, filteredMemberIds]
   );
+
+  const summary = useMemo(() => {
+    let vacationDays = 0;
+    let sickDays = 0;
+    for (const a of filteredAbsences) {
+      const days = differenceInDays(parseISO(a.endDate), parseISO(a.startDate)) + 1;
+      if (a.type === "vacation") vacationDays += days;
+      else sickDays += days;
+    }
+    return { vacationDays, sickDays, totalDays: vacationDays + sickDays };
+  }, [filteredAbsences]);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -152,6 +163,42 @@ export default function AbsencesPage() {
             </DialogContent>
           </Dialog>
         </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="rounded-lg bg-status-vacation/10 p-2">
+              <Palmtree className="h-5 w-5 text-status-vacation" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{summary.vacationDays}</p>
+              <p className="text-xs text-muted-foreground">{t.vacation}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="rounded-lg bg-status-sick/10 p-2">
+              <Stethoscope className="h-5 w-5 text-status-sick" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{summary.sickDays}</p>
+              <p className="text-xs text-muted-foreground">{t.sickLeave}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="rounded-lg bg-primary/10 p-2">
+              <CalendarIcon className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{summary.totalDays}</p>
+              <p className="text-xs text-muted-foreground">{t.totalDays}</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Tabs defaultValue="timeline">
