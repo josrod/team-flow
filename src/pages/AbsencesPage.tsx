@@ -60,7 +60,7 @@ export default function AbsencesPage() {
   const monthEnd = endOfMonth(viewMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-  const timelineAbsences = absences.filter((a) => {
+  const timelineAbsences = filteredAbsences.filter((a) => {
     const s = parseISO(a.startDate);
     const e = parseISO(a.endDate);
     return s <= monthEnd && e >= monthStart;
