@@ -192,7 +192,7 @@ export default function AbsencesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-full overflow-hidden">
+      <div className="flex flex-wrap gap-3">
         <Card className="min-w-0">
           <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
             <div className="rounded-lg bg-status-vacation/10 p-2">
