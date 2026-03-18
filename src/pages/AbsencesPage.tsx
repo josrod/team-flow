@@ -15,7 +15,7 @@ import { format, differenceInDays, eachDayOfInterval, startOfMonth, endOfMonth, 
 import { es, enUS } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
-import { AbsenceType } from "@/types";
+import { AbsenceType, Absence } from "@/types";
 import { motion } from "framer-motion";
 
 export default function AbsencesPage() {
