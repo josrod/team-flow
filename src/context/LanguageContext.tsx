@@ -153,6 +153,8 @@ const translations = {
     created: "Created",
     deleteHandoverTitle: "Delete handover?",
     deleteHandoverDesc: "This action cannot be undone. The handover will be permanently deleted.",
+    deleteAbsenceTitle: "Delete absence?",
+    deleteAbsenceDesc: "This action cannot be undone. The absence will be permanently deleted.",
     cancel: "Cancel",
     confirmDelete: "Delete",
     // Not found

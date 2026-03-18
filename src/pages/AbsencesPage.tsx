@@ -294,7 +294,28 @@ export default function AbsencesPage() {
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <span className="font-medium">{member?.name}</span>
-                          <StatusBadge status={a.type} />
+                          <div className="flex items-center gap-1">
+                            <StatusBadge status={a.type} />
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>{t.deleteAbsenceTitle}</AlertDialogTitle>
+                                  <AlertDialogDescription>{t.deleteAbsenceDesc}</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deleteAbsence(a.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                    {t.confirmDelete}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
                           {format(parseISO(a.startDate), "dd MMM", { locale: dateLoc })} — {format(parseISO(a.endDate), "dd MMM", { locale: dateLoc })}
