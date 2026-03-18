@@ -24,6 +24,7 @@ const translations = {
     role: "Rol",
     search: "Buscar...",
     all: "Todos",
+    allTeams: "Todos los equipos",
     available: "Disponibles",
     vacation: "Vacaciones",
     sickLeave: "Baja",
