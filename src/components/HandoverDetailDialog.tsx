@@ -1,9 +1,22 @@
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -13,6 +26,8 @@ import {
   Briefcase,
   FileText,
   Clock,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { format, parseISO, differenceInCalendarDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -27,6 +42,8 @@ interface HandoverDetailDialogProps {
   toMember: TeamMember | undefined;
   absence: Absence | undefined;
   topics: WorkTopic[];
+  onEdit?: (h: Handover) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function HandoverDetailDialog({
