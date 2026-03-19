@@ -153,6 +153,10 @@ const translations = {
     days: "days",
     // Handovers page
     handoversDesc: "Work handover management",
+    filterByDate: "Filter by date",
+    from: "From",
+    to: "To",
+    clearFilter: "Clear filter",
     createHandover: "Create handover",
     newHandover: "New handover",
     absentPerson: "Absent person",

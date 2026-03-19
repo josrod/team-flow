@@ -248,6 +248,47 @@ export default function HandoversPage() {
               ))}
             </SelectContent>
           </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button size="sm" variant="outline" className={cn("rounded-xl gap-1", (dateFrom || dateTo) && "border-primary text-primary")}>
+                <CalendarIcon className="h-4 w-4" />
+                {dateFrom && dateTo
+                  ? `${format(dateFrom, "dd/MM/yyyy")} – ${format(dateTo, "dd/MM/yyyy")}`
+                  : dateFrom
+                    ? `${t.from}: ${format(dateFrom, "dd/MM/yyyy")}`
+                    : dateTo
+                      ? `${t.to}: ${format(dateTo, "dd/MM/yyyy")}`
+                      : t.filterByDate}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-4 space-y-3" align="end">
+              <div className="space-y-2">
+                <Label className="text-xs">{t.from}</Label>
+                <Calendar
+                  mode="single"
+                  selected={dateFrom}
+                  onSelect={setDateFrom}
+                  className={cn("p-2 pointer-events-auto")}
+                  disabled={dateTo ? (d) => d > dateTo : undefined}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">{t.to}</Label>
+                <Calendar
+                  mode="single"
+                  selected={dateTo}
+                  onSelect={setDateTo}
+                  className={cn("p-2 pointer-events-auto")}
+                  disabled={dateFrom ? (d) => d < dateFrom : undefined}
+                />
+              </div>
+              {(dateFrom || dateTo) && (
+                <Button size="sm" variant="ghost" className="w-full text-xs" onClick={() => { setDateFrom(undefined); setDateTo(undefined); }}>
+                  <X className="h-3 w-3 mr-1" /> {t.clearFilter}
+                </Button>
+              )}
+            </PopoverContent>
+          </Popover>
           <Button size="sm" variant="outline" className="rounded-xl" onClick={handleExportCsv}>
             <Download className="h-4 w-4 mr-1" /> {t.exportCsv}
           </Button>
