@@ -1,9 +1,22 @@
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -13,6 +26,8 @@ import {
   Briefcase,
   FileText,
   Clock,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { format, parseISO, differenceInCalendarDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -27,6 +42,8 @@ interface HandoverDetailDialogProps {
   toMember: TeamMember | undefined;
   absence: Absence | undefined;
   topics: WorkTopic[];
+  onEdit?: (h: Handover) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function HandoverDetailDialog({
@@ -37,6 +54,8 @@ export function HandoverDetailDialog({
   toMember,
   absence,
   topics,
+  onEdit,
+  onDelete,
 }: HandoverDetailDialogProps) {
   const { t } = useLang();
 
@@ -183,10 +202,62 @@ export function HandoverDetailDialog({
             </div>
           )}
 
-          {/* Footer */}
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60">
-            <Clock className="h-3 w-3" />
-            {t.created}: {handover.createdAt}
+          {/* Footer with actions */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60">
+              <Clock className="h-3 w-3" />
+              {t.created}: {handover.createdAt}
+            </div>
+            {(onEdit || onDelete) && (
+              <div className="flex items-center gap-2">
+                {onEdit && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs"
+                    onClick={() => {
+                      onOpenChange(false);
+                      onEdit(handover);
+                    }}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    {t.editHandover}
+                  </Button>
+                )}
+                {onDelete && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-1.5 text-xs text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        {t.confirmDelete}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t.deleteHandoverTitle}</AlertDialogTitle>
+                        <AlertDialogDescription>{t.deleteHandoverDesc}</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => {
+                            onOpenChange(false);
+                            onDelete(handover.id);
+                          }}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {t.confirmDelete}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>

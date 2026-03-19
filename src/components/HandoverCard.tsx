@@ -192,6 +192,8 @@ export function HandoverCard({
       toMember={toMember}
       absence={absence}
       topics={topics}
+      onEdit={onEdit}
+      onDelete={onDelete}
     />
     </>
   );
