@@ -68,7 +68,10 @@ export default function HandoversPage() {
   };
 
   const handleAdd = () => {
-    if (!fromMember || !toMember || !fromMemberAbsence || selectedTopics.length === 0) return;
+    if (!fromMember) { toast.error(t.handoverSelectAbsent); return; }
+    if (!toMember) { toast.error(t.handoverSelectCover); return; }
+    if (!fromMemberAbsence) { toast.error(t.handoverSelectAbsent); return; }
+    if (selectedTopics.length === 0) { toast.error(t.handoverSelectTopics); return; }
     const notesResult = handoverNotesSchema.safeParse(notes);
     if (!notesResult.success) {
       toast.error(notesResult.error.errors[0].message);
@@ -95,7 +98,9 @@ export default function HandoversPage() {
   };
 
   const handleEdit = () => {
-    if (!editingHandover || !toMember || selectedTopics.length === 0) return;
+    if (!editingHandover) return;
+    if (!toMember) { toast.error(t.handoverSelectCover); return; }
+    if (selectedTopics.length === 0) { toast.error(t.handoverSelectTopics); return; }
     const notesResult = handoverNotesSchema.safeParse(notes);
     if (!notesResult.success) {
       toast.error(notesResult.error.errors[0].message);
