@@ -50,10 +50,14 @@ export default function HandoversPage() {
     return members.filter((m) => m.teamId === selectedTeam).map((m) => m.id);
   }, [members, selectedTeam]);
 
-  const filteredHandovers = useMemo(
-    () => handovers.filter((h) => filteredMemberIds.includes(h.fromMemberId)),
-    [handovers, filteredMemberIds]
-  );
+  const filteredHandovers = useMemo(() => {
+    return handovers.filter((h) => {
+      if (!filteredMemberIds.includes(h.fromMemberId)) return false;
+      if (dateFrom && h.createdAt < format(dateFrom, "yyyy-MM-dd")) return false;
+      if (dateTo && h.createdAt > format(dateTo, "yyyy-MM-dd")) return false;
+      return true;
+    });
+  }, [handovers, filteredMemberIds, dateFrom, dateTo]);
 
   const membersWithAbsence = members.filter((m) =>
     absences.some((a) => a.memberId === m.id && a.endDate >= today)
