@@ -176,6 +176,7 @@ const translations = {
     handoverSelectAbsent: "Select the absent person",
     handoverSelectCover: "Select who covers",
     handoverSelectTopics: "Select at least one topic",
+    noTopicsAvailable: "This person has no assigned topics. You can continue without selecting any.",
     cancel: "Cancel",
     confirmDelete: "Delete",
     // Not found
