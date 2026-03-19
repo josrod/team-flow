@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowRightLeft, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowRightLeft, Download, Pencil, Plus, Trash2 } from "lucide-react";
+import { format } from "date-fns";
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { handoverNotesSchema } from "@/lib/validation";
@@ -122,6 +123,28 @@ export default function HandoversPage() {
     );
   };
 
+  const handleExportCsv = () => {
+    const header = `${t.absentPerson},${t.covers},${t.topicsToTransfer},${t.notes},${t.created}`;
+    const rows = filteredHandovers.map((h) => {
+      const from = members.find((m) => m.id === h.fromMemberId);
+      const to = members.find((m) => m.id === h.toMemberId);
+      const topics = workTopics
+        .filter((tp) => h.topicIds.includes(tp.id))
+        .map((tp) => tp.name)
+        .join("; ");
+      const escapedNotes = `"${h.notes.replace(/"/g, '""')}"`;
+      return `${from?.name ?? ""},${to?.name ?? ""},${topics},${escapedNotes},${h.createdAt}`;
+    });
+    const csv = [header, ...rows].join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `handovers_${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const renderFormFields = (isEdit: boolean) => {
     const editFromTopics = isEdit && editingHandover
       ? workTopics.filter((tp) => tp.memberId === editingHandover.fromMemberId)
@@ -216,6 +239,9 @@ export default function HandoversPage() {
               ))}
             </SelectContent>
           </Select>
+          <Button size="sm" variant="outline" className="rounded-xl" onClick={handleExportCsv}>
+            <Download className="h-4 w-4 mr-1" /> {t.exportCsv}
+          </Button>
           <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
               <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> {t.createHandover}</Button>
