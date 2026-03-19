@@ -202,9 +202,9 @@ export default function HandoversPage() {
             </SelectContent>
           </Select>
         </div>
-        {editFromTopics.length > 0 && (
-          <div>
-            <Label>{t.topicsToTransfer}</Label>
+        <div>
+          <Label>{t.topicsToTransfer}</Label>
+          {editFromTopics.length > 0 ? (
             <div className="space-y-2 mt-2">
               {editFromTopics.map((tp) => (
                 <div key={tp.id} className="flex items-center gap-2">
@@ -216,8 +216,10 @@ export default function HandoversPage() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-xs text-muted-foreground mt-2">{t.noTopicsAvailable}</p>
+          )}
+        </div>
         <div>
           <Label>{t.notes}</Label>
           <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t.notesPlaceholder} maxLength={1000} />
