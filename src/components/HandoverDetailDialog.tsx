@@ -54,6 +54,8 @@ export function HandoverDetailDialog({
   toMember,
   absence,
   topics,
+  onEdit,
+  onDelete,
 }: HandoverDetailDialogProps) {
   const { t } = useLang();
 
