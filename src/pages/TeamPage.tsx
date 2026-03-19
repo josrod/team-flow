@@ -258,7 +258,28 @@ export default function TeamPage() {
                     )}
                   </div>
                 </div>
-              </SheetHeader>
+               </SheetHeader>
+
+              {teams.length > 1 && (
+                <div className="mt-4">
+                  <Label className="text-xs text-muted-foreground">{t.team}</Label>
+                  <Select
+                    value={selectedMember.teamId}
+                    onValueChange={(newTeamId) => {
+                      const updated = { ...selectedMember, teamId: newTeamId };
+                      updateMember(updated);
+                      setSelectedMember(updated);
+                    }}
+                  >
+                    <SelectTrigger className="h-8 text-sm mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {teams.map((tm) => (
+                        <SelectItem key={tm.id} value={tm.id}>{tm.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="mt-6 space-y-4">
                 <div className="flex items-center justify-between">
