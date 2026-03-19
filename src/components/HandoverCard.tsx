@@ -40,6 +40,7 @@ export function HandoverCard({
   onDelete,
 }: HandoverCardProps) {
   const { t } = useLang();
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const absenceDays =
     absence
