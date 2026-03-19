@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import { ArrowRight, CalendarDays, Pencil, Trash2, Briefcase } from "lucide-reac
 import { format, parseISO, differenceInCalendarDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/context/LanguageContext";
+import { HandoverDetailDialog } from "@/components/HandoverDetailDialog";
 import type { Handover, Absence, TeamMember, WorkTopic } from "@/types";
 
 interface HandoverCardProps {
@@ -38,6 +40,7 @@ export function HandoverCard({
   onDelete,
 }: HandoverCardProps) {
   const { t } = useLang();
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const absenceDays =
     absence
@@ -53,8 +56,11 @@ export function HandoverCard({
       : "bg-[hsl(var(--status-sick)/.12)] text-[hsl(var(--status-sick))]";
 
   return (
-    <Card className="hover:shadow-md transition-all duration-200 overflow-hidden">
-      {/* Colored top accent based on absence type */}
+    <>
+    <Card
+      className="hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
+      onClick={() => setDetailOpen(true)}
+    >
       <div
         className={cn(
           "h-1",
@@ -87,7 +93,7 @@ export function HandoverCard({
               <p className="text-[10px] text-muted-foreground truncate">{toMember?.role}</p>
             </div>
           </div>
-          <div className="flex items-center gap-0.5 shrink-0">
+          <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
             <Button
               variant="ghost"
               size="icon"
@@ -177,5 +183,16 @@ export function HandoverCard({
         </p>
       </CardContent>
     </Card>
+
+    <HandoverDetailDialog
+      open={detailOpen}
+      onOpenChange={setDetailOpen}
+      handover={handover}
+      fromMember={fromMember}
+      toMember={toMember}
+      absence={absence}
+      topics={topics}
+    />
+    </>
   );
 }
