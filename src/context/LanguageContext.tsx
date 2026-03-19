@@ -79,6 +79,9 @@ const translations = {
     deleteHandoverDesc: "Esta acción no se puede deshacer. El handover será eliminado permanentemente.",
     deleteAbsenceTitle: "¿Eliminar ausencia?",
     deleteAbsenceDesc: "Esta acción no se puede deshacer. La ausencia será eliminada permanentemente.",
+    handoverSelectAbsent: "Selecciona la persona ausente",
+    handoverSelectCover: "Selecciona quién cubre",
+    handoverSelectTopics: "Selecciona al menos un tema",
     cancel: "Cancelar",
     confirmDelete: "Eliminar",
     // Not found
