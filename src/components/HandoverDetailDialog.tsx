@@ -202,10 +202,62 @@ export function HandoverDetailDialog({
             </div>
           )}
 
-          {/* Footer */}
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60">
-            <Clock className="h-3 w-3" />
-            {t.created}: {handover.createdAt}
+          {/* Footer with actions */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60">
+              <Clock className="h-3 w-3" />
+              {t.created}: {handover.createdAt}
+            </div>
+            {(onEdit || onDelete) && (
+              <div className="flex items-center gap-2">
+                {onEdit && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs"
+                    onClick={() => {
+                      onOpenChange(false);
+                      onEdit(handover);
+                    }}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    {t.edit}
+                  </Button>
+                )}
+                {onDelete && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-1.5 text-xs text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        {t.delete}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t.deleteHandoverTitle}</AlertDialogTitle>
+                        <AlertDialogDescription>{t.deleteHandoverDesc}</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => {
+                            onOpenChange(false);
+                            onDelete(handover.id);
+                          }}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {t.confirmDelete}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
