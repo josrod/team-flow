@@ -81,7 +81,7 @@ export default function HandoversPage() {
     if (!fromMember) { toast.error(t.handoverSelectAbsent); return; }
     if (!toMember) { toast.error(t.handoverSelectCover); return; }
     if (!fromMemberAbsence) { toast.error(t.handoverSelectAbsent); return; }
-    if (selectedTopics.length === 0) { toast.error(t.handoverSelectTopics); return; }
+    // Topics are optional – allow blank handovers when the member has none
     const notesResult = handoverNotesSchema.safeParse(notes);
     if (!notesResult.success) {
       toast.error(notesResult.error.errors[0].message);
@@ -110,7 +110,7 @@ export default function HandoversPage() {
   const handleEdit = () => {
     if (!editingHandover) return;
     if (!toMember) { toast.error(t.handoverSelectCover); return; }
-    if (selectedTopics.length === 0) { toast.error(t.handoverSelectTopics); return; }
+    // Topics are optional on edit too
     const notesResult = handoverNotesSchema.safeParse(notes);
     if (!notesResult.success) {
       toast.error(notesResult.error.errors[0].message);
@@ -202,9 +202,9 @@ export default function HandoversPage() {
             </SelectContent>
           </Select>
         </div>
-        {editFromTopics.length > 0 && (
-          <div>
-            <Label>{t.topicsToTransfer}</Label>
+        <div>
+          <Label>{t.topicsToTransfer}</Label>
+          {editFromTopics.length > 0 ? (
             <div className="space-y-2 mt-2">
               {editFromTopics.map((tp) => (
                 <div key={tp.id} className="flex items-center gap-2">
@@ -216,8 +216,10 @@ export default function HandoversPage() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-xs text-muted-foreground mt-2">{t.noTopicsAvailable}</p>
+          )}
+        </div>
         <div>
           <Label>{t.notes}</Label>
           <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t.notesPlaceholder} maxLength={1000} />
