@@ -64,6 +64,10 @@ const translations = {
     days: "días",
     // Handovers page
     handoversDesc: "Gestión de traspasos de trabajo",
+    filterByDate: "Filtrar por fecha",
+    from: "Desde",
+    to: "Hasta",
+    clearFilter: "Limpiar filtro",
     createHandover: "Crear handover",
     newHandover: "Nuevo handover",
     absentPerson: "Persona ausente",
@@ -149,6 +153,10 @@ const translations = {
     days: "days",
     // Handovers page
     handoversDesc: "Work handover management",
+    filterByDate: "Filter by date",
+    from: "From",
+    to: "To",
+    clearFilter: "Clear filter",
     createHandover: "Create handover",
     newHandover: "New handover",
     absentPerson: "Absent person",

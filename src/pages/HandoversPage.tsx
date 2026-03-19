@@ -5,16 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowRightLeft, Download, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowRightLeft, CalendarIcon, Download, Pencil, Plus, Trash2, X } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { handoverNotesSchema } from "@/lib/validation";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import type { Handover } from "@/types";
 
 const container = {
@@ -37,6 +40,8 @@ export default function HandoversPage() {
   const [toMember, setToMember] = useState("");
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -45,10 +50,14 @@ export default function HandoversPage() {
     return members.filter((m) => m.teamId === selectedTeam).map((m) => m.id);
   }, [members, selectedTeam]);
 
-  const filteredHandovers = useMemo(
-    () => handovers.filter((h) => filteredMemberIds.includes(h.fromMemberId)),
-    [handovers, filteredMemberIds]
-  );
+  const filteredHandovers = useMemo(() => {
+    return handovers.filter((h) => {
+      if (!filteredMemberIds.includes(h.fromMemberId)) return false;
+      if (dateFrom && h.createdAt < format(dateFrom, "yyyy-MM-dd")) return false;
+      if (dateTo && h.createdAt > format(dateTo, "yyyy-MM-dd")) return false;
+      return true;
+    });
+  }, [handovers, filteredMemberIds, dateFrom, dateTo]);
 
   const membersWithAbsence = members.filter((m) =>
     absences.some((a) => a.memberId === m.id && a.endDate >= today)
@@ -239,6 +248,47 @@ export default function HandoversPage() {
               ))}
             </SelectContent>
           </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button size="sm" variant="outline" className={cn("rounded-xl gap-1", (dateFrom || dateTo) && "border-primary text-primary")}>
+                <CalendarIcon className="h-4 w-4" />
+                {dateFrom && dateTo
+                  ? `${format(dateFrom, "dd/MM/yyyy")} – ${format(dateTo, "dd/MM/yyyy")}`
+                  : dateFrom
+                    ? `${t.from}: ${format(dateFrom, "dd/MM/yyyy")}`
+                    : dateTo
+                      ? `${t.to}: ${format(dateTo, "dd/MM/yyyy")}`
+                      : t.filterByDate}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-4 space-y-3" align="end">
+              <div className="space-y-2">
+                <Label className="text-xs">{t.from}</Label>
+                <Calendar
+                  mode="single"
+                  selected={dateFrom}
+                  onSelect={setDateFrom}
+                  className={cn("p-2 pointer-events-auto")}
+                  disabled={dateTo ? (d) => d > dateTo : undefined}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">{t.to}</Label>
+                <Calendar
+                  mode="single"
+                  selected={dateTo}
+                  onSelect={setDateTo}
+                  className={cn("p-2 pointer-events-auto")}
+                  disabled={dateFrom ? (d) => d < dateFrom : undefined}
+                />
+              </div>
+              {(dateFrom || dateTo) && (
+                <Button size="sm" variant="ghost" className="w-full text-xs" onClick={() => { setDateFrom(undefined); setDateTo(undefined); }}>
+                  <X className="h-3 w-3 mr-1" /> {t.clearFilter}
+                </Button>
+              )}
+            </PopoverContent>
+          </Popover>
           <Button size="sm" variant="outline" className="rounded-xl" onClick={handleExportCsv}>
             <Download className="h-4 w-4 mr-1" /> {t.exportCsv}
           </Button>
