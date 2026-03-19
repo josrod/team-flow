@@ -79,6 +79,7 @@ const translations = {
     editHandover: "Editar handover",
     updateHandover: "Actualizar handover",
     created: "Creado",
+    handoverDetail: "Detalle del handover",
     absenceType: "Tipo",
     absencePeriod: "Período de ausencia",
     topicCount: "temas",
