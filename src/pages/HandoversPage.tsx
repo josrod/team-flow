@@ -239,6 +239,9 @@ export default function HandoversPage() {
               ))}
             </SelectContent>
           </Select>
+          <Button size="sm" variant="outline" className="rounded-xl" onClick={handleExportCsv}>
+            <Download className="h-4 w-4 mr-1" /> {t.exportCsv}
+          </Button>
           <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
               <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> {t.createHandover}</Button>
