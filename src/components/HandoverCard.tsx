@@ -184,5 +184,16 @@ export function HandoverCard({
         </p>
       </CardContent>
     </Card>
+
+    <HandoverDetailDialog
+      open={detailOpen}
+      onOpenChange={setDetailOpen}
+      handover={handover}
+      fromMember={fromMember}
+      toMember={toMember}
+      absence={absence}
+      topics={topics}
+    />
+    </>
   );
 }
