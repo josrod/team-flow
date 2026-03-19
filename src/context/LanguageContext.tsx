@@ -86,6 +86,7 @@ const translations = {
     handoverSelectAbsent: "Selecciona la persona ausente",
     handoverSelectCover: "Selecciona quién cubre",
     handoverSelectTopics: "Selecciona al menos un tema",
+    noTopicsAvailable: "Esta persona no tiene temas asignados. Puedes continuar sin seleccionar ninguno.",
     cancel: "Cancelar",
     confirmDelete: "Eliminar",
     // Not found
