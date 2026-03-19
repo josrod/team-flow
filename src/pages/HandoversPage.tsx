@@ -40,6 +40,8 @@ export default function HandoversPage() {
   const [toMember, setToMember] = useState("");
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
 
   const today = new Date().toISOString().split("T")[0];
 
