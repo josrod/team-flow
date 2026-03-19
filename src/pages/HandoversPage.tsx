@@ -327,58 +327,18 @@ export default function HandoversPage() {
             const from = members.find((m) => m.id === h.fromMemberId);
             const to = members.find((m) => m.id === h.toMemberId);
             const topics = workTopics.filter((tp) => h.topicIds.includes(tp.id));
+            const absence = absences.find((a) => a.id === h.absenceId);
             return (
               <motion.div key={h.id} variants={item}>
-                <Card className="hover:shadow-md transition-all duration-200">
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Avatar className="h-7 w-7">
-                          <AvatarFallback className="text-[10px] bg-status-sick/10 text-status-sick font-semibold">{from?.name.slice(0, 2)}</AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{from?.name}</span>
-                        <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
-                        <Avatar className="h-7 w-7">
-                          <AvatarFallback className="text-[10px] bg-status-available/10 text-status-available font-semibold">{to?.name.slice(0, 2)}</AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{to?.name}</span>
-                      </div>
-                      <div className="flex items-center gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => openEdit(h)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>{t.deleteHandoverTitle}</AlertDialogTitle>
-                              <AlertDialogDescription>{t.deleteHandoverDesc}</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteHandover(h.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                {t.confirmDelete}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                    {topics.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {topics.map((tp) => (
-                          <span key={tp.id} className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-full font-medium">{tp.name}</span>
-                        ))}
-                      </div>
-                    )}
-                    {h.notes && <p className="text-xs text-muted-foreground leading-relaxed">{h.notes}</p>}
-                    <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">{t.created}: {h.createdAt}</p>
-                  </CardContent>
-                </Card>
+                <HandoverCard
+                  handover={h}
+                  fromMember={from}
+                  toMember={to}
+                  absence={absence}
+                  topics={topics}
+                  onEdit={openEdit}
+                  onDelete={deleteHandover}
+                />
               </motion.div>
             );
           })
