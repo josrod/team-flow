@@ -164,6 +164,9 @@ const translations = {
     deleteHandoverDesc: "This action cannot be undone. The handover will be permanently deleted.",
     deleteAbsenceTitle: "Delete absence?",
     deleteAbsenceDesc: "This action cannot be undone. The absence will be permanently deleted.",
+    handoverSelectAbsent: "Select the absent person",
+    handoverSelectCover: "Select who covers",
+    handoverSelectTopics: "Select at least one topic",
     cancel: "Cancel",
     confirmDelete: "Delete",
     // Not found
