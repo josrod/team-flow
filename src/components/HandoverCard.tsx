@@ -93,7 +93,7 @@ export function HandoverCard({
               <p className="text-[10px] text-muted-foreground truncate">{toMember?.role}</p>
             </div>
           </div>
-          <div className="flex items-center gap-0.5 shrink-0">
+          <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
             <Button
               variant="ghost"
               size="icon"
@@ -101,6 +101,7 @@ export function HandoverCard({
               onClick={() => onEdit(handover)}
             >
               <Pencil className="h-3.5 w-3.5" />
+            </Button>
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
