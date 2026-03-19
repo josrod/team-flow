@@ -238,7 +238,7 @@ export default function HandoversPage() {
           <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight">{t.handovers}</h1>
           <p className="text-muted-foreground mt-1">{t.handoversDesc}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Select value={selectedTeam} onValueChange={setSelectedTeam}>
             <SelectTrigger className="w-[160px]">
               <SelectValue />
