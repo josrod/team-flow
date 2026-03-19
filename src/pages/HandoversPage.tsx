@@ -123,6 +123,28 @@ export default function HandoversPage() {
     );
   };
 
+  const handleExportCsv = () => {
+    const header = `${t.absentPerson},${t.covers},${t.topicsToTransfer},${t.notes},${t.created}`;
+    const rows = filteredHandovers.map((h) => {
+      const from = members.find((m) => m.id === h.fromMemberId);
+      const to = members.find((m) => m.id === h.toMemberId);
+      const topics = workTopics
+        .filter((tp) => h.topicIds.includes(tp.id))
+        .map((tp) => tp.name)
+        .join("; ");
+      const escapedNotes = `"${h.notes.replace(/"/g, '""')}"`;
+      return `${from?.name ?? ""},${to?.name ?? ""},${topics},${escapedNotes},${h.createdAt}`;
+    });
+    const csv = [header, ...rows].join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `handovers_${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const renderFormFields = (isEdit: boolean) => {
     const editFromTopics = isEdit && editingHandover
       ? workTopics.filter((tp) => tp.memberId === editingHandover.fromMemberId)
