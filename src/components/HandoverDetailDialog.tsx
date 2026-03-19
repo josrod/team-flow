@@ -233,7 +233,7 @@ export function HandoverDetailDialog({
                         className="h-8 gap-1.5 text-xs text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                        {t.delete}
+                        {t.confirmDelete}
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
