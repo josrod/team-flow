@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import { ArrowRight, CalendarDays, Pencil, Trash2, Briefcase } from "lucide-reac
 import { format, parseISO, differenceInCalendarDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/context/LanguageContext";
+import { HandoverDetailDialog } from "@/components/HandoverDetailDialog";
 import type { Handover, Absence, TeamMember, WorkTopic } from "@/types";
 
 interface HandoverCardProps {
