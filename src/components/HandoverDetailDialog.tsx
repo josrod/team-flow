@@ -221,7 +221,7 @@ export function HandoverDetailDialog({
                     }}
                   >
                     <Pencil className="h-3.5 w-3.5" />
-                    {t.edit}
+                    {t.editHandover}
                   </Button>
                 )}
                 {onDelete && (
