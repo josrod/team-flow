@@ -56,8 +56,11 @@ export function HandoverCard({
       : "bg-[hsl(var(--status-sick)/.12)] text-[hsl(var(--status-sick))]";
 
   return (
-    <Card className="hover:shadow-md transition-all duration-200 overflow-hidden">
-      {/* Colored top accent based on absence type */}
+    <>
+    <Card
+      className="hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
+      onClick={() => setDetailOpen(true)}
+    >
       <div
         className={cn(
           "h-1",
