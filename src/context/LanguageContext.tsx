@@ -96,6 +96,18 @@ const translations = {
     confirmMove: "¿Mover miembro?",
     confirmMoveDesc: "¿Mover a {name} al equipo {team}?",
     confirmDelete: "Eliminar",
+    // Analytics
+    analyticsTitle: "Analytics",
+    analyticsCapacity: "Capacidad del equipo",
+    analyticsHandoverRate: "Tasa de handover",
+    analyticsActiveAbsences: "Ausencias activas",
+    analyticsActive: "activos",
+    analyticsCurrently: "actualmente",
+    analyticsTeamCapacity: "Capacidad por equipo",
+    analyticsAbsenceType: "Tipo de ausencia",
+    analyticsAbsenceTrend: "Tendencia de ausencias (21 días)",
+    analyticsNoData: "Sin datos disponibles",
+    analyticsNoAbsences: "Sin ausencias activas",
     // Not found
     pageNotFound: "Oops! Página no encontrada",
     returnHome: "Volver al inicio",
