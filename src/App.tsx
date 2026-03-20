@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import TeamPage from "./pages/TeamPage";
 import AbsencesPage from "./pages/AbsencesPage";
 import HandoversPage from "./pages/HandoversPage";
+import AzureDevOpsSettingsPage from "./pages/AzureDevOpsSettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
