@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Download, Palmtree, Pencil, Stethoscope, Trash2 } from "lucide-react";
+import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Download, Upload, Palmtree, Pencil, Stethoscope, Trash2 } from "lucide-react";
+import { AbsenceImportDialog } from "@/components/AbsenceImportDialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format, differenceInDays, eachDayOfInterval, startOfMonth, endOfMonth, parseISO, addMonths, subMonths } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -32,6 +33,7 @@ export default function AbsencesPage() {
   const [selectedTeam, setSelectedTeam] = useState("all");
   const [editOpen, setEditOpen] = useState(false);
   const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const filteredMemberIds = useMemo(() => {
     if (selectedTeam === "all") return members.map((m) => m.id);
@@ -152,6 +154,9 @@ export default function AbsencesPage() {
           </Select>
           <Button size="sm" variant="outline" className="rounded-xl" onClick={handleExportCsv}>
             <Download className="h-4 w-4 mr-1" /> {t.exportCsv}
+          </Button>
+          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setImportOpen(true)}>
+            <Upload className="h-4 w-4 mr-1" /> {t.importAbsences}
           </Button>
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger asChild>
@@ -433,6 +438,7 @@ export default function AbsencesPage() {
           </motion.div>
         </TabsContent>
       </Tabs>
+      <AbsenceImportDialog open={importOpen} onOpenChange={setImportOpen} />
     </div>
   );
 }
