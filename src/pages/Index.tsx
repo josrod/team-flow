@@ -139,7 +139,7 @@ const Index = () => {
           const TeamIcon = getTeamIcon(team.icon);
           const saveEdit = () => {
             const result = teamNameSchema.safeParse(editName);
-            if (!result.success) { toast.error(result.error.errors[0].message); return; }
+            if (!result.success) { toast.error(result.error.issues[0].message); return; }
             updateTeamName(team.id, result.data, editIcon);
             setEditingTeamId(null);
             setIconPickerOpen(false);
