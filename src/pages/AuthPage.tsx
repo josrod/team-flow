@@ -127,7 +127,7 @@ export default function AuthPage() {
         </div>
 
         {/* Card */}
-        <div className="rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-border bg-card shadow-md overflow-hidden">
           <AnimatePresence mode="wait">
             {mode === "forgot" ? (
               <motion.div
