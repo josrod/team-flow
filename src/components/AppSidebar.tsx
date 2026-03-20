@@ -23,6 +23,7 @@ import {
 export function AppSidebar() {
   const { teams, resetData, exportData, importData } = useApp();
   const { t } = useLang();
+  const { signOut, user } = useAuth();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
