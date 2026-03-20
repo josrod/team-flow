@@ -118,23 +118,40 @@ export function AbsenceImportDialog({ open, onOpenChange }: { open: boolean; onO
       };
       reader.readAsText(file);
     } else if (ext === "xlsx" || ext === "xls") {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const wb = readXlsx(data, { type: "array" });
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        const rows = xlsxUtils.sheet_to_json<RawRow>(sheet, { defval: "" });
+      file.arrayBuffer().then(async (buffer) => {
+        const wb = new ExcelJS.Workbook();
+        await wb.xlsx.load(buffer);
+        const sheet = wb.worksheets[0];
+        if (!sheet || sheet.rowCount < 2) {
+          toast.error(t.importEmpty);
+          return;
+        }
+        const headerRow = sheet.getRow(1);
+        const cols: string[] = [];
+        headerRow.eachCell((cell, colNumber) => {
+          cols[colNumber - 1] = String(cell.value ?? "");
+        });
+        const rows: RawRow[] = [];
+        for (let r = 2; r <= sheet.rowCount; r++) {
+          const row = sheet.getRow(r);
+          const obj: RawRow = {};
+          let hasValue = false;
+          cols.forEach((col, idx) => {
+            const val = String(row.getCell(idx + 1).value ?? "");
+            obj[col] = val;
+            if (val) hasValue = true;
+          });
+          if (hasValue) rows.push(obj);
+        }
         if (rows.length === 0) {
           toast.error(t.importEmpty);
           return;
         }
-        const cols = Object.keys(rows[0]);
         setColumns(cols);
-        setRawRows(rows.map((r) => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, String(v)]))));
+        setRawRows(rows);
         autoMap(cols);
         setStep("mapping");
-      };
-      reader.readAsArrayBuffer(file);
+      });
     } else {
       toast.error(t.importUnsupportedFormat);
     }
