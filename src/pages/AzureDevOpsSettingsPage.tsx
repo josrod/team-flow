@@ -149,22 +149,19 @@ export default function AzureDevOpsSettingsPage() {
   };
 
   const handleDelete = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const { data, error } = await supabase.functions.invoke("azure-devops-settings", {
+      method: "DELETE",
+    });
 
-    const { error } = await supabase
-      .from("azure_devops_settings")
-      .delete()
-      .eq("user_id", user.id);
-
-    if (error) {
-      toast.error(error.message);
+    if (error || !data?.success) {
+      toast.error(error?.message ?? "Delete failed");
       return;
     }
 
     setOrganization("");
     setProject("");
     setPat("");
+    setPatMasked("");
     setAutoSync(false);
     setSyncInterval("30");
     setConnectionStatus("idle");
