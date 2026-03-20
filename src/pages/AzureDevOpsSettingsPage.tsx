@@ -37,6 +37,7 @@ export default function AzureDevOpsSettingsPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [hasExisting, setHasExisting] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
+  const [patMasked, setPatMasked] = useState("");
 
   useEffect(() => {
     loadSettings();
