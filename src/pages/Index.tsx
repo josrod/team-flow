@@ -427,6 +427,11 @@ const Index = () => {
           </div>
         )}
       </motion.div>
+
+      {/* Analytics Panel */}
+      <motion.div variants={item}>
+        <AnalyticsPanel />
+      </motion.div>
     </motion.div>
   );
 };
