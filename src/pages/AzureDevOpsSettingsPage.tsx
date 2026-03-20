@@ -37,31 +37,32 @@ export default function AzureDevOpsSettingsPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [hasExisting, setHasExisting] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
+  const [patMasked, setPatMasked] = useState("");
 
   useEffect(() => {
     loadSettings();
   }, []);
 
   const loadSettings = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
 
-    const { data } = await supabase
-      .from("azure_devops_settings")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const { data, error } = await supabase.functions.invoke("azure-devops-settings", {
+      method: "GET",
+    });
 
-    if (data) {
-      setOrganization(data.organization);
-      setProject(data.project);
-      setPat(data.pat_encrypted);
-      setAutoSync(data.auto_sync_enabled);
-      setSyncInterval(String(data.sync_interval_minutes));
-      setLastSynced(data.last_synced_at);
-      setHasExisting(true);
-      setConnectionStatus("success");
-    }
+    if (error || !data?.data) return;
+
+    const settings = data.data;
+    setOrganization(settings.organization);
+    setProject(settings.project);
+    setPat(""); // Never show real PAT; user must re-enter to update
+    setAutoSync(settings.auto_sync_enabled);
+    setSyncInterval(String(settings.sync_interval_minutes));
+    setLastSynced(settings.last_synced_at);
+    setHasExisting(true);
+    setConnectionStatus("success");
+    setPatMasked(settings.pat_masked ?? "");
   };
 
   const handleTestConnection = async () => {
@@ -114,38 +115,30 @@ export default function AzureDevOpsSettingsPage() {
       toast.error(t.adoTestFirst);
       return;
     }
+    if (!pat.trim()) {
+      toast.error(t.adoFillAllFields);
+      return;
+    }
 
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error(t.adoLoginRequired);
-        return;
-      }
+      const { data, error } = await supabase.functions.invoke("azure-devops-settings", {
+        method: "POST",
+        body: {
+          organization: organization.trim(),
+          project: project.trim(),
+          pat: pat.trim(),
+          auto_sync_enabled: autoSync,
+          sync_interval_minutes: Number(syncInterval),
+        },
+      });
 
-      const payload = {
-        user_id: user.id,
-        organization: organization.trim(),
-        project: project.trim(),
-        pat_encrypted: pat.trim(),
-        auto_sync_enabled: autoSync,
-        sync_interval_minutes: Number(syncInterval),
-      };
+      if (error) throw new Error(error.message);
+      if (!data?.success) throw new Error(data?.error ?? "Save failed");
 
-      if (hasExisting) {
-        const { error } = await supabase
-          .from("azure_devops_settings")
-          .update(payload)
-          .eq("user_id", user.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("azure_devops_settings")
-          .insert(payload);
-        if (error) throw error;
-        setHasExisting(true);
-      }
-
+      setHasExisting(true);
+      setPat("");
+      setPatMasked(organization.slice(0, 4) + "****");
       toast.success(`💾 ${t.adoSettingsSaved}`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error saving";
@@ -156,22 +149,19 @@ export default function AzureDevOpsSettingsPage() {
   };
 
   const handleDelete = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const { data, error } = await supabase.functions.invoke("azure-devops-settings", {
+      method: "DELETE",
+    });
 
-    const { error } = await supabase
-      .from("azure_devops_settings")
-      .delete()
-      .eq("user_id", user.id);
-
-    if (error) {
-      toast.error(error.message);
+    if (error || !data?.success) {
+      toast.error(error?.message ?? "Delete failed");
       return;
     }
 
     setOrganization("");
     setProject("");
     setPat("");
+    setPatMasked("");
     setAutoSync(false);
     setSyncInterval("30");
     setConnectionStatus("idle");
@@ -246,7 +236,10 @@ export default function AzureDevOpsSettingsPage() {
                   </Button>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">{t.adoPatHint}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {hasExisting && patMasked ? `Current: ${patMasked} — ` : ""}
+                {t.adoPatHint}
+              </p>
             </div>
 
             <Button
