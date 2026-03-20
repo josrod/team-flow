@@ -2,7 +2,7 @@ import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, AreaChart, Area, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
 import { Users, UserCheck, ArrowRightLeft, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { useMemo } from "react";
@@ -82,6 +82,11 @@ export function AnalyticsPanel() {
     count: { label: t.absent, color: "hsl(var(--primary))" },
   };
 
+  const pieChartConfig: ChartConfig = {
+    vacation: { label: t.vacation, color: "hsl(var(--status-vacation))" },
+    sickLeave: { label: t.sickLeave, color: "hsl(var(--status-sick))" },
+  };
+
   const summaryCards = [
     { label: t.analyticsCapacity, value: `${metrics.capacityPct}%`, sub: `${metrics.availableCount}/${metrics.totalMembers}`, icon: Users, color: "text-primary" },
     { label: t.analyticsHandoverRate, value: `${metrics.handoverRate}%`, sub: `${metrics.activeHandovers} ${t.analyticsActive}`, icon: ArrowRightLeft, color: "text-status-available" },
@@ -156,28 +161,26 @@ export function AnalyticsPanel() {
             <CardContent className="pb-4">
               {absenceTypeData.length > 0 ? (
                 <div className="flex items-center gap-6">
-                  <div className="h-[200px] w-[200px] shrink-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={absenceTypeData}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={80}
-                          strokeWidth={2}
-                          stroke="hsl(var(--card))"
-                        >
-                          {absenceTypeData.map((entry, index) => (
-                            <Cell key={index} fill={entry.fill} />
-                          ))}
-                        </Pie>
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <ChartContainer config={pieChartConfig} className="h-[200px] w-[200px] shrink-0">
+                    <PieChart>
+                      <Pie
+                        data={absenceTypeData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        strokeWidth={2}
+                        stroke="hsl(var(--card))"
+                      >
+                        {absenceTypeData.map((entry, index) => (
+                          <Cell key={index} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                    </PieChart>
+                  </ChartContainer>
                   <div className="space-y-3">
                     {absenceTypeData.map((entry) => (
                       <div key={entry.name} className="flex items-center gap-2">
