@@ -236,7 +236,10 @@ export default function AzureDevOpsSettingsPage() {
                   </Button>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">{t.adoPatHint}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {hasExisting && patMasked ? `Current: ${patMasked} — ` : ""}
+                {t.adoPatHint}
+              </p>
             </div>
 
             <Button
