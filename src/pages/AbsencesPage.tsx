@@ -155,6 +155,9 @@ export default function AbsencesPage() {
           <Button size="sm" variant="outline" className="rounded-xl" onClick={handleExportCsv}>
             <Download className="h-4 w-4 mr-1" /> {t.exportCsv}
           </Button>
+          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setImportOpen(true)}>
+            <Upload className="h-4 w-4 mr-1" /> {t.importAbsences}
+          </Button>
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> {t.newAbsence}</Button>
