@@ -13,7 +13,7 @@ import { Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
 export default function AuthPage() {
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t } = useLang();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 

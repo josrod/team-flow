@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t } = useLang();
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
