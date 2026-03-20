@@ -2,7 +2,7 @@ import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, AreaChart, Area, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
 import { Users, UserCheck, ArrowRightLeft, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { useMemo } from "react";
