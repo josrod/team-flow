@@ -438,6 +438,7 @@ export default function AbsencesPage() {
           </motion.div>
         </TabsContent>
       </Tabs>
+      <AbsenceImportDialog open={importOpen} onOpenChange={setImportOpen} />
     </div>
   );
 }
