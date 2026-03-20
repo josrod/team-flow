@@ -92,6 +92,9 @@ const translations = {
     handoverSelectTopics: "Selecciona al menos un tema",
     noTopicsAvailable: "Esta persona no tiene temas asignados. Puedes continuar sin seleccionar ninguno.",
     cancel: "Cancelar",
+    confirm: "Confirmar",
+    confirmMove: "¿Mover miembro?",
+    confirmMoveDesc: "¿Mover a {name} al equipo {team}?",
     confirmDelete: "Eliminar",
     // Not found
     pageNotFound: "Oops! Página no encontrada",
@@ -186,6 +189,9 @@ const translations = {
     handoverSelectTopics: "Select at least one topic",
     noTopicsAvailable: "This person has no assigned topics. You can continue without selecting any.",
     cancel: "Cancel",
+    confirm: "Confirm",
+    confirmMove: "Move member?",
+    confirmMoveDesc: "Move {name} to {team}?",
     confirmDelete: "Delete",
     // Not found
     pageNotFound: "Oops! Page not found",

@@ -1,4 +1,14 @@
 import { useParams } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
@@ -46,6 +56,7 @@ export default function TeamPage() {
   const [editNameValue, setEditNameValue] = useState("");
   const [editingRole, setEditingRole] = useState(false);
   const [editRoleValue, setEditRoleValue] = useState("");
+  const [pendingTeamId, setPendingTeamId] = useState<string | null>(null);
 
   const [topicFormOpen, setTopicFormOpen] = useState(false);
   const [editingTopic, setEditingTopic] = useState<WorkTopic | null>(null);
@@ -266,9 +277,9 @@ export default function TeamPage() {
                   <Select
                     value={selectedMember.teamId}
                     onValueChange={(newTeamId) => {
-                      const updated = { ...selectedMember, teamId: newTeamId };
-                      updateMember(updated);
-                      setSelectedMember(updated);
+                      if (newTeamId !== selectedMember.teamId) {
+                        setPendingTeamId(newTeamId);
+                      }
                     }}
                   >
                     <SelectTrigger className="h-8 text-sm mt-1"><SelectValue /></SelectTrigger>
@@ -278,6 +289,30 @@ export default function TeamPage() {
                       ))}
                     </SelectContent>
                   </Select>
+
+                  <AlertDialog open={pendingTeamId !== null} onOpenChange={(open) => { if (!open) setPendingTeamId(null); }}>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t.confirmMove ?? "Move member?"}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {(t.confirmMoveDesc ?? "Move {name} to {team}?")
+                            .replace("{name}", selectedMember.name)
+                            .replace("{team}", teams.find((tm) => tm.id === pendingTeamId)?.name ?? "")}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => {
+                          if (pendingTeamId) {
+                            const updated = { ...selectedMember, teamId: pendingTeamId };
+                            updateMember(updated);
+                            setSelectedMember(updated);
+                          }
+                          setPendingTeamId(null);
+                        }}>{t.confirm ?? "Confirm"}</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               )}
 
