@@ -1,9 +1,10 @@
-import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Download, Upload, Settings, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Download, Upload, Settings, LogOut, type LucideIcon } from "lucide-react";
 import cuswLogo from "@/assets/cusw-logo.png";
 import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
