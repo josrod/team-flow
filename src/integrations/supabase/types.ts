@@ -14,7 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      azure_devops_settings: {
+        Row: {
+          auto_sync_enabled: boolean
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          organization: string
+          pat_encrypted: string
+          project: string
+          sync_interval_minutes: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_sync_enabled?: boolean
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          organization: string
+          pat_encrypted: string
+          project: string
+          sync_interval_minutes?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_sync_enabled?: boolean
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          organization?: string
+          pat_encrypted?: string
+          project?: string
+          sync_interval_minutes?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
