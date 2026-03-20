@@ -205,6 +205,18 @@ const translations = {
     confirmMove: "Move member?",
     confirmMoveDesc: "Move {name} to {team}?",
     confirmDelete: "Delete",
+    // Analytics
+    analyticsTitle: "Analytics",
+    analyticsCapacity: "Team capacity",
+    analyticsHandoverRate: "Handover rate",
+    analyticsActiveAbsences: "Active absences",
+    analyticsActive: "active",
+    analyticsCurrently: "currently",
+    analyticsTeamCapacity: "Capacity by team",
+    analyticsAbsenceType: "Absence type",
+    analyticsAbsenceTrend: "Absence trend (21 days)",
+    analyticsNoData: "No data available",
+    analyticsNoAbsences: "No active absences",
     // Not found
     pageNotFound: "Oops! Page not found",
     returnHome: "Return to Home",
