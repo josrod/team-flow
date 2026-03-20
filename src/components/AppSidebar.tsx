@@ -145,6 +145,23 @@ export function AppSidebar() {
           <RotateCcw className="h-3.5 w-3.5 shrink-0" />
           {!isCollapsed && <span>Reset data</span>}
         </Button>
+        {user && (
+          <div className="pt-2 border-t border-sidebar-border mt-2">
+            {!isCollapsed && (
+              <p className="text-[10px] text-sidebar-foreground/50 truncate px-2 mb-1">{user.email}</p>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => signOut()}
+              title={t.authLogout}
+              className={cn("w-full gap-2 text-sidebar-foreground/60 hover:text-destructive hover:bg-sidebar-accent text-xs", isCollapsed ? "justify-center px-0" : "justify-start")}
+            >
+              <LogOut className="h-3.5 w-3.5 shrink-0" />
+              {!isCollapsed && <span>{t.authLogout}</span>}
+            </Button>
+          </div>
+        )}
       </SidebarFooter>
     </Sidebar>
   );
