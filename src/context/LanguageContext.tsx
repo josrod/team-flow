@@ -189,6 +189,9 @@ const translations = {
     handoverSelectTopics: "Select at least one topic",
     noTopicsAvailable: "This person has no assigned topics. You can continue without selecting any.",
     cancel: "Cancel",
+    confirm: "Confirm",
+    confirmMove: "Move member?",
+    confirmMoveDesc: "Move {name} to {team}?",
     confirmDelete: "Delete",
     // Not found
     pageNotFound: "Oops! Page not found",
