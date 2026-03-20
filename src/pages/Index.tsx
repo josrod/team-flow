@@ -139,7 +139,7 @@ const Index = () => {
           const TeamIcon = getTeamIcon(team.icon);
           const saveEdit = () => {
             const result = teamNameSchema.safeParse(editName);
-            if (!result.success) { toast.error(result.error.errors[0].message); return; }
+            if (!result.success) { toast.error(result.error.issues[0].message); return; }
             updateTeamName(team.id, result.data, editIcon);
             setEditingTeamId(null);
             setIconPickerOpen(false);
@@ -282,7 +282,7 @@ const Index = () => {
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         const result = teamNameSchema.safeParse(newTeamName);
-                        if (!result.success) { toast.error(result.error.errors[0].message); return; }
+                        if (!result.success) { toast.error(result.error.issues[0].message); return; }
                         addTeam(result.data, newTeamIcon);
                         setNewTeamName(""); setNewTeamIcon("users"); setShowNewTeam(false);
                       }
@@ -296,7 +296,7 @@ const Index = () => {
                   </Button>
                   <Button size="sm" onClick={() => {
                     const result = teamNameSchema.safeParse(newTeamName);
-                    if (!result.success) { toast.error(result.error.errors[0].message); return; }
+                    if (!result.success) { toast.error(result.error.issues[0].message); return; }
                     addTeam(result.data, newTeamIcon);
                     setNewTeamName(""); setNewTeamIcon("users"); setShowNewTeam(false);
                   }}>

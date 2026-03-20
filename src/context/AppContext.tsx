@@ -211,7 +211,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const raw = JSON.parse(json);
         const result = importDataSchema.safeParse(raw);
         if (!result.success) {
-          const msg = result.error.errors.map((e) => e.message).join(", ");
+          const msg = result.error.issues.map((e) => e.message).join(", ");
           toast.error(`Esquema inválido: ${msg}`);
           return;
         }

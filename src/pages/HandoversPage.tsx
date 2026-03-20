@@ -85,7 +85,7 @@ export default function HandoversPage() {
     // Topics are optional – allow blank handovers when the member has none
     const notesResult = handoverNotesSchema.safeParse(notes);
     if (!notesResult.success) {
-      toast.error(notesResult.error.errors[0].message);
+      toast.error(notesResult.error.issues[0].message);
       return;
     }
     addHandover({
@@ -114,7 +114,7 @@ export default function HandoversPage() {
     // Topics are optional on edit too
     const notesResult = handoverNotesSchema.safeParse(notes);
     if (!notesResult.success) {
-      toast.error(notesResult.error.errors[0].message);
+      toast.error(notesResult.error.issues[0].message);
       return;
     }
     updateHandover({
