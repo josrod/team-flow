@@ -56,6 +56,7 @@ export default function TeamPage() {
   const [editNameValue, setEditNameValue] = useState("");
   const [editingRole, setEditingRole] = useState(false);
   const [editRoleValue, setEditRoleValue] = useState("");
+  const [pendingTeamId, setPendingTeamId] = useState<string | null>(null);
 
   const [topicFormOpen, setTopicFormOpen] = useState(false);
   const [editingTopic, setEditingTopic] = useState<WorkTopic | null>(null);
