@@ -43,25 +43,25 @@ export default function AzureDevOpsSettingsPage() {
   }, []);
 
   const loadSettings = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
 
-    const { data } = await supabase
-      .from("azure_devops_settings")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const { data, error } = await supabase.functions.invoke("azure-devops-settings", {
+      method: "GET",
+    });
 
-    if (data) {
-      setOrganization(data.organization);
-      setProject(data.project);
-      setPat(data.pat_encrypted);
-      setAutoSync(data.auto_sync_enabled);
-      setSyncInterval(String(data.sync_interval_minutes));
-      setLastSynced(data.last_synced_at);
-      setHasExisting(true);
-      setConnectionStatus("success");
-    }
+    if (error || !data?.data) return;
+
+    const settings = data.data;
+    setOrganization(settings.organization);
+    setProject(settings.project);
+    setPat(""); // Never show real PAT; user must re-enter to update
+    setAutoSync(settings.auto_sync_enabled);
+    setSyncInterval(String(settings.sync_interval_minutes));
+    setLastSynced(settings.last_synced_at);
+    setHasExisting(true);
+    setConnectionStatus("success");
+    setPatMasked(settings.pat_masked ?? "");
   };
 
   const handleTestConnection = async () => {
