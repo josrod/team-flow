@@ -156,28 +156,26 @@ export function AnalyticsPanel() {
             <CardContent className="pb-4">
               {absenceTypeData.length > 0 ? (
                 <div className="flex items-center gap-6">
-                  <div className="h-[200px] w-[200px] shrink-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={absenceTypeData}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={80}
-                          strokeWidth={2}
-                          stroke="hsl(var(--card))"
-                        >
-                          {absenceTypeData.map((entry, index) => (
-                            <Cell key={index} fill={entry.fill} />
-                          ))}
-                        </Pie>
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <ChartContainer config={pieChartConfig} className="h-[200px] w-[200px] shrink-0">
+                    <PieChart>
+                      <Pie
+                        data={absenceTypeData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        strokeWidth={2}
+                        stroke="hsl(var(--card))"
+                      >
+                        {absenceTypeData.map((entry, index) => (
+                          <Cell key={index} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                    </PieChart>
+                  </ChartContainer>
                   <div className="space-y-3">
                     {absenceTypeData.map((entry) => (
                       <div key={entry.name} className="flex items-center gap-2">
