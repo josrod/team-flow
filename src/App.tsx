@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import TeamPage from "./pages/TeamPage";
 import AbsencesPage from "./pages/AbsencesPage";
 import HandoversPage from "./pages/HandoversPage";
+import AzureDevOpsSettingsPage from "./pages/AzureDevOpsSettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
                   <Route path="/team/:teamId" element={<TeamPage />} />
                   <Route path="/absences" element={<AbsencesPage />} />
                   <Route path="/handovers" element={<HandoversPage />} />
+                  <Route path="/settings/azure-devops" element={<AzureDevOpsSettingsPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </AppLayout>

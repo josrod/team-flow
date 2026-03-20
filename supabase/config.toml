@@ -1,0 +1,4 @@
+project_id = "veirotksnslmhshxfkoa"
+
+[functions.azure-devops-test]
+verify_jwt = false
