@@ -73,7 +73,7 @@ export default function TeamPage() {
     if (!teamId) return;
     const result = memberSchema.safeParse({ name: newName, role: newRole, teamId });
     if (!result.success) {
-      toast.error(result.error.errors[0].message);
+      toast.error(result.error.issues[0].message);
       return;
     }
     addMember({ name: result.data.name, role: result.data.role, teamId });
