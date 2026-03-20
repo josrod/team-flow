@@ -6,6 +6,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useLang } from "@/context/LanguageContext";
 import { Moon, Sun, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -20,6 +21,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <header className="h-14 flex items-center justify-between border-b px-4 bg-card/80 backdrop-blur-sm sticky top-0 z-10">
             <SidebarTrigger />
             <div className="flex items-center gap-1">
+              <NotificationBell />
               <Button
                 variant="ghost"
                 size="sm"
