@@ -11,7 +11,7 @@ import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
 import { toast } from "sonner";
 import { parse as parseCsv } from "papaparse";
-import { read as readXlsx, utils as xlsxUtils } from "xlsx";
+import ExcelJS from "exceljs";
 import { parseISO, isValid, format } from "date-fns";
 import { cn } from "@/lib/utils";
 

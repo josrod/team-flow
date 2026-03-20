@@ -104,7 +104,7 @@ export default function TeamPage() {
     if (!selectedMember) return;
     const result = topicSchema.safeParse({ name: topicName, description: topicDesc, status: topicStatus });
     if (!result.success) {
-      toast.error(result.error.errors[0].message);
+      toast.error(result.error.issues[0].message);
       return;
     }
     if (editingTopic) {

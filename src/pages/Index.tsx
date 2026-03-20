@@ -296,7 +296,7 @@ const Index = () => {
                   </Button>
                   <Button size="sm" onClick={() => {
                     const result = teamNameSchema.safeParse(newTeamName);
-                    if (!result.success) { toast.error(result.error.errors[0].message); return; }
+                    if (!result.success) { toast.error(result.error.issues[0].message); return; }
                     addTeam(result.data, newTeamIcon);
                     setNewTeamName(""); setNewTeamIcon("users"); setShowNewTeam(false);
                   }}>
