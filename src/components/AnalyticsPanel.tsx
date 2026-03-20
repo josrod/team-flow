@@ -82,6 +82,11 @@ export function AnalyticsPanel() {
     count: { label: t.absent, color: "hsl(var(--primary))" },
   };
 
+  const pieChartConfig: ChartConfig = {
+    vacation: { label: t.vacation, color: "hsl(var(--status-vacation))" },
+    sickLeave: { label: t.sickLeave, color: "hsl(var(--status-sick))" },
+  };
+
   const summaryCards = [
     { label: t.analyticsCapacity, value: `${metrics.capacityPct}%`, sub: `${metrics.availableCount}/${metrics.totalMembers}`, icon: Users, color: "text-primary" },
     { label: t.analyticsHandoverRate, value: `${metrics.handoverRate}%`, sub: `${metrics.activeHandovers} ${t.analyticsActive}`, icon: ArrowRightLeft, color: "text-status-available" },
