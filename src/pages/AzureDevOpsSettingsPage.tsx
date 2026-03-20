@@ -115,38 +115,30 @@ export default function AzureDevOpsSettingsPage() {
       toast.error(t.adoTestFirst);
       return;
     }
+    if (!pat.trim()) {
+      toast.error(t.adoFillAllFields);
+      return;
+    }
 
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error(t.adoLoginRequired);
-        return;
-      }
+      const { data, error } = await supabase.functions.invoke("azure-devops-settings", {
+        method: "POST",
+        body: {
+          organization: organization.trim(),
+          project: project.trim(),
+          pat: pat.trim(),
+          auto_sync_enabled: autoSync,
+          sync_interval_minutes: Number(syncInterval),
+        },
+      });
 
-      const payload = {
-        user_id: user.id,
-        organization: organization.trim(),
-        project: project.trim(),
-        pat_encrypted: pat.trim(),
-        auto_sync_enabled: autoSync,
-        sync_interval_minutes: Number(syncInterval),
-      };
+      if (error) throw new Error(error.message);
+      if (!data?.success) throw new Error(data?.error ?? "Save failed");
 
-      if (hasExisting) {
-        const { error } = await supabase
-          .from("azure_devops_settings")
-          .update(payload)
-          .eq("user_id", user.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("azure_devops_settings")
-          .insert(payload);
-        if (error) throw error;
-        setHasExisting(true);
-      }
-
+      setHasExisting(true);
+      setPat("");
+      setPatMasked(organization.slice(0, 4) + "****");
       toast.success(`💾 ${t.adoSettingsSaved}`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error saving";
