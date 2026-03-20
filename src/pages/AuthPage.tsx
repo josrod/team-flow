@@ -85,7 +85,7 @@ export default function AuthPage() {
     "h-11 bg-muted/40 border-border/60 text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-1 focus-visible:ring-ring/50 focus-visible:ring-offset-0 focus-visible:border-ring/40 transition-all duration-200";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-6 sm:py-4">
       {/* Subtle grid background */}
       <div
         className="pointer-events-none fixed inset-0 opacity-[0.03]"
@@ -103,15 +103,19 @@ export default function AuthPage() {
         className="relative w-full max-w-[380px]"
       >
         {/* Logo + brand */}
-        <div className="mb-8 flex flex-col items-center gap-3">
-          <motion.img
-            src={cuswLogo}
-            alt="CUSW"
-            className="h-12 w-12 rounded-xl object-cover"
+        <div className="mb-5 sm:mb-8 flex flex-col items-center gap-2.5">
+          <motion.div
+            className="flex h-12 w-12 items-center justify-center rounded-xl bg-card border border-border/60 shadow-sm"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          />
+          >
+            <img
+              src={cuswLogo}
+              alt="CUSW"
+              className="h-9 w-9 rounded-lg object-cover"
+            />
+          </motion.div>
           <div className="text-center">
             <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
               TeamFlow
