@@ -1,5 +1,6 @@
 import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
+import { AnalyticsPanel } from "@/components/AnalyticsPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -425,6 +426,11 @@ const Index = () => {
             })}
           </div>
         )}
+      </motion.div>
+
+      {/* Analytics Panel */}
+      <motion.div variants={item}>
+        <AnalyticsPanel />
       </motion.div>
     </motion.div>
   );
