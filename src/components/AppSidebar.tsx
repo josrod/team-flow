@@ -70,6 +70,7 @@ export function AppSidebar() {
     })),
     { title: t.absences, url: "/absences", icon: CalendarDays },
     { title: t.handovers, url: "/handovers", icon: ArrowRightLeft },
+    { title: "Azure DevOps", url: "/settings/azure-devops", icon: Settings },
   ];
 
   return (
