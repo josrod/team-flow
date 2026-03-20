@@ -31,6 +31,7 @@ const App = () => (
                   <Route path="/team/:teamId" element={<TeamPage />} />
                   <Route path="/absences" element={<AbsencesPage />} />
                   <Route path="/handovers" element={<HandoversPage />} />
+                  <Route path="/settings/azure-devops" element={<AzureDevOpsSettingsPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </AppLayout>
