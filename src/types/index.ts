@@ -1,5 +1,5 @@
-export type MemberStatus = "available" | "vacation" | "sick-leave";
-export type AbsenceType = "vacation" | "sick-leave";
+export type MemberStatus = "available" | "vacation" | "sick-leave" | "work-travel" | "other-project" | "parental-leave";
+export type AbsenceType = "vacation" | "sick-leave" | "work-travel" | "other-project" | "parental-leave";
 export type WorkTopicStatus = "in-progress" | "pending" | "blocked" | "completed";
 
 export interface TeamMember {

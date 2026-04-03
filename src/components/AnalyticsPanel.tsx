@@ -52,12 +52,14 @@ export function AnalyticsPanel() {
   // Absence type pie chart
   const absenceTypeData = useMemo(() => {
     const activeAbsences = absences.filter((a) => a.startDate <= today && a.endDate >= today);
-    const vacation = activeAbsences.filter((a) => a.type === "vacation").length;
-    const sick = activeAbsences.filter((a) => a.type === "sick-leave").length;
-    return [
-      { name: t.vacation, value: vacation, fill: "hsl(var(--status-vacation))" },
-      { name: t.sickLeave, value: sick, fill: "hsl(var(--status-sick))" },
-    ].filter((d) => d.value > 0);
+    const counts: { name: string; value: number; fill: string }[] = [
+      { name: t.vacation, value: activeAbsences.filter((a) => a.type === "vacation").length, fill: "hsl(var(--status-vacation))" },
+      { name: t.sickLeave, value: activeAbsences.filter((a) => a.type === "sick-leave").length, fill: "hsl(var(--status-sick))" },
+      { name: t.workTravel, value: activeAbsences.filter((a) => a.type === "work-travel").length, fill: "hsl(var(--status-work-travel))" },
+      { name: t.otherProject, value: activeAbsences.filter((a) => a.type === "other-project").length, fill: "hsl(var(--status-other-project))" },
+      { name: t.parentalLeave, value: activeAbsences.filter((a) => a.type === "parental-leave").length, fill: "hsl(var(--status-parental-leave))" },
+    ];
+    return counts.filter((d) => d.value > 0);
   }, [absences, today, t]);
 
   // Absence trend: next 14 days
@@ -85,6 +87,9 @@ export function AnalyticsPanel() {
   const pieChartConfig: ChartConfig = {
     vacation: { label: t.vacation, color: "hsl(var(--status-vacation))" },
     sickLeave: { label: t.sickLeave, color: "hsl(var(--status-sick))" },
+    workTravel: { label: t.workTravel, color: "hsl(var(--status-work-travel))" },
+    otherProject: { label: t.otherProject, color: "hsl(var(--status-other-project))" },
+    parentalLeave: { label: t.parentalLeave, color: "hsl(var(--status-parental-leave))" },
   };
 
   const summaryCards = [

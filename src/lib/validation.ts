@@ -41,7 +41,7 @@ const workTopicSchema = z.object({
 const absenceSchema = z.object({
   id: z.string(),
   memberId: z.string(),
-  type: z.enum(["vacation", "sick-leave"]),
+  type: z.enum(["vacation", "sick-leave", "work-travel", "other-project", "parental-leave"]),
   startDate: z.string(),
   endDate: z.string(),
 });

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { importDataSchema } from "@/lib/validation";
-import { Team, TeamMember, WorkTopic, Absence, Handover } from "@/types";
+import { Team, TeamMember, WorkTopic, Absence, Handover, MemberStatus } from "@/types";
 import {
   teams as seedTeams,
   members as seedMembers,
@@ -53,7 +53,7 @@ interface AppState {
   updateWorkTopic: (t: WorkTopic) => void;
   deleteWorkTopic: (id: string) => void;
   updateTeamName: (id: string, name: string, icon?: string) => void;
-  getMemberStatus: (memberId: string) => "available" | "vacation" | "sick-leave";
+  getMemberStatus: (memberId: string) => MemberStatus;
   resetData: () => void;
   exportData: () => string;
   importData: (json: string) => void;
@@ -98,7 +98,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [teams, members, workTopics, absences, handovers]);
 
   const getMemberStatus = useCallback(
-    (memberId: string): "available" | "vacation" | "sick-leave" => {
+    (memberId: string): MemberStatus => {
       const today = new Date().toISOString().split("T")[0];
       const active = absences.find(
         (a) => a.memberId === memberId && a.startDate <= today && a.endDate >= today
