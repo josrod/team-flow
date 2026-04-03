@@ -236,7 +236,7 @@ export default function AbsencesPage() {
               <Palmtree className="h-4 w-4 sm:h-5 sm:w-5 text-status-vacation" />
             </div>
             <div>
-              <p className="text-xl sm:text-2xl font-bold">{summary.vacationDays}</p>
+              <p className="text-xl sm:text-2xl font-bold">{summary.vacation}</p>
               <p className="text-xs text-muted-foreground">{t.vacation}</p>
             </div>
           </CardContent>
@@ -247,8 +247,41 @@ export default function AbsencesPage() {
               <Stethoscope className="h-4 w-4 sm:h-5 sm:w-5 text-status-sick" />
             </div>
             <div>
-              <p className="text-xl sm:text-2xl font-bold">{summary.sickDays}</p>
+              <p className="text-xl sm:text-2xl font-bold">{summary["sick-leave"]}</p>
               <p className="text-xs text-muted-foreground">{t.sickLeave}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="min-w-0 flex-1 basis-[calc(50%-6px)] sm:basis-0">
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="rounded-lg bg-status-work-travel/10 p-2">
+              <Plane className="h-4 w-4 sm:h-5 sm:w-5 text-status-work-travel" />
+            </div>
+            <div>
+              <p className="text-xl sm:text-2xl font-bold">{summary["work-travel"]}</p>
+              <p className="text-xs text-muted-foreground">{t.workTravel}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="min-w-0 flex-1 basis-[calc(50%-6px)] sm:basis-0">
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="rounded-lg bg-status-other-project/10 p-2">
+              <FolderKanban className="h-4 w-4 sm:h-5 sm:w-5 text-status-other-project" />
+            </div>
+            <div>
+              <p className="text-xl sm:text-2xl font-bold">{summary["other-project"]}</p>
+              <p className="text-xs text-muted-foreground">{t.otherProject}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="min-w-0 flex-1 basis-[calc(50%-6px)] sm:basis-0">
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="rounded-lg bg-status-parental-leave/10 p-2">
+              <Baby className="h-4 w-4 sm:h-5 sm:w-5 text-status-parental-leave" />
+            </div>
+            <div>
+              <p className="text-xl sm:text-2xl font-bold">{summary["parental-leave"]}</p>
+              <p className="text-xs text-muted-foreground">{t.parentalLeave}</p>
             </div>
           </CardContent>
         </Card>
