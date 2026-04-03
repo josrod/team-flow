@@ -62,10 +62,13 @@ function tryParseDate(raw: string): string | null {
   return null;
 }
 
-function normalizeType(raw: string): "vacation" | "sick-leave" | null {
+function normalizeType(raw: string): "vacation" | "sick-leave" | "work-travel" | "other-project" | "parental-leave" | null {
   const lower = raw.toLowerCase().trim();
   if (["vacation", "vacaciones", "holiday", "pto", "annual leave"].includes(lower)) return "vacation";
   if (["sick", "sick-leave", "sick leave", "baja", "enfermedad", "medical"].includes(lower)) return "sick-leave";
+  if (["work-travel", "work travel", "viaje de trabajo", "viaje trabajo", "business trip", "travel"].includes(lower)) return "work-travel";
+  if (["other-project", "other project", "otro proyecto", "otro project"].includes(lower)) return "other-project";
+  if (["parental-leave", "parental leave", "baja maternal", "baja paternal", "maternidad", "paternidad", "maternity", "paternity"].includes(lower)) return "parental-leave";
   return null;
 }
 
