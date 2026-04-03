@@ -62,11 +62,11 @@ export const absences: Absence[] = [
   { id: "abs-1", memberId: "member-2", type: "vacation", startDate: d(-2), endDate: d(5) },
   { id: "abs-2", memberId: "member-5", type: "sick-leave", startDate: d(-1), endDate: d(3) },
   { id: "abs-3", memberId: "member-8", type: "vacation", startDate: d(3), endDate: d(10) },
-  { id: "abs-4", memberId: "member-12", type: "vacation", startDate: d(7), endDate: d(14) },
+  { id: "abs-4", memberId: "member-12", type: "work-travel", startDate: d(7), endDate: d(14) },
   { id: "abs-5", memberId: "member-18", type: "sick-leave", startDate: d(-3), endDate: d(1) },
-  { id: "abs-6", memberId: "member-21", type: "vacation", startDate: d(5), endDate: d(12) },
-  { id: "abs-7", memberId: "member-25", type: "vacation", startDate: d(10), endDate: d(17) },
-  { id: "abs-8", memberId: "member-30", type: "sick-leave", startDate: d(0), endDate: d(4) },
+  { id: "abs-6", memberId: "member-21", type: "other-project", startDate: d(5), endDate: d(12) },
+  { id: "abs-7", memberId: "member-25", type: "parental-leave", startDate: d(10), endDate: d(17) },
+  { id: "abs-8", memberId: "member-30", type: "work-travel", startDate: d(0), endDate: d(4) },
 ];
 
 export const handovers: Handover[] = [
