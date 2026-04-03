@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { importDataSchema } from "@/lib/validation";
-import { Team, TeamMember, WorkTopic, Absence, Handover } from "@/types";
+import { Team, TeamMember, WorkTopic, Absence, Handover, MemberStatus } from "@/types";
 import {
   teams as seedTeams,
   members as seedMembers,
