@@ -87,6 +87,9 @@ export function AnalyticsPanel() {
   const pieChartConfig: ChartConfig = {
     vacation: { label: t.vacation, color: "hsl(var(--status-vacation))" },
     sickLeave: { label: t.sickLeave, color: "hsl(var(--status-sick))" },
+    workTravel: { label: t.workTravel, color: "hsl(var(--status-work-travel))" },
+    otherProject: { label: t.otherProject, color: "hsl(var(--status-other-project))" },
+    parentalLeave: { label: t.parentalLeave, color: "hsl(var(--status-parental-leave))" },
   };
 
   const summaryCards = [
