@@ -98,7 +98,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [teams, members, workTopics, absences, handovers]);
 
   const getMemberStatus = useCallback(
-    (memberId: string): "available" | "vacation" | "sick-leave" => {
+    (memberId: string): MemberStatus => {
       const today = new Date().toISOString().split("T")[0];
       const active = absences.find(
         (a) => a.memberId === memberId && a.startDate <= today && a.endDate >= today
