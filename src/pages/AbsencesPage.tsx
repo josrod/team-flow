@@ -46,14 +46,13 @@ export default function AbsencesPage() {
   );
 
   const summary = useMemo(() => {
-    let vacationDays = 0;
-    let sickDays = 0;
+    const counts: Record<AbsenceType, number> = { vacation: 0, "sick-leave": 0, "work-travel": 0, "other-project": 0, "parental-leave": 0 };
     for (const a of filteredAbsences) {
       const days = differenceInDays(parseISO(a.endDate), parseISO(a.startDate)) + 1;
-      if (a.type === "vacation") vacationDays += days;
-      else sickDays += days;
+      counts[a.type] += days;
     }
-    return { vacationDays, sickDays, totalDays: vacationDays + sickDays };
+    const totalDays = Object.values(counts).reduce((s, v) => s + v, 0);
+    return { ...counts, totalDays };
   }, [filteredAbsences]);
 
   const today = new Date().toISOString().split("T")[0];
