@@ -231,7 +231,7 @@ export function AbsenceImportDialog({ open, onOpenChange }: { open: boolean; onO
     for (const row of validRows) {
       addAbsence({
         memberId: row.memberId!,
-        type: row.type as "vacation" | "sick-leave",
+        type: row.type as AbsenceType,
         startDate: row.startDate,
         endDate: row.endDate,
       });
