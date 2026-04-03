@@ -119,7 +119,7 @@ export default function AbsencesPage() {
       const member = members.find((m) => m.id === a.memberId);
       const team = teams.find((tm) => tm.id === member?.teamId);
       const days = differenceInDays(parseISO(a.endDate), parseISO(a.startDate)) + 1;
-      const typeLabel = a.type === "vacation" ? t.vacation : t.sickLeave;
+      const typeLabel = absenceTypeLabel(a.type);
       return `${member?.name},${team?.name ?? ""},${typeLabel},${a.startDate},${a.endDate},${days}`;
     });
     const csv = [header, ...rows].join("\n");
