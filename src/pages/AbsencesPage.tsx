@@ -55,6 +55,17 @@ export default function AbsencesPage() {
     return { ...counts, totalDays };
   }, [filteredAbsences]);
 
+  const absenceTypeLabel = (type: AbsenceType): string => {
+    const map: Record<AbsenceType, string> = {
+      vacation: t.vacation,
+      "sick-leave": t.sickLeave,
+      "work-travel": t.workTravel,
+      "other-project": t.otherProject,
+      "parental-leave": t.parentalLeave,
+    };
+    return map[type];
+  };
+
   const today = new Date().toISOString().split("T")[0];
 
   const handleAdd = () => {
