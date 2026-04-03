@@ -14,6 +14,7 @@ import { parse as parseCsv } from "papaparse";
 import ExcelJS from "exceljs";
 import { parseISO, isValid, format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { AbsenceType } from "@/types";
 
 type Step = "upload" | "mapping" | "preview";
 
