@@ -72,14 +72,7 @@ export function HandoverCard({
       className="hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
       onClick={() => setDetailOpen(true)}
     >
-      <div
-        className={cn(
-          "h-1",
-          absence?.type === "vacation"
-            ? "bg-[hsl(var(--status-vacation))]"
-            : "bg-[hsl(var(--status-sick))]"
-        )}
-      />
+      <div className={cn("h-1", absenceColors.bar)} />
       <CardContent className="p-4 space-y-3">
         {/* Header: people + actions */}
         <div className="flex items-start justify-between gap-2">
