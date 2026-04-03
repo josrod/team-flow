@@ -48,6 +48,9 @@
     --status-available: 152 60% 42%;
     --status-vacation: 38 92% 50%;
     --status-sick: 0 72% 51%;
+    --status-work-travel: 262 60% 55%;
+    --status-other-project: 190 70% 42%;
+    --status-parental-leave: 330 65% 55%;
     --status-info: 217 91% 60%;
   }
 
