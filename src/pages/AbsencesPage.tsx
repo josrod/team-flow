@@ -193,6 +193,9 @@ export default function AbsencesPage() {
                     <SelectContent>
                       <SelectItem value="vacation">{t.vacation}</SelectItem>
                       <SelectItem value="sick-leave">{t.sickLeave}</SelectItem>
+                      <SelectItem value="work-travel">{t.workTravel}</SelectItem>
+                      <SelectItem value="other-project">{t.otherProject}</SelectItem>
+                      <SelectItem value="parental-leave">{t.parentalLeave}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
