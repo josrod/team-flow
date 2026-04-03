@@ -47,13 +47,24 @@ export function HandoverCard({
       ? differenceInCalendarDays(parseISO(absence.endDate), parseISO(absence.startDate)) + 1
       : null;
 
-  const absenceTypeLabel =
-    absence?.type === "vacation" ? t.vacation : absence?.type === "sick-leave" ? t.sickLeave : "";
+  const absenceTypeLabelMap: Record<string, string> = {
+    vacation: t.vacation,
+    "sick-leave": t.sickLeave,
+    "work-travel": t.workTravel,
+    "other-project": t.otherProject,
+    "parental-leave": t.parentalLeave,
+  };
+  const absenceTypeLabel = absence ? absenceTypeLabelMap[absence.type] ?? "" : "";
 
-  const absenceTypeClass =
-    absence?.type === "vacation"
-      ? "bg-[hsl(var(--status-vacation)/.12)] text-[hsl(var(--status-vacation))]"
-      : "bg-[hsl(var(--status-sick)/.12)] text-[hsl(var(--status-sick))]";
+  const absenceColorMap: Record<string, { bg: string; bar: string }> = {
+    vacation: { bg: "bg-[hsl(var(--status-vacation)/.12)] text-[hsl(var(--status-vacation))]", bar: "bg-[hsl(var(--status-vacation))]" },
+    "sick-leave": { bg: "bg-[hsl(var(--status-sick)/.12)] text-[hsl(var(--status-sick))]", bar: "bg-[hsl(var(--status-sick))]" },
+    "work-travel": { bg: "bg-[hsl(var(--status-work-travel)/.12)] text-[hsl(var(--status-work-travel))]", bar: "bg-[hsl(var(--status-work-travel))]" },
+    "other-project": { bg: "bg-[hsl(var(--status-other-project)/.12)] text-[hsl(var(--status-other-project))]", bar: "bg-[hsl(var(--status-other-project))]" },
+    "parental-leave": { bg: "bg-[hsl(var(--status-parental-leave)/.12)] text-[hsl(var(--status-parental-leave))]", bar: "bg-[hsl(var(--status-parental-leave))]" },
+  };
+  const absenceColors = absence ? absenceColorMap[absence.type] ?? { bg: "", bar: "" } : { bg: "", bar: "" };
+  const absenceTypeClass = absenceColors.bg;
 
   return (
     <>
