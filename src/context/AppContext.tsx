@@ -53,7 +53,7 @@ interface AppState {
   updateWorkTopic: (t: WorkTopic) => void;
   deleteWorkTopic: (id: string) => void;
   updateTeamName: (id: string, name: string, icon?: string) => void;
-  getMemberStatus: (memberId: string) => "available" | "vacation" | "sick-leave";
+  getMemberStatus: (memberId: string) => MemberStatus;
   resetData: () => void;
   exportData: () => string;
   importData: (json: string) => void;
