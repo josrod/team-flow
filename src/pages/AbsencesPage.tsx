@@ -154,7 +154,7 @@ export default function AbsencesPage() {
           <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight">{t.absences}</h1>
           <p className="text-muted-foreground mt-1">{t.absencesDesc}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Select value={selectedTeam} onValueChange={setSelectedTeam}>
             <SelectTrigger className="w-[160px]">
               <SelectValue />
@@ -164,6 +164,19 @@ export default function AbsencesPage() {
               {teams.map((team) => (
                 <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedAbsenceType} onValueChange={setSelectedAbsenceType}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t.allTypes}</SelectItem>
+              <SelectItem value="vacation">{t.vacation}</SelectItem>
+              <SelectItem value="sick-leave">{t.sickLeave}</SelectItem>
+              <SelectItem value="work-travel">{t.workTravel}</SelectItem>
+              <SelectItem value="other-project">{t.otherProject}</SelectItem>
+              <SelectItem value="parental-leave">{t.parentalLeave}</SelectItem>
             </SelectContent>
           </Select>
           <Button size="sm" variant="outline" className="rounded-xl" onClick={handleExportCsv}>
