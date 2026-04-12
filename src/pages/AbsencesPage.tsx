@@ -319,6 +319,9 @@ export default function AbsencesPage() {
                 <SelectContent>
                   <SelectItem value="vacation">{t.vacation}</SelectItem>
                   <SelectItem value="sick-leave">{t.sickLeave}</SelectItem>
+                  <SelectItem value="work-travel">{t.workTravel}</SelectItem>
+                  <SelectItem value="other-project">{t.otherProject}</SelectItem>
+                  <SelectItem value="parental-leave">{t.parentalLeave}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -411,6 +414,9 @@ export default function AbsencesPage() {
                                   "flex-1 mx-px rounded-sm transition-colors",
                                   absence?.type === "vacation" && "bg-status-vacation/40",
                                   absence?.type === "sick-leave" && "bg-status-sick/40",
+                                  absence?.type === "work-travel" && "bg-status-work-travel/40",
+                                  absence?.type === "other-project" && "bg-status-other-project/40",
+                                  absence?.type === "parental-leave" && "bg-status-parental-leave/40",
                                   !absence && "bg-muted/20"
                                 )}
                               />
