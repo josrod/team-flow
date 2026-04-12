@@ -34,6 +34,7 @@ export default function AbsencesPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [selectedAbsenceType, setSelectedAbsenceType] = useState("all");
 
   const filteredMemberIds = useMemo(() => {
     if (selectedTeam === "all") return members.map((m) => m.id);
@@ -41,8 +42,11 @@ export default function AbsencesPage() {
   }, [members, selectedTeam]);
 
   const filteredAbsences = useMemo(
-    () => absences.filter((a) => filteredMemberIds.includes(a.memberId)),
-    [absences, filteredMemberIds]
+    () => absences.filter((a) =>
+      filteredMemberIds.includes(a.memberId) &&
+      (selectedAbsenceType === "all" || a.type === selectedAbsenceType)
+    ),
+    [absences, filteredMemberIds, selectedAbsenceType]
   );
 
   const summary = useMemo(() => {
