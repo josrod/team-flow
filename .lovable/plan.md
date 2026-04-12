@@ -1,59 +1,41 @@
 
 
-## 🗂️ Team Flow — Gestión de equipos, ausencias y handovers
+# Add new absence types
 
-### Descripción general
-Una aplicación limpia y sencilla para visualizar dos equipos de proyecto, saber quién está de vacaciones o de baja, y facilitar el handover de tareas entre compañeros. Los datos se gestionarán localmente (sin backend por ahora), con datos de ejemplo precargados.
+The system currently only supports **vacation** and **sick-leave**. We need to add three new types: **work-travel**, **other-project**, and **parental-leave**.
 
----
+## Files to modify
 
-### 📄 Página principal — Dashboard
-- Vista general con **dos paneles**, uno por equipo (nombres personalizables)
-- Cada equipo muestra un **resumen rápido**: número de miembros, cuántos están ausentes hoy, próximas ausencias
-- Barra de **búsqueda** para encontrar personas rápidamente (necesario dado el tamaño de los equipos 16+)
-- Diseño limpio con sidebar de navegación colapsable
+### 1. Types and validation
+- **`src/types/index.ts`** — Extend `AbsenceType` to `"vacation" | "sick-leave" | "work-travel" | "other-project" | "parental-leave"`. Extend `MemberStatus` similarly.
+- **`src/lib/validation.ts`** — Update the `absenceSchema` `type` enum to include the 3 new values.
 
----
+### 2. Theme (colors)
+- **`src/index.css`** — Add 3 new CSS variables in both `:root` and `.dark`: `--status-work-travel` (blue-ish, e.g. `210 70% 50%`), `--status-other-project` (purple, e.g. `270 60% 55%`), `--status-parental-leave` (pink, e.g. `330 65% 55%`).
+- **`tailwind.config.ts`** — Add `"work-travel"`, `"other-project"`, `"parental-leave"` to the `status` color map.
 
-### 👥 Vista de equipo
-- Lista de miembros con **avatar, nombre, rol** y **estado actual** (disponible / vacaciones / baja)
-- Indicador visual de color por estado (verde = disponible, amarillo = vacaciones, rojo = baja)
-- Al hacer clic en un miembro se abre su **ficha detallada**
-- **Filtros** por estado (todos, disponibles, ausentes) para gestionar equipos grandes
+### 3. UI components
+- **`src/components/StatusBadge.tsx`** — Add entries in `statusConfig` and `topicStatusConfig` for the 3 new types with appropriate labels and colors.
+- **`src/components/HandoverCard.tsx`** — Update any absence type label mapping.
+- **`src/components/AnalyticsPanel.tsx`** — Add new types to the PieChart data/colors.
 
----
+### 4. Absences page
+- **`src/pages/AbsencesPage.tsx`**:
+  - Add 3 new summary cards with icons (`Plane`, `FolderKanban`, `Baby` from lucide-react).
+  - Update the `summary` computation to count `workTravelDays`, `otherProjectDays`, `parentalLeaveDays`.
+  - Add new `<SelectItem>` entries in both add and edit dialogs.
+  - Update timeline color rendering for the 3 new types.
+  - Update CSV export type label mapping.
 
-### 📅 Vista de ausencias (doble vista)
-1. **Calendario visual** — Vista tipo timeline/Gantt donde se ven barras horizontales por persona con sus periodos de ausencia a lo largo del mes
-2. **Lista de ausencias** — Tarjetas con próximas ausencias ordenadas por fecha, indicando persona, tipo (vacaciones/baja), fechas y duración
-- Posibilidad de **alternar entre ambas vistas** con tabs
-- Botón para **registrar nueva ausencia** con formulario: persona, tipo, fecha inicio, fecha fin
+### 5. Import dialog
+- **`src/components/AbsenceImportDialog.tsx`** — Extend `normalizeType()` to recognize strings like "travel", "viaje de trabajo", "otro proyecto", "other project", "baja maternal", "maternity", "paternity", "parental leave" → map to the new types.
 
----
+### 6. Translations
+- **`src/context/LanguageContext.tsx`** — Add translation keys: `workTravel`, `otherProject`, `parentalLeave` in both `es` and `en`.
 
-### 🔄 Gestión de temas de trabajo y handover
-- Cada miembro tiene asignados **temas de trabajo** con:
-  - **Nombre del tema/proyecto**
-  - **Descripción** del trabajo actual
-  - **Estado** (en progreso, pendiente, bloqueado, completado)
-- Cuando un miembro tiene una ausencia programada, se muestra un **botón de "Crear handover"** que permite:
-  - Seleccionar el compañero que cubrirá
-  - Seleccionar qué temas se transfieren
-  - Añadir notas adicionales para el handover
-- Panel de **handovers activos** visible en el dashboard
+### 7. Mock data
+- **`src/data/mock-data.ts`** — Add sample absences using the new types so they appear in the dashboard.
 
----
-
-### ➕ Gestión de miembros
-- Formulario para **añadir/editar/eliminar** miembros del equipo
-- Campos: nombre, rol, equipo asignado
-- Asignación de temas de trabajo desde la ficha del miembro
-
----
-
-### 🎨 Diseño y experiencia
-- Interfaz minimalista y limpia con colores neutros
-- Sidebar con navegación: Dashboard, Equipo 1, Equipo 2, Ausencias, Handovers
-- Totalmente responsive para uso en escritorio y móvil
-- Datos de ejemplo precargados para probar la app inmediatamente
+## Summary
+Roughly 10 files touched. The changes are additive — no breaking changes to existing data. Existing `vacation` and `sick-leave` absences continue to work unchanged.
 
