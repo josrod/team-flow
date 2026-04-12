@@ -25,6 +25,7 @@ const translations = {
     search: "Buscar...",
     all: "Todos",
     allTeams: "Todos los equipos",
+    allTypes: "Todos los tipos",
     available: "Disponibles",
     vacation: "Vacaciones",
     sickLeave: "Baja",
