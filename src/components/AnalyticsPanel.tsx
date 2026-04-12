@@ -54,9 +54,15 @@ export function AnalyticsPanel() {
     const activeAbsences = absences.filter((a) => a.startDate <= today && a.endDate >= today);
     const vacation = activeAbsences.filter((a) => a.type === "vacation").length;
     const sick = activeAbsences.filter((a) => a.type === "sick-leave").length;
+    const workTravel = activeAbsences.filter((a) => a.type === "work-travel").length;
+    const otherProject = activeAbsences.filter((a) => a.type === "other-project").length;
+    const parentalLeave = activeAbsences.filter((a) => a.type === "parental-leave").length;
     return [
       { name: t.vacation, value: vacation, fill: "hsl(var(--status-vacation))" },
       { name: t.sickLeave, value: sick, fill: "hsl(var(--status-sick))" },
+      { name: t.workTravel, value: workTravel, fill: "hsl(var(--status-work-travel))" },
+      { name: t.otherProject, value: otherProject, fill: "hsl(var(--status-other-project))" },
+      { name: t.parentalLeave, value: parentalLeave, fill: "hsl(var(--status-parental-leave))" },
     ].filter((d) => d.value > 0);
   }, [absences, today, t]);
 
@@ -85,6 +91,9 @@ export function AnalyticsPanel() {
   const pieChartConfig: ChartConfig = {
     vacation: { label: t.vacation, color: "hsl(var(--status-vacation))" },
     sickLeave: { label: t.sickLeave, color: "hsl(var(--status-sick))" },
+    workTravel: { label: t.workTravel, color: "hsl(var(--status-work-travel))" },
+    otherProject: { label: t.otherProject, color: "hsl(var(--status-other-project))" },
+    parentalLeave: { label: t.parentalLeave, color: "hsl(var(--status-parental-leave))" },
   };
 
   const summaryCards = [
