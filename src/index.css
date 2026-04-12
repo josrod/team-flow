@@ -91,6 +91,10 @@
     --sidebar-accent-foreground: 220 20% 95%;
     --sidebar-border: 224 20% 16%;
     --sidebar-ring: 238 60% 65%;
+
+    --status-work-travel: 210 70% 55%;
+    --status-other-project: 270 60% 60%;
+    --status-parental-leave: 330 65% 60%;
   }
 }
 
