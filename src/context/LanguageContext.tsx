@@ -223,6 +223,7 @@ const translations = {
     search: "Search...",
     all: "All",
     allTeams: "All teams",
+    allTypes: "All types",
     available: "Available",
     vacation: "Vacation",
     sickLeave: "Sick leave",
