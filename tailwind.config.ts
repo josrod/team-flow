@@ -66,6 +66,9 @@ export default {
           vacation: "hsl(var(--status-vacation))",
           sick: "hsl(var(--status-sick))",
           info: "hsl(var(--status-info))",
+          "work-travel": "hsl(var(--status-work-travel))",
+          "other-project": "hsl(var(--status-other-project))",
+          "parental-leave": "hsl(var(--status-parental-leave))",
         },
       },
       borderRadius: {

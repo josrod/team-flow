@@ -5,6 +5,9 @@ export const statusConfig: Record<MemberStatus, { label: string; className: stri
   available: { label: "Disponible", className: "bg-status-available/10 text-status-available border-status-available/30", dot: "bg-status-available" },
   vacation: { label: "Vacaciones", className: "bg-status-vacation/10 text-status-vacation border-status-vacation/30", dot: "bg-status-vacation" },
   "sick-leave": { label: "Baja", className: "bg-status-sick/10 text-status-sick border-status-sick/30", dot: "bg-status-sick" },
+  "work-travel": { label: "Viaje de trabajo", className: "bg-status-work-travel/10 text-status-work-travel border-status-work-travel/30", dot: "bg-status-work-travel" },
+  "other-project": { label: "Otro proyecto", className: "bg-status-other-project/10 text-status-other-project border-status-other-project/30", dot: "bg-status-other-project" },
+  "parental-leave": { label: "Baja parental", className: "bg-status-parental-leave/10 text-status-parental-leave border-status-parental-leave/30", dot: "bg-status-parental-leave" },
 };
 
 export const topicStatusConfig: Record<WorkTopicStatus, { label: string; className: string }> = {
