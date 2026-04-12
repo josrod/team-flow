@@ -47,13 +47,17 @@ export function HandoverCard({
       ? differenceInCalendarDays(parseISO(absence.endDate), parseISO(absence.startDate)) + 1
       : null;
 
-  const absenceTypeLabel =
-    absence?.type === "vacation" ? t.vacation : absence?.type === "sick-leave" ? t.sickLeave : "";
+  const absenceTypeMap: Record<string, { label: string; className: string; barClass: string }> = {
+    vacation: { label: t.vacation, className: "bg-[hsl(var(--status-vacation)/.12)] text-[hsl(var(--status-vacation))]", barClass: "bg-[hsl(var(--status-vacation))]" },
+    "sick-leave": { label: t.sickLeave, className: "bg-[hsl(var(--status-sick)/.12)] text-[hsl(var(--status-sick))]", barClass: "bg-[hsl(var(--status-sick))]" },
+    "work-travel": { label: t.workTravel, className: "bg-[hsl(var(--status-work-travel)/.12)] text-[hsl(var(--status-work-travel))]", barClass: "bg-[hsl(var(--status-work-travel))]" },
+    "other-project": { label: t.otherProject, className: "bg-[hsl(var(--status-other-project)/.12)] text-[hsl(var(--status-other-project))]", barClass: "bg-[hsl(var(--status-other-project))]" },
+    "parental-leave": { label: t.parentalLeave, className: "bg-[hsl(var(--status-parental-leave)/.12)] text-[hsl(var(--status-parental-leave))]", barClass: "bg-[hsl(var(--status-parental-leave))]" },
+  };
 
-  const absenceTypeClass =
-    absence?.type === "vacation"
-      ? "bg-[hsl(var(--status-vacation)/.12)] text-[hsl(var(--status-vacation))]"
-      : "bg-[hsl(var(--status-sick)/.12)] text-[hsl(var(--status-sick))]";
+  const absenceInfo = absenceTypeMap[absence?.type ?? ""] ?? { label: "", className: "", barClass: "bg-muted" };
+  const absenceTypeLabel = absenceInfo.label;
+  const absenceTypeClass = absenceInfo.className;
 
   return (
     <>
@@ -61,14 +65,7 @@ export function HandoverCard({
       className="hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
       onClick={() => setDetailOpen(true)}
     >
-      <div
-        className={cn(
-          "h-1",
-          absence?.type === "vacation"
-            ? "bg-[hsl(var(--status-vacation))]"
-            : "bg-[hsl(var(--status-sick))]"
-        )}
-      />
+      <div className={cn("h-1", absenceInfo.barClass)} />
       <CardContent className="p-4 space-y-3">
         {/* Header: people + actions */}
         <div className="flex items-start justify-between gap-2">

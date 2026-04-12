@@ -62,10 +62,13 @@ function tryParseDate(raw: string): string | null {
   return null;
 }
 
-function normalizeType(raw: string): "vacation" | "sick-leave" | null {
+function normalizeType(raw: string): "vacation" | "sick-leave" | "work-travel" | "other-project" | "parental-leave" | null {
   const lower = raw.toLowerCase().trim();
   if (["vacation", "vacaciones", "holiday", "pto", "annual leave"].includes(lower)) return "vacation";
   if (["sick", "sick-leave", "sick leave", "baja", "enfermedad", "medical"].includes(lower)) return "sick-leave";
+  if (["work-travel", "work travel", "travel", "viaje", "viaje de trabajo", "business trip"].includes(lower)) return "work-travel";
+  if (["other-project", "other project", "otro proyecto", "project", "proyecto"].includes(lower)) return "other-project";
+  if (["parental-leave", "parental leave", "parental", "baja maternal", "baja paternal", "baja parental", "maternity", "paternity"].includes(lower)) return "parental-leave";
   return null;
 }
 
@@ -211,7 +214,7 @@ export function AbsenceImportDialog({ open, onOpenChange }: { open: boolean; onO
     for (const row of validRows) {
       addAbsence({
         memberId: row.memberId!,
-        type: row.type as "vacation" | "sick-leave",
+        type: row.type as "vacation" | "sick-leave" | "work-travel" | "other-project" | "parental-leave",
         startDate: row.startDate,
         endDate: row.endDate,
       });

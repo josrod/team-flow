@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Download, Upload, Palmtree, Pencil, Stethoscope, Trash2 } from "lucide-react";
+import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Download, Upload, Palmtree, Pencil, Stethoscope, Trash2, Plane, FolderKanban, Baby } from "lucide-react";
 import { AbsenceImportDialog } from "@/components/AbsenceImportDialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format, differenceInDays, eachDayOfInterval, startOfMonth, endOfMonth, parseISO, addMonths, subMonths } from "date-fns";
@@ -48,12 +48,18 @@ export default function AbsencesPage() {
   const summary = useMemo(() => {
     let vacationDays = 0;
     let sickDays = 0;
+    let workTravelDays = 0;
+    let otherProjectDays = 0;
+    let parentalLeaveDays = 0;
     for (const a of filteredAbsences) {
       const days = differenceInDays(parseISO(a.endDate), parseISO(a.startDate)) + 1;
       if (a.type === "vacation") vacationDays += days;
-      else sickDays += days;
+      else if (a.type === "sick-leave") sickDays += days;
+      else if (a.type === "work-travel") workTravelDays += days;
+      else if (a.type === "other-project") otherProjectDays += days;
+      else if (a.type === "parental-leave") parentalLeaveDays += days;
     }
-    return { vacationDays, sickDays, totalDays: vacationDays + sickDays };
+    return { vacationDays, sickDays, workTravelDays, otherProjectDays, parentalLeaveDays, totalDays: vacationDays + sickDays + workTravelDays + otherProjectDays + parentalLeaveDays };
   }, [filteredAbsences]);
 
   const today = new Date().toISOString().split("T")[0];
@@ -120,7 +126,11 @@ export default function AbsencesPage() {
       const member = members.find((m) => m.id === a.memberId);
       const team = teams.find((tm) => tm.id === member?.teamId);
       const days = differenceInDays(parseISO(a.endDate), parseISO(a.startDate)) + 1;
-      const typeLabel = a.type === "vacation" ? t.vacation : t.sickLeave;
+      const typeMap: Record<string, string> = {
+        vacation: t.vacation, "sick-leave": t.sickLeave, "work-travel": t.workTravel,
+        "other-project": t.otherProject, "parental-leave": t.parentalLeave,
+      };
+      const typeLabel = typeMap[a.type] ?? a.type;
       return `${member?.name},${team?.name ?? ""},${typeLabel},${a.startDate},${a.endDate},${days}`;
     });
     const csv = [header, ...rows].join("\n");
@@ -183,6 +193,9 @@ export default function AbsencesPage() {
                     <SelectContent>
                       <SelectItem value="vacation">{t.vacation}</SelectItem>
                       <SelectItem value="sick-leave">{t.sickLeave}</SelectItem>
+                      <SelectItem value="work-travel">{t.workTravel}</SelectItem>
+                      <SelectItem value="other-project">{t.otherProject}</SelectItem>
+                      <SelectItem value="parental-leave">{t.parentalLeave}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -242,6 +255,39 @@ export default function AbsencesPage() {
             </div>
           </CardContent>
         </Card>
+        <Card className="min-w-0 flex-1 basis-[calc(50%-6px)] sm:basis-0">
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="rounded-lg bg-status-work-travel/10 p-2">
+              <Plane className="h-4 w-4 sm:h-5 sm:w-5 text-status-work-travel" />
+            </div>
+            <div>
+              <p className="text-xl sm:text-2xl font-bold">{summary.workTravelDays}</p>
+              <p className="text-xs text-muted-foreground">{t.workTravel}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="min-w-0 flex-1 basis-[calc(50%-6px)] sm:basis-0">
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="rounded-lg bg-status-other-project/10 p-2">
+              <FolderKanban className="h-4 w-4 sm:h-5 sm:w-5 text-status-other-project" />
+            </div>
+            <div>
+              <p className="text-xl sm:text-2xl font-bold">{summary.otherProjectDays}</p>
+              <p className="text-xs text-muted-foreground">{t.otherProject}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="min-w-0 flex-1 basis-[calc(50%-6px)] sm:basis-0">
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="rounded-lg bg-status-parental-leave/10 p-2">
+              <Baby className="h-4 w-4 sm:h-5 sm:w-5 text-status-parental-leave" />
+            </div>
+            <div>
+              <p className="text-xl sm:text-2xl font-bold">{summary.parentalLeaveDays}</p>
+              <p className="text-xs text-muted-foreground">{t.parentalLeave}</p>
+            </div>
+          </CardContent>
+        </Card>
         <Card className="min-w-0 flex-1 basis-full sm:basis-0">
           <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
             <div className="rounded-lg bg-primary/10 p-2">
@@ -273,6 +319,9 @@ export default function AbsencesPage() {
                 <SelectContent>
                   <SelectItem value="vacation">{t.vacation}</SelectItem>
                   <SelectItem value="sick-leave">{t.sickLeave}</SelectItem>
+                  <SelectItem value="work-travel">{t.workTravel}</SelectItem>
+                  <SelectItem value="other-project">{t.otherProject}</SelectItem>
+                  <SelectItem value="parental-leave">{t.parentalLeave}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -365,6 +414,9 @@ export default function AbsencesPage() {
                                   "flex-1 mx-px rounded-sm transition-colors",
                                   absence?.type === "vacation" && "bg-status-vacation/40",
                                   absence?.type === "sick-leave" && "bg-status-sick/40",
+                                  absence?.type === "work-travel" && "bg-status-work-travel/40",
+                                  absence?.type === "other-project" && "bg-status-other-project/40",
+                                  absence?.type === "parental-leave" && "bg-status-parental-leave/40",
                                   !absence && "bg-muted/20"
                                 )}
                               />
