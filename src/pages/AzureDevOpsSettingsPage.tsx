@@ -202,6 +202,25 @@ export const AzureDevOpsSettingsPage = () => {
         pat: pat.trim(),
       });
       setDiagnostics(result);
+      const now = new Date().toISOString();
+      setDiagnosticsAt(now);
+
+      // Persist the diagnostic so it survives reloads and other devices.
+      if (hasExisting) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          await supabase
+            .from("azure_devops_settings")
+            .update({
+              last_diagnostic: result as unknown as never,
+              last_diagnostic_at: now,
+            })
+            .eq("user_id", user.id);
+        }
+      }
+
       if (result.allPassed) {
         toast.success("✅ Todos los permisos del PAT verificados");
       } else if (result.missingScopes.length > 0) {
