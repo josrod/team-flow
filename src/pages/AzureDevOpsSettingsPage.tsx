@@ -319,6 +319,14 @@ export const AzureDevOpsSettingsPage = () => {
         setHasExisting(true);
       }
 
+      // Saved → drop the local draft, the DB is the source of truth now.
+      try {
+        localStorage.removeItem(DRAFT_KEY);
+      } catch {
+        // Ignore.
+      }
+      setAutoSavedAt(new Date().toISOString());
+
       toast.success(`💾 ${t.adoSettingsSaved}`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error saving";
