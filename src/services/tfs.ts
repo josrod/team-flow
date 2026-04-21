@@ -439,3 +439,178 @@ export const runPatDiagnostics = async (
 
   return { allPassed, checks, missingScopes };
 };
+
+// ---------------------------------------------------------------------------
+// Discovery helpers — used by the autocomplete inputs in the settings page
+// to suggest valid collection / project / team names instead of relying on
+// the user's memory.
+// ---------------------------------------------------------------------------
+
+export interface TfsCollectionRef {
+  id: string;
+  name: string;
+}
+
+export interface TfsProjectRef {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface TfsTeamRef {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface TfsDiscoveryResult<T> {
+  items: T[];
+  /** Non-fatal error — when present the caller should still treat items (if any) as best-effort. */
+  error?: TfsError;
+}
+
+const buildServerUrl = (serverUrl: string): string =>
+  serverUrl.trim().replace(/\/+$/, "");
+
+interface RawListResponse<T> {
+  count?: number;
+  value?: T[];
+}
+
+const fetchJsonList = async <T>(
+  url: string,
+  pat: string,
+): Promise<TfsDiscoveryResult<T>> => {
+  if (isMixedContent(url)) {
+    return {
+      items: [],
+      error: {
+        kind: "mixed_content",
+        url,
+        message: "Mixed content: la app es HTTPS pero el TFS es HTTP.",
+      },
+    };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: buildAuthHeader(pat),
+        Accept: "application/json",
+      },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      return {
+        items: [],
+        error: {
+          kind:
+            response.status === 401
+              ? "unauthorized"
+              : response.status === 403
+              ? "forbidden"
+              : response.status === 404
+              ? "not_found"
+              : "http",
+          status: response.status,
+          url,
+          message: `HTTP ${response.status} al listar el recurso.`,
+          detail: body.slice(0, 300),
+        },
+      };
+    }
+
+    const data = (await response.json()) as RawListResponse<T>;
+    return { items: data.value ?? [] };
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return {
+        items: [],
+        error: {
+          kind: "timeout",
+          url,
+          message: `Tiempo de espera agotado tras ${REQUEST_TIMEOUT_MS / 1000}s.`,
+        },
+      };
+    }
+    if (isNetworkLevelError(err)) {
+      return {
+        items: [],
+        error: {
+          kind: "cors",
+          url,
+          message: "Sin respuesta del servidor (CORS, VPN o firewall).",
+        },
+      };
+    }
+    return {
+      items: [],
+      error: {
+        kind: "unknown",
+        url,
+        message: err instanceof Error ? err.message : "Error desconocido.",
+      },
+    };
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+};
+
+/**
+ * List all collections reachable from the TFS server root.
+ * Endpoint: GET {server}/_apis/projectcollections
+ */
+export const listTfsCollections = async (
+  serverUrl: string,
+  pat: string,
+): Promise<TfsDiscoveryResult<TfsCollectionRef>> => {
+  if (!serverUrl.trim() || !pat.trim()) return { items: [] };
+  const url = `${buildServerUrl(serverUrl)}/_apis/projectcollections?api-version=${API_VERSION}`;
+  return fetchJsonList<TfsCollectionRef>(url, pat);
+};
+
+/**
+ * List all projects inside a collection.
+ * Endpoint: GET {server}/{collection}/_apis/projects?stateFilter=all
+ */
+export const listTfsProjects = async (
+  serverUrl: string,
+  collection: string,
+  pat: string,
+): Promise<TfsDiscoveryResult<TfsProjectRef>> => {
+  if (!serverUrl.trim() || !collection.trim() || !pat.trim()) return { items: [] };
+  const base = buildCollectionUrl(serverUrl, collection);
+  const url = `${base}/_apis/projects?stateFilter=all&$top=500&api-version=${API_VERSION}`;
+  return fetchJsonList<TfsProjectRef>(url, pat);
+};
+
+/**
+ * List teams inside a project.
+ * Endpoint: GET {server}/{collection}/_apis/projects/{project}/teams
+ */
+export const listTfsTeams = async (
+  serverUrl: string,
+  collection: string,
+  project: string,
+  pat: string,
+): Promise<TfsDiscoveryResult<TfsTeamRef>> => {
+  if (
+    !serverUrl.trim() ||
+    !collection.trim() ||
+    !project.trim() ||
+    !pat.trim()
+  ) {
+    return { items: [] };
+  }
+  const base = buildCollectionUrl(serverUrl, collection);
+  const url = `${base}/_apis/projects/${encodeURIComponent(
+    project.trim(),
+  )}/teams?$top=500&api-version=${API_VERSION}`;
+  return fetchJsonList<TfsTeamRef>(url, pat);
+};
