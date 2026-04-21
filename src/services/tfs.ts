@@ -44,6 +44,41 @@ export interface TfsTestResult {
   error?: TfsError;
 }
 
+/** A single PAT scope check performed by the advanced diagnostic. */
+export type TfsScopeId =
+  | "project_team_read"
+  | "work_items_read"
+  | "work_read";
+
+export type TfsScopeStatus = "ok" | "unauthorized" | "forbidden" | "not_found" | "network" | "skipped";
+
+export interface TfsScopeCheck {
+  id: TfsScopeId;
+  /** Human-friendly scope label (e.g. "Project & Team (Read)"). */
+  label: string;
+  /** Required PAT scope name in TFS UI. */
+  requiredScope: string;
+  /** Endpoint that was probed. */
+  endpoint: string;
+  /** Final URL attempted. */
+  url: string;
+  status: TfsScopeStatus;
+  /** HTTP status when the server responded. */
+  httpStatus?: number;
+  /** Short message explaining the outcome. */
+  message: string;
+  /** Body excerpt (≤300 chars) when relevant. */
+  detail?: string;
+}
+
+export interface TfsDiagnosticResult {
+  /** True when every required scope returned ok. */
+  allPassed: boolean;
+  checks: TfsScopeCheck[];
+  /** Aggregated list of scopes that the PAT seems to be missing. */
+  missingScopes: string[];
+}
+
 const API_VERSION = "5.0";
 const REQUEST_TIMEOUT_MS = 15_000;
 
