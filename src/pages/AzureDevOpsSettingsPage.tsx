@@ -182,7 +182,8 @@ export const AzureDevOpsSettingsPage = () => {
     setConnectionStatus("idle");
     setTfsProject(null);
     setTfsError(null);
-    setDiagnostics(null);
+    // Note: diagnostics are intentionally NOT cleared here — they persist until
+    // the user runs a new diagnostic, so editing a field doesn't wipe results.
   };
 
   const handleAdvancedCheck = async () => {
