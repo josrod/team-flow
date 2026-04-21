@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,15 +50,24 @@ export const AzureDevOpsSettingsPage = () => {
   const [tfsError, setTfsError] = useState<TfsError | null>(null);
   const [diagnostics, setDiagnostics] = useState<TfsDiagnosticResult | null>(null);
   const [diagnosing, setDiagnosing] = useState(false);
+  const [diagnosticsAt, setDiagnosticsAt] = useState<string | null>(null);
   const [hasExisting, setHasExisting] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
+  const [autoSavedAt, setAutoSavedAt] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
+  const autoSaveTimerRef = useRef<number | null>(null);
+
+  const DRAFT_KEY = "ado_settings_draft";
 
   useEffect(() => {
     const loadSettings = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        hasLoadedRef.current = true;
+        return;
+      }
 
       const { data } = await supabase
         .from("azure_devops_settings")
@@ -78,16 +87,103 @@ export const AzureDevOpsSettingsPage = () => {
         setLastSynced(data.last_synced_at);
         setHasExisting(true);
         setConnectionStatus("success");
+
+        const rawDiag = (data as { last_diagnostic?: unknown }).last_diagnostic;
+        if (rawDiag && typeof rawDiag === "object") {
+          setDiagnostics(rawDiag as TfsDiagnosticResult);
+        }
+        const diagAt = (data as { last_diagnostic_at?: string | null }).last_diagnostic_at;
+        if (diagAt) setDiagnosticsAt(diagAt);
+      } else {
+        // Restore unsaved draft (no PAT yet → not in DB).
+        try {
+          const raw = localStorage.getItem(DRAFT_KEY);
+          if (raw) {
+            const draft = JSON.parse(raw) as Partial<{
+              serverUrl: string;
+              collection: string;
+              organization: string;
+              project: string;
+              team: string;
+            }>;
+            if (draft.serverUrl) setServerUrl(draft.serverUrl);
+            if (draft.collection) setCollection(draft.collection);
+            if (draft.organization) setOrganization(draft.organization);
+            if (draft.project) setProject(draft.project);
+            if (draft.team) setTeam(draft.team);
+          }
+        } catch {
+          // Ignore corrupt draft.
+        }
       }
+
+      hasLoadedRef.current = true;
     };
     loadSettings();
   }, []);
+
+  // Debounced auto-save: persists config changes ~800 ms after the user stops typing.
+  useEffect(() => {
+    if (!hasLoadedRef.current) return;
+
+    if (autoSaveTimerRef.current !== null) {
+      window.clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = window.setTimeout(async () => {
+      // Always keep a local draft so the form survives reloads even before connecting.
+      try {
+        localStorage.setItem(
+          DRAFT_KEY,
+          JSON.stringify({
+            serverUrl: serverUrl.trim(),
+            collection: collection.trim(),
+            organization: organization.trim(),
+            project: project.trim(),
+            team: team.trim(),
+          }),
+        );
+      } catch {
+        // Ignore quota errors.
+      }
+
+      // Only sync to the backend when a row already exists (PAT was provided).
+      if (!hasExisting) return;
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from("azure_devops_settings")
+        .update({
+          server_url: serverUrl.trim(),
+          collection: collection.trim(),
+          organization: organization.trim() || null,
+          project: project.trim(),
+          team: team.trim() || null,
+          auto_sync_enabled: autoSync,
+          sync_interval_minutes: Number(syncInterval),
+        })
+        .eq("user_id", user.id);
+
+      if (!error) setAutoSavedAt(new Date().toISOString());
+    }, 800);
+
+    return () => {
+      if (autoSaveTimerRef.current !== null) {
+        window.clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, hasExisting]);
 
   const resetStatus = () => {
     setConnectionStatus("idle");
     setTfsProject(null);
     setTfsError(null);
-    setDiagnostics(null);
+    // Note: diagnostics are intentionally NOT cleared here — they persist until
+    // the user runs a new diagnostic, so editing a field doesn't wipe results.
   };
 
   const handleAdvancedCheck = async () => {
@@ -106,6 +202,25 @@ export const AzureDevOpsSettingsPage = () => {
         pat: pat.trim(),
       });
       setDiagnostics(result);
+      const now = new Date().toISOString();
+      setDiagnosticsAt(now);
+
+      // Persist the diagnostic so it survives reloads and other devices.
+      if (hasExisting) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          await supabase
+            .from("azure_devops_settings")
+            .update({
+              last_diagnostic: result as unknown as never,
+              last_diagnostic_at: now,
+            })
+            .eq("user_id", user.id);
+        }
+      }
+
       if (result.allPassed) {
         toast.success("✅ Todos los permisos del PAT verificados");
       } else if (result.missingScopes.length > 0) {
@@ -204,6 +319,14 @@ export const AzureDevOpsSettingsPage = () => {
         setHasExisting(true);
       }
 
+      // Saved → drop the local draft, the DB is the source of truth now.
+      try {
+        localStorage.removeItem(DRAFT_KEY);
+      } catch {
+        // Ignore.
+      }
+      setAutoSavedAt(new Date().toISOString());
+
       toast.success(`💾 ${t.adoSettingsSaved}`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error saving";
@@ -240,8 +363,16 @@ export const AzureDevOpsSettingsPage = () => {
     setConnectionStatus("idle");
     setTfsProject(null);
     setTfsError(null);
+    setDiagnostics(null);
+    setDiagnosticsAt(null);
     setHasExisting(false);
     setLastSynced(null);
+    setAutoSavedAt(null);
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      // Ignore.
+    }
     toast.success(`🗑️ ${t.adoSettingsDeleted}`);
   };
 
@@ -433,7 +564,16 @@ export const AzureDevOpsSettingsPage = () => {
 
             {connectionStatus === "error" && tfsError && <TfsErrorPanel error={tfsError} />}
 
-            {diagnostics && <TfsPatDiagnosticsPanel result={diagnostics} />}
+            {diagnostics && (
+              <div className="space-y-2">
+                {diagnosticsAt && (
+                  <p className="text-xs text-muted-foreground">
+                    Último diagnóstico: {new Date(diagnosticsAt).toLocaleString()}
+                  </p>
+                )}
+                <TfsPatDiagnosticsPanel result={diagnostics} />
+              </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>
@@ -485,23 +625,31 @@ export const AzureDevOpsSettingsPage = () => {
       </motion.div>
 
       <motion.div
-        className="flex gap-2"
+        className="space-y-2"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <Button
-          onClick={handleSave}
-          disabled={saving || connectionStatus !== "success"}
-          className="flex-1"
-        >
-          {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          {hasExisting ? t.adoUpdateSettings : t.adoSaveSettings}
-        </Button>
-        {hasExisting && (
-          <Button variant="destructive" onClick={handleDelete}>
-            {t.adoDisconnect}
+        <div className="flex gap-2">
+          <Button
+            onClick={handleSave}
+            disabled={saving || connectionStatus !== "success"}
+            className="flex-1"
+          >
+            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {hasExisting ? t.adoUpdateSettings : t.adoSaveSettings}
           </Button>
+          {hasExisting && (
+            <Button variant="destructive" onClick={handleDelete}>
+              {t.adoDisconnect}
+            </Button>
+          )}
+        </div>
+        {autoSavedAt && hasExisting && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+            Cambios guardados automáticamente · {new Date(autoSavedAt).toLocaleTimeString()}
+          </p>
         )}
       </motion.div>
     </div>

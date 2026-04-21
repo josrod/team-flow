@@ -20,6 +20,8 @@ export type Database = {
           collection: string | null
           created_at: string
           id: string
+          last_diagnostic: Json | null
+          last_diagnostic_at: string | null
           last_synced_at: string | null
           organization: string | null
           pat_encrypted: string
@@ -35,6 +37,8 @@ export type Database = {
           collection?: string | null
           created_at?: string
           id?: string
+          last_diagnostic?: Json | null
+          last_diagnostic_at?: string | null
           last_synced_at?: string | null
           organization?: string | null
           pat_encrypted: string
@@ -50,6 +54,8 @@ export type Database = {
           collection?: string | null
           created_at?: string
           id?: string
+          last_diagnostic?: Json | null
+          last_diagnostic_at?: string | null
           last_synced_at?: string | null
           organization?: string | null
           pat_encrypted?: string
