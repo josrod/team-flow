@@ -64,7 +64,10 @@ export const AzureDevOpsSettingsPage = () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        hasLoadedRef.current = true;
+        return;
+      }
 
       const { data } = await supabase
         .from("azure_devops_settings")
@@ -84,10 +87,96 @@ export const AzureDevOpsSettingsPage = () => {
         setLastSynced(data.last_synced_at);
         setHasExisting(true);
         setConnectionStatus("success");
+
+        const rawDiag = (data as { last_diagnostic?: unknown }).last_diagnostic;
+        if (rawDiag && typeof rawDiag === "object") {
+          setDiagnostics(rawDiag as TfsDiagnosticResult);
+        }
+        const diagAt = (data as { last_diagnostic_at?: string | null }).last_diagnostic_at;
+        if (diagAt) setDiagnosticsAt(diagAt);
+      } else {
+        // Restore unsaved draft (no PAT yet → not in DB).
+        try {
+          const raw = localStorage.getItem(DRAFT_KEY);
+          if (raw) {
+            const draft = JSON.parse(raw) as Partial<{
+              serverUrl: string;
+              collection: string;
+              organization: string;
+              project: string;
+              team: string;
+            }>;
+            if (draft.serverUrl) setServerUrl(draft.serverUrl);
+            if (draft.collection) setCollection(draft.collection);
+            if (draft.organization) setOrganization(draft.organization);
+            if (draft.project) setProject(draft.project);
+            if (draft.team) setTeam(draft.team);
+          }
+        } catch {
+          // Ignore corrupt draft.
+        }
       }
+
+      hasLoadedRef.current = true;
     };
     loadSettings();
   }, []);
+
+  // Debounced auto-save: persists config changes ~800 ms after the user stops typing.
+  useEffect(() => {
+    if (!hasLoadedRef.current) return;
+
+    if (autoSaveTimerRef.current !== null) {
+      window.clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = window.setTimeout(async () => {
+      // Always keep a local draft so the form survives reloads even before connecting.
+      try {
+        localStorage.setItem(
+          DRAFT_KEY,
+          JSON.stringify({
+            serverUrl: serverUrl.trim(),
+            collection: collection.trim(),
+            organization: organization.trim(),
+            project: project.trim(),
+            team: team.trim(),
+          }),
+        );
+      } catch {
+        // Ignore quota errors.
+      }
+
+      // Only sync to the backend when a row already exists (PAT was provided).
+      if (!hasExisting) return;
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from("azure_devops_settings")
+        .update({
+          server_url: serverUrl.trim(),
+          collection: collection.trim(),
+          organization: organization.trim() || null,
+          project: project.trim(),
+          team: team.trim() || null,
+          auto_sync_enabled: autoSync,
+          sync_interval_minutes: Number(syncInterval),
+        })
+        .eq("user_id", user.id);
+
+      if (!error) setAutoSavedAt(new Date().toISOString());
+    }, 800);
+
+    return () => {
+      if (autoSaveTimerRef.current !== null) {
+        window.clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, hasExisting]);
 
   const resetStatus = () => {
     setConnectionStatus("idle");
