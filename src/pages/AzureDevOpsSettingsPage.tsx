@@ -189,6 +189,19 @@ export const AzureDevOpsSettingsPage = () => {
     // the user runs a new diagnostic, so editing a field doesn't wipe results.
   };
 
+  // Real-time validation of connection fields. Recomputed on every keystroke.
+  const fieldValidation = useMemo(
+    () => validateConnectionFields({ serverUrl, collection, project, team }),
+    [serverUrl, collection, project, team],
+  );
+
+  const inputStateClass = (status: "empty" | "valid" | "invalid") =>
+    cn(
+      "mt-1",
+      status === "invalid" && "border-destructive focus-visible:ring-destructive",
+      status === "valid" && "border-emerald-500/60 focus-visible:ring-emerald-500/40",
+    );
+
   const handleAdvancedCheck = async () => {
     if (!serverUrl.trim() || !collection.trim() || !project.trim() || !pat.trim()) {
       toast.error(t.adoFillAllFields);
