@@ -400,6 +400,20 @@ export const AzureDevOpsSettingsPage = () => {
               {t.adoTestConnection}
             </Button>
 
+            <Button
+              onClick={handleAdvancedCheck}
+              disabled={diagnosing || !serverUrl || !collection || !project || !pat}
+              variant="outline"
+              className="w-full"
+            >
+              {diagnosing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <ShieldCheck className="h-4 w-4 mr-2" />
+              )}
+              Comprobación avanzada del PAT
+            </Button>
+
             {connectionStatus === "success" && (
               <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 flex items-start gap-2">
                 <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
