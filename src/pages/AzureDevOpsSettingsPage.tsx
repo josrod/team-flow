@@ -363,8 +363,16 @@ export const AzureDevOpsSettingsPage = () => {
     setConnectionStatus("idle");
     setTfsProject(null);
     setTfsError(null);
+    setDiagnostics(null);
+    setDiagnosticsAt(null);
     setHasExisting(false);
     setLastSynced(null);
+    setAutoSavedAt(null);
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      // Ignore.
+    }
     toast.success(`🗑️ ${t.adoSettingsDeleted}`);
   };
 
