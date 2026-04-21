@@ -207,6 +207,10 @@ export const AzureDevOpsSettingsPage = () => {
       toast.error(t.adoFillAllFields);
       return;
     }
+    if (!fieldValidation.allRequiredValid) {
+      toast.error("Corrige los campos marcados antes de ejecutar el diagnóstico.");
+      return;
+    }
     setDiagnosing(true);
     setDiagnostics(null);
     try {
@@ -254,6 +258,10 @@ export const AzureDevOpsSettingsPage = () => {
   const handleTestConnection = async () => {
     if (!serverUrl.trim() || !collection.trim() || !project.trim() || !pat.trim()) {
       toast.error(t.adoFillAllFields);
+      return;
+    }
+    if (!fieldValidation.allRequiredValid) {
+      toast.error("Corrige los campos marcados antes de probar la conexión.");
       return;
     }
 
