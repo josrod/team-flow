@@ -10,7 +10,6 @@ import {
   Settings,
   Plug,
   CheckCircle2,
-  XCircle,
   Loader2,
   Eye,
   EyeOff,
@@ -21,7 +20,8 @@ import { useLang } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { testTfsConnection, type TfsProjectInfo } from "@/services/tfs";
+import { testTfsConnection, type TfsProjectInfo, type TfsError } from "@/services/tfs";
+import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 
 export const AzureDevOpsSettingsPage = () => {
   const { t } = useLang();
@@ -39,7 +39,7 @@ export const AzureDevOpsSettingsPage = () => {
   const [saving, setSaving] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<"idle" | "success" | "error">("idle");
   const [tfsProject, setTfsProject] = useState<TfsProjectInfo | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [tfsError, setTfsError] = useState<TfsError | null>(null);
   const [hasExisting, setHasExisting] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
 
@@ -76,7 +76,7 @@ export const AzureDevOpsSettingsPage = () => {
   const resetStatus = () => {
     setConnectionStatus("idle");
     setTfsProject(null);
-    setErrorMessage("");
+    setTfsError(null);
   };
 
   const handleTestConnection = async () => {
@@ -103,11 +103,21 @@ export const AzureDevOpsSettingsPage = () => {
         toast.success(`✅ ${t.adoConnectionOk}`);
       } else {
         setConnectionStatus("error");
-        setErrorMessage(result.error ?? "Unknown error");
+        setTfsError(
+          result.error ?? {
+            kind: "unknown",
+            url: "",
+            message: "Error desconocido",
+          },
+        );
       }
     } catch (err: unknown) {
       setConnectionStatus("error");
-      setErrorMessage(err instanceof Error ? err.message : "Network error");
+      setTfsError({
+        kind: "unknown",
+        url: "",
+        message: err instanceof Error ? err.message : "Network error",
+      });
     } finally {
       setTesting(false);
     }
