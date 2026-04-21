@@ -87,6 +87,37 @@ export const AzureDevOpsSettingsPage = () => {
     setConnectionStatus("idle");
     setTfsProject(null);
     setTfsError(null);
+    setDiagnostics(null);
+  };
+
+  const handleAdvancedCheck = async () => {
+    if (!serverUrl.trim() || !collection.trim() || !project.trim() || !pat.trim()) {
+      toast.error(t.adoFillAllFields);
+      return;
+    }
+    setDiagnosing(true);
+    setDiagnostics(null);
+    try {
+      const result = await runPatDiagnostics({
+        serverUrl: serverUrl.trim(),
+        collection: collection.trim(),
+        project: project.trim(),
+        team: team.trim() || undefined,
+        pat: pat.trim(),
+      });
+      setDiagnostics(result);
+      if (result.allPassed) {
+        toast.success("✅ Todos los permisos del PAT verificados");
+      } else if (result.missingScopes.length > 0) {
+        toast.error(`Faltan scopes: ${result.missingScopes.join(", ")}`);
+      } else {
+        toast.error("Algunas comprobaciones fallaron — revisa el panel");
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error en diagnóstico");
+    } finally {
+      setDiagnosing(false);
+    }
   };
 
   const handleTestConnection = async () => {
