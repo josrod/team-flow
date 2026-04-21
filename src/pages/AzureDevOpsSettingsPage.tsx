@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,9 @@ import {
 } from "@/services/tfs";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { TfsPatDiagnosticsPanel } from "@/components/TfsPatDiagnosticsPanel";
+import { TfsFieldHint } from "@/components/TfsFieldHint";
+import { validateConnectionFields } from "@/lib/tfsValidation";
+import { cn } from "@/lib/utils";
 
 export const AzureDevOpsSettingsPage = () => {
   const { t } = useLang();
@@ -186,9 +189,26 @@ export const AzureDevOpsSettingsPage = () => {
     // the user runs a new diagnostic, so editing a field doesn't wipe results.
   };
 
+  // Real-time validation of connection fields. Recomputed on every keystroke.
+  const fieldValidation = useMemo(
+    () => validateConnectionFields({ serverUrl, collection, project, team }),
+    [serverUrl, collection, project, team],
+  );
+
+  const inputStateClass = (status: "empty" | "valid" | "invalid") =>
+    cn(
+      "mt-1",
+      status === "invalid" && "border-destructive focus-visible:ring-destructive",
+      status === "valid" && "border-emerald-500/60 focus-visible:ring-emerald-500/40",
+    );
+
   const handleAdvancedCheck = async () => {
     if (!serverUrl.trim() || !collection.trim() || !project.trim() || !pat.trim()) {
       toast.error(t.adoFillAllFields);
+      return;
+    }
+    if (!fieldValidation.allRequiredValid) {
+      toast.error("Corrige los campos marcados antes de ejecutar el diagnóstico.");
       return;
     }
     setDiagnosing(true);
@@ -238,6 +258,10 @@ export const AzureDevOpsSettingsPage = () => {
   const handleTestConnection = async () => {
     if (!serverUrl.trim() || !collection.trim() || !project.trim() || !pat.trim()) {
       toast.error(t.adoFillAllFields);
+      return;
+    }
+    if (!fieldValidation.allRequiredValid) {
+      toast.error("Corrige los campos marcados antes de probar la conexión.");
       return;
     }
 
@@ -421,9 +445,13 @@ export const AzureDevOpsSettingsPage = () => {
                   setServerUrl(e.target.value);
                   resetStatus();
                 }}
-                className="mt-1"
+                aria-invalid={fieldValidation.serverUrl.status === "invalid"}
+                className={inputStateClass(fieldValidation.serverUrl.status)}
               />
-              <p className="text-xs text-muted-foreground mt-1">{t.adoServerUrlHint}</p>
+              <TfsFieldHint
+                validation={fieldValidation.serverUrl}
+                defaultHint={t.adoServerUrlHint}
+              />
             </div>
 
             <div>
@@ -436,9 +464,13 @@ export const AzureDevOpsSettingsPage = () => {
                   setCollection(e.target.value);
                   resetStatus();
                 }}
-                className="mt-1"
+                aria-invalid={fieldValidation.collection.status === "invalid"}
+                className={inputStateClass(fieldValidation.collection.status)}
               />
-              <p className="text-xs text-muted-foreground mt-1">{t.adoCollectionHint}</p>
+              <TfsFieldHint
+                validation={fieldValidation.collection}
+                defaultHint={t.adoCollectionHint}
+              />
             </div>
 
             <div>
@@ -451,8 +483,10 @@ export const AzureDevOpsSettingsPage = () => {
                   setProject(e.target.value);
                   resetStatus();
                 }}
-                className="mt-1"
+                aria-invalid={fieldValidation.project.status === "invalid"}
+                className={inputStateClass(fieldValidation.project.status)}
               />
+              <TfsFieldHint validation={fieldValidation.project} />
             </div>
 
             <div>
@@ -465,9 +499,14 @@ export const AzureDevOpsSettingsPage = () => {
                   setTeam(e.target.value);
                   resetStatus();
                 }}
-                className="mt-1"
+                aria-invalid={fieldValidation.team.status === "invalid"}
+                className={inputStateClass(fieldValidation.team.status)}
               />
-              <p className="text-xs text-muted-foreground mt-1">{t.adoTeamHint}</p>
+              <TfsFieldHint
+                validation={fieldValidation.team}
+                defaultHint={t.adoTeamHint}
+                hideValid
+              />
             </div>
 
             <Separator />
@@ -519,7 +558,11 @@ export const AzureDevOpsSettingsPage = () => {
 
             <Button
               onClick={handleTestConnection}
-              disabled={testing || !serverUrl || !collection || !project || !pat}
+              disabled={
+                testing ||
+                !pat ||
+                !fieldValidation.allRequiredValid
+              }
               variant="outline"
               className="w-full"
             >
@@ -533,7 +576,11 @@ export const AzureDevOpsSettingsPage = () => {
 
             <Button
               onClick={handleAdvancedCheck}
-              disabled={diagnosing || !serverUrl || !collection || !project || !pat}
+              disabled={
+                diagnosing ||
+                !pat ||
+                !fieldValidation.allRequiredValid
+              }
               variant="outline"
               className="w-full"
             >
@@ -544,6 +591,14 @@ export const AzureDevOpsSettingsPage = () => {
               )}
               Comprobación avanzada del PAT
             </Button>
+
+            {!fieldValidation.allRequiredValid &&
+              (serverUrl.trim() || collection.trim() || project.trim() || team.trim()) && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  Corrige los campos marcados antes de probar la conexión.
+                </p>
+              )}
 
             {connectionStatus === "success" && (
               <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 flex items-start gap-2">
@@ -633,7 +688,11 @@ export const AzureDevOpsSettingsPage = () => {
         <div className="flex gap-2">
           <Button
             onClick={handleSave}
-            disabled={saving || connectionStatus !== "success"}
+            disabled={
+              saving ||
+              connectionStatus !== "success" ||
+              !fieldValidation.allRequiredValid
+            }
             className="flex-1"
           >
             {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
