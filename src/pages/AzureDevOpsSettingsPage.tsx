@@ -48,6 +48,8 @@ export const AzureDevOpsSettingsPage = () => {
   const [connectionStatus, setConnectionStatus] = useState<"idle" | "success" | "error">("idle");
   const [tfsProject, setTfsProject] = useState<TfsProjectInfo | null>(null);
   const [tfsError, setTfsError] = useState<TfsError | null>(null);
+  const [diagnostics, setDiagnostics] = useState<TfsDiagnosticResult | null>(null);
+  const [diagnosing, setDiagnosing] = useState(false);
   const [hasExisting, setHasExisting] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
 
