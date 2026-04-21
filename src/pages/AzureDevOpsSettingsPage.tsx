@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,9 @@ import {
 } from "@/services/tfs";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { TfsPatDiagnosticsPanel } from "@/components/TfsPatDiagnosticsPanel";
+import { TfsFieldHint } from "@/components/TfsFieldHint";
+import { validateConnectionFields } from "@/lib/tfsValidation";
+import { cn } from "@/lib/utils";
 
 export const AzureDevOpsSettingsPage = () => {
   const { t } = useLang();
