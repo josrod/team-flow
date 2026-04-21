@@ -15,13 +15,21 @@ import {
   EyeOff,
   RefreshCw,
   AlertTriangle,
+  ShieldCheck,
 } from "lucide-react";
 import { useLang } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { testTfsConnection, type TfsProjectInfo, type TfsError } from "@/services/tfs";
+import {
+  testTfsConnection,
+  runPatDiagnostics,
+  type TfsProjectInfo,
+  type TfsError,
+  type TfsDiagnosticResult,
+} from "@/services/tfs";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
+import { TfsPatDiagnosticsPanel } from "@/components/TfsPatDiagnosticsPanel";
 
 export const AzureDevOpsSettingsPage = () => {
   const { t } = useLang();
