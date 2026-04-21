@@ -198,6 +198,7 @@ export const AzureDevOpsSettingsPage = () => {
     setSyncInterval("30");
     setConnectionStatus("idle");
     setTfsProject(null);
+    setTfsError(null);
     setHasExisting(false);
     setLastSynced(null);
     toast.success(`🗑️ ${t.adoSettingsDeleted}`);
