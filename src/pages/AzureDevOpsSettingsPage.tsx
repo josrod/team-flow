@@ -15,13 +15,21 @@ import {
   EyeOff,
   RefreshCw,
   AlertTriangle,
+  ShieldCheck,
 } from "lucide-react";
 import { useLang } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { testTfsConnection, type TfsProjectInfo, type TfsError } from "@/services/tfs";
+import {
+  testTfsConnection,
+  runPatDiagnostics,
+  type TfsProjectInfo,
+  type TfsError,
+  type TfsDiagnosticResult,
+} from "@/services/tfs";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
+import { TfsPatDiagnosticsPanel } from "@/components/TfsPatDiagnosticsPanel";
 
 export const AzureDevOpsSettingsPage = () => {
   const { t } = useLang();
@@ -40,6 +48,8 @@ export const AzureDevOpsSettingsPage = () => {
   const [connectionStatus, setConnectionStatus] = useState<"idle" | "success" | "error">("idle");
   const [tfsProject, setTfsProject] = useState<TfsProjectInfo | null>(null);
   const [tfsError, setTfsError] = useState<TfsError | null>(null);
+  const [diagnostics, setDiagnostics] = useState<TfsDiagnosticResult | null>(null);
+  const [diagnosing, setDiagnosing] = useState(false);
   const [hasExisting, setHasExisting] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
 
@@ -77,6 +87,37 @@ export const AzureDevOpsSettingsPage = () => {
     setConnectionStatus("idle");
     setTfsProject(null);
     setTfsError(null);
+    setDiagnostics(null);
+  };
+
+  const handleAdvancedCheck = async () => {
+    if (!serverUrl.trim() || !collection.trim() || !project.trim() || !pat.trim()) {
+      toast.error(t.adoFillAllFields);
+      return;
+    }
+    setDiagnosing(true);
+    setDiagnostics(null);
+    try {
+      const result = await runPatDiagnostics({
+        serverUrl: serverUrl.trim(),
+        collection: collection.trim(),
+        project: project.trim(),
+        team: team.trim() || undefined,
+        pat: pat.trim(),
+      });
+      setDiagnostics(result);
+      if (result.allPassed) {
+        toast.success("✅ Todos los permisos del PAT verificados");
+      } else if (result.missingScopes.length > 0) {
+        toast.error(`Faltan scopes: ${result.missingScopes.join(", ")}`);
+      } else {
+        toast.error("Algunas comprobaciones fallaron — revisa el panel");
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error en diagnóstico");
+    } finally {
+      setDiagnosing(false);
+    }
   };
 
   const handleTestConnection = async () => {
@@ -359,6 +400,20 @@ export const AzureDevOpsSettingsPage = () => {
               {t.adoTestConnection}
             </Button>
 
+            <Button
+              onClick={handleAdvancedCheck}
+              disabled={diagnosing || !serverUrl || !collection || !project || !pat}
+              variant="outline"
+              className="w-full"
+            >
+              {diagnosing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <ShieldCheck className="h-4 w-4 mr-2" />
+              )}
+              Comprobación avanzada del PAT
+            </Button>
+
             {connectionStatus === "success" && (
               <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 flex items-start gap-2">
                 <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
@@ -377,6 +432,8 @@ export const AzureDevOpsSettingsPage = () => {
             )}
 
             {connectionStatus === "error" && tfsError && <TfsErrorPanel error={tfsError} />}
+
+            {diagnostics && <TfsPatDiagnosticsPanel result={diagnostics} />}
           </CardContent>
         </Card>
       </motion.div>
