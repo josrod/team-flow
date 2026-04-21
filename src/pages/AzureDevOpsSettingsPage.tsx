@@ -375,15 +375,7 @@ export const AzureDevOpsSettingsPage = () => {
               </div>
             )}
 
-            {connectionStatus === "error" && (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 flex items-start gap-2">
-                <XCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-destructive">{t.adoConnectionFailed}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{errorMessage}</p>
-                </div>
-              </div>
-            )}
+            {connectionStatus === "error" && tfsError && <TfsErrorPanel error={tfsError} />}
           </CardContent>
         </Card>
       </motion.div>
