@@ -445,9 +445,13 @@ export const AzureDevOpsSettingsPage = () => {
                   setServerUrl(e.target.value);
                   resetStatus();
                 }}
-                className="mt-1"
+                aria-invalid={fieldValidation.serverUrl.status === "invalid"}
+                className={inputStateClass(fieldValidation.serverUrl.status)}
               />
-              <p className="text-xs text-muted-foreground mt-1">{t.adoServerUrlHint}</p>
+              <TfsFieldHint
+                validation={fieldValidation.serverUrl}
+                defaultHint={t.adoServerUrlHint}
+              />
             </div>
 
             <div>
@@ -460,9 +464,13 @@ export const AzureDevOpsSettingsPage = () => {
                   setCollection(e.target.value);
                   resetStatus();
                 }}
-                className="mt-1"
+                aria-invalid={fieldValidation.collection.status === "invalid"}
+                className={inputStateClass(fieldValidation.collection.status)}
               />
-              <p className="text-xs text-muted-foreground mt-1">{t.adoCollectionHint}</p>
+              <TfsFieldHint
+                validation={fieldValidation.collection}
+                defaultHint={t.adoCollectionHint}
+              />
             </div>
 
             <div>
@@ -475,8 +483,10 @@ export const AzureDevOpsSettingsPage = () => {
                   setProject(e.target.value);
                   resetStatus();
                 }}
-                className="mt-1"
+                aria-invalid={fieldValidation.project.status === "invalid"}
+                className={inputStateClass(fieldValidation.project.status)}
               />
+              <TfsFieldHint validation={fieldValidation.project} />
             </div>
 
             <div>
@@ -489,9 +499,14 @@ export const AzureDevOpsSettingsPage = () => {
                   setTeam(e.target.value);
                   resetStatus();
                 }}
-                className="mt-1"
+                aria-invalid={fieldValidation.team.status === "invalid"}
+                className={inputStateClass(fieldValidation.team.status)}
               />
-              <p className="text-xs text-muted-foreground mt-1">{t.adoTeamHint}</p>
+              <TfsFieldHint
+                validation={fieldValidation.team}
+                defaultHint={t.adoTeamHint}
+                hideValid
+              />
             </div>
 
             <Separator />
