@@ -558,7 +558,11 @@ export const AzureDevOpsSettingsPage = () => {
 
             <Button
               onClick={handleTestConnection}
-              disabled={testing || !serverUrl || !collection || !project || !pat}
+              disabled={
+                testing ||
+                !pat ||
+                !fieldValidation.allRequiredValid
+              }
               variant="outline"
               className="w-full"
             >
@@ -572,7 +576,11 @@ export const AzureDevOpsSettingsPage = () => {
 
             <Button
               onClick={handleAdvancedCheck}
-              disabled={diagnosing || !serverUrl || !collection || !project || !pat}
+              disabled={
+                diagnosing ||
+                !pat ||
+                !fieldValidation.allRequiredValid
+              }
               variant="outline"
               className="w-full"
             >
@@ -583,6 +591,14 @@ export const AzureDevOpsSettingsPage = () => {
               )}
               Comprobación avanzada del PAT
             </Button>
+
+            {!fieldValidation.allRequiredValid &&
+              (serverUrl.trim() || collection.trim() || project.trim() || team.trim()) && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  Corrige los campos marcados antes de probar la conexión.
+                </p>
+              )}
 
             {connectionStatus === "success" && (
               <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 flex items-start gap-2">
