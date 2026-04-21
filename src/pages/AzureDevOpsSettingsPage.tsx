@@ -5,27 +5,32 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Settings, Plug, CheckCircle2, XCircle, Loader2, Eye, EyeOff, RefreshCw } from "lucide-react";
+import {
+  Settings,
+  Plug,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  AlertTriangle,
+} from "lucide-react";
 import { useLang } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { testTfsConnection, type TfsProjectInfo } from "@/services/tfs";
 
-interface AzureProject {
-  name: string;
-  id: string;
-  state: string;
-  description: string;
-}
-
-export default function AzureDevOpsSettingsPage() {
+export const AzureDevOpsSettingsPage = () => {
   const { t } = useLang();
 
+  const [serverUrl, setServerUrl] = useState("");
+  const [collection, setCollection] = useState("");
   const [organization, setOrganization] = useState("");
   const [project, setProject] = useState("");
+  const [team, setTeam] = useState("");
   const [pat, setPat] = useState("");
   const [showPat, setShowPat] = useState(false);
   const [autoSync, setAutoSync] = useState(false);
@@ -33,73 +38,72 @@ export default function AzureDevOpsSettingsPage() {
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<"idle" | "success" | "error">("idle");
-  const [azureProject, setAzureProject] = useState<AzureProject | null>(null);
+  const [tfsProject, setTfsProject] = useState<TfsProjectInfo | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [hasExisting, setHasExisting] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
 
   useEffect(() => {
+    const loadSettings = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from("azure_devops_settings")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (data) {
+        setServerUrl(data.server_url ?? "");
+        setCollection(data.collection ?? "");
+        setOrganization(data.organization ?? "");
+        setProject(data.project);
+        setTeam(data.team ?? "");
+        setPat(data.pat_encrypted);
+        setAutoSync(data.auto_sync_enabled);
+        setSyncInterval(String(data.sync_interval_minutes));
+        setLastSynced(data.last_synced_at);
+        setHasExisting(true);
+        setConnectionStatus("success");
+      }
+    };
     loadSettings();
   }, []);
 
-  const loadSettings = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data } = await supabase
-      .from("azure_devops_settings")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (data) {
-      setOrganization(data.organization);
-      setProject(data.project);
-      setPat(data.pat_encrypted);
-      setAutoSync(data.auto_sync_enabled);
-      setSyncInterval(String(data.sync_interval_minutes));
-      setLastSynced(data.last_synced_at);
-      setHasExisting(true);
-      setConnectionStatus("success");
-    }
+  const resetStatus = () => {
+    setConnectionStatus("idle");
+    setTfsProject(null);
+    setErrorMessage("");
   };
 
   const handleTestConnection = async () => {
-    if (!organization.trim() || !project.trim() || !pat.trim()) {
+    if (!serverUrl.trim() || !collection.trim() || !project.trim() || !pat.trim()) {
       toast.error(t.adoFillAllFields);
       return;
     }
 
     setTesting(true);
-    setConnectionStatus("idle");
-    setAzureProject(null);
-    setErrorMessage("");
+    resetStatus();
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error(t.adoLoginRequired);
-        setTesting(false);
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke("azure-devops-test", {
-        body: { organization: organization.trim(), project: project.trim(), pat: pat.trim() },
+      const result = await testTfsConnection({
+        serverUrl: serverUrl.trim(),
+        collection: collection.trim(),
+        project: project.trim(),
+        team: team.trim() || undefined,
+        pat: pat.trim(),
       });
 
-      if (error) {
-        setConnectionStatus("error");
-        setErrorMessage(error.message);
-        return;
-      }
-
-      if (data.success) {
+      if (result.success && result.project) {
         setConnectionStatus("success");
-        setAzureProject(data.project);
+        setTfsProject(result.project);
         toast.success(`✅ ${t.adoConnectionOk}`);
       } else {
         setConnectionStatus("error");
-        setErrorMessage(data.error ?? "Unknown error");
+        setErrorMessage(result.error ?? "Unknown error");
       }
     } catch (err: unknown) {
       setConnectionStatus("error");
@@ -117,7 +121,9 @@ export default function AzureDevOpsSettingsPage() {
 
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         toast.error(t.adoLoginRequired);
         return;
@@ -125,8 +131,11 @@ export default function AzureDevOpsSettingsPage() {
 
       const payload = {
         user_id: user.id,
-        organization: organization.trim(),
+        server_url: serverUrl.trim(),
+        collection: collection.trim(),
+        organization: organization.trim() || null,
         project: project.trim(),
+        team: team.trim() || null,
         pat_encrypted: pat.trim(),
         auto_sync_enabled: autoSync,
         sync_interval_minutes: Number(syncInterval),
@@ -139,9 +148,7 @@ export default function AzureDevOpsSettingsPage() {
           .eq("user_id", user.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from("azure_devops_settings")
-          .insert(payload);
+        const { error } = await supabase.from("azure_devops_settings").insert(payload);
         if (error) throw error;
         setHasExisting(true);
       }
@@ -156,7 +163,9 @@ export default function AzureDevOpsSettingsPage() {
   };
 
   const handleDelete = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return;
 
     const { error } = await supabase
@@ -169,13 +178,16 @@ export default function AzureDevOpsSettingsPage() {
       return;
     }
 
+    setServerUrl("");
+    setCollection("");
     setOrganization("");
     setProject("");
+    setTeam("");
     setPat("");
     setAutoSync(false);
     setSyncInterval("30");
     setConnectionStatus("idle");
-    setAzureProject(null);
+    setTfsProject(null);
     setHasExisting(false);
     setLastSynced(null);
     toast.success(`🗑️ ${t.adoSettingsDeleted}`);
@@ -191,6 +203,21 @@ export default function AzureDevOpsSettingsPage() {
         <p className="text-muted-foreground mt-1">{t.adoDesc}</p>
       </div>
 
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2"
+      >
+        <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+            {t.adoNetworkWarningTitle}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">{t.adoNetworkWarningBody}</p>
+        </div>
+      </motion.div>
+
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Card>
           <CardHeader>
@@ -202,27 +229,82 @@ export default function AzureDevOpsSettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="ado-org">{t.adoOrganization}</Label>
+              <Label htmlFor="ado-server">{t.adoServerUrl}</Label>
               <Input
-                id="ado-org"
-                placeholder="my-organization"
-                value={organization}
-                onChange={(e) => { setOrganization(e.target.value); setConnectionStatus("idle"); }}
+                id="ado-server"
+                placeholder="https://tfs.empresa.net/tfs"
+                value={serverUrl}
+                onChange={(e) => {
+                  setServerUrl(e.target.value);
+                  resetStatus();
+                }}
                 className="mt-1"
               />
-              <p className="text-xs text-muted-foreground mt-1">{t.adoOrgHint}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t.adoServerUrlHint}</p>
+            </div>
+
+            <div>
+              <Label htmlFor="ado-collection">{t.adoCollection}</Label>
+              <Input
+                id="ado-collection"
+                placeholder="RNDCollection"
+                value={collection}
+                onChange={(e) => {
+                  setCollection(e.target.value);
+                  resetStatus();
+                }}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">{t.adoCollectionHint}</p>
             </div>
 
             <div>
               <Label htmlFor="ado-project">{t.adoProject}</Label>
               <Input
                 id="ado-project"
-                placeholder="MyProject"
+                placeholder="SDES"
                 value={project}
-                onChange={(e) => { setProject(e.target.value); setConnectionStatus("idle"); }}
+                onChange={(e) => {
+                  setProject(e.target.value);
+                  resetStatus();
+                }}
                 className="mt-1"
               />
             </div>
+
+            <div>
+              <Label htmlFor="ado-team">{t.adoTeam}</Label>
+              <Input
+                id="ado-team"
+                placeholder="Rodat"
+                value={team}
+                onChange={(e) => {
+                  setTeam(e.target.value);
+                  resetStatus();
+                }}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">{t.adoTeamHint}</p>
+            </div>
+
+            <Separator />
+
+            <div>
+              <Label htmlFor="ado-org">{t.adoOrganization}</Label>
+              <Input
+                id="ado-org"
+                placeholder="my-organization"
+                value={organization}
+                onChange={(e) => {
+                  setOrganization(e.target.value);
+                  resetStatus();
+                }}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">{t.adoOrgHint}</p>
+            </div>
+
+            <Separator />
 
             <div>
               <Label htmlFor="ado-pat">{t.adoPat}</Label>
@@ -233,7 +315,10 @@ export default function AzureDevOpsSettingsPage() {
                     type={showPat ? "text" : "password"}
                     placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
                     value={pat}
-                    onChange={(e) => { setPat(e.target.value); setConnectionStatus("idle"); }}
+                    onChange={(e) => {
+                      setPat(e.target.value);
+                      resetStatus();
+                    }}
                   />
                   <Button
                     type="button"
@@ -251,7 +336,7 @@ export default function AzureDevOpsSettingsPage() {
 
             <Button
               onClick={handleTestConnection}
-              disabled={testing || !organization || !project || !pat}
+              disabled={testing || !serverUrl || !collection || !project || !pat}
               variant="outline"
               className="w-full"
             >
@@ -267,11 +352,13 @@ export default function AzureDevOpsSettingsPage() {
               <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 flex items-start gap-2">
                 <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{t.adoConnectionOk}</p>
-                  {azureProject && (
+                  <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                    {t.adoConnectionOk}
+                  </p>
+                  {tfsProject && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      {azureProject.name} — {azureProject.state}
-                      {azureProject.description && ` — ${azureProject.description.slice(0, 80)}`}
+                      {tfsProject.name} — {tfsProject.state}
+                      {tfsProject.description && ` — ${tfsProject.description.slice(0, 80)}`}
                     </p>
                   )}
                 </div>
@@ -291,7 +378,11 @@ export default function AzureDevOpsSettingsPage() {
         </Card>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
         <Card>
           <CardHeader>
             <CardTitle className="text-lg font-display flex items-center gap-2">
@@ -355,4 +446,6 @@ export default function AzureDevOpsSettingsPage() {
       </motion.div>
     </div>
   );
-}
+};
+
+export default AzureDevOpsSettingsPage;
