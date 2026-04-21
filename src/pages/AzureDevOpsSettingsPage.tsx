@@ -564,7 +564,16 @@ export const AzureDevOpsSettingsPage = () => {
 
             {connectionStatus === "error" && tfsError && <TfsErrorPanel error={tfsError} />}
 
-            {diagnostics && <TfsPatDiagnosticsPanel result={diagnostics} />}
+            {diagnostics && (
+              <div className="space-y-2">
+                {diagnosticsAt && (
+                  <p className="text-xs text-muted-foreground">
+                    Último diagnóstico: {new Date(diagnosticsAt).toLocaleString()}
+                  </p>
+                )}
+                <TfsPatDiagnosticsPanel result={diagnostics} />
+              </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>
