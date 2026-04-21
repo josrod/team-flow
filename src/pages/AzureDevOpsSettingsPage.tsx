@@ -688,7 +688,11 @@ export const AzureDevOpsSettingsPage = () => {
         <div className="flex gap-2">
           <Button
             onClick={handleSave}
-            disabled={saving || connectionStatus !== "success"}
+            disabled={
+              saving ||
+              connectionStatus !== "success" ||
+              !fieldValidation.allRequiredValid
+            }
             className="flex-1"
           >
             {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
