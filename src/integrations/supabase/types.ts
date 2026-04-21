@@ -17,37 +17,46 @@ export type Database = {
       azure_devops_settings: {
         Row: {
           auto_sync_enabled: boolean
+          collection: string | null
           created_at: string
           id: string
           last_synced_at: string | null
-          organization: string
+          organization: string | null
           pat_encrypted: string
           project: string
+          server_url: string | null
           sync_interval_minutes: number
+          team: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           auto_sync_enabled?: boolean
+          collection?: string | null
           created_at?: string
           id?: string
           last_synced_at?: string | null
-          organization: string
+          organization?: string | null
           pat_encrypted: string
           project: string
+          server_url?: string | null
           sync_interval_minutes?: number
+          team?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           auto_sync_enabled?: boolean
+          collection?: string | null
           created_at?: string
           id?: string
           last_synced_at?: string | null
-          organization?: string
+          organization?: string | null
           pat_encrypted?: string
           project?: string
+          server_url?: string | null
           sync_interval_minutes?: number
+          team?: string | null
           updated_at?: string
           user_id?: string
         }
