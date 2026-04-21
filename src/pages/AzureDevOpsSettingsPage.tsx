@@ -432,6 +432,8 @@ export const AzureDevOpsSettingsPage = () => {
             )}
 
             {connectionStatus === "error" && tfsError && <TfsErrorPanel error={tfsError} />}
+
+            {diagnostics && <TfsPatDiagnosticsPanel result={diagnostics} />}
           </CardContent>
         </Card>
       </motion.div>
