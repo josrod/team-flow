@@ -625,23 +625,31 @@ export const AzureDevOpsSettingsPage = () => {
       </motion.div>
 
       <motion.div
-        className="flex gap-2"
+        className="space-y-2"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <Button
-          onClick={handleSave}
-          disabled={saving || connectionStatus !== "success"}
-          className="flex-1"
-        >
-          {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          {hasExisting ? t.adoUpdateSettings : t.adoSaveSettings}
-        </Button>
-        {hasExisting && (
-          <Button variant="destructive" onClick={handleDelete}>
-            {t.adoDisconnect}
+        <div className="flex gap-2">
+          <Button
+            onClick={handleSave}
+            disabled={saving || connectionStatus !== "success"}
+            className="flex-1"
+          >
+            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {hasExisting ? t.adoUpdateSettings : t.adoSaveSettings}
           </Button>
+          {hasExisting && (
+            <Button variant="destructive" onClick={handleDelete}>
+              {t.adoDisconnect}
+            </Button>
+          )}
+        </div>
+        {autoSavedAt && hasExisting && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+            Cambios guardados automáticamente · {new Date(autoSavedAt).toLocaleTimeString()}
+          </p>
         )}
       </motion.div>
     </div>
