@@ -50,8 +50,14 @@ export const AzureDevOpsSettingsPage = () => {
   const [tfsError, setTfsError] = useState<TfsError | null>(null);
   const [diagnostics, setDiagnostics] = useState<TfsDiagnosticResult | null>(null);
   const [diagnosing, setDiagnosing] = useState(false);
+  const [diagnosticsAt, setDiagnosticsAt] = useState<string | null>(null);
   const [hasExisting, setHasExisting] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
+  const [autoSavedAt, setAutoSavedAt] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
+  const autoSaveTimerRef = useRef<number | null>(null);
+
+  const DRAFT_KEY = "ado_settings_draft";
 
   useEffect(() => {
     const loadSettings = async () => {
