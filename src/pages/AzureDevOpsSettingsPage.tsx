@@ -24,6 +24,9 @@ import { motion } from "framer-motion";
 import {
   testTfsConnection,
   runPatDiagnostics,
+  listTfsCollections,
+  listTfsProjects,
+  listTfsTeams,
   type TfsProjectInfo,
   type TfsError,
   type TfsDiagnosticResult,
@@ -31,7 +34,8 @@ import {
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { TfsPatDiagnosticsPanel } from "@/components/TfsPatDiagnosticsPanel";
 import { TfsFieldHint } from "@/components/TfsFieldHint";
-import { validateConnectionFields } from "@/lib/tfsValidation";
+import { TfsAutocompleteInput } from "@/components/TfsAutocompleteInput";
+import { validateConnectionFields, validateServerUrl } from "@/lib/tfsValidation";
 import { cn } from "@/lib/utils";
 
 export const AzureDevOpsSettingsPage = () => {
@@ -456,16 +460,27 @@ export const AzureDevOpsSettingsPage = () => {
 
             <div>
               <Label htmlFor="ado-collection">{t.adoCollection}</Label>
-              <Input
+              <TfsAutocompleteInput
                 id="ado-collection"
-                placeholder="RNDCollection"
                 value={collection}
-                onChange={(e) => {
-                  setCollection(e.target.value);
+                onChange={(v) => {
+                  setCollection(v);
                   resetStatus();
                 }}
-                aria-invalid={fieldValidation.collection.status === "invalid"}
-                className={inputStateClass(fieldValidation.collection.status)}
+                placeholder="RNDCollection"
+                ariaInvalid={fieldValidation.collection.status === "invalid"}
+                inputClassName={inputStateClass(fieldValidation.collection.status)}
+                enabled={
+                  validateServerUrl(serverUrl).status === "valid" && pat.trim().length > 0
+                }
+                disabledReason="Introduce primero la URL del servidor y el PAT."
+                loadSuggestions={async () => {
+                  const result = await listTfsCollections(serverUrl, pat);
+                  return {
+                    items: result.items.map((c) => ({ id: c.id || c.name, name: c.name })),
+                    errorMessage: result.error?.message,
+                  };
+                }}
               />
               <TfsFieldHint
                 validation={fieldValidation.collection}
@@ -475,32 +490,67 @@ export const AzureDevOpsSettingsPage = () => {
 
             <div>
               <Label htmlFor="ado-project">{t.adoProject}</Label>
-              <Input
+              <TfsAutocompleteInput
                 id="ado-project"
-                placeholder="SDES"
                 value={project}
-                onChange={(e) => {
-                  setProject(e.target.value);
+                onChange={(v) => {
+                  setProject(v);
                   resetStatus();
                 }}
-                aria-invalid={fieldValidation.project.status === "invalid"}
-                className={inputStateClass(fieldValidation.project.status)}
+                placeholder="SDES"
+                ariaInvalid={fieldValidation.project.status === "invalid"}
+                inputClassName={inputStateClass(fieldValidation.project.status)}
+                enabled={
+                  validateServerUrl(serverUrl).status === "valid" &&
+                  collection.trim().length > 0 &&
+                  pat.trim().length > 0
+                }
+                disabledReason="Introduce servidor, colección y PAT para listar proyectos."
+                loadSuggestions={async () => {
+                  const result = await listTfsProjects(serverUrl, collection, pat);
+                  return {
+                    items: result.items.map((p) => ({
+                      id: p.id || p.name,
+                      name: p.name,
+                      description: p.description,
+                    })),
+                    errorMessage: result.error?.message,
+                  };
+                }}
               />
               <TfsFieldHint validation={fieldValidation.project} />
             </div>
 
             <div>
               <Label htmlFor="ado-team">{t.adoTeam}</Label>
-              <Input
+              <TfsAutocompleteInput
                 id="ado-team"
-                placeholder="Rodat"
                 value={team}
-                onChange={(e) => {
-                  setTeam(e.target.value);
+                onChange={(v) => {
+                  setTeam(v);
                   resetStatus();
                 }}
-                aria-invalid={fieldValidation.team.status === "invalid"}
-                className={inputStateClass(fieldValidation.team.status)}
+                placeholder="Rodat"
+                ariaInvalid={fieldValidation.team.status === "invalid"}
+                inputClassName={inputStateClass(fieldValidation.team.status)}
+                enabled={
+                  validateServerUrl(serverUrl).status === "valid" &&
+                  collection.trim().length > 0 &&
+                  project.trim().length > 0 &&
+                  pat.trim().length > 0
+                }
+                disabledReason="Introduce servidor, colección, proyecto y PAT para listar equipos."
+                loadSuggestions={async () => {
+                  const result = await listTfsTeams(serverUrl, collection, project, pat);
+                  return {
+                    items: result.items.map((t) => ({
+                      id: t.id || t.name,
+                      name: t.name,
+                      description: t.description,
+                    })),
+                    errorMessage: result.error?.message,
+                  };
+                }}
               />
               <TfsFieldHint
                 validation={fieldValidation.team}
