@@ -590,6 +590,214 @@ export const listTfsProjects = async (
   return fetchJsonList<TfsProjectRef>(url, pat);
 };
 
+// ---------------------------------------------------------------------------
+// Work item discovery (Features & Tasks) via WIQL
+// ---------------------------------------------------------------------------
+
+export interface TfsWorkItem {
+  id: number;
+  title: string;
+  state: string;
+  workItemType: string;
+  assignedTo?: string;
+  assignedToEmail?: string;
+  parentId?: number;
+  iterationPath?: string;
+  areaPath?: string;
+  tags?: string;
+  url?: string;
+}
+
+interface WiqlResultRef {
+  id: number;
+  url?: string;
+}
+
+interface WiqlResponse {
+  workItems?: WiqlResultRef[];
+}
+
+interface RawWorkItem {
+  id: number;
+  url?: string;
+  fields: Record<string, unknown>;
+}
+
+interface RawWorkItemsResponse {
+  value?: RawWorkItem[];
+}
+
+const parseAssignedTo = (val: unknown): { name?: string; email?: string } => {
+  if (!val) return {};
+  if (typeof val === "string") return { name: val };
+  if (typeof val === "object" && val !== null) {
+    const obj = val as { displayName?: string; uniqueName?: string };
+    return { name: obj.displayName, email: obj.uniqueName };
+  }
+  return {};
+};
+
+const mapRawToWorkItem = (raw: RawWorkItem): TfsWorkItem => {
+  const f = raw.fields ?? {};
+  const assigned = parseAssignedTo(f["System.AssignedTo"]);
+  return {
+    id: raw.id,
+    title: String(f["System.Title"] ?? ""),
+    state: String(f["System.State"] ?? ""),
+    workItemType: String(f["System.WorkItemType"] ?? ""),
+    assignedTo: assigned.name,
+    assignedToEmail: assigned.email,
+    iterationPath: f["System.IterationPath"] as string | undefined,
+    areaPath: f["System.AreaPath"] as string | undefined,
+    tags: f["System.Tags"] as string | undefined,
+    url: raw.url,
+  };
+};
+
+const runWiqlAndFetch = async (
+  conn: TfsConnection,
+  wiql: string,
+  fields: string[],
+): Promise<TfsDiscoveryResult<TfsWorkItem>> => {
+  const base = buildCollectionUrl(conn.serverUrl, conn.collection);
+  const projectSeg = encodeURIComponent(conn.project.trim());
+  const wiqlUrl = `${base}/${projectSeg}/_apis/wit/wiql?api-version=${API_VERSION}`;
+
+  if (isMixedContent(wiqlUrl)) {
+    return {
+      items: [],
+      error: { kind: "mixed_content", url: wiqlUrl, message: "Mixed content (HTTPS → HTTP)." },
+    };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const wiqlRes = await fetch(wiqlUrl, {
+      method: "POST",
+      headers: {
+        Authorization: buildAuthHeader(conn.pat),
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query: wiql }),
+      signal: controller.signal,
+    });
+
+    if (!wiqlRes.ok) {
+      const body = await wiqlRes.text().catch(() => "");
+      return {
+        items: [],
+        error: {
+          kind: wiqlRes.status === 401 ? "unauthorized" : wiqlRes.status === 403 ? "forbidden" : "http",
+          status: wiqlRes.status,
+          url: wiqlUrl,
+          message: `WIQL falló con HTTP ${wiqlRes.status}.`,
+          detail: body.slice(0, 300),
+        },
+      };
+    }
+
+    const wiqlData = (await wiqlRes.json()) as WiqlResponse;
+    const ids = (wiqlData.workItems ?? []).map((w) => w.id);
+    if (ids.length === 0) return { items: [] };
+
+    // Batch in groups of 200 (WIT REST limit)
+    const batches: number[][] = [];
+    for (let i = 0; i < ids.length; i += 200) batches.push(ids.slice(i, i + 200));
+
+    const all: TfsWorkItem[] = [];
+    for (const batch of batches) {
+      const fieldsParam = encodeURIComponent(fields.join(","));
+      const detailsUrl = `${base}/_apis/wit/workitems?ids=${batch.join(",")}&fields=${fieldsParam}&api-version=${API_VERSION}`;
+      const detailsRes = await fetch(detailsUrl, {
+        method: "GET",
+        headers: {
+          Authorization: buildAuthHeader(conn.pat),
+          Accept: "application/json",
+        },
+        signal: controller.signal,
+      });
+      if (!detailsRes.ok) continue;
+      const data = (await detailsRes.json()) as RawWorkItemsResponse;
+      for (const raw of data.value ?? []) all.push(mapRawToWorkItem(raw));
+    }
+
+    return { items: all };
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return {
+        items: [],
+        error: { kind: "timeout", url: wiqlUrl, message: "Tiempo de espera agotado." },
+      };
+    }
+    if (isNetworkLevelError(err)) {
+      return {
+        items: [],
+        error: { kind: "cors", url: wiqlUrl, message: "Sin respuesta (CORS, VPN o firewall)." },
+      };
+    }
+    return {
+      items: [],
+      error: {
+        kind: "unknown",
+        url: wiqlUrl,
+        message: err instanceof Error ? err.message : "Error desconocido.",
+      },
+    };
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+};
+
+/**
+ * List Features in the configured project. Returns active + recently closed.
+ */
+export const listTfsFeatures = async (
+  conn: TfsConnection,
+): Promise<TfsDiscoveryResult<TfsWorkItem>> => {
+  const project = conn.project.trim().replace(/'/g, "''");
+  const wiql = `SELECT [System.Id] FROM WorkItems
+WHERE [System.TeamProject] = '${project}'
+  AND [System.WorkItemType] = 'Feature'
+ORDER BY [System.ChangedDate] DESC`;
+  return runWiqlAndFetch(conn, wiql, [
+    "System.Id",
+    "System.Title",
+    "System.State",
+    "System.WorkItemType",
+    "System.AssignedTo",
+    "System.IterationPath",
+    "System.AreaPath",
+    "System.Tags",
+  ]);
+};
+
+/**
+ * List Tasks (and User Stories / Bugs) currently assigned in the project.
+ */
+export const listTfsTasks = async (
+  conn: TfsConnection,
+): Promise<TfsDiscoveryResult<TfsWorkItem>> => {
+  const project = conn.project.trim().replace(/'/g, "''");
+  const wiql = `SELECT [System.Id] FROM WorkItems
+WHERE [System.TeamProject] = '${project}'
+  AND [System.WorkItemType] IN ('Task','User Story','Bug','Product Backlog Item')
+  AND [System.State] <> 'Removed'
+ORDER BY [System.ChangedDate] DESC`;
+  return runWiqlAndFetch(conn, wiql, [
+    "System.Id",
+    "System.Title",
+    "System.State",
+    "System.WorkItemType",
+    "System.AssignedTo",
+    "System.IterationPath",
+    "System.AreaPath",
+    "System.Tags",
+  ]);
+};
+
 /**
  * List teams inside a project.
  * Endpoint: GET {server}/{collection}/_apis/projects/{project}/teams
