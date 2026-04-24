@@ -711,3 +711,80 @@ export default function FeaturesPage() {
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Searchable person picker — replaces the plain <Select> so users can quickly
+// type a name to filter, see a count of matching people, and clear the
+// selection with a single click.
+// ---------------------------------------------------------------------------
+interface PersonComboboxProps {
+  value: string;
+  onChange: (next: string) => void;
+  people: string[];
+}
+
+function PersonCombobox({ value, onChange, people }: PersonComboboxProps) {
+  const [open, setOpen] = useState(false);
+  const isAll = value === "all";
+  const label = isAll ? `Todas las personas (${people.length})` : value;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="h-9 w-60 justify-between font-normal"
+        >
+          <span className={cn("truncate", isAll && "text-muted-foreground")}>{label}</span>
+          <div className="flex items-center gap-1 shrink-0">
+            {!isAll && (
+              <X
+                className="h-3.5 w-3.5 opacity-60 hover:opacity-100"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange("all");
+                }}
+              />
+            )}
+            <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />
+          </div>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-60 p-0" align="end">
+        <Command>
+          <CommandInput placeholder="Buscar persona..." />
+          <CommandList>
+            <CommandEmpty>Sin coincidencias.</CommandEmpty>
+            <CommandGroup>
+              <CommandItem
+                value="__all__"
+                onSelect={() => {
+                  onChange("all");
+                  setOpen(false);
+                }}
+              >
+                <Check className={cn("mr-2 h-4 w-4", isAll ? "opacity-100" : "opacity-0")} />
+                Todas las personas
+              </CommandItem>
+              {people.map((p) => (
+                <CommandItem
+                  key={p}
+                  value={p}
+                  onSelect={() => {
+                    onChange(p);
+                    setOpen(false);
+                  }}
+                >
+                  <Check className={cn("mr-2 h-4 w-4", value === p ? "opacity-100" : "opacity-0")} />
+                  <span className="truncate">{p}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
