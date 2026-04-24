@@ -17,7 +17,7 @@ import {
   PieChart, Pie, Legend,
 } from "recharts";
 import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X } from "lucide-react";
-import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, type TfsWorkItem } from "@/services/tfs";
+import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, type TfsConnection, type TfsWorkItem } from "@/services/tfs";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
@@ -78,6 +78,9 @@ export default function FeaturesPage() {
   const [tfsTasks, setTfsTasks] = useState<TfsWorkItem[]>([]);
   const [tfsError, setTfsError] = useState<string | null>(null);
   const [tfsBaseUrl, setTfsBaseUrl] = useState<string | null>(null);
+  // Cached TFS connection (resolved from settings) so we can warm the area
+  // path cache when the team filter changes, without re-querying Supabase.
+  const [tfsConn, setTfsConn] = useState<TfsConnection | null>(null);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTeam = searchParams.get("team") ?? "all";
@@ -153,6 +156,7 @@ export default function FeaturesPage() {
         team: settings.team ?? undefined,
         pat: settings.pat_encrypted,
       };
+      setTfsConn(conn);
       // Build base URL for "Open in Azure DevOps" links
       const cleanServer = settings.server_url.replace(/\/+$/, "");
       const cleanCollection = settings.collection.replace(/^\/+|\/+$/g, "");
@@ -291,6 +295,20 @@ export default function FeaturesPage() {
       { replace: true },
     );
   }, [loading, source, teams, members, peopleForTab, activeTeam, activePerson, tasks.length, features.length, setSearchParams]);
+
+  // Debounced prefetch of team area paths whenever the team filter changes in
+  // TFS mode. The cache (TTL 10 min) makes this a no-op when the value is
+  // already warm; otherwise it warms it in the background so the people
+  // selector and any subsequent reload feel instant.
+  useEffect(() => {
+    if (source !== "tfs" || !tfsConn?.team) return;
+    const timer = window.setTimeout(() => {
+      // Fire-and-forget: errors here are non-fatal — `loadFromTfs` will
+      // surface them on the next user-triggered refresh.
+      void listTfsTeamAreaPaths(tfsConn).catch(() => {});
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [source, tfsConn, activeTeam]);
 
 
   // Filtered tasks
