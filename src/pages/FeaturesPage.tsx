@@ -545,6 +545,19 @@ export default function FeaturesPage() {
             <Loader2 className="h-3 w-3 animate-spin" />
             <span>Precargando áreas…</span>
           </div>
+          {/* Fallback warning — shown when prefetch failed but we still have
+              a cached set of area paths keeping the selector usable. */}
+          {prefetchStaleWarning && !prefetching && (
+            <Badge
+              variant="outline"
+              className="gap-1.5 border-status-vacation/40 text-status-vacation"
+              title="No se pudo actualizar la lista de áreas del equipo. Se está usando la última versión en caché."
+              aria-live="polite"
+            >
+              <AlertTriangle className="h-3 w-3" />
+              <span className="text-xs">Usando caché</span>
+            </Badge>
+          )}
           {tfsConnConfigured && (
             <Button size="sm" variant="outline" onClick={() => loadFromTfs(undefined, { forceAreaRefresh: true })} disabled={loading}>
               {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
