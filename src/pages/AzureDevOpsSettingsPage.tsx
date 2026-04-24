@@ -385,6 +385,8 @@ export const AzureDevOpsSettingsPage = () => {
       return;
     }
 
+    clearTfsAreaPathCache();
+
     setServerUrl("");
     setCollection("");
     setOrganization("");
