@@ -163,7 +163,7 @@ export default function FeaturesPage() {
       // both features and tasks to that team only.
       let areaPaths: string[] = [];
       if (conn.team) {
-        const areaRes = await listTfsTeamAreaPaths(conn);
+        const areaRes = await listTfsTeamAreaPaths(conn, { force: options.forceAreaRefresh });
         if (areaRes.error) {
           // Non-fatal: warn but keep going without area filtering.
           toast.warning(`No se pudieron leer las áreas del equipo: ${areaRes.error.message}`);
