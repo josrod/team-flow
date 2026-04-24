@@ -306,6 +306,7 @@ export default function FeaturesPage() {
         listTfsFeatures(conn, areaPaths),
         listTfsTasks(conn),
       ]);
+      const loadHadError = Boolean(featRes.error || taskRes.error);
       if (featRes.error) {
         setTfsError(featRes.error.message);
         toast.error(`TFS: ${featRes.error.message}`);
@@ -319,8 +320,22 @@ export default function FeaturesPage() {
         : taskRes.items;
       setTfsFeatures(featRes.items);
       setTfsTasks(scopedTasks);
+      setLastAreaPaths(areaPaths);
+      setTfsLoadFailed(loadHadError);
+
+      // Warm the people cache on a successful load so a future failure can
+      // degrade gracefully without emptying the person selector.
+      if (!loadHadError) {
+        const peopleSet = new Set<string>();
+        scopedTasks.forEach((t) => t.assignedTo && peopleSet.add(t.assignedTo));
+        featRes.items.forEach((f) => f.assignedTo && peopleSet.add(f.assignedTo));
+        const people = Array.from(peopleSet).sort();
+        writeTfsPeopleCache(conn, areaPaths, people);
+        setPeopleFallbackStale(false);
+      }
     } catch (err) {
       setTfsError(err instanceof Error ? err.message : "Error desconocido");
+      setTfsLoadFailed(true);
       setSource("local");
     } finally {
       setLoading(false);
