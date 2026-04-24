@@ -126,6 +126,7 @@ export default function FeaturesPage() {
 
   const loadFromTfs = async (
     presetSettings?: { server_url: string | null; collection: string | null; project: string; team: string | null; pat_encrypted: string },
+    options: { forceAreaRefresh?: boolean } = {},
   ) => {
     if (!user) return;
     setLoading(true);
@@ -162,7 +163,7 @@ export default function FeaturesPage() {
       // both features and tasks to that team only.
       let areaPaths: string[] = [];
       if (conn.team) {
-        const areaRes = await listTfsTeamAreaPaths(conn);
+        const areaRes = await listTfsTeamAreaPaths(conn, { force: options.forceAreaRefresh });
         if (areaRes.error) {
           // Non-fatal: warn but keep going without area filtering.
           toast.warning(`No se pudieron leer las áreas del equipo: ${areaRes.error.message}`);
@@ -374,7 +375,7 @@ export default function FeaturesPage() {
             <span className="text-xs">{source === "tfs" ? "Azure DevOps" : "Datos locales"}</span>
           </Badge>
           {tfsConnConfigured && (
-            <Button size="sm" variant="outline" onClick={() => loadFromTfs()} disabled={loading}>
+            <Button size="sm" variant="outline" onClick={() => loadFromTfs(undefined, { forceAreaRefresh: true })} disabled={loading}>
               {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
               <span className="ml-1.5">Actualizar</span>
             </Button>

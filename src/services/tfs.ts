@@ -870,12 +870,21 @@ interface TeamFieldValuesResponse {
  */
 export const listTfsTeamAreaPaths = async (
   conn: TfsConnection,
+  options: { force?: boolean } = {},
 ): Promise<TfsDiscoveryResult<string>> => {
   if (!conn.team?.trim()) return { items: [] };
   const base = buildCollectionUrl(conn.serverUrl, conn.collection);
   const url = `${base}/${encodeURIComponent(conn.project.trim())}/${encodeURIComponent(
     conn.team.trim(),
   )}/_apis/work/teamsettings/teamfieldvalues?api-version=${API_VERSION}`;
+
+  // Cache lookup — avoids re-hitting teamfieldvalues on every team filter
+  // change or page refresh within the TTL window.
+  const cacheKey = buildAreaCacheKey(conn);
+  if (!options.force) {
+    const cached = readAreaCache(cacheKey);
+    if (cached) return { items: cached };
+  }
 
   if (isMixedContent(url)) {
     return { items: [], error: { kind: "mixed_content", url, message: "Mixed content (HTTPS → HTTP)." } };
@@ -905,6 +914,7 @@ export const listTfsTeamAreaPaths = async (
     }
     const data = (await res.json()) as TeamFieldValuesResponse;
     const paths = (data.values ?? []).map((v) => v.value).filter(Boolean);
+    writeAreaCache(cacheKey, paths);
     return { items: paths };
   } catch (err: unknown) {
     if (err instanceof DOMException && err.name === "AbortError") {
@@ -920,4 +930,49 @@ export const listTfsTeamAreaPaths = async (
   } finally {
     window.clearTimeout(timeoutId);
   }
+};
+
+// ---------------------------------------------------------------------------
+// In-memory TTL cache for team area paths.
+// Lives for the lifetime of the JS module (cleared on full page reload).
+// Keyed per (server + collection + project + team) so switching connections
+// never returns stale data from another tenant.
+// ---------------------------------------------------------------------------
+interface AreaCacheEntry {
+  paths: string[];
+  expiresAt: number;
+}
+
+const AREA_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const areaPathCache = new Map<string, AreaCacheEntry>();
+
+const buildAreaCacheKey = (conn: TfsConnection): string =>
+  [
+    conn.serverUrl.trim().replace(/\/+$/, "").toLowerCase(),
+    conn.collection.trim().toLowerCase(),
+    conn.project.trim().toLowerCase(),
+    (conn.team ?? "").trim().toLowerCase(),
+  ].join("|");
+
+const readAreaCache = (key: string): string[] | null => {
+  const entry = areaPathCache.get(key);
+  if (!entry) return null;
+  if (entry.expiresAt < Date.now()) {
+    areaPathCache.delete(key);
+    return null;
+  }
+  return entry.paths;
+};
+
+const writeAreaCache = (key: string, paths: string[]): void => {
+  areaPathCache.set(key, { paths, expiresAt: Date.now() + AREA_CACHE_TTL_MS });
+};
+
+/** Clear cached area paths — call after editing the Azure DevOps settings. */
+export const clearTfsAreaPathCache = (conn?: TfsConnection): void => {
+  if (!conn) {
+    areaPathCache.clear();
+    return;
+  }
+  areaPathCache.delete(buildAreaCacheKey(conn));
 };
