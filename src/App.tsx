@@ -13,6 +13,7 @@ import Index from "./pages/Index";
 import TeamPage from "./pages/TeamPage";
 import AbsencesPage from "./pages/AbsencesPage";
 import HandoversPage from "./pages/HandoversPage";
+import FeaturesPage from "./pages/FeaturesPage";
 import AzureDevOpsSettingsPage from "./pages/AzureDevOpsSettingsPage";
 import AuthPage from "./pages/AuthPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -37,6 +38,7 @@ const App = () => (
                   <Route path="/team/:teamId" element={<ProtectedRoute><AppLayout><TeamPage /></AppLayout></ProtectedRoute>} />
                   <Route path="/absences" element={<ProtectedRoute><AppLayout><AbsencesPage /></AppLayout></ProtectedRoute>} />
                   <Route path="/handovers" element={<ProtectedRoute><AppLayout><HandoversPage /></AppLayout></ProtectedRoute>} />
+                  <Route path="/features" element={<ProtectedRoute><AppLayout><FeaturesPage /></AppLayout></ProtectedRoute>} />
                   <Route path="/settings/azure-devops" element={<ProtectedRoute><AppLayout><AzureDevOpsSettingsPage /></AppLayout></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
