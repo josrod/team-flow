@@ -987,3 +987,90 @@ export const clearTfsAreaPathCache = (conn?: TfsConnection): void => {
   }
   areaPathCache.delete(buildAreaCacheKey(conn));
 };
+
+// ---------------------------------------------------------------------------
+// In-memory cache for the people list associated to a team's area paths.
+// Populated after a successful TFS load; read as a best-effort fallback when a
+// subsequent reload fails (network/CORS/HTTP) so the person selector keeps
+// showing the last known roster instead of collapsing to an empty list.
+//
+// Keyed per (connection + set of area paths) so switching team/area set never
+// returns stale data from another scope.
+// ---------------------------------------------------------------------------
+interface PeopleCacheEntry {
+  people: string[];
+  storedAt: number;
+}
+
+const peopleByAreaCache = new Map<string, PeopleCacheEntry>();
+
+const normalizeAreaPathsKey = (paths: readonly string[]): string =>
+  [...paths]
+    .map((p) => p.trim().toLowerCase())
+    .filter(Boolean)
+    .sort()
+    .join("||");
+
+const buildPeopleCacheKey = (conn: TfsConnection, areaPaths: readonly string[]): string =>
+  `${buildAreaCacheKey(conn)}::${normalizeAreaPathsKey(areaPaths)}`;
+
+/**
+ * Persist the people list associated to the given connection + area paths
+ * scope. Overwrites any previous entry. `people` is expected to be an already
+ * de-duplicated, sorted list.
+ */
+export const writeTfsPeopleCache = (
+  conn: TfsConnection,
+  areaPaths: readonly string[],
+  people: readonly string[],
+): void => {
+  peopleByAreaCache.set(buildPeopleCacheKey(conn, areaPaths), {
+    people: [...people],
+    storedAt: Date.now(),
+  });
+};
+
+/**
+ * Read the cached people list for an exact (connection + area paths) match.
+ * No TTL is applied — the cache is a best-effort fallback and the caller
+ * decides whether to surface a "stale" warning. Returns `null` when no
+ * matching entry exists.
+ */
+export const peekTfsPeopleCache = (
+  conn: TfsConnection,
+  areaPaths: readonly string[],
+): string[] | null => {
+  const entry = peopleByAreaCache.get(buildPeopleCacheKey(conn, areaPaths));
+  return entry ? entry.people : null;
+};
+
+/**
+ * Fallback lookup when no exact (conn + areaPaths) entry exists. Returns the
+ * most recently stored people list for the same connection (ignoring the
+ * area-paths component of the key) so the selector degrades gracefully even
+ * if the area list changed between calls. Returns `null` when nothing has
+ * ever been cached for the connection.
+ */
+export const peekTfsPeopleCacheForConnection = (
+  conn: TfsConnection,
+): string[] | null => {
+  const prefix = `${buildAreaCacheKey(conn)}::`;
+  let best: PeopleCacheEntry | null = null;
+  for (const [key, entry] of peopleByAreaCache.entries()) {
+    if (!key.startsWith(prefix)) continue;
+    if (!best || entry.storedAt > best.storedAt) best = entry;
+  }
+  return best ? best.people : null;
+};
+
+/** Clear cached people lists — call after editing the Azure DevOps settings. */
+export const clearTfsPeopleCache = (conn?: TfsConnection): void => {
+  if (!conn) {
+    peopleByAreaCache.clear();
+    return;
+  }
+  const prefix = `${buildAreaCacheKey(conn)}::`;
+  for (const key of Array.from(peopleByAreaCache.keys())) {
+    if (key.startsWith(prefix)) peopleByAreaCache.delete(key);
+  }
+};
