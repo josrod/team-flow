@@ -259,6 +259,28 @@ export default function FeaturesPage() {
   // Reset person dropdown when tab changes
   useEffect(() => { setActivePerson("all"); }, [activeTeam]);
 
+  const copyWorkItemLink = async (id: string, type: "feature" | "tarea") => {
+    if (!tfsBaseUrl) return;
+    const url = `${tfsBaseUrl}/_workitems/edit/${id}`;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = url;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      toast.success(`Enlace de la ${type} #${id} copiado`);
+    } catch {
+      toast.error("No se pudo copiar el enlace");
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
