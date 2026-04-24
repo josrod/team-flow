@@ -16,7 +16,9 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
   PieChart, Pie, Legend,
 } from "recharts";
-import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X } from "lucide-react";
+import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X, Undo2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, type TfsConnection, type TfsWorkItem } from "@/services/tfs";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
@@ -126,6 +128,55 @@ export default function FeaturesPage() {
     }
   }, [activeTeam, activePerson, search]);
 
+  // "Confirmar cambios" mode: when enabled, filter edits are held in a local
+  // draft and only pushed to the URL (and therefore the dashboard) when the
+  // user clicks "Aplicar". This avoids multiple reloads while adjusting.
+  const MANUAL_APPLY_STORAGE_KEY = "featuresPage:manualApply";
+  const [manualApply, setManualApply] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(MANUAL_APPLY_STORAGE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(MANUAL_APPLY_STORAGE_KEY, manualApply ? "1" : "0");
+    } catch {
+      // Ignore storage errors.
+    }
+  }, [manualApply]);
+
+  // Draft filter values. They mirror the applied (URL) values whenever the
+  // user is NOT in manual-apply mode, or right after an apply/discard action.
+  const [draftTeam, setDraftTeam] = useState<string>(activeTeam);
+  const [draftPerson, setDraftPerson] = useState<string>(activePerson);
+  const [draftSearch, setDraftSearch] = useState<string>(search);
+
+  // Keep drafts in sync with applied values when manual-apply is off, so the
+  // UI reflects changes driven from elsewhere (URL hydration, invalid-ID
+  // normalization, etc.).
+  useEffect(() => {
+    if (!manualApply) {
+      setDraftTeam(activeTeam);
+      setDraftPerson(activePerson);
+      setDraftSearch(search);
+    }
+  }, [manualApply, activeTeam, activePerson, search]);
+
+  const commitFilters = (next: { team: string; person: string; q: string }) => {
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (!next.team || next.team === "all") params.delete("team"); else params.set("team", next.team);
+        if (!next.person || next.person === "all") params.delete("person"); else params.set("person", next.person);
+        if (!next.q) params.delete("q"); else params.set("q", next.q);
+        return params;
+      },
+      { replace: true },
+    );
+  };
+
   const updateParam = (key: "team" | "person" | "q", value: string) => {
     setSearchParams(
       (prev) => {
@@ -143,9 +194,38 @@ export default function FeaturesPage() {
     );
   };
 
-  const setActiveTeam = (v: string) => updateParam("team", v);
-  const setActivePerson = (v: string) => updateParam("person", v);
-  const setSearch = (v: string) => updateParam("q", v);
+  // Filter setters: route through drafts when manual-apply is on, otherwise
+  // push directly to the URL (original behavior).
+  const setActiveTeam = (v: string) => {
+    if (manualApply) {
+      setDraftTeam(v);
+      // Reset person draft when team draft changes, mirroring URL behavior.
+      setDraftPerson("all");
+    } else {
+      updateParam("team", v);
+    }
+  };
+  const setActivePerson = (v: string) => {
+    if (manualApply) setDraftPerson(v);
+    else updateParam("person", v);
+  };
+  const setSearch = (v: string) => {
+    if (manualApply) setDraftSearch(v);
+    else updateParam("q", v);
+  };
+
+  const hasPendingChanges =
+    manualApply &&
+    (draftTeam !== activeTeam || draftPerson !== activePerson || draftSearch !== search);
+
+  const applyDraft = () => {
+    commitFilters({ team: draftTeam, person: draftPerson, q: draftSearch });
+  };
+  const discardDraft = () => {
+    setDraftTeam(activeTeam);
+    setDraftPerson(activePerson);
+    setDraftSearch(search);
+  };
 
   // Detect TFS settings on mount
   useEffect(() => {
@@ -669,22 +749,69 @@ export default function FeaturesPage() {
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
-                  value={search}
+                  value={manualApply ? draftSearch : search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar tarea..."
                   className="pl-8 h-9 w-56"
                 />
               </div>
               <PersonCombobox
-                value={activePerson}
+                value={manualApply ? draftPerson : activePerson}
                 onChange={setActivePerson}
                 people={peopleForTab}
               />
             </div>
           </div>
+          {/* Confirmar cambios: holds filter edits in a draft until applied */}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="manual-apply"
+                checked={manualApply}
+                onCheckedChange={(checked) => {
+                  setManualApply(checked);
+                  // When turning on, seed drafts from current applied values.
+                  if (checked) {
+                    setDraftTeam(activeTeam);
+                    setDraftPerson(activePerson);
+                    setDraftSearch(search);
+                  }
+                }}
+              />
+              <Label htmlFor="manual-apply" className="text-xs text-muted-foreground cursor-pointer">
+                Confirmar cambios antes de aplicar
+              </Label>
+              {hasPendingChanges && (
+                <Badge variant="secondary" className="text-[10px]">Cambios sin aplicar</Badge>
+              )}
+            </div>
+            {manualApply && (
+              <div className="flex items-center gap-1.5">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8"
+                  onClick={discardDraft}
+                  disabled={!hasPendingChanges}
+                >
+                  <Undo2 className="h-3.5 w-3.5" />
+                  <span className="ml-1.5">Descartar</span>
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-8"
+                  onClick={applyDraft}
+                  disabled={!hasPendingChanges}
+                >
+                  <Check className="h-3.5 w-3.5" />
+                  <span className="ml-1.5">Aplicar</span>
+                </Button>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTeam} onValueChange={setActiveTeam}>
+          <Tabs value={manualApply ? draftTeam : activeTeam} onValueChange={setActiveTeam}>
             <TabsList>
               <TabsTrigger value="all">Todos</TabsTrigger>
               {teams.map((team) => (
