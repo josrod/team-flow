@@ -76,9 +76,31 @@ export default function FeaturesPage() {
   const [tfsError, setTfsError] = useState<string | null>(null);
   const [tfsBaseUrl, setTfsBaseUrl] = useState<string | null>(null);
 
-  const [activeTeam, setActiveTeam] = useState<string>("all");
-  const [activePerson, setActivePerson] = useState<string>("all");
-  const [search, setSearch] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTeam = searchParams.get("team") ?? "all";
+  const activePerson = searchParams.get("person") ?? "all";
+  const search = searchParams.get("q") ?? "";
+
+  const updateParam = (key: "team" | "person" | "q", value: string) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (!value || value === "all") {
+          next.delete(key);
+        } else {
+          next.set(key, value);
+        }
+        // Reset person when team changes
+        if (key === "team") next.delete("person");
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
+  const setActiveTeam = (v: string) => updateParam("team", v);
+  const setActivePerson = (v: string) => updateParam("person", v);
+  const setSearch = (v: string) => updateParam("q", v);
 
   // Detect TFS settings on mount
   useEffect(() => {
