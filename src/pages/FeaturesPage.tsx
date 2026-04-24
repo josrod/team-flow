@@ -563,7 +563,7 @@ export default function FeaturesPage() {
                         <TableHead className="w-[120px]">Estado</TableHead>
                         <TableHead className="w-[180px]">Asignado a</TableHead>
                         {source === "tfs" && tfsBaseUrl && (
-                          <TableHead className="w-[60px] text-right">Acción</TableHead>
+                          <TableHead className="w-[90px] text-right">Acciones</TableHead>
                         )}
                       </TableRow>
                     </TableHeader>
