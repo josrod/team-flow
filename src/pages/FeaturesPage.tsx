@@ -17,7 +17,7 @@ import {
   PieChart, Pie, Legend,
 } from "recharts";
 import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X } from "lucide-react";
-import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, type TfsWorkItem } from "@/services/tfs";
+import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, type TfsConnection, type TfsWorkItem } from "@/services/tfs";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
@@ -78,6 +78,9 @@ export default function FeaturesPage() {
   const [tfsTasks, setTfsTasks] = useState<TfsWorkItem[]>([]);
   const [tfsError, setTfsError] = useState<string | null>(null);
   const [tfsBaseUrl, setTfsBaseUrl] = useState<string | null>(null);
+  // Cached TFS connection (resolved from settings) so we can warm the area
+  // path cache when the team filter changes, without re-querying Supabase.
+  const [tfsConn, setTfsConn] = useState<TfsConnection | null>(null);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTeam = searchParams.get("team") ?? "all";
