@@ -419,15 +419,33 @@ export default function FeaturesPage() {
   // TFS mode. The cache (TTL 10 min) makes this a no-op when the value is
   // already warm; otherwise it warms it in the background so the people
   // selector and any subsequent reload feel instant.
+  //
+  // Fallback: if the prefetch fails (network/CORS/timeout/HTTP error), we
+  // keep the last known cached paths (if any) so the selector stays usable,
+  // and we surface a subtle "usando caché" warning. The warning auto-clears
+  // on the next successful prefetch.
   const [prefetching, setPrefetching] = useState(false);
+  const [prefetchStaleWarning, setPrefetchStaleWarning] = useState(false);
   useEffect(() => {
     if (source !== "tfs" || !tfsConn?.team) return;
+    const conn = tfsConn;
     const timer = window.setTimeout(() => {
       setPrefetching(true);
-      // Fire-and-forget: errors here are non-fatal — `loadFromTfs` will
-      // surface them on the next user-triggered refresh.
-      listTfsTeamAreaPaths(tfsConn)
-        .catch(() => {})
+      listTfsTeamAreaPaths(conn)
+        .then((res) => {
+          if (res.error) {
+            // Network/HTTP failure: fall back to last cache if available.
+            const cached = peekTfsAreaPathCache(conn);
+            setPrefetchStaleWarning(cached !== null);
+          } else {
+            // Fresh data arrived — clear any previous warning.
+            setPrefetchStaleWarning(false);
+          }
+        })
+        .catch(() => {
+          const cached = peekTfsAreaPathCache(conn);
+          setPrefetchStaleWarning(cached !== null);
+        })
         .finally(() => setPrefetching(false));
     }, 250);
     return () => window.clearTimeout(timer);
