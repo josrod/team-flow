@@ -16,8 +16,11 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
   PieChart, Pie, Legend,
 } from "recharts";
-import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy } from "lucide-react";
-import { listTfsFeatures, listTfsTasks, type TfsWorkItem } from "@/services/tfs";
+import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X } from "lucide-react";
+import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, type TfsWorkItem } from "@/services/tfs";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
 
