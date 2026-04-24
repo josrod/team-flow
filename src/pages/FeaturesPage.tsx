@@ -408,22 +408,34 @@ export default function FeaturesPage() {
                     </div>
                     <Progress value={pct} className="h-1.5" />
                     {source === "tfs" && tfsBaseUrl && (
-                      <Button
-                        asChild
-                        size="sm"
-                        variant="ghost"
-                        className="mt-3 h-7 px-2 text-xs w-full justify-center"
-                      >
-                        <a
-                          href={`${tfsBaseUrl}/_workitems/edit/${f.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`Abrir feature ${f.id} en Azure DevOps`}
+                      <div className="mt-3 flex items-center gap-1.5">
+                        <Button
+                          asChild
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs flex-1 justify-center"
                         >
-                          <ExternalLink className="h-3 w-3" />
-                          Abrir en Azure DevOps
-                        </a>
-                      </Button>
+                          <a
+                            href={`${tfsBaseUrl}/_workitems/edit/${f.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`Abrir feature ${f.id} en Azure DevOps`}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            Abrir en Azure DevOps
+                          </a>
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 shrink-0"
+                          title="Copiar enlace"
+                          aria-label={`Copiar enlace de la feature ${f.id}`}
+                          onClick={() => copyWorkItemLink(f.id, "feature")}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                 );
