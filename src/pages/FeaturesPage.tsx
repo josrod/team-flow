@@ -749,14 +749,14 @@ export default function FeaturesPage() {
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
-                  value={search}
+                  value={manualApply ? draftSearch : search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar tarea..."
                   className="pl-8 h-9 w-56"
                 />
               </div>
               <PersonCombobox
-                value={activePerson}
+                value={manualApply ? draftPerson : activePerson}
                 onChange={setActivePerson}
                 people={peopleForTab}
               />
@@ -764,7 +764,7 @@ export default function FeaturesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTeam} onValueChange={setActiveTeam}>
+          <Tabs value={manualApply ? draftTeam : activeTeam} onValueChange={setActiveTeam}>
             <TabsList>
               <TabsTrigger value="all">Todos</TabsTrigger>
               {teams.map((team) => (
