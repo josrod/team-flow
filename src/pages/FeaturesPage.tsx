@@ -385,6 +385,24 @@ export default function FeaturesPage() {
                       <span className="font-medium">{pct}%</span>
                     </div>
                     <Progress value={pct} className="h-1.5" />
+                    {source === "tfs" && tfsBaseUrl && (
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="ghost"
+                        className="mt-3 h-7 px-2 text-xs w-full justify-center"
+                      >
+                        <a
+                          href={`${tfsBaseUrl}/_workitems/edit/${f.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Abrir feature ${f.id} en Azure DevOps`}
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Abrir en Azure DevOps
+                        </a>
+                      </Button>
+                    )}
                   </div>
                 );
               })}
