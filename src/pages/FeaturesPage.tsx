@@ -84,45 +84,55 @@ export default function FeaturesPage() {
       if (!user) return;
       const { data } = await supabase
         .from("azure_devops_settings")
-        .select("server_url, collection, project, pat_encrypted")
+        .select("server_url, collection, project, team, pat_encrypted")
         .eq("user_id", user.id)
         .maybeSingle();
       if (data?.server_url && data?.collection && data?.project && data?.pat_encrypted) {
         setTfsConnConfigured(true);
         setSource("tfs");
-        await loadFromTfs();
+        await loadFromTfs(data);
       }
     };
     detect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const loadFromTfs = async () => {
+  const loadFromTfs = async (
+    presetSettings?: { server_url: string | null; collection: string | null; project: string; team: string | null; pat_encrypted: string },
+  ) => {
     if (!user) return;
     setLoading(true);
     setTfsError(null);
     try {
-      const { data, error } = await supabase.functions.invoke("azure-devops-decrypt-pat");
-      if (error || !data?.pat || !data?.settings) {
-        // Fallback: try fetching raw settings — but PAT is encrypted; the dedicated
-        // edge function is required to use TFS live. If unavailable, gracefully degrade.
-        setTfsError("No se pudo descifrar el PAT. Mostrando datos locales.");
+      let settings = presetSettings;
+      if (!settings) {
+        const { data } = await supabase
+          .from("azure_devops_settings")
+          .select("server_url, collection, project, team, pat_encrypted")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        settings = data ?? undefined;
+      }
+      if (!settings?.server_url || !settings?.collection || !settings?.project || !settings?.pat_encrypted) {
+        setTfsError("Configuración de Azure DevOps incompleta. Mostrando datos locales.");
         setSource("local");
-        setLoading(false);
         return;
       }
       const conn = {
-        serverUrl: data.settings.server_url,
-        collection: data.settings.collection,
-        project: data.settings.project,
-        team: data.settings.team,
-        pat: data.pat,
+        serverUrl: settings.server_url,
+        collection: settings.collection,
+        project: settings.project,
+        team: settings.team ?? undefined,
+        pat: settings.pat_encrypted,
       };
       const [featRes, taskRes] = await Promise.all([
         listTfsFeatures(conn),
         listTfsTasks(conn),
       ]);
-      if (featRes.error) setTfsError(featRes.error.message);
+      if (featRes.error) {
+        setTfsError(featRes.error.message);
+        toast.error(`TFS: ${featRes.error.message}`);
+      }
       setTfsFeatures(featRes.items);
       setTfsTasks(taskRes.items);
     } catch (err) {
