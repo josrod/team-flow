@@ -157,16 +157,36 @@ export default function FeaturesPage() {
       const cleanCollection = settings.collection.replace(/^\/+|\/+$/g, "");
       const cleanProject = settings.project.replace(/^\/+|\/+$/g, "");
       setTfsBaseUrl(`${cleanServer}/${cleanCollection}/${encodeURIComponent(cleanProject)}`);
+
+      // Resolve the area paths owned by the configured team so we can scope
+      // both features and tasks to that team only.
+      let areaPaths: string[] = [];
+      if (conn.team) {
+        const areaRes = await listTfsTeamAreaPaths(conn);
+        if (areaRes.error) {
+          // Non-fatal: warn but keep going without area filtering.
+          toast.warning(`No se pudieron leer las áreas del equipo: ${areaRes.error.message}`);
+        }
+        areaPaths = areaRes.items;
+      }
+
       const [featRes, taskRes] = await Promise.all([
-        listTfsFeatures(conn),
+        listTfsFeatures(conn, areaPaths),
         listTfsTasks(conn),
       ]);
       if (featRes.error) {
         setTfsError(featRes.error.message);
         toast.error(`TFS: ${featRes.error.message}`);
       }
+      // Client-side scope: keep only tasks under the team's area paths so the
+      // dashboard reflects "this team's work" only.
+      const scopedTasks = areaPaths.length > 0
+        ? taskRes.items.filter((t) =>
+            t.areaPath && areaPaths.some((p) => t.areaPath === p || t.areaPath!.startsWith(`${p}\\`)),
+          )
+        : taskRes.items;
       setTfsFeatures(featRes.items);
-      setTfsTasks(taskRes.items);
+      setTfsTasks(scopedTasks);
     } catch (err) {
       setTfsError(err instanceof Error ? err.message : "Error desconocido");
       setSource("local");
