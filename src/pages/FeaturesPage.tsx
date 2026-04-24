@@ -73,6 +73,7 @@ export default function FeaturesPage() {
   const [tfsFeatures, setTfsFeatures] = useState<TfsWorkItem[]>([]);
   const [tfsTasks, setTfsTasks] = useState<TfsWorkItem[]>([]);
   const [tfsError, setTfsError] = useState<string | null>(null);
+  const [tfsBaseUrl, setTfsBaseUrl] = useState<string | null>(null);
 
   const [activeTeam, setActiveTeam] = useState<string>("all");
   const [activePerson, setActivePerson] = useState<string>("all");
