@@ -296,6 +296,20 @@ export default function FeaturesPage() {
     );
   }, [loading, source, teams, members, peopleForTab, activeTeam, activePerson, tasks.length, features.length, setSearchParams]);
 
+  // Debounced prefetch of team area paths whenever the team filter changes in
+  // TFS mode. The cache (TTL 10 min) makes this a no-op when the value is
+  // already warm; otherwise it warms it in the background so the people
+  // selector and any subsequent reload feel instant.
+  useEffect(() => {
+    if (source !== "tfs" || !tfsConn?.team) return;
+    const timer = window.setTimeout(() => {
+      // Fire-and-forget: errors here are non-fatal — `loadFromTfs` will
+      // surface them on the next user-triggered refresh.
+      void listTfsTeamAreaPaths(tfsConn).catch(() => {});
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [source, tfsConn, activeTeam]);
+
 
   // Filtered tasks
   const filteredTasks = useMemo(() => {
