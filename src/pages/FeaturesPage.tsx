@@ -126,6 +126,7 @@ export default function FeaturesPage() {
 
   const loadFromTfs = async (
     presetSettings?: { server_url: string | null; collection: string | null; project: string; team: string | null; pat_encrypted: string },
+    options: { forceAreaRefresh?: boolean } = {},
   ) => {
     if (!user) return;
     setLoading(true);
