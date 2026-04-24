@@ -837,11 +837,24 @@ export default function FeaturesPage() {
                   className="pl-8 h-9 w-56"
                 />
               </div>
-              <PersonCombobox
-                value={manualApply ? draftPerson : activePerson}
-                onChange={setActivePerson}
-                people={peopleForTab}
-              />
+              <div className="flex items-center gap-1.5">
+                <PersonCombobox
+                  value={manualApply ? draftPerson : activePerson}
+                  onChange={setActivePerson}
+                  people={peopleForTab}
+                />
+                {peopleFallbackStale && (
+                  <Badge
+                    variant="outline"
+                    className="gap-1 border-status-vacation/40 text-status-vacation"
+                    title="No se pudo actualizar la lista de personas. Se está mostrando el último listado en caché."
+                    aria-live="polite"
+                  >
+                    <AlertTriangle className="h-3 w-3" />
+                    <span className="text-[10px]">Caché</span>
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
           {/* Confirmar cambios: holds filter edits in a draft until applied */}
