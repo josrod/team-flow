@@ -156,6 +156,7 @@ export default function FeaturesPage() {
         team: settings.team ?? undefined,
         pat: settings.pat_encrypted,
       };
+      setTfsConn(conn);
       // Build base URL for "Open in Azure DevOps" links
       const cleanServer = settings.server_url.replace(/\/+$/, "");
       const cleanCollection = settings.collection.replace(/^\/+|\/+$/g, "");
