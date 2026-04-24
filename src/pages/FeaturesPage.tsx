@@ -83,6 +83,14 @@ export default function FeaturesPage() {
   // Cached TFS connection (resolved from settings) so we can warm the area
   // path cache when the team filter changes, without re-querying Supabase.
   const [tfsConn, setTfsConn] = useState<TfsConnection | null>(null);
+  // Area paths resolved during the most recent TFS load + whether that load
+  // failed (feature/task fetch). Used to decide when to fall back to the
+  // cached people list for the person selector.
+  const [lastAreaPaths, setLastAreaPaths] = useState<string[]>([]);
+  const [tfsLoadFailed, setTfsLoadFailed] = useState(false);
+  // True when the people list shown in the selector comes from the fallback
+  // cache (i.e. the last load failed but we have a previous roster on hand).
+  const [peopleFallbackStale, setPeopleFallbackStale] = useState(false);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTeam = searchParams.get("team") ?? "all";
