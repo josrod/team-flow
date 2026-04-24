@@ -528,6 +528,9 @@ export default function FeaturesPage() {
                         <TableHead className="w-[100px]">Tipo</TableHead>
                         <TableHead className="w-[120px]">Estado</TableHead>
                         <TableHead className="w-[180px]">Asignado a</TableHead>
+                        {source === "tfs" && tfsBaseUrl && (
+                          <TableHead className="w-[60px] text-right">Acción</TableHead>
+                        )}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -552,6 +555,26 @@ export default function FeaturesPage() {
                             <TableCell className="text-sm">
                               {t.assignee || <span className="text-muted-foreground italic">Sin asignar</span>}
                             </TableCell>
+                            {source === "tfs" && tfsBaseUrl && (
+                              <TableCell className="text-right">
+                                <Button
+                                  asChild
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7"
+                                  title="Abrir en Azure DevOps"
+                                >
+                                  <a
+                                    href={`${tfsBaseUrl}/_workitems/edit/${t.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={`Abrir tarea ${t.id} en Azure DevOps`}
+                                  >
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                  </a>
+                                </Button>
+                              </TableCell>
+                            )}
                           </TableRow>
                         );
                       })}
