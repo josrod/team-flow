@@ -236,6 +236,39 @@ export default function FeaturesPage() {
     return members.filter((m) => m.teamId === activeTeam).map((m) => m.name);
   }, [source, tasks, features, activeTeam, members]);
 
+  // Normalize invalid URL params (stale team/person IDs) back to "all".
+  // Wait for data to be ready before invalidating, otherwise we'd wipe the
+  // URL prematurely while TFS is still loading or local data is hydrating.
+  useEffect(() => {
+    if (loading) return;
+    const dataReady = source === "tfs"
+      ? tasks.length + features.length > 0
+      : teams.length > 0 || members.length > 0;
+    if (!dataReady) return;
+
+    const invalidTeam =
+      activeTeam !== "all" && source === "local" && !teams.some((t) => t.id === activeTeam);
+    const invalidPerson =
+      activePerson !== "all" && !peopleForTab.includes(activePerson);
+
+    if (!invalidTeam && !invalidPerson) return;
+
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (invalidTeam) {
+          next.delete("team");
+          next.delete("person");
+        } else if (invalidPerson) {
+          next.delete("person");
+        }
+        return next;
+      },
+      { replace: true },
+    );
+  }, [loading, source, teams, members, peopleForTab, activeTeam, activePerson, tasks.length, features.length, setSearchParams]);
+
+
   // Filtered tasks
   const filteredTasks = useMemo(() => {
     return tasks.filter((t) => {
