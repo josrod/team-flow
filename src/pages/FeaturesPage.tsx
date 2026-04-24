@@ -16,7 +16,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
   PieChart, Pie, Legend,
 } from "recharts";
-import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon } from "lucide-react";
+import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink } from "lucide-react";
 import { listTfsFeatures, listTfsTasks, type TfsWorkItem } from "@/services/tfs";
 import { toast } from "sonner";
 
@@ -73,6 +73,7 @@ export default function FeaturesPage() {
   const [tfsFeatures, setTfsFeatures] = useState<TfsWorkItem[]>([]);
   const [tfsTasks, setTfsTasks] = useState<TfsWorkItem[]>([]);
   const [tfsError, setTfsError] = useState<string | null>(null);
+  const [tfsBaseUrl, setTfsBaseUrl] = useState<string | null>(null);
 
   const [activeTeam, setActiveTeam] = useState<string>("all");
   const [activePerson, setActivePerson] = useState<string>("all");
@@ -125,6 +126,11 @@ export default function FeaturesPage() {
         team: settings.team ?? undefined,
         pat: settings.pat_encrypted,
       };
+      // Build base URL for "Open in Azure DevOps" links
+      const cleanServer = settings.server_url.replace(/\/+$/, "");
+      const cleanCollection = settings.collection.replace(/^\/+|\/+$/g, "");
+      const cleanProject = settings.project.replace(/^\/+|\/+$/g, "");
+      setTfsBaseUrl(`${cleanServer}/${cleanCollection}/${encodeURIComponent(cleanProject)}`);
       const [featRes, taskRes] = await Promise.all([
         listTfsFeatures(conn),
         listTfsTasks(conn),
@@ -379,6 +385,24 @@ export default function FeaturesPage() {
                       <span className="font-medium">{pct}%</span>
                     </div>
                     <Progress value={pct} className="h-1.5" />
+                    {source === "tfs" && tfsBaseUrl && (
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="ghost"
+                        className="mt-3 h-7 px-2 text-xs w-full justify-center"
+                      >
+                        <a
+                          href={`${tfsBaseUrl}/_workitems/edit/${f.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Abrir feature ${f.id} en Azure DevOps`}
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Abrir en Azure DevOps
+                        </a>
+                      </Button>
+                    )}
                   </div>
                 );
               })}
@@ -504,6 +528,9 @@ export default function FeaturesPage() {
                         <TableHead className="w-[100px]">Tipo</TableHead>
                         <TableHead className="w-[120px]">Estado</TableHead>
                         <TableHead className="w-[180px]">Asignado a</TableHead>
+                        {source === "tfs" && tfsBaseUrl && (
+                          <TableHead className="w-[60px] text-right">Acción</TableHead>
+                        )}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -528,6 +555,26 @@ export default function FeaturesPage() {
                             <TableCell className="text-sm">
                               {t.assignee || <span className="text-muted-foreground italic">Sin asignar</span>}
                             </TableCell>
+                            {source === "tfs" && tfsBaseUrl && (
+                              <TableCell className="text-right">
+                                <Button
+                                  asChild
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7"
+                                  title="Abrir en Azure DevOps"
+                                >
+                                  <a
+                                    href={`${tfsBaseUrl}/_workitems/edit/${t.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={`Abrir tarea ${t.id} en Azure DevOps`}
+                                  >
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                  </a>
+                                </Button>
+                              </TableCell>
+                            )}
                           </TableRow>
                         );
                       })}
