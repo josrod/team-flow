@@ -27,6 +27,7 @@ import {
   listTfsCollections,
   listTfsProjects,
   listTfsTeams,
+  clearTfsAreaPathCache,
   type TfsProjectInfo,
   type TfsError,
   type TfsDiagnosticResult,
