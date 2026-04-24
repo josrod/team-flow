@@ -348,6 +348,10 @@ export const AzureDevOpsSettingsPage = () => {
         setHasExisting(true);
       }
 
+      // Settings changed → invalidate cached team area paths so the next
+      // dashboard load picks up the new team/project mapping.
+      clearTfsAreaPathCache();
+
       // Saved → drop the local draft, the DB is the source of truth now.
       try {
         localStorage.removeItem(DRAFT_KEY);
