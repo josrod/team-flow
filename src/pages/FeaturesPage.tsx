@@ -339,12 +339,16 @@ export default function FeaturesPage() {
   // TFS mode. The cache (TTL 10 min) makes this a no-op when the value is
   // already warm; otherwise it warms it in the background so the people
   // selector and any subsequent reload feel instant.
+  const [prefetching, setPrefetching] = useState(false);
   useEffect(() => {
     if (source !== "tfs" || !tfsConn?.team) return;
     const timer = window.setTimeout(() => {
+      setPrefetching(true);
       // Fire-and-forget: errors here are non-fatal — `loadFromTfs` will
       // surface them on the next user-triggered refresh.
-      void listTfsTeamAreaPaths(tfsConn).catch(() => {});
+      listTfsTeamAreaPaths(tfsConn)
+        .catch(() => {})
+        .finally(() => setPrefetching(false));
     }, 250);
     return () => window.clearTimeout(timer);
   }, [source, tfsConn, activeTeam]);
@@ -431,6 +435,18 @@ export default function FeaturesPage() {
             {source === "tfs" ? <Cloud className="h-3 w-3" /> : <Database className="h-3 w-3" />}
             <span className="text-xs">{source === "tfs" ? "Azure DevOps" : "Datos locales"}</span>
           </Badge>
+          {/* Subtle prefetch indicator — fades in while warming the area-path cache */}
+          <div
+            aria-live="polite"
+            aria-hidden={!prefetching}
+            className={cn(
+              "flex items-center gap-1.5 text-xs text-muted-foreground transition-opacity duration-200",
+              prefetching ? "opacity-100" : "opacity-0 pointer-events-none",
+            )}
+          >
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>Precargando áreas…</span>
+          </div>
           {tfsConnConfigured && (
             <Button size="sm" variant="outline" onClick={() => loadFromTfs(undefined, { forceAreaRefresh: true })} disabled={loading}>
               {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
