@@ -16,10 +16,10 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
   PieChart, Pie, Legend,
 } from "recharts";
-import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X, Undo2 } from "lucide-react";
+import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X, Undo2, AlertTriangle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, type TfsConnection, type TfsWorkItem } from "@/services/tfs";
+import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, peekTfsAreaPathCache, type TfsConnection, type TfsWorkItem } from "@/services/tfs";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
@@ -419,15 +419,33 @@ export default function FeaturesPage() {
   // TFS mode. The cache (TTL 10 min) makes this a no-op when the value is
   // already warm; otherwise it warms it in the background so the people
   // selector and any subsequent reload feel instant.
+  //
+  // Fallback: if the prefetch fails (network/CORS/timeout/HTTP error), we
+  // keep the last known cached paths (if any) so the selector stays usable,
+  // and we surface a subtle "usando caché" warning. The warning auto-clears
+  // on the next successful prefetch.
   const [prefetching, setPrefetching] = useState(false);
+  const [prefetchStaleWarning, setPrefetchStaleWarning] = useState(false);
   useEffect(() => {
     if (source !== "tfs" || !tfsConn?.team) return;
+    const conn = tfsConn;
     const timer = window.setTimeout(() => {
       setPrefetching(true);
-      // Fire-and-forget: errors here are non-fatal — `loadFromTfs` will
-      // surface them on the next user-triggered refresh.
-      listTfsTeamAreaPaths(tfsConn)
-        .catch(() => {})
+      listTfsTeamAreaPaths(conn)
+        .then((res) => {
+          if (res.error) {
+            // Network/HTTP failure: fall back to last cache if available.
+            const cached = peekTfsAreaPathCache(conn);
+            setPrefetchStaleWarning(cached !== null);
+          } else {
+            // Fresh data arrived — clear any previous warning.
+            setPrefetchStaleWarning(false);
+          }
+        })
+        .catch(() => {
+          const cached = peekTfsAreaPathCache(conn);
+          setPrefetchStaleWarning(cached !== null);
+        })
         .finally(() => setPrefetching(false));
     }, 250);
     return () => window.clearTimeout(timer);
@@ -527,6 +545,19 @@ export default function FeaturesPage() {
             <Loader2 className="h-3 w-3 animate-spin" />
             <span>Precargando áreas…</span>
           </div>
+          {/* Fallback warning — shown when prefetch failed but we still have
+              a cached set of area paths keeping the selector usable. */}
+          {prefetchStaleWarning && !prefetching && (
+            <Badge
+              variant="outline"
+              className="gap-1.5 border-status-vacation/40 text-status-vacation"
+              title="No se pudo actualizar la lista de áreas del equipo. Se está usando la última versión en caché."
+              aria-live="polite"
+            >
+              <AlertTriangle className="h-3 w-3" />
+              <span className="text-xs">Usando caché</span>
+            </Badge>
+          )}
           {tfsConnConfigured && (
             <Button size="sm" variant="outline" onClick={() => loadFromTfs(undefined, { forceAreaRefresh: true })} disabled={loading}>
               {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}

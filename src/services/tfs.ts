@@ -968,6 +968,17 @@ const writeAreaCache = (key: string, paths: string[]): void => {
   areaPathCache.set(key, { paths, expiresAt: Date.now() + AREA_CACHE_TTL_MS });
 };
 
+/**
+ * Read cached area paths ignoring TTL. Used as a best-effort fallback when a
+ * fresh fetch fails (network/CORS/timeout) so the UI can keep working with
+ * the last known values instead of collapsing to an empty selector.
+ * Returns `null` when no entry was ever cached for the connection.
+ */
+export const peekTfsAreaPathCache = (conn: TfsConnection): string[] | null => {
+  const entry = areaPathCache.get(buildAreaCacheKey(conn));
+  return entry ? entry.paths : null;
+};
+
 /** Clear cached area paths — call after editing the Azure DevOps settings. */
 export const clearTfsAreaPathCache = (conn?: TfsConnection): void => {
   if (!conn) {
