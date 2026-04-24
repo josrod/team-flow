@@ -279,8 +279,6 @@ export default function FeaturesPage() {
     return features.filter((f) => f.id === activeTeam);
   }, [features, activeTeam, source]);
 
-  // Reset person dropdown when tab changes
-  useEffect(() => { setActivePerson("all"); }, [activeTeam]);
 
   const copyWorkItemLink = async (id: string, type: "feature" | "tarea") => {
     if (!tfsBaseUrl) return;
