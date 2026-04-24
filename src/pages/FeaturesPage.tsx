@@ -19,7 +19,7 @@ import {
 import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X, Undo2, AlertTriangle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, peekTfsAreaPathCache, type TfsConnection, type TfsWorkItem } from "@/services/tfs";
+import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, peekTfsAreaPathCache, peekTfsPeopleCache, peekTfsPeopleCacheForConnection, writeTfsPeopleCache, type TfsConnection, type TfsWorkItem } from "@/services/tfs";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
@@ -83,6 +83,14 @@ export default function FeaturesPage() {
   // Cached TFS connection (resolved from settings) so we can warm the area
   // path cache when the team filter changes, without re-querying Supabase.
   const [tfsConn, setTfsConn] = useState<TfsConnection | null>(null);
+  // Area paths resolved during the most recent TFS load + whether that load
+  // failed (feature/task fetch). Used to decide when to fall back to the
+  // cached people list for the person selector.
+  const [lastAreaPaths, setLastAreaPaths] = useState<string[]>([]);
+  const [tfsLoadFailed, setTfsLoadFailed] = useState(false);
+  // True when the people list shown in the selector comes from the fallback
+  // cache (i.e. the last load failed but we have a previous roster on hand).
+  const [peopleFallbackStale, setPeopleFallbackStale] = useState(false);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTeam = searchParams.get("team") ?? "all";
@@ -298,6 +306,7 @@ export default function FeaturesPage() {
         listTfsFeatures(conn, areaPaths),
         listTfsTasks(conn),
       ]);
+      const loadHadError = Boolean(featRes.error || taskRes.error);
       if (featRes.error) {
         setTfsError(featRes.error.message);
         toast.error(`TFS: ${featRes.error.message}`);
@@ -311,8 +320,22 @@ export default function FeaturesPage() {
         : taskRes.items;
       setTfsFeatures(featRes.items);
       setTfsTasks(scopedTasks);
+      setLastAreaPaths(areaPaths);
+      setTfsLoadFailed(loadHadError);
+
+      // Warm the people cache on a successful load so a future failure can
+      // degrade gracefully without emptying the person selector.
+      if (!loadHadError) {
+        const peopleSet = new Set<string>();
+        scopedTasks.forEach((t) => t.assignedTo && peopleSet.add(t.assignedTo));
+        featRes.items.forEach((f) => f.assignedTo && peopleSet.add(f.assignedTo));
+        const people = Array.from(peopleSet).sort();
+        writeTfsPeopleCache(conn, areaPaths, people);
+        setPeopleFallbackStale(false);
+      }
     } catch (err) {
       setTfsError(err instanceof Error ? err.message : "Error desconocido");
+      setTfsLoadFailed(true);
       setSource("local");
     } finally {
       setLoading(false);
@@ -371,17 +394,45 @@ export default function FeaturesPage() {
     return { features: feats, tasks: tks };
   }, [source, tfsFeatures, tfsTasks, teams, members, workTopics]);
 
-  // Filter people by selected team tab (for the dropdown)
+  // Filter people by selected team tab (for the dropdown).
+  //
+  // Fallback: when the current TFS load failed and yielded an empty roster,
+  // fall back to the last cached people list associated to the same
+  // connection + area paths so the selector stays usable. A subtle warning
+  // is surfaced via `peopleFallbackStale` so the user knows the list may be
+  // outdated.
   const peopleForTab = useMemo(() => {
     if (source === "tfs") {
       const set = new Set<string>();
       tasks.forEach((t) => t.assignee && set.add(t.assignee));
       features.forEach((f) => f.assignee && set.add(f.assignee));
-      return Array.from(set).sort();
+      if (set.size > 0) return Array.from(set).sort();
+
+      // Empty live roster: try the cache if the last load failed.
+      if (tfsConn && tfsLoadFailed) {
+        const exact = peekTfsPeopleCache(tfsConn, lastAreaPaths);
+        if (exact && exact.length > 0) return exact;
+        const anyForConn = peekTfsPeopleCacheForConnection(tfsConn);
+        if (anyForConn && anyForConn.length > 0) return anyForConn;
+      }
+      return [];
     }
     if (activeTeam === "all") return members.map((m) => m.name);
     return members.filter((m) => m.teamId === activeTeam).map((m) => m.name);
-  }, [source, tasks, features, activeTeam, members]);
+  }, [source, tasks, features, activeTeam, members, tfsConn, tfsLoadFailed, lastAreaPaths]);
+
+  // Flip the "stale" flag whenever the selector is actually being populated
+  // from the fallback cache rather than from fresh data.
+  useEffect(() => {
+    if (source !== "tfs") {
+      if (peopleFallbackStale) setPeopleFallbackStale(false);
+      return;
+    }
+    const liveHasPeople =
+      tasks.some((t) => t.assignee) || features.some((f) => f.assignee);
+    const usingFallback = tfsLoadFailed && !liveHasPeople && peopleForTab.length > 0;
+    if (usingFallback !== peopleFallbackStale) setPeopleFallbackStale(usingFallback);
+  }, [source, tfsLoadFailed, tasks, features, peopleForTab.length, peopleFallbackStale]);
 
   // Normalize invalid URL params (stale team/person IDs) back to "all".
   // Wait for data to be ready before invalidating, otherwise we'd wipe the
@@ -786,11 +837,24 @@ export default function FeaturesPage() {
                   className="pl-8 h-9 w-56"
                 />
               </div>
-              <PersonCombobox
-                value={manualApply ? draftPerson : activePerson}
-                onChange={setActivePerson}
-                people={peopleForTab}
-              />
+              <div className="flex items-center gap-1.5">
+                <PersonCombobox
+                  value={manualApply ? draftPerson : activePerson}
+                  onChange={setActivePerson}
+                  people={peopleForTab}
+                />
+                {peopleFallbackStale && (
+                  <Badge
+                    variant="outline"
+                    className="gap-1 border-status-vacation/40 text-status-vacation"
+                    title="No se pudo actualizar la lista de personas. Se está mostrando el último listado en caché."
+                    aria-live="polite"
+                  >
+                    <AlertTriangle className="h-3 w-3" />
+                    <span className="text-[10px]">Caché</span>
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
           {/* Confirmar cambios: holds filter edits in a draft until applied */}
