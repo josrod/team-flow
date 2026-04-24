@@ -601,17 +601,11 @@ export default function FeaturesPage() {
                   className="pl-8 h-9 w-56"
                 />
               </div>
-              <Select value={activePerson} onValueChange={setActivePerson}>
-                <SelectTrigger className="w-52 h-9">
-                  <SelectValue placeholder="Persona" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las personas</SelectItem>
-                  {peopleForTab.map((p) => (
-                    <SelectItem key={p} value={p}>{p}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <PersonCombobox
+                value={activePerson}
+                onChange={setActivePerson}
+                people={peopleForTab}
+              />
             </div>
           </div>
         </CardHeader>
