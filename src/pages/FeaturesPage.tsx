@@ -16,7 +16,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
   PieChart, Pie, Legend,
 } from "recharts";
-import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink } from "lucide-react";
+import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy } from "lucide-react";
 import { listTfsFeatures, listTfsTasks, type TfsWorkItem } from "@/services/tfs";
 import { toast } from "sonner";
 
@@ -259,6 +259,28 @@ export default function FeaturesPage() {
   // Reset person dropdown when tab changes
   useEffect(() => { setActivePerson("all"); }, [activeTeam]);
 
+  const copyWorkItemLink = async (id: string, type: "feature" | "tarea") => {
+    if (!tfsBaseUrl) return;
+    const url = `${tfsBaseUrl}/_workitems/edit/${id}`;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = url;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      toast.success(`Enlace de la ${type} #${id} copiado`);
+    } catch {
+      toast.error("No se pudo copiar el enlace");
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
@@ -386,22 +408,34 @@ export default function FeaturesPage() {
                     </div>
                     <Progress value={pct} className="h-1.5" />
                     {source === "tfs" && tfsBaseUrl && (
-                      <Button
-                        asChild
-                        size="sm"
-                        variant="ghost"
-                        className="mt-3 h-7 px-2 text-xs w-full justify-center"
-                      >
-                        <a
-                          href={`${tfsBaseUrl}/_workitems/edit/${f.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`Abrir feature ${f.id} en Azure DevOps`}
+                      <div className="mt-3 flex items-center gap-1.5">
+                        <Button
+                          asChild
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs flex-1 justify-center"
                         >
-                          <ExternalLink className="h-3 w-3" />
-                          Abrir en Azure DevOps
-                        </a>
-                      </Button>
+                          <a
+                            href={`${tfsBaseUrl}/_workitems/edit/${f.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`Abrir feature ${f.id} en Azure DevOps`}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            Abrir en Azure DevOps
+                          </a>
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 shrink-0"
+                          title="Copiar enlace"
+                          aria-label={`Copiar enlace de la feature ${f.id}`}
+                          onClick={() => copyWorkItemLink(f.id, "feature")}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                 );
@@ -529,7 +563,7 @@ export default function FeaturesPage() {
                         <TableHead className="w-[120px]">Estado</TableHead>
                         <TableHead className="w-[180px]">Asignado a</TableHead>
                         {source === "tfs" && tfsBaseUrl && (
-                          <TableHead className="w-[60px] text-right">Acción</TableHead>
+                          <TableHead className="w-[90px] text-right">Acciones</TableHead>
                         )}
                       </TableRow>
                     </TableHeader>
@@ -557,22 +591,34 @@ export default function FeaturesPage() {
                             </TableCell>
                             {source === "tfs" && tfsBaseUrl && (
                               <TableCell className="text-right">
-                                <Button
-                                  asChild
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7"
-                                  title="Abrir en Azure DevOps"
-                                >
-                                  <a
-                                    href={`${tfsBaseUrl}/_workitems/edit/${t.id}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    aria-label={`Abrir tarea ${t.id} en Azure DevOps`}
+                                <div className="flex items-center justify-end gap-0.5">
+                                  <Button
+                                    asChild
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7"
+                                    title="Abrir en Azure DevOps"
                                   >
-                                    <ExternalLink className="h-3.5 w-3.5" />
-                                  </a>
-                                </Button>
+                                    <a
+                                      href={`${tfsBaseUrl}/_workitems/edit/${t.id}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      aria-label={`Abrir tarea ${t.id} en Azure DevOps`}
+                                    >
+                                      <ExternalLink className="h-3.5 w-3.5" />
+                                    </a>
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7"
+                                    title="Copiar enlace"
+                                    aria-label={`Copiar enlace de la tarea ${t.id}`}
+                                    onClick={() => copyWorkItemLink(t.id, "tarea")}
+                                  >
+                                    <Copy className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             )}
                           </TableRow>
