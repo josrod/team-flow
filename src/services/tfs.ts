@@ -752,15 +752,38 @@ const runWiqlAndFetch = async (
 };
 
 /**
- * List Features in the configured project. Returns active + recently closed.
+ * Active feature states we care about in the dashboard.
+ * Filters out Done / Closed / Removed / Cut so users only see live work.
+ */
+export const ACTIVE_FEATURE_STATES = ["Open", "In Refinement", "In Progress"] as const;
+
+/**
+ * List Features in the configured project, restricted to the given team's
+ * area path(s) and to the active state set (Open, In Refinement, In Progress).
+ *
+ * When `teamAreaPaths` is empty/undefined, no area-path filter is applied
+ * (used as a safe fallback when the team has no area mapping).
  */
 export const listTfsFeatures = async (
   conn: TfsConnection,
+  teamAreaPaths?: string[],
 ): Promise<TfsDiscoveryResult<TfsWorkItem>> => {
   const project = conn.project.trim().replace(/'/g, "''");
+  const stateList = ACTIVE_FEATURE_STATES.map((s) => `'${s.replace(/'/g, "''")}'`).join(", ");
+
+  // Build optional area-path filter. Each path matches itself and descendants
+  // via the WIQL `UNDER` operator, so a team's root area covers all its sub-areas.
+  const areaClause =
+    teamAreaPaths && teamAreaPaths.length > 0
+      ? ` AND (${teamAreaPaths
+          .map((p) => `[System.AreaPath] UNDER '${p.replace(/'/g, "''")}'`)
+          .join(" OR ")})`
+      : "";
+
   const wiql = `SELECT [System.Id] FROM WorkItems
 WHERE [System.TeamProject] = '${project}'
   AND [System.WorkItemType] = 'Feature'
+  AND [System.State] IN (${stateList})${areaClause}
 ORDER BY [System.ChangedDate] DESC`;
   return runWiqlAndFetch(conn, wiql, [
     "System.Id",
