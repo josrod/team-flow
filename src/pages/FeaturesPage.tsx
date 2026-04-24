@@ -126,6 +126,11 @@ export default function FeaturesPage() {
         team: settings.team ?? undefined,
         pat: settings.pat_encrypted,
       };
+      // Build base URL for "Open in Azure DevOps" links
+      const cleanServer = settings.server_url.replace(/\/+$/, "");
+      const cleanCollection = settings.collection.replace(/^\/+|\/+$/g, "");
+      const cleanProject = settings.project.replace(/^\/+|\/+$/g, "");
+      setTfsBaseUrl(`${cleanServer}/${cleanCollection}/${encodeURIComponent(cleanProject)}`);
       const [featRes, taskRes] = await Promise.all([
         listTfsFeatures(conn),
         listTfsTasks(conn),
