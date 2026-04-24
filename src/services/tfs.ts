@@ -752,15 +752,38 @@ const runWiqlAndFetch = async (
 };
 
 /**
- * List Features in the configured project. Returns active + recently closed.
+ * Active feature states we care about in the dashboard.
+ * Filters out Done / Closed / Removed / Cut so users only see live work.
+ */
+export const ACTIVE_FEATURE_STATES = ["Open", "In Refinement", "In Progress"] as const;
+
+/**
+ * List Features in the configured project, restricted to the given team's
+ * area path(s) and to the active state set (Open, In Refinement, In Progress).
+ *
+ * When `teamAreaPaths` is empty/undefined, no area-path filter is applied
+ * (used as a safe fallback when the team has no area mapping).
  */
 export const listTfsFeatures = async (
   conn: TfsConnection,
+  teamAreaPaths?: string[],
 ): Promise<TfsDiscoveryResult<TfsWorkItem>> => {
   const project = conn.project.trim().replace(/'/g, "''");
+  const stateList = ACTIVE_FEATURE_STATES.map((s) => `'${s.replace(/'/g, "''")}'`).join(", ");
+
+  // Build optional area-path filter. Each path matches itself and descendants
+  // via the WIQL `UNDER` operator, so a team's root area covers all its sub-areas.
+  const areaClause =
+    teamAreaPaths && teamAreaPaths.length > 0
+      ? ` AND (${teamAreaPaths
+          .map((p) => `[System.AreaPath] UNDER '${p.replace(/'/g, "''")}'`)
+          .join(" OR ")})`
+      : "";
+
   const wiql = `SELECT [System.Id] FROM WorkItems
 WHERE [System.TeamProject] = '${project}'
   AND [System.WorkItemType] = 'Feature'
+  AND [System.State] IN (${stateList})${areaClause}
 ORDER BY [System.ChangedDate] DESC`;
   return runWiqlAndFetch(conn, wiql, [
     "System.Id",
@@ -821,4 +844,80 @@ export const listTfsTeams = async (
     project.trim(),
   )}/teams?$top=500&api-version=${API_VERSION}`;
   return fetchJsonList<TfsTeamRef>(url, pat);
+};
+
+// ---------------------------------------------------------------------------
+// Team field values — used to scope features to the area paths that belong
+// to a given team. Endpoint:
+//   GET {server}/{collection}/{project}/{team}/_apis/work/teamsettings/teamfieldvalues
+// Returns the default area + included sub-areas for the team.
+// ---------------------------------------------------------------------------
+
+interface TeamFieldValueRaw {
+  value: string;
+  includeChildren?: boolean;
+}
+
+interface TeamFieldValuesResponse {
+  field?: { referenceName?: string };
+  defaultValue?: string;
+  values?: TeamFieldValueRaw[];
+}
+
+/**
+ * Resolve the area paths configured for a team. Falls back to an empty list
+ * (no area filter) when the team is unknown or the call fails.
+ */
+export const listTfsTeamAreaPaths = async (
+  conn: TfsConnection,
+): Promise<TfsDiscoveryResult<string>> => {
+  if (!conn.team?.trim()) return { items: [] };
+  const base = buildCollectionUrl(conn.serverUrl, conn.collection);
+  const url = `${base}/${encodeURIComponent(conn.project.trim())}/${encodeURIComponent(
+    conn.team.trim(),
+  )}/_apis/work/teamsettings/teamfieldvalues?api-version=${API_VERSION}`;
+
+  if (isMixedContent(url)) {
+    return { items: [], error: { kind: "mixed_content", url, message: "Mixed content (HTTPS → HTTP)." } };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      return {
+        items: [],
+        error: {
+          kind: res.status === 401 ? "unauthorized" : res.status === 403 ? "forbidden" : "http",
+          status: res.status,
+          url,
+          message: `HTTP ${res.status} al leer team field values.`,
+          detail: body.slice(0, 300),
+        },
+      };
+    }
+    const data = (await res.json()) as TeamFieldValuesResponse;
+    const paths = (data.values ?? []).map((v) => v.value).filter(Boolean);
+    return { items: paths };
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return { items: [], error: { kind: "timeout", url, message: "Tiempo de espera agotado." } };
+    }
+    if (isNetworkLevelError(err)) {
+      return { items: [], error: { kind: "cors", url, message: "Sin respuesta (CORS, VPN o firewall)." } };
+    }
+    return {
+      items: [],
+      error: { kind: "unknown", url, message: err instanceof Error ? err.message : "Error desconocido." },
+    };
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 };

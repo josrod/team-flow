@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// Select removed in favor of a searchable combobox for the person picker.
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,11 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
   PieChart, Pie, Legend,
 } from "recharts";
-import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy } from "lucide-react";
-import { listTfsFeatures, listTfsTasks, type TfsWorkItem } from "@/services/tfs";
+import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X } from "lucide-react";
+import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, type TfsWorkItem } from "@/services/tfs";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
 
@@ -154,16 +157,36 @@ export default function FeaturesPage() {
       const cleanCollection = settings.collection.replace(/^\/+|\/+$/g, "");
       const cleanProject = settings.project.replace(/^\/+|\/+$/g, "");
       setTfsBaseUrl(`${cleanServer}/${cleanCollection}/${encodeURIComponent(cleanProject)}`);
+
+      // Resolve the area paths owned by the configured team so we can scope
+      // both features and tasks to that team only.
+      let areaPaths: string[] = [];
+      if (conn.team) {
+        const areaRes = await listTfsTeamAreaPaths(conn);
+        if (areaRes.error) {
+          // Non-fatal: warn but keep going without area filtering.
+          toast.warning(`No se pudieron leer las áreas del equipo: ${areaRes.error.message}`);
+        }
+        areaPaths = areaRes.items;
+      }
+
       const [featRes, taskRes] = await Promise.all([
-        listTfsFeatures(conn),
+        listTfsFeatures(conn, areaPaths),
         listTfsTasks(conn),
       ]);
       if (featRes.error) {
         setTfsError(featRes.error.message);
         toast.error(`TFS: ${featRes.error.message}`);
       }
+      // Client-side scope: keep only tasks under the team's area paths so the
+      // dashboard reflects "this team's work" only.
+      const scopedTasks = areaPaths.length > 0
+        ? taskRes.items.filter((t) =>
+            t.areaPath && areaPaths.some((p) => t.areaPath === p || t.areaPath!.startsWith(`${p}\\`)),
+          )
+        : taskRes.items;
       setTfsFeatures(featRes.items);
-      setTfsTasks(taskRes.items);
+      setTfsTasks(scopedTasks);
     } catch (err) {
       setTfsError(err instanceof Error ? err.message : "Error desconocido");
       setSource("local");
@@ -578,17 +601,11 @@ export default function FeaturesPage() {
                   className="pl-8 h-9 w-56"
                 />
               </div>
-              <Select value={activePerson} onValueChange={setActivePerson}>
-                <SelectTrigger className="w-52 h-9">
-                  <SelectValue placeholder="Persona" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las personas</SelectItem>
-                  {peopleForTab.map((p) => (
-                    <SelectItem key={p} value={p}>{p}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <PersonCombobox
+                value={activePerson}
+                onChange={setActivePerson}
+                people={peopleForTab}
+              />
             </div>
           </div>
         </CardHeader>
@@ -692,5 +709,82 @@ export default function FeaturesPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Searchable person picker — replaces the plain <Select> so users can quickly
+// type a name to filter, see a count of matching people, and clear the
+// selection with a single click.
+// ---------------------------------------------------------------------------
+interface PersonComboboxProps {
+  value: string;
+  onChange: (next: string) => void;
+  people: string[];
+}
+
+function PersonCombobox({ value, onChange, people }: PersonComboboxProps) {
+  const [open, setOpen] = useState(false);
+  const isAll = value === "all";
+  const label = isAll ? `Todas las personas (${people.length})` : value;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="h-9 w-60 justify-between font-normal"
+        >
+          <span className={cn("truncate", isAll && "text-muted-foreground")}>{label}</span>
+          <div className="flex items-center gap-1 shrink-0">
+            {!isAll && (
+              <X
+                className="h-3.5 w-3.5 opacity-60 hover:opacity-100"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange("all");
+                }}
+              />
+            )}
+            <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />
+          </div>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-60 p-0" align="end">
+        <Command>
+          <CommandInput placeholder="Buscar persona..." />
+          <CommandList>
+            <CommandEmpty>Sin coincidencias.</CommandEmpty>
+            <CommandGroup>
+              <CommandItem
+                value="__all__"
+                onSelect={() => {
+                  onChange("all");
+                  setOpen(false);
+                }}
+              >
+                <Check className={cn("mr-2 h-4 w-4", isAll ? "opacity-100" : "opacity-0")} />
+                Todas las personas
+              </CommandItem>
+              {people.map((p) => (
+                <CommandItem
+                  key={p}
+                  value={p}
+                  onSelect={() => {
+                    onChange(p);
+                    setOpen(false);
+                  }}
+                >
+                  <Check className={cn("mr-2 h-4 w-4", value === p ? "opacity-100" : "opacity-0")} />
+                  <span className="truncate">{p}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
