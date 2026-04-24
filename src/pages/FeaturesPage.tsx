@@ -87,6 +87,45 @@ export default function FeaturesPage() {
   const activePerson = searchParams.get("person") ?? "all";
   const search = searchParams.get("q") ?? "";
 
+  // Persist last-used filters in localStorage so the user keeps their context
+  // when navigating away and back to the dashboard. The URL still wins when
+  // present (so shared/bookmarked links keep working).
+  const FILTERS_STORAGE_KEY = "featuresPage:lastFilters";
+
+  // On first mount, if the URL has no filter params but localStorage does,
+  // hydrate the URL from storage. This runs once.
+  useEffect(() => {
+    const hasUrlFilters =
+      searchParams.has("team") || searchParams.has("person") || searchParams.has("q");
+    if (hasUrlFilters) return;
+    try {
+      const raw = localStorage.getItem(FILTERS_STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { team?: string; person?: string; q?: string };
+      const next = new URLSearchParams(searchParams);
+      let touched = false;
+      if (saved.team && saved.team !== "all") { next.set("team", saved.team); touched = true; }
+      if (saved.person && saved.person !== "all") { next.set("person", saved.person); touched = true; }
+      if (saved.q) { next.set("q", saved.q); touched = true; }
+      if (touched) setSearchParams(next, { replace: true });
+    } catch {
+      // Ignore malformed storage entries.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist filters to localStorage whenever they change.
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        FILTERS_STORAGE_KEY,
+        JSON.stringify({ team: activeTeam, person: activePerson, q: search }),
+      );
+    } catch {
+      // Storage may be unavailable (private mode, quota); ignore.
+    }
+  }, [activeTeam, activePerson, search]);
+
   const updateParam = (key: "team" | "person" | "q", value: string) => {
     setSearchParams(
       (prev) => {
