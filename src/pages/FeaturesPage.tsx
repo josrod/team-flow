@@ -128,6 +128,55 @@ export default function FeaturesPage() {
     }
   }, [activeTeam, activePerson, search]);
 
+  // "Confirmar cambios" mode: when enabled, filter edits are held in a local
+  // draft and only pushed to the URL (and therefore the dashboard) when the
+  // user clicks "Aplicar". This avoids multiple reloads while adjusting.
+  const MANUAL_APPLY_STORAGE_KEY = "featuresPage:manualApply";
+  const [manualApply, setManualApply] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(MANUAL_APPLY_STORAGE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(MANUAL_APPLY_STORAGE_KEY, manualApply ? "1" : "0");
+    } catch {
+      // Ignore storage errors.
+    }
+  }, [manualApply]);
+
+  // Draft filter values. They mirror the applied (URL) values whenever the
+  // user is NOT in manual-apply mode, or right after an apply/discard action.
+  const [draftTeam, setDraftTeam] = useState<string>(activeTeam);
+  const [draftPerson, setDraftPerson] = useState<string>(activePerson);
+  const [draftSearch, setDraftSearch] = useState<string>(search);
+
+  // Keep drafts in sync with applied values when manual-apply is off, so the
+  // UI reflects changes driven from elsewhere (URL hydration, invalid-ID
+  // normalization, etc.).
+  useEffect(() => {
+    if (!manualApply) {
+      setDraftTeam(activeTeam);
+      setDraftPerson(activePerson);
+      setDraftSearch(search);
+    }
+  }, [manualApply, activeTeam, activePerson, search]);
+
+  const commitFilters = (next: { team: string; person: string; q: string }) => {
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (!next.team || next.team === "all") params.delete("team"); else params.set("team", next.team);
+        if (!next.person || next.person === "all") params.delete("person"); else params.set("person", next.person);
+        if (!next.q) params.delete("q"); else params.set("q", next.q);
+        return params;
+      },
+      { replace: true },
+    );
+  };
+
   const updateParam = (key: "team" | "person" | "q", value: string) => {
     setSearchParams(
       (prev) => {
@@ -145,9 +194,38 @@ export default function FeaturesPage() {
     );
   };
 
-  const setActiveTeam = (v: string) => updateParam("team", v);
-  const setActivePerson = (v: string) => updateParam("person", v);
-  const setSearch = (v: string) => updateParam("q", v);
+  // Filter setters: route through drafts when manual-apply is on, otherwise
+  // push directly to the URL (original behavior).
+  const setActiveTeam = (v: string) => {
+    if (manualApply) {
+      setDraftTeam(v);
+      // Reset person draft when team draft changes, mirroring URL behavior.
+      setDraftPerson("all");
+    } else {
+      updateParam("team", v);
+    }
+  };
+  const setActivePerson = (v: string) => {
+    if (manualApply) setDraftPerson(v);
+    else updateParam("person", v);
+  };
+  const setSearch = (v: string) => {
+    if (manualApply) setDraftSearch(v);
+    else updateParam("q", v);
+  };
+
+  const hasPendingChanges =
+    manualApply &&
+    (draftTeam !== activeTeam || draftPerson !== activePerson || draftSearch !== search);
+
+  const applyDraft = () => {
+    commitFilters({ team: draftTeam, person: draftPerson, q: draftSearch });
+  };
+  const discardDraft = () => {
+    setDraftTeam(activeTeam);
+    setDraftPerson(activePerson);
+    setDraftSearch(search);
+  };
 
   // Detect TFS settings on mount
   useEffect(() => {
