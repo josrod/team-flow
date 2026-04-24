@@ -435,6 +435,18 @@ export default function FeaturesPage() {
             {source === "tfs" ? <Cloud className="h-3 w-3" /> : <Database className="h-3 w-3" />}
             <span className="text-xs">{source === "tfs" ? "Azure DevOps" : "Datos locales"}</span>
           </Badge>
+          {/* Subtle prefetch indicator — fades in while warming the area-path cache */}
+          <div
+            aria-live="polite"
+            aria-hidden={!prefetching}
+            className={cn(
+              "flex items-center gap-1.5 text-xs text-muted-foreground transition-opacity duration-200",
+              prefetching ? "opacity-100" : "opacity-0 pointer-events-none",
+            )}
+          >
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>Precargando áreas…</span>
+          </div>
           {tfsConnConfigured && (
             <Button size="sm" variant="outline" onClick={() => loadFromTfs(undefined, { forceAreaRefresh: true })} disabled={loading}>
               {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
