@@ -394,17 +394,45 @@ export default function FeaturesPage() {
     return { features: feats, tasks: tks };
   }, [source, tfsFeatures, tfsTasks, teams, members, workTopics]);
 
-  // Filter people by selected team tab (for the dropdown)
+  // Filter people by selected team tab (for the dropdown).
+  //
+  // Fallback: when the current TFS load failed and yielded an empty roster,
+  // fall back to the last cached people list associated to the same
+  // connection + area paths so the selector stays usable. A subtle warning
+  // is surfaced via `peopleFallbackStale` so the user knows the list may be
+  // outdated.
   const peopleForTab = useMemo(() => {
     if (source === "tfs") {
       const set = new Set<string>();
       tasks.forEach((t) => t.assignee && set.add(t.assignee));
       features.forEach((f) => f.assignee && set.add(f.assignee));
-      return Array.from(set).sort();
+      if (set.size > 0) return Array.from(set).sort();
+
+      // Empty live roster: try the cache if the last load failed.
+      if (tfsConn && tfsLoadFailed) {
+        const exact = peekTfsPeopleCache(tfsConn, lastAreaPaths);
+        if (exact && exact.length > 0) return exact;
+        const anyForConn = peekTfsPeopleCacheForConnection(tfsConn);
+        if (anyForConn && anyForConn.length > 0) return anyForConn;
+      }
+      return [];
     }
     if (activeTeam === "all") return members.map((m) => m.name);
     return members.filter((m) => m.teamId === activeTeam).map((m) => m.name);
-  }, [source, tasks, features, activeTeam, members]);
+  }, [source, tasks, features, activeTeam, members, tfsConn, tfsLoadFailed, lastAreaPaths]);
+
+  // Flip the "stale" flag whenever the selector is actually being populated
+  // from the fallback cache rather than from fresh data.
+  useEffect(() => {
+    if (source !== "tfs") {
+      if (peopleFallbackStale) setPeopleFallbackStale(false);
+      return;
+    }
+    const liveHasPeople =
+      tasks.some((t) => t.assignee) || features.some((f) => f.assignee);
+    const usingFallback = tfsLoadFailed && !liveHasPeople && peopleForTab.length > 0;
+    if (usingFallback !== peopleFallbackStale) setPeopleFallbackStale(usingFallback);
+  }, [source, tfsLoadFailed, tasks, features, peopleForTab.length, peopleFallbackStale]);
 
   // Normalize invalid URL params (stale team/person IDs) back to "all".
   // Wait for data to be ready before invalidating, otherwise we'd wipe the
