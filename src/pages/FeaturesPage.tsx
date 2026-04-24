@@ -269,7 +269,7 @@ export default function FeaturesPage() {
             <span className="text-xs">{source === "tfs" ? "Azure DevOps" : "Datos locales"}</span>
           </Badge>
           {tfsConnConfigured && (
-            <Button size="sm" variant="outline" onClick={loadFromTfs} disabled={loading}>
+            <Button size="sm" variant="outline" onClick={() => loadFromTfs()} disabled={loading}>
               {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
               <span className="ml-1.5">Actualizar</span>
             </Button>
