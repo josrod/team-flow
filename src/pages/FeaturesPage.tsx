@@ -718,7 +718,7 @@ export default function FeaturesPage() {
                   <p className="text-sm font-medium">
                     {scopeCheck.ok
                       ? "Alcance verificado"
-                      : "Hay elementos fuera del alcance esperado"}
+                      : "Elementos fuera del alcance ocultos automáticamente"}
                   </p>
                   <Badge variant="outline" className="gap-1 font-mono text-[11px]">
                     Área: {RODAT_AREA_PATH}
@@ -734,7 +734,9 @@ export default function FeaturesPage() {
                     </>
                   ) : (
                     <>
-                      {scopeCheck.featuresOutOfArea.length} features fuera del área,
+                      Mostrando {scopeCheck.featuresTotal} de {scopeCheck.featuresRawTotal} features
+                      {" "}y {scopeCheck.tasksTotal} de {scopeCheck.tasksRawTotal} tareas.
+                      {" "}Excluidas: {scopeCheck.featuresOutOfArea.length} features fuera del área,
                       {" "}{scopeCheck.tasksOutOfArea.length} tareas fuera del área,
                       {" "}{scopeCheck.tasksOutOfIteration.length} tareas fuera de la iteración.
                     </>
