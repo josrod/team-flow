@@ -76,8 +76,11 @@ export default function FeaturesPage() {
   const [source, setSource] = useState<DataSource>("local");
   const [loading, setLoading] = useState(false);
   const [tfsConnConfigured, setTfsConnConfigured] = useState(false);
-  const [tfsFeatures, setTfsFeatures] = useState<TfsWorkItem[]>([]);
-  const [tfsTasks, setTfsTasks] = useState<TfsWorkItem[]>([]);
+  // Raw payloads as returned by TFS — kept untouched so the scope audit can
+  // detect items that fall outside the required Rodat area/iteration. The UI
+  // never reads these directly; it consumes the scoped derivations below.
+  const [tfsFeaturesRaw, setTfsFeaturesRaw] = useState<TfsWorkItem[]>([]);
+  const [tfsTasksRaw, setTfsTasksRaw] = useState<TfsWorkItem[]>([]);
   const [tfsError, setTfsError] = useState<string | null>(null);
   const [tfsBaseUrl, setTfsBaseUrl] = useState<string | null>(null);
   // Cached TFS connection (resolved from settings) so we can warm the area
