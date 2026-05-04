@@ -899,18 +899,25 @@ export const listTfsClassificationNodes = async (
 export const listTfsFeatures = async (
   conn: TfsConnection,
   teamAreaPaths?: string[],
+  configuredAreaPaths?: string[],
 ): Promise<TfsDiscoveryResult<TfsWorkItem>> => {
   const project = conn.project.trim().replace(/'/g, "''");
   const stateList = ACTIVE_FEATURE_STATES.map((s) => `'${s.replace(/'/g, "''")}'`).join(", ");
 
-  // Hard scope: always restrict to SDES\Rodat (and descendants). If the team
-  // also exposes more specific area paths, intersect with those; otherwise
-  // fall back to the Rodat root only.
-  const rodatEsc = RODAT_AREA_PATH.replace(/'/g, "''");
-  const effectiveAreas = (teamAreaPaths ?? []).filter(
-    (p) => p === RODAT_AREA_PATH || p.startsWith(`${RODAT_AREA_PATH}\\`),
-  );
-  const areaList = effectiveAreas.length > 0 ? effectiveAreas : [RODAT_AREA_PATH];
+  // Effective scope precedence:
+  //   1. Explicit user-configured areas from Settings (Settings dropdown).
+  //   2. Team-resolved areas intersected with the legacy Rodat root.
+  //   3. Fallback to the Rodat root only.
+  const userAreas = (configuredAreaPaths ?? []).filter((p) => p.trim().length > 0);
+  let areaList: string[];
+  if (userAreas.length > 0) {
+    areaList = userAreas;
+  } else {
+    const rodatTeamAreas = (teamAreaPaths ?? []).filter(
+      (p) => p === RODAT_AREA_PATH || p.startsWith(`${RODAT_AREA_PATH}\\`),
+    );
+    areaList = rodatTeamAreas.length > 0 ? rodatTeamAreas : [RODAT_AREA_PATH];
+  }
   const areaClause = ` AND (${areaList
     .map((p) => `[System.AreaPath] UNDER '${p.replace(/'/g, "''")}'`)
     .join(" OR ")})`;
