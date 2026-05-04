@@ -758,6 +758,14 @@ const runWiqlAndFetch = async (
 export const ACTIVE_FEATURE_STATES = ["Open", "In Refinement", "In Progress"] as const;
 
 /**
+ * Hard scope applied to every Features/Tasks query, regardless of the team
+ * configured in Azure DevOps settings. The dashboard must only ever surface
+ * work under SDES\Rodat (and, for tasks, iterations under SDES\Rodat\4.4).
+ */
+export const RODAT_AREA_PATH = "SDES\\Rodat";
+export const RODAT_ITERATION_PATH = "SDES\\Rodat\\4.4";
+
+/**
  * List Features in the configured project, restricted to the given team's
  * area path(s) and to the active state set (Open, In Refinement, In Progress).
  *
