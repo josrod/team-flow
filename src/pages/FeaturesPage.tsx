@@ -797,12 +797,16 @@ export default function FeaturesPage() {
                       ? "Alcance verificado"
                       : "Elementos fuera del alcance ocultos automáticamente"}
                   </p>
-                  <Badge variant="outline" className="gap-1 font-mono text-[11px]">
-                    Área: {RODAT_AREA_PATH}
-                  </Badge>
-                  <Badge variant="outline" className="gap-1 font-mono text-[11px]">
-                    Iteración (tareas): {RODAT_ITERATION_PATH}
-                  </Badge>
+                  {effectiveAreaPaths.map((p) => (
+                    <Badge key={`area-${p}`} variant="outline" className="gap-1 font-mono text-[11px]">
+                      Área: {p}
+                    </Badge>
+                  ))}
+                  {effectiveIterationPaths.map((p) => (
+                    <Badge key={`iter-${p}`} variant="outline" className="gap-1 font-mono text-[11px]">
+                      Iteración (tareas): {p}
+                    </Badge>
+                  ))}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {scopeCheck.ok ? (
