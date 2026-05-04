@@ -659,6 +659,81 @@ export default function FeaturesPage() {
         </Card>
       )}
 
+      {/* Scope validation banner — confirms that Features and Tasks are
+          restricted to SDES\Rodat, and Tasks additionally to iterations
+          under SDES\Rodat\4.4. Only meaningful for the TFS source. */}
+      {source === "tfs" && (
+        <Card
+          className={cn(
+            "border",
+            scopeCheck.ok
+              ? "border-status-work/40 bg-status-work/5"
+              : "border-destructive/50 bg-destructive/5",
+          )}
+          aria-live="polite"
+        >
+          <CardContent className="py-3">
+            <div className="flex flex-wrap items-start gap-3">
+              <div className="mt-0.5">
+                {scopeCheck.ok ? (
+                  <ShieldCheck className="h-5 w-5 text-status-work" aria-hidden />
+                ) : (
+                  <ShieldAlert className="h-5 w-5 text-destructive" aria-hidden />
+                )}
+              </div>
+              <div className="flex-1 min-w-0 space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-medium">
+                    {scopeCheck.ok
+                      ? "Alcance verificado"
+                      : "Hay elementos fuera del alcance esperado"}
+                  </p>
+                  <Badge variant="outline" className="gap-1 font-mono text-[11px]">
+                    Área: {RODAT_AREA_PATH}
+                  </Badge>
+                  <Badge variant="outline" className="gap-1 font-mono text-[11px]">
+                    Iteración (tareas): {RODAT_ITERATION_PATH}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {scopeCheck.ok ? (
+                    <>
+                      {scopeCheck.featuresTotal} features y {scopeCheck.tasksTotal} tareas cargadas, todas dentro del alcance.
+                    </>
+                  ) : (
+                    <>
+                      {scopeCheck.featuresOutOfArea.length} features fuera del área,
+                      {" "}{scopeCheck.tasksOutOfArea.length} tareas fuera del área,
+                      {" "}{scopeCheck.tasksOutOfIteration.length} tareas fuera de la iteración.
+                    </>
+                  )}
+                </p>
+                {!scopeCheck.ok && (
+                  <ul className="text-xs text-destructive/90 space-y-0.5 mt-1 max-h-24 overflow-auto">
+                    {scopeCheck.featuresOutOfArea.slice(0, 3).map((f) => (
+                      <li key={`fa-${f.id}`} className="font-mono truncate">
+                        Feature #{f.id} → {f.areaPath ?? "(sin área)"}
+                      </li>
+                    ))}
+                    {scopeCheck.tasksOutOfArea.slice(0, 3).map((t) => (
+                      <li key={`ta-${t.id}`} className="font-mono truncate">
+                        Tarea #{t.id} → área {t.areaPath ?? "(sin área)"}
+                      </li>
+                    ))}
+                    {scopeCheck.tasksOutOfIteration.slice(0, 3).map((t) => (
+                      <li key={`ti-${t.id}`} className="font-mono truncate">
+                        Tarea #{t.id} → iteración {t.iterationPath ?? "(sin iteración)"}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+
       {/* KPI strip */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         <Card>
