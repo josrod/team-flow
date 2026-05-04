@@ -661,18 +661,19 @@ export default function FeaturesPage() {
   }, [features, activeTeam, source]);
 
   // Scope validation — audits the raw TFS payload to confirm that every
-  // Feature/Task lives under the required Rodat area path, and that every
-  // Task's iteration is under SDES\Rodat\4.4. Surfaced as a visible banner so
-  // users (and us) can verify the hard scope is being enforced end-to-end.
+  // Feature/Task lives under one of the configured area paths, and that
+  // every Task's iteration is under one of the configured iteration paths.
+  // Surfaced as a visible banner so users (and us) can verify the scope is
+  // being enforced end-to-end.
   const scopeCheck = useMemo(() => {
     const featuresOutOfArea = tfsFeaturesRaw.filter(
-      (f) => !isPathUnder(f.areaPath, RODAT_AREA_PATH),
+      (f) => !effectiveAreaPaths.some((root) => isPathUnder(f.areaPath, root)),
     );
     const tasksOutOfArea = tfsTasksRaw.filter(
-      (t) => !isPathUnder(t.areaPath, RODAT_AREA_PATH),
+      (t) => !effectiveAreaPaths.some((root) => isPathUnder(t.areaPath, root)),
     );
     const tasksOutOfIteration = tfsTasksRaw.filter(
-      (t) => !isPathUnder(t.iterationPath, RODAT_ITERATION_PATH),
+      (t) => !effectiveIterationPaths.some((root) => isPathUnder(t.iterationPath, root)),
     );
     return {
       featuresTotal: tfsFeatures.length,
@@ -687,7 +688,7 @@ export default function FeaturesPage() {
         tasksOutOfArea.length === 0 &&
         tasksOutOfIteration.length === 0,
     };
-  }, [tfsFeaturesRaw, tfsTasksRaw, tfsFeatures.length, tfsTasks.length]);
+  }, [tfsFeaturesRaw, tfsTasksRaw, tfsFeatures.length, tfsTasks.length, effectiveAreaPaths, effectiveIterationPaths]);
 
 
   const copyWorkItemLink = async (id: string, type: "feature" | "tarea") => {
