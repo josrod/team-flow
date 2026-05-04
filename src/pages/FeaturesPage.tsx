@@ -874,16 +874,28 @@ export default function FeaturesPage() {
                     : "Por defecto"}
                 </Badge>
               </div>
-              <div className="flex flex-wrap gap-1.5 pl-1">
-                {effectiveAreaPaths.map((p) => (
-                  <Badge
-                    key={`scope-area-${p}`}
-                    variant="outline"
-                    className="font-mono text-[11px]"
-                  >
-                    {p}
-                  </Badge>
-                ))}
+              <div className="flex flex-wrap gap-x-3 gap-y-1.5 pl-1">
+                {effectiveAreaPaths.map((p) => {
+                  const isConfigured = configuredAreaPaths.includes(p);
+                  return (
+                    <span
+                      key={`scope-area-${p}`}
+                      className="inline-flex items-center gap-1.5"
+                    >
+                      <Badge variant="outline" className="font-mono text-[11px]">
+                        {p}
+                      </Badge>
+                      <span
+                        className={cn(
+                          "text-[10px]",
+                          isConfigured ? "text-foreground/70" : "text-muted-foreground italic",
+                        )}
+                      >
+                        {isConfigured ? "configurado" : "default RODAT"}
+                      </span>
+                    </span>
+                  );
+                })}
               </div>
             </div>
             <div className="space-y-1.5">
@@ -900,16 +912,28 @@ export default function FeaturesPage() {
                     : "Por defecto"}
                 </Badge>
               </div>
-              <div className="flex flex-wrap gap-1.5 pl-1">
-                {effectiveIterationPaths.map((p) => (
-                  <Badge
-                    key={`scope-iter-${p}`}
-                    variant="outline"
-                    className="font-mono text-[11px]"
-                  >
-                    {p}
-                  </Badge>
-                ))}
+              <div className="flex flex-wrap gap-x-3 gap-y-1.5 pl-1">
+                {effectiveIterationPaths.map((p) => {
+                  const isConfigured = configuredIterationPaths.includes(p);
+                  return (
+                    <span
+                      key={`scope-iter-${p}`}
+                      className="inline-flex items-center gap-1.5"
+                    >
+                      <Badge variant="outline" className="font-mono text-[11px]">
+                        {p}
+                      </Badge>
+                      <span
+                        className={cn(
+                          "text-[10px]",
+                          isConfigured ? "text-foreground/70" : "text-muted-foreground italic",
+                        )}
+                      >
+                        {isConfigured ? "configurado" : "default RODAT"}
+                      </span>
+                    </span>
+                  );
+                })}
               </div>
             </div>
             {/* Impact summary — counts of items returned by the current
