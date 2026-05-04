@@ -860,6 +860,20 @@ export default function FeaturesPage() {
             </div>
           </CardHeader>
           <CardContent className="pt-0 space-y-3">
+            {/* Legend — clarifies the meaning of the small tags rendered
+                next to each path so users can interpret them at a glance. */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border bg-background/60 px-2.5 py-1.5 text-[11px] text-muted-foreground">
+              <span className="font-medium text-foreground">Leyenda:</span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="text-foreground/70">configurado</span>
+                <span>= elegido por ti en Ajustes › Azure DevOps</span>
+              </span>
+              <span className="text-border" aria-hidden>•</span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="italic">default RODAT</span>
+                <span>= valor por defecto del equipo (SDES\Rodat / SDES\Rodat\4.4)</span>
+              </span>
+            </div>
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-medium text-muted-foreground min-w-[8rem]">
