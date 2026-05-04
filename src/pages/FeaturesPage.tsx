@@ -912,6 +912,44 @@ export default function FeaturesPage() {
                 ))}
               </div>
             </div>
+            {/* Impact summary — counts of items returned by the current
+                scope so the user can quickly gauge how restrictive their
+                area/iteration selection is. Excluded counts surface only
+                when TFS returned items outside the scope. */}
+            <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+              <span className="text-xs font-medium text-muted-foreground">
+                Resultado con este alcance
+              </span>
+              <Badge variant="secondary" className="gap-1.5">
+                <Layers className="h-3 w-3" aria-hidden />
+                {scopeCheck.featuresTotal} {scopeCheck.featuresTotal === 1 ? "feature" : "features"}
+              </Badge>
+              <Badge variant="secondary" className="gap-1.5">
+                <ListChecks className="h-3 w-3" aria-hidden />
+                {scopeCheck.tasksTotal} {scopeCheck.tasksTotal === 1 ? "tarea" : "tareas"}
+              </Badge>
+              {!scopeCheck.ok && (
+                <Badge variant="outline" className="gap-1.5 text-muted-foreground">
+                  <EyeOff className="h-3 w-3" aria-hidden />
+                  {scopeCheck.featuresRawTotal - scopeCheck.featuresTotal +
+                    (scopeCheck.tasksRawTotal - scopeCheck.tasksTotal)}{" "}
+                  excluido{
+                    scopeCheck.featuresRawTotal -
+                      scopeCheck.featuresTotal +
+                      (scopeCheck.tasksRawTotal - scopeCheck.tasksTotal) ===
+                    1
+                      ? ""
+                      : "s"
+                  }
+                </Badge>
+              )}
+              {loading && (
+                <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                  Actualizando…
+                </span>
+              )}
+            </div>
             {configuredAreaPaths.length === 0 && configuredIterationPaths.length === 0 && (
               <p className="text-[11px] text-muted-foreground">
                 No hay alcance personalizado en Ajustes; se usan los valores por defecto del equipo RODAT.
