@@ -866,7 +866,7 @@ export default function FeaturesPage() {
                             groupKey: "tasksArea" as const,
                             icon: <MapPinOff className="h-3.5 w-3.5" />,
                             label: `Tareas fuera del área (${scopeCheck.tasksOutOfArea.length})`,
-                            reason: `Esperado bajo ${RODAT_AREA_PATH}`,
+                            reason: `Esperado bajo ${effectiveAreaPaths.join(" o ")}`,
                             items: scopeCheck.tasksOutOfArea.map((t) => ({
                               id: t.id,
                               type: "Tarea" as const,
