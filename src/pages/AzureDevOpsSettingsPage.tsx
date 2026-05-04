@@ -407,6 +407,8 @@ export const AzureDevOpsSettingsPage = () => {
     setPat("");
     setAutoSync(false);
     setSyncInterval("30");
+    setAreaPaths([]);
+    setIterationPaths([]);
     setConnectionStatus("idle");
     setTfsProject(null);
     setTfsError(null);
