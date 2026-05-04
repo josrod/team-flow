@@ -300,6 +300,66 @@ export default function FeaturesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  // Live-refresh: when the user changes the area/iteration scope in the
+  // Settings page (in this tab or any other), the dashboard reloads so the
+  // "Alcance efectivo" summary and the underlying queries stay in sync
+  // without forcing a manual refresh. Compares the new arrays against the
+  // currently-applied scope and only reloads on actual differences.
+  useEffect(() => {
+    if (!user) return;
+    const sameSet = (a: string[] | null | undefined, b: string[]) => {
+      const aa = (a ?? []).filter((p) => p && p.trim().length > 0);
+      if (aa.length !== b.length) return false;
+      const sortedA = [...aa].sort();
+      const sortedB = [...b].sort();
+      return sortedA.every((v, i) => v === sortedB[i]);
+    };
+    const channel = supabase
+      .channel(`azure-devops-settings:${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "azure_devops_settings",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const next = payload.new as {
+            server_url: string | null;
+            collection: string | null;
+            project: string | null;
+            team: string | null;
+            pat_encrypted: string | null;
+            area_paths: string[] | null;
+            iteration_paths: string[] | null;
+          };
+          if (!next.server_url || !next.collection || !next.project || !next.pat_encrypted) {
+            return;
+          }
+          const areasChanged = !sameSet(next.area_paths, configuredAreaPaths);
+          const itersChanged = !sameSet(next.iteration_paths, configuredIterationPaths);
+          if (!areasChanged && !itersChanged) return;
+          toast.info("Alcance actualizado en Ajustes — recargando datos…");
+          void loadFromTfs({
+            server_url: next.server_url,
+            collection: next.collection,
+            project: next.project,
+            team: next.team,
+            pat_encrypted: next.pat_encrypted,
+            area_paths: next.area_paths,
+            iteration_paths: next.iteration_paths,
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, configuredAreaPaths, configuredIterationPaths]);
+
   const loadFromTfs = async (
     presetSettings?: {
       server_url: string | null;
