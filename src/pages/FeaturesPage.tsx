@@ -96,6 +96,42 @@ export default function FeaturesPage() {
   // cache (i.e. the last load failed but we have a previous roster on hand).
   const [peopleFallbackStale, setPeopleFallbackStale] = useState(false);
 
+  // Persisted open/closed state for the scope-audit panel and each of its
+  // groups, so the user finds it as they last left it. Lazy initializer reads
+  // localStorage once on mount; subsequent toggles re-persist.
+  const AUDIT_STORAGE_KEY = "featuresPage:auditPanel";
+  type AuditPanelState = {
+    open: boolean;
+    groups: { featuresArea: boolean; tasksArea: boolean; tasksIteration: boolean };
+  };
+  const defaultAuditState: AuditPanelState = {
+    open: false,
+    groups: { featuresArea: true, tasksArea: true, tasksIteration: true },
+  };
+  const [auditState, setAuditState] = useState<AuditPanelState>(() => {
+    try {
+      const raw = localStorage.getItem(AUDIT_STORAGE_KEY);
+      if (!raw) return defaultAuditState;
+      const parsed = JSON.parse(raw) as Partial<AuditPanelState>;
+      return {
+        open: typeof parsed.open === "boolean" ? parsed.open : defaultAuditState.open,
+        groups: { ...defaultAuditState.groups, ...(parsed.groups ?? {}) },
+      };
+    } catch {
+      return defaultAuditState;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(auditState));
+    } catch {
+      // Storage may be unavailable; ignore.
+    }
+  }, [auditState]);
+  const setAuditOpen = (open: boolean) => setAuditState((s) => ({ ...s, open }));
+  const setGroupOpen = (group: keyof AuditPanelState["groups"], open: boolean) =>
+    setAuditState((s) => ({ ...s, groups: { ...s.groups, [group]: open } }));
+
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTeam = searchParams.get("team") ?? "all";
   const activePerson = searchParams.get("person") ?? "all";
@@ -744,7 +780,11 @@ export default function FeaturesPage() {
                   )}
                 </p>
                 {!scopeCheck.ok && (
-                  <Collapsible className="mt-2">
+                  <Collapsible
+                    className="mt-2"
+                    open={auditState.open}
+                    onOpenChange={setAuditOpen}
+                  >
                     <CollapsibleTrigger
                       className={cn(
                         "group flex items-center gap-1.5 text-xs font-medium",
@@ -762,9 +802,10 @@ export default function FeaturesPage() {
                     </CollapsibleTrigger>
                     <CollapsibleContent className="mt-3">
                       <div className="rounded-md border border-border/60 bg-background/60 divide-y divide-border/60 max-h-72 overflow-auto">
-                        {[
+                        {([
                           {
                             key: "features-area",
+                            groupKey: "featuresArea" as const,
                             icon: <MapPinOff className="h-3.5 w-3.5" />,
                             label: `Features fuera del área (${scopeCheck.featuresOutOfArea.length})`,
                             reason: `Esperado bajo ${RODAT_AREA_PATH}`,
@@ -778,6 +819,7 @@ export default function FeaturesPage() {
                           },
                           {
                             key: "tasks-area",
+                            groupKey: "tasksArea" as const,
                             icon: <MapPinOff className="h-3.5 w-3.5" />,
                             label: `Tareas fuera del área (${scopeCheck.tasksOutOfArea.length})`,
                             reason: `Esperado bajo ${RODAT_AREA_PATH}`,
@@ -791,6 +833,7 @@ export default function FeaturesPage() {
                           },
                           {
                             key: "tasks-iteration",
+                            groupKey: "tasksIteration" as const,
                             icon: <CalendarOff className="h-3.5 w-3.5" />,
                             label: `Tareas fuera de la iteración (${scopeCheck.tasksOutOfIteration.length})`,
                             reason: `Esperado bajo ${RODAT_ITERATION_PATH}`,
@@ -802,56 +845,69 @@ export default function FeaturesPage() {
                               detailValue: t.iterationPath ?? "(sin iteración)",
                             })),
                           },
-                        ]
+                        ])
                           .filter((g) => g.items.length > 0)
                           .map((group) => (
-                            <div key={group.key} className="p-3 space-y-2">
-                              <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                            <Collapsible
+                              key={group.key}
+                              className="p-3"
+                              open={auditState.groups[group.groupKey]}
+                              onOpenChange={(open) => setGroupOpen(group.groupKey, open)}
+                            >
+                              <CollapsibleTrigger
+                                className={cn(
+                                  "group/inner flex w-full items-center gap-1.5 text-xs font-medium text-foreground",
+                                  "hover:underline focus:outline-none focus:ring-2 focus:ring-ring rounded text-left",
+                                )}
+                              >
                                 {group.icon}
                                 <span>{group.label}</span>
                                 <span className="text-muted-foreground font-normal">
                                   · {group.reason}
                                 </span>
-                              </div>
-                              <ul className="space-y-1">
-                                {group.items.map((it) => (
-                                  <li
-                                    key={`${group.key}-${it.id}`}
-                                    className="flex items-start gap-2 text-xs"
-                                  >
-                                    <Badge
-                                      variant="outline"
-                                      className="shrink-0 font-mono text-[10px] px-1.5 py-0"
+                                <ChevronDown className="h-3.5 w-3.5 ml-auto transition-transform group-data-[state=open]/inner:rotate-180" />
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="mt-2">
+                                <ul className="space-y-1">
+                                  {group.items.map((it) => (
+                                    <li
+                                      key={`${group.key}-${it.id}`}
+                                      className="flex items-start gap-2 text-xs"
                                     >
-                                      {it.type} #{it.id}
-                                    </Badge>
-                                    <div className="min-w-0 flex-1">
-                                      <p className="truncate text-foreground" title={it.title}>
-                                        {it.title || "(sin título)"}
-                                      </p>
-                                      <p
-                                        className="truncate font-mono text-[11px] text-muted-foreground"
-                                        title={`${it.detailLabel}: ${it.detailValue}`}
+                                      <Badge
+                                        variant="outline"
+                                        className="shrink-0 font-mono text-[10px] px-1.5 py-0"
                                       >
-                                        {it.detailLabel}: {it.detailValue}
-                                      </p>
-                                    </div>
-                                    {tfsBaseUrl && (
-                                      <a
-                                        href={`${tfsBaseUrl}/_workitems/edit/${it.id}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="shrink-0 inline-flex items-center gap-1 text-xs text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ring rounded"
-                                        aria-label={`Abrir ${it.type} ${it.id} en Azure DevOps`}
-                                      >
-                                        <ExternalLink className="h-3 w-3" />
-                                        Abrir
-                                      </a>
-                                    )}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
+                                        {it.type} #{it.id}
+                                      </Badge>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="truncate text-foreground" title={it.title}>
+                                          {it.title || "(sin título)"}
+                                        </p>
+                                        <p
+                                          className="truncate font-mono text-[11px] text-muted-foreground"
+                                          title={`${it.detailLabel}: ${it.detailValue}`}
+                                        >
+                                          {it.detailLabel}: {it.detailValue}
+                                        </p>
+                                      </div>
+                                      {tfsBaseUrl && (
+                                        <a
+                                          href={`${tfsBaseUrl}/_workitems/edit/${it.id}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="shrink-0 inline-flex items-center gap-1 text-xs text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ring rounded"
+                                          aria-label={`Abrir ${it.type} ${it.id} en Azure DevOps`}
+                                        >
+                                          <ExternalLink className="h-3 w-3" />
+                                          Abrir
+                                        </a>
+                                      )}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </CollapsibleContent>
+                            </Collapsible>
                           ))}
                       </div>
                     </CollapsibleContent>
