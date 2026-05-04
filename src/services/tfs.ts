@@ -945,16 +945,26 @@ ORDER BY [System.ChangedDate] DESC`;
  */
 export const listTfsTasks = async (
   conn: TfsConnection,
+  configuredAreaPaths?: string[],
+  configuredIterationPaths?: string[],
 ): Promise<TfsDiscoveryResult<TfsWorkItem>> => {
   const project = conn.project.trim().replace(/'/g, "''");
-  const areaEsc = RODAT_AREA_PATH.replace(/'/g, "''");
-  const iterEsc = RODAT_ITERATION_PATH.replace(/'/g, "''");
+  const userAreas = (configuredAreaPaths ?? []).filter((p) => p.trim().length > 0);
+  const userIters = (configuredIterationPaths ?? []).filter((p) => p.trim().length > 0);
+  const areaList = userAreas.length > 0 ? userAreas : [RODAT_AREA_PATH];
+  const iterList = userIters.length > 0 ? userIters : [RODAT_ITERATION_PATH];
+  const areaClause = `(${areaList
+    .map((p) => `[System.AreaPath] UNDER '${p.replace(/'/g, "''")}'`)
+    .join(" OR ")})`;
+  const iterClause = `(${iterList
+    .map((p) => `[System.IterationPath] UNDER '${p.replace(/'/g, "''")}'`)
+    .join(" OR ")})`;
   const wiql = `SELECT [System.Id] FROM WorkItems
 WHERE [System.TeamProject] = '${project}'
   AND [System.WorkItemType] IN ('Task','User Story','Bug','Product Backlog Item')
   AND [System.State] <> 'Removed'
-  AND [System.AreaPath] UNDER '${areaEsc}'
-  AND [System.IterationPath] UNDER '${iterEsc}'
+  AND ${areaClause}
+  AND ${iterClause}
 ORDER BY [System.ChangedDate] DESC`;
   return runWiqlAndFetch(conn, wiql, [
     "System.Id",
