@@ -53,6 +53,8 @@ export const AzureDevOpsSettingsPage = () => {
   const [showPat, setShowPat] = useState(false);
   const [autoSync, setAutoSync] = useState(false);
   const [syncInterval, setSyncInterval] = useState("30");
+  const [areaPaths, setAreaPaths] = useState<string[]>([]);
+  const [iterationPaths, setIterationPaths] = useState<string[]>([]);
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<"idle" | "success" | "error">("idle");
