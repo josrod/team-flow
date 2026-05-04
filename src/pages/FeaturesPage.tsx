@@ -852,7 +852,7 @@ export default function FeaturesPage() {
                             groupKey: "featuresArea" as const,
                             icon: <MapPinOff className="h-3.5 w-3.5" />,
                             label: `Features fuera del área (${scopeCheck.featuresOutOfArea.length})`,
-                            reason: `Esperado bajo ${RODAT_AREA_PATH}`,
+                            reason: `Esperado bajo ${effectiveAreaPaths.join(" o ")}`,
                             items: scopeCheck.featuresOutOfArea.map((f) => ({
                               id: f.id,
                               type: "Feature" as const,
