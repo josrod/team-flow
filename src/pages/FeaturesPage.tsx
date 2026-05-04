@@ -92,6 +92,11 @@ export default function FeaturesPage() {
   // cached people list for the person selector.
   const [lastAreaPaths, setLastAreaPaths] = useState<string[]>([]);
   const [tfsLoadFailed, setTfsLoadFailed] = useState(false);
+  // User-configured scope from the Settings page (multi-select dropdowns).
+  // Empty arrays mean "use legacy Rodat defaults". These are the source of
+  // truth for both the WIQL queries and the client-side scope audit.
+  const [configuredAreaPaths, setConfiguredAreaPaths] = useState<string[]>([]);
+  const [configuredIterationPaths, setConfiguredIterationPaths] = useState<string[]>([]);
   // True when the people list shown in the selector comes from the fallback
   // cache (i.e. the last load failed but we have a previous roster on hand).
   const [peopleFallbackStale, setPeopleFallbackStale] = useState(false);
