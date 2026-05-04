@@ -76,8 +76,11 @@ export default function FeaturesPage() {
   const [source, setSource] = useState<DataSource>("local");
   const [loading, setLoading] = useState(false);
   const [tfsConnConfigured, setTfsConnConfigured] = useState(false);
-  const [tfsFeatures, setTfsFeatures] = useState<TfsWorkItem[]>([]);
-  const [tfsTasks, setTfsTasks] = useState<TfsWorkItem[]>([]);
+  // Raw payloads as returned by TFS — kept untouched so the scope audit can
+  // detect items that fall outside the required Rodat area/iteration. The UI
+  // never reads these directly; it consumes the scoped derivations below.
+  const [tfsFeaturesRaw, setTfsFeaturesRaw] = useState<TfsWorkItem[]>([]);
+  const [tfsTasksRaw, setTfsTasksRaw] = useState<TfsWorkItem[]>([]);
   const [tfsError, setTfsError] = useState<string | null>(null);
   const [tfsBaseUrl, setTfsBaseUrl] = useState<string | null>(null);
   // Cached TFS connection (resolved from settings) so we can warm the area
@@ -320,25 +323,29 @@ export default function FeaturesPage() {
       const effectiveAreas = rodatAreas.length > 0 ? rodatAreas : [RODAT_AREA_PATH];
       const isUnderArea = (path: string | undefined, root: string) =>
         Boolean(path && (path === root || path.startsWith(`${root}\\`)));
-      const scopedFeatures = featRes.items.filter((f) =>
-        effectiveAreas.some((p) => isUnderArea(f.areaPath, p)),
-      );
-      const scopedTasks = taskRes.items.filter(
-        (t) =>
-          effectiveAreas.some((p) => isUnderArea(t.areaPath, p)) &&
-          isUnderArea(t.iterationPath, RODAT_ITERATION_PATH),
-      );
-      setTfsFeatures(scopedFeatures);
-      setTfsTasks(scopedTasks);
+      // Persist the raw payloads — the scoped derivations below filter what
+      // the UI actually shows, while the audit banner inspects the raw lists
+      // to detect any item TFS returned outside the required Rodat scope.
+      setTfsFeaturesRaw(featRes.items);
+      setTfsTasksRaw(taskRes.items);
       setLastAreaPaths(effectiveAreas);
       setTfsLoadFailed(loadHadError);
 
       // Warm the people cache on a successful load so a future failure can
-      // degrade gracefully without emptying the person selector.
+      // degrade gracefully without emptying the person selector. Uses the
+      // scoped task list so we never cache people from out-of-scope items.
       if (!loadHadError) {
         const peopleSet = new Set<string>();
-        scopedTasks.forEach((t) => t.assignedTo && peopleSet.add(t.assignedTo));
-        featRes.items.forEach((f) => f.assignedTo && peopleSet.add(f.assignedTo));
+        taskRes.items
+          .filter(
+            (t) =>
+              effectiveAreas.some((p) => isUnderArea(t.areaPath, p)) &&
+              isUnderArea(t.iterationPath, RODAT_ITERATION_PATH),
+          )
+          .forEach((t) => t.assignedTo && peopleSet.add(t.assignedTo));
+        featRes.items
+          .filter((f) => effectiveAreas.some((p) => isUnderArea(f.areaPath, p)))
+          .forEach((f) => f.assignedTo && peopleSet.add(f.assignedTo));
         const people = Array.from(peopleSet).sort();
         writeTfsPeopleCache(conn, areaPaths, people);
         setPeopleFallbackStale(false);
@@ -351,6 +358,27 @@ export default function FeaturesPage() {
       setLoading(false);
     }
   };
+
+  // Scoped derivations — every UI consumer reads these instead of the raw
+  // payload, guaranteeing that out-of-scope items never leak into listings,
+  // KPIs, charts or the person selector. Features must live under
+  // SDES\Rodat; tasks must additionally live under iteration SDES\Rodat\4.4.
+  const isPathUnder = (path: string | undefined, root: string) =>
+    Boolean(path && (path === root || path.startsWith(`${root}\\`)));
+
+  const tfsFeatures = useMemo(
+    () => tfsFeaturesRaw.filter((f) => isPathUnder(f.areaPath, RODAT_AREA_PATH)),
+    [tfsFeaturesRaw],
+  );
+  const tfsTasks = useMemo(
+    () =>
+      tfsTasksRaw.filter(
+        (t) =>
+          isPathUnder(t.areaPath, RODAT_AREA_PATH) &&
+          isPathUnder(t.iterationPath, RODAT_ITERATION_PATH),
+      ),
+    [tfsTasksRaw],
+  );
 
   // Build unified data depending on source
   const { features, tasks } = useMemo<{ features: UnifiedFeature[]; tasks: UnifiedTask[] }>(() => {
@@ -561,16 +589,20 @@ export default function FeaturesPage() {
   // Task's iteration is under SDES\Rodat\4.4. Surfaced as a visible banner so
   // users (and us) can verify the hard scope is being enforced end-to-end.
   const scopeCheck = useMemo(() => {
-    const isUnder = (path: string | undefined, root: string) =>
-      Boolean(path && (path === root || path.startsWith(`${root}\\`)));
-    const featuresOutOfArea = tfsFeatures.filter((f) => !isUnder(f.areaPath, RODAT_AREA_PATH));
-    const tasksOutOfArea = tfsTasks.filter((t) => !isUnder(t.areaPath, RODAT_AREA_PATH));
-    const tasksOutOfIteration = tfsTasks.filter(
-      (t) => !isUnder(t.iterationPath, RODAT_ITERATION_PATH),
+    const featuresOutOfArea = tfsFeaturesRaw.filter(
+      (f) => !isPathUnder(f.areaPath, RODAT_AREA_PATH),
+    );
+    const tasksOutOfArea = tfsTasksRaw.filter(
+      (t) => !isPathUnder(t.areaPath, RODAT_AREA_PATH),
+    );
+    const tasksOutOfIteration = tfsTasksRaw.filter(
+      (t) => !isPathUnder(t.iterationPath, RODAT_ITERATION_PATH),
     );
     return {
       featuresTotal: tfsFeatures.length,
       tasksTotal: tfsTasks.length,
+      featuresRawTotal: tfsFeaturesRaw.length,
+      tasksRawTotal: tfsTasksRaw.length,
       featuresOutOfArea,
       tasksOutOfArea,
       tasksOutOfIteration,
@@ -579,7 +611,7 @@ export default function FeaturesPage() {
         tasksOutOfArea.length === 0 &&
         tasksOutOfIteration.length === 0,
     };
-  }, [tfsFeatures, tfsTasks]);
+  }, [tfsFeaturesRaw, tfsTasksRaw, tfsFeatures.length, tfsTasks.length]);
 
 
   const copyWorkItemLink = async (id: string, type: "feature" | "tarea") => {
@@ -668,7 +700,7 @@ export default function FeaturesPage() {
             "border",
             scopeCheck.ok
               ? "border-status-work/40 bg-status-work/5"
-              : "border-destructive/50 bg-destructive/5",
+              : "border-status-vacation/40 bg-status-vacation/5",
           )}
           aria-live="polite"
         >
@@ -678,7 +710,7 @@ export default function FeaturesPage() {
                 {scopeCheck.ok ? (
                   <ShieldCheck className="h-5 w-5 text-status-work" aria-hidden />
                 ) : (
-                  <ShieldAlert className="h-5 w-5 text-destructive" aria-hidden />
+                  <ShieldAlert className="h-5 w-5 text-status-vacation" aria-hidden />
                 )}
               </div>
               <div className="flex-1 min-w-0 space-y-1.5">
@@ -686,7 +718,7 @@ export default function FeaturesPage() {
                   <p className="text-sm font-medium">
                     {scopeCheck.ok
                       ? "Alcance verificado"
-                      : "Hay elementos fuera del alcance esperado"}
+                      : "Elementos fuera del alcance ocultos automáticamente"}
                   </p>
                   <Badge variant="outline" className="gap-1 font-mono text-[11px]">
                     Área: {RODAT_AREA_PATH}
@@ -702,7 +734,9 @@ export default function FeaturesPage() {
                     </>
                   ) : (
                     <>
-                      {scopeCheck.featuresOutOfArea.length} features fuera del área,
+                      Mostrando {scopeCheck.featuresTotal} de {scopeCheck.featuresRawTotal} features
+                      {" "}y {scopeCheck.tasksTotal} de {scopeCheck.tasksRawTotal} tareas.
+                      {" "}Excluidas: {scopeCheck.featuresOutOfArea.length} features fuera del área,
                       {" "}{scopeCheck.tasksOutOfArea.length} tareas fuera del área,
                       {" "}{scopeCheck.tasksOutOfIteration.length} tareas fuera de la iteración.
                     </>
