@@ -344,6 +344,8 @@ export const AzureDevOpsSettingsPage = () => {
         pat_encrypted: pat.trim(),
         auto_sync_enabled: autoSync,
         sync_interval_minutes: Number(syncInterval),
+        area_paths: areaPaths,
+        iteration_paths: iterationPaths,
       };
 
       if (hasExisting) {
