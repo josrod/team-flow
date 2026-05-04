@@ -700,7 +700,7 @@ export default function FeaturesPage() {
             "border",
             scopeCheck.ok
               ? "border-status-work/40 bg-status-work/5"
-              : "border-destructive/50 bg-destructive/5",
+              : "border-status-vacation/40 bg-status-vacation/5",
           )}
           aria-live="polite"
         >
@@ -710,7 +710,7 @@ export default function FeaturesPage() {
                 {scopeCheck.ok ? (
                   <ShieldCheck className="h-5 w-5 text-status-work" aria-hidden />
                 ) : (
-                  <ShieldAlert className="h-5 w-5 text-destructive" aria-hidden />
+                  <ShieldAlert className="h-5 w-5 text-status-vacation" aria-hidden />
                 )}
               </div>
               <div className="flex-1 min-w-0 space-y-1.5">
