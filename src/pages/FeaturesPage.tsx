@@ -589,16 +589,20 @@ export default function FeaturesPage() {
   // Task's iteration is under SDES\Rodat\4.4. Surfaced as a visible banner so
   // users (and us) can verify the hard scope is being enforced end-to-end.
   const scopeCheck = useMemo(() => {
-    const isUnder = (path: string | undefined, root: string) =>
-      Boolean(path && (path === root || path.startsWith(`${root}\\`)));
-    const featuresOutOfArea = tfsFeatures.filter((f) => !isUnder(f.areaPath, RODAT_AREA_PATH));
-    const tasksOutOfArea = tfsTasks.filter((t) => !isUnder(t.areaPath, RODAT_AREA_PATH));
-    const tasksOutOfIteration = tfsTasks.filter(
-      (t) => !isUnder(t.iterationPath, RODAT_ITERATION_PATH),
+    const featuresOutOfArea = tfsFeaturesRaw.filter(
+      (f) => !isPathUnder(f.areaPath, RODAT_AREA_PATH),
+    );
+    const tasksOutOfArea = tfsTasksRaw.filter(
+      (t) => !isPathUnder(t.areaPath, RODAT_AREA_PATH),
+    );
+    const tasksOutOfIteration = tfsTasksRaw.filter(
+      (t) => !isPathUnder(t.iterationPath, RODAT_ITERATION_PATH),
     );
     return {
       featuresTotal: tfsFeatures.length,
       tasksTotal: tfsTasks.length,
+      featuresRawTotal: tfsFeaturesRaw.length,
+      tasksRawTotal: tfsTasksRaw.length,
       featuresOutOfArea,
       tasksOutOfArea,
       tasksOutOfIteration,
@@ -607,7 +611,7 @@ export default function FeaturesPage() {
         tasksOutOfArea.length === 0 &&
         tasksOutOfIteration.length === 0,
     };
-  }, [tfsFeatures, tfsTasks]);
+  }, [tfsFeaturesRaw, tfsTasksRaw, tfsFeatures.length, tfsTasks.length]);
 
 
   const copyWorkItemLink = async (id: string, type: "feature" | "tarea") => {
