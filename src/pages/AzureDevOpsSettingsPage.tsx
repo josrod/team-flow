@@ -96,6 +96,10 @@ export const AzureDevOpsSettingsPage = () => {
         setPat(data.pat_encrypted);
         setAutoSync(data.auto_sync_enabled);
         setSyncInterval(String(data.sync_interval_minutes));
+        const rawAreas = (data as { area_paths?: string[] | null }).area_paths;
+        const rawIters = (data as { iteration_paths?: string[] | null }).iteration_paths;
+        if (Array.isArray(rawAreas)) setAreaPaths(rawAreas);
+        if (Array.isArray(rawIters)) setIterationPaths(rawIters);
         setLastSynced(data.last_synced_at);
         setHasExisting(true);
         setConnectionStatus("success");
