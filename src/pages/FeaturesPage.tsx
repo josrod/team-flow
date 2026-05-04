@@ -96,6 +96,42 @@ export default function FeaturesPage() {
   // cache (i.e. the last load failed but we have a previous roster on hand).
   const [peopleFallbackStale, setPeopleFallbackStale] = useState(false);
 
+  // Persisted open/closed state for the scope-audit panel and each of its
+  // groups, so the user finds it as they last left it. Lazy initializer reads
+  // localStorage once on mount; subsequent toggles re-persist.
+  const AUDIT_STORAGE_KEY = "featuresPage:auditPanel";
+  type AuditPanelState = {
+    open: boolean;
+    groups: { featuresArea: boolean; tasksArea: boolean; tasksIteration: boolean };
+  };
+  const defaultAuditState: AuditPanelState = {
+    open: false,
+    groups: { featuresArea: true, tasksArea: true, tasksIteration: true },
+  };
+  const [auditState, setAuditState] = useState<AuditPanelState>(() => {
+    try {
+      const raw = localStorage.getItem(AUDIT_STORAGE_KEY);
+      if (!raw) return defaultAuditState;
+      const parsed = JSON.parse(raw) as Partial<AuditPanelState>;
+      return {
+        open: typeof parsed.open === "boolean" ? parsed.open : defaultAuditState.open,
+        groups: { ...defaultAuditState.groups, ...(parsed.groups ?? {}) },
+      };
+    } catch {
+      return defaultAuditState;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(auditState));
+    } catch {
+      // Storage may be unavailable; ignore.
+    }
+  }, [auditState]);
+  const setAuditOpen = (open: boolean) => setAuditState((s) => ({ ...s, open }));
+  const setGroupOpen = (group: keyof AuditPanelState["groups"], open: boolean) =>
+    setAuditState((s) => ({ ...s, groups: { ...s.groups, [group]: open } }));
+
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTeam = searchParams.get("team") ?? "all";
   const activePerson = searchParams.get("person") ?? "all";
