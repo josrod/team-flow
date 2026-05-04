@@ -424,23 +424,36 @@ export default function FeaturesPage() {
 
   // Scoped derivations — every UI consumer reads these instead of the raw
   // payload, guaranteeing that out-of-scope items never leak into listings,
-  // KPIs, charts or the person selector. Features must live under
-  // SDES\Rodat; tasks must additionally live under iteration SDES\Rodat\4.4.
+  // KPIs, charts or the person selector. Effective scope = the user-configured
+  // areas/iterations from Settings, falling back to the legacy Rodat defaults
+  // when nothing has been picked.
   const isPathUnder = (path: string | undefined, root: string) =>
     Boolean(path && (path === root || path.startsWith(`${root}\\`)));
 
+  const effectiveAreaPaths = useMemo(
+    () => (configuredAreaPaths.length > 0 ? configuredAreaPaths : [RODAT_AREA_PATH]),
+    [configuredAreaPaths],
+  );
+  const effectiveIterationPaths = useMemo(
+    () => (configuredIterationPaths.length > 0 ? configuredIterationPaths : [RODAT_ITERATION_PATH]),
+    [configuredIterationPaths],
+  );
+
   const tfsFeatures = useMemo(
-    () => tfsFeaturesRaw.filter((f) => isPathUnder(f.areaPath, RODAT_AREA_PATH)),
-    [tfsFeaturesRaw],
+    () =>
+      tfsFeaturesRaw.filter((f) =>
+        effectiveAreaPaths.some((root) => isPathUnder(f.areaPath, root)),
+      ),
+    [tfsFeaturesRaw, effectiveAreaPaths],
   );
   const tfsTasks = useMemo(
     () =>
       tfsTasksRaw.filter(
         (t) =>
-          isPathUnder(t.areaPath, RODAT_AREA_PATH) &&
-          isPathUnder(t.iterationPath, RODAT_ITERATION_PATH),
+          effectiveAreaPaths.some((root) => isPathUnder(t.areaPath, root)) &&
+          effectiveIterationPaths.some((root) => isPathUnder(t.iterationPath, root)),
       ),
-    [tfsTasksRaw],
+    [tfsTasksRaw, effectiveAreaPaths, effectiveIterationPaths],
   );
 
   // Build unified data depending on source
