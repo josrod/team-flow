@@ -776,13 +776,28 @@ export default function FeaturesPage() {
       {source === "tfs" && (
         <Card className="border bg-muted/30">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Layers className="h-4 w-4 text-muted-foreground" aria-hidden />
-              Alcance efectivo
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Filtros aplicados a las consultas de Features y Tareas. Cámbialos en Ajustes › Azure DevOps.
-            </CardDescription>
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-muted-foreground" aria-hidden />
+                  Alcance efectivo
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Filtros aplicados a las consultas de Features y Tareas. Cámbialos en Ajustes › Azure DevOps.
+                </CardDescription>
+              </div>
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="shrink-0 gap-1.5"
+              >
+                <Link to="/settings/azure-devops">
+                  <SettingsIcon className="h-3.5 w-3.5" aria-hidden />
+                  Cambiar en Ajustes
+                </Link>
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="pt-0 space-y-3">
             <div className="space-y-1.5">
