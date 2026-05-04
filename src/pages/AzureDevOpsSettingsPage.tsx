@@ -27,6 +27,7 @@ import {
   listTfsCollections,
   listTfsProjects,
   listTfsTeams,
+  listTfsClassificationNodes,
   clearTfsAreaPathCache,
   type TfsProjectInfo,
   type TfsError,
@@ -36,6 +37,7 @@ import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { TfsPatDiagnosticsPanel } from "@/components/TfsPatDiagnosticsPanel";
 import { TfsFieldHint } from "@/components/TfsFieldHint";
 import { TfsAutocompleteInput } from "@/components/TfsAutocompleteInput";
+import { TfsMultiSelect } from "@/components/TfsMultiSelect";
 import { validateConnectionFields, validateServerUrl } from "@/lib/tfsValidation";
 import { cn } from "@/lib/utils";
 
