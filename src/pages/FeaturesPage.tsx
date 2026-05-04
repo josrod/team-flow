@@ -16,7 +16,8 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
   PieChart, Pie, Legend,
 } from "recharts";
-import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X, Undo2, AlertTriangle, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X, Undo2, AlertTriangle, ShieldCheck, ShieldAlert, ChevronDown, EyeOff, MapPinOff, CalendarOff } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, peekTfsAreaPathCache, peekTfsPeopleCache, peekTfsPeopleCacheForConnection, writeTfsPeopleCache, RODAT_AREA_PATH, RODAT_ITERATION_PATH, type TfsConnection, type TfsWorkItem } from "@/services/tfs";
@@ -743,23 +744,118 @@ export default function FeaturesPage() {
                   )}
                 </p>
                 {!scopeCheck.ok && (
-                  <ul className="text-xs text-destructive/90 space-y-0.5 mt-1 max-h-24 overflow-auto">
-                    {scopeCheck.featuresOutOfArea.slice(0, 3).map((f) => (
-                      <li key={`fa-${f.id}`} className="font-mono truncate">
-                        Feature #{f.id} → {f.areaPath ?? "(sin área)"}
-                      </li>
-                    ))}
-                    {scopeCheck.tasksOutOfArea.slice(0, 3).map((t) => (
-                      <li key={`ta-${t.id}`} className="font-mono truncate">
-                        Tarea #{t.id} → área {t.areaPath ?? "(sin área)"}
-                      </li>
-                    ))}
-                    {scopeCheck.tasksOutOfIteration.slice(0, 3).map((t) => (
-                      <li key={`ti-${t.id}`} className="font-mono truncate">
-                        Tarea #{t.id} → iteración {t.iterationPath ?? "(sin iteración)"}
-                      </li>
-                    ))}
-                  </ul>
+                  <Collapsible className="mt-2">
+                    <CollapsibleTrigger
+                      className={cn(
+                        "group flex items-center gap-1.5 text-xs font-medium",
+                        "text-status-vacation hover:underline focus:outline-none focus:ring-2 focus:ring-ring rounded",
+                      )}
+                      aria-label="Mostrar detalle de elementos ocultos"
+                    >
+                      <EyeOff className="h-3.5 w-3.5" />
+                      Ver auditoría de elementos ocultos
+                      {" "}
+                      ({scopeCheck.featuresOutOfArea.length +
+                        scopeCheck.tasksOutOfArea.length +
+                        scopeCheck.tasksOutOfIteration.length})
+                      <ChevronDown className="h-3.5 w-3.5 transition-transform group-data-[state=open]:rotate-180" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-3">
+                      <div className="rounded-md border border-border/60 bg-background/60 divide-y divide-border/60 max-h-72 overflow-auto">
+                        {[
+                          {
+                            key: "features-area",
+                            icon: <MapPinOff className="h-3.5 w-3.5" />,
+                            label: `Features fuera del área (${scopeCheck.featuresOutOfArea.length})`,
+                            reason: `Esperado bajo ${RODAT_AREA_PATH}`,
+                            items: scopeCheck.featuresOutOfArea.map((f) => ({
+                              id: f.id,
+                              type: "Feature" as const,
+                              title: f.title,
+                              detailLabel: "Área",
+                              detailValue: f.areaPath ?? "(sin área)",
+                            })),
+                          },
+                          {
+                            key: "tasks-area",
+                            icon: <MapPinOff className="h-3.5 w-3.5" />,
+                            label: `Tareas fuera del área (${scopeCheck.tasksOutOfArea.length})`,
+                            reason: `Esperado bajo ${RODAT_AREA_PATH}`,
+                            items: scopeCheck.tasksOutOfArea.map((t) => ({
+                              id: t.id,
+                              type: "Tarea" as const,
+                              title: t.title,
+                              detailLabel: "Área",
+                              detailValue: t.areaPath ?? "(sin área)",
+                            })),
+                          },
+                          {
+                            key: "tasks-iteration",
+                            icon: <CalendarOff className="h-3.5 w-3.5" />,
+                            label: `Tareas fuera de la iteración (${scopeCheck.tasksOutOfIteration.length})`,
+                            reason: `Esperado bajo ${RODAT_ITERATION_PATH}`,
+                            items: scopeCheck.tasksOutOfIteration.map((t) => ({
+                              id: t.id,
+                              type: "Tarea" as const,
+                              title: t.title,
+                              detailLabel: "Iteración",
+                              detailValue: t.iterationPath ?? "(sin iteración)",
+                            })),
+                          },
+                        ]
+                          .filter((g) => g.items.length > 0)
+                          .map((group) => (
+                            <div key={group.key} className="p-3 space-y-2">
+                              <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                                {group.icon}
+                                <span>{group.label}</span>
+                                <span className="text-muted-foreground font-normal">
+                                  · {group.reason}
+                                </span>
+                              </div>
+                              <ul className="space-y-1">
+                                {group.items.map((it) => (
+                                  <li
+                                    key={`${group.key}-${it.id}`}
+                                    className="flex items-start gap-2 text-xs"
+                                  >
+                                    <Badge
+                                      variant="outline"
+                                      className="shrink-0 font-mono text-[10px] px-1.5 py-0"
+                                    >
+                                      {it.type} #{it.id}
+                                    </Badge>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="truncate text-foreground" title={it.title}>
+                                        {it.title || "(sin título)"}
+                                      </p>
+                                      <p
+                                        className="truncate font-mono text-[11px] text-muted-foreground"
+                                        title={`${it.detailLabel}: ${it.detailValue}`}
+                                      >
+                                        {it.detailLabel}: {it.detailValue}
+                                      </p>
+                                    </div>
+                                    {tfsBaseUrl && (
+                                      <a
+                                        href={`${tfsBaseUrl}/_workitems/edit/${it.id}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="shrink-0 inline-flex items-center gap-1 text-xs text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ring rounded"
+                                        aria-label={`Abrir ${it.type} ${it.id} en Azure DevOps`}
+                                      >
+                                        <ExternalLink className="h-3 w-3" />
+                                        Abrir
+                                      </a>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 )}
               </div>
             </div>
