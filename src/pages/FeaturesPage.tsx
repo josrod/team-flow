@@ -19,7 +19,7 @@ import {
 import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X, Undo2, AlertTriangle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, peekTfsAreaPathCache, peekTfsPeopleCache, peekTfsPeopleCacheForConnection, writeTfsPeopleCache, type TfsConnection, type TfsWorkItem } from "@/services/tfs";
+import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, peekTfsAreaPathCache, peekTfsPeopleCache, peekTfsPeopleCacheForConnection, writeTfsPeopleCache, RODAT_AREA_PATH, RODAT_ITERATION_PATH, type TfsConnection, type TfsWorkItem } from "@/services/tfs";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
@@ -311,16 +311,26 @@ export default function FeaturesPage() {
         setTfsError(featRes.error.message);
         toast.error(`TFS: ${featRes.error.message}`);
       }
-      // Client-side scope: keep only tasks under the team's area paths so the
-      // dashboard reflects "this team's work" only.
-      const scopedTasks = areaPaths.length > 0
-        ? taskRes.items.filter((t) =>
-            t.areaPath && areaPaths.some((p) => t.areaPath === p || t.areaPath!.startsWith(`${p}\\`)),
-          )
-        : taskRes.items;
-      setTfsFeatures(featRes.items);
+      // Client-side scope (defense in depth): always restrict to SDES\Rodat
+      // and tasks must live under iteration SDES\Rodat\4.4. If the team
+      // exposes more specific area paths inside Rodat, intersect with those.
+      const rodatAreas = areaPaths.filter(
+        (p) => p === RODAT_AREA_PATH || p.startsWith(`${RODAT_AREA_PATH}\\`),
+      );
+      const effectiveAreas = rodatAreas.length > 0 ? rodatAreas : [RODAT_AREA_PATH];
+      const isUnderArea = (path: string | undefined, root: string) =>
+        Boolean(path && (path === root || path.startsWith(`${root}\\`)));
+      const scopedFeatures = featRes.items.filter((f) =>
+        effectiveAreas.some((p) => isUnderArea(f.areaPath, p)),
+      );
+      const scopedTasks = taskRes.items.filter(
+        (t) =>
+          effectiveAreas.some((p) => isUnderArea(t.areaPath, p)) &&
+          isUnderArea(t.iterationPath, RODAT_ITERATION_PATH),
+      );
+      setTfsFeatures(scopedFeatures);
       setTfsTasks(scopedTasks);
-      setLastAreaPaths(areaPaths);
+      setLastAreaPaths(effectiveAreas);
       setTfsLoadFailed(loadHadError);
 
       // Warm the people cache on a successful load so a future failure can

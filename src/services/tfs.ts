@@ -758,6 +758,14 @@ const runWiqlAndFetch = async (
 export const ACTIVE_FEATURE_STATES = ["Open", "In Refinement", "In Progress"] as const;
 
 /**
+ * Hard scope applied to every Features/Tasks query, regardless of the team
+ * configured in Azure DevOps settings. The dashboard must only ever surface
+ * work under SDES\Rodat (and, for tasks, iterations under SDES\Rodat\4.4).
+ */
+export const RODAT_AREA_PATH = "SDES\\Rodat";
+export const RODAT_ITERATION_PATH = "SDES\\Rodat\\4.4";
+
+/**
  * List Features in the configured project, restricted to the given team's
  * area path(s) and to the active state set (Open, In Refinement, In Progress).
  *
@@ -771,14 +779,17 @@ export const listTfsFeatures = async (
   const project = conn.project.trim().replace(/'/g, "''");
   const stateList = ACTIVE_FEATURE_STATES.map((s) => `'${s.replace(/'/g, "''")}'`).join(", ");
 
-  // Build optional area-path filter. Each path matches itself and descendants
-  // via the WIQL `UNDER` operator, so a team's root area covers all its sub-areas.
-  const areaClause =
-    teamAreaPaths && teamAreaPaths.length > 0
-      ? ` AND (${teamAreaPaths
-          .map((p) => `[System.AreaPath] UNDER '${p.replace(/'/g, "''")}'`)
-          .join(" OR ")})`
-      : "";
+  // Hard scope: always restrict to SDES\Rodat (and descendants). If the team
+  // also exposes more specific area paths, intersect with those; otherwise
+  // fall back to the Rodat root only.
+  const rodatEsc = RODAT_AREA_PATH.replace(/'/g, "''");
+  const effectiveAreas = (teamAreaPaths ?? []).filter(
+    (p) => p === RODAT_AREA_PATH || p.startsWith(`${RODAT_AREA_PATH}\\`),
+  );
+  const areaList = effectiveAreas.length > 0 ? effectiveAreas : [RODAT_AREA_PATH];
+  const areaClause = ` AND (${areaList
+    .map((p) => `[System.AreaPath] UNDER '${p.replace(/'/g, "''")}'`)
+    .join(" OR ")})`;
 
   const wiql = `SELECT [System.Id] FROM WorkItems
 WHERE [System.TeamProject] = '${project}'
@@ -799,15 +810,20 @@ ORDER BY [System.ChangedDate] DESC`;
 
 /**
  * List Tasks (and User Stories / Bugs) currently assigned in the project.
+ * Hard-scoped to area `SDES\\Rodat` and iterations under `SDES\\Rodat\\4.4`.
  */
 export const listTfsTasks = async (
   conn: TfsConnection,
 ): Promise<TfsDiscoveryResult<TfsWorkItem>> => {
   const project = conn.project.trim().replace(/'/g, "''");
+  const areaEsc = RODAT_AREA_PATH.replace(/'/g, "''");
+  const iterEsc = RODAT_ITERATION_PATH.replace(/'/g, "''");
   const wiql = `SELECT [System.Id] FROM WorkItems
 WHERE [System.TeamProject] = '${project}'
   AND [System.WorkItemType] IN ('Task','User Story','Bug','Product Backlog Item')
   AND [System.State] <> 'Removed'
+  AND [System.AreaPath] UNDER '${areaEsc}'
+  AND [System.IterationPath] UNDER '${iterEsc}'
 ORDER BY [System.ChangedDate] DESC`;
   return runWiqlAndFetch(conn, wiql, [
     "System.Id",
