@@ -286,7 +286,7 @@ export default function FeaturesPage() {
       if (!user) return;
       const { data } = await supabase
         .from("azure_devops_settings")
-        .select("server_url, collection, project, team, pat_encrypted")
+        .select("server_url, collection, project, team, pat_encrypted, area_paths, iteration_paths")
         .eq("user_id", user.id)
         .maybeSingle();
       if (data?.server_url && data?.collection && data?.project && data?.pat_encrypted) {
@@ -300,7 +300,15 @@ export default function FeaturesPage() {
   }, [user]);
 
   const loadFromTfs = async (
-    presetSettings?: { server_url: string | null; collection: string | null; project: string; team: string | null; pat_encrypted: string },
+    presetSettings?: {
+      server_url: string | null;
+      collection: string | null;
+      project: string;
+      team: string | null;
+      pat_encrypted: string;
+      area_paths?: string[] | null;
+      iteration_paths?: string[] | null;
+    },
     options: { forceAreaRefresh?: boolean } = {},
   ) => {
     if (!user) return;
