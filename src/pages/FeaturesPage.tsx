@@ -323,25 +323,29 @@ export default function FeaturesPage() {
       const effectiveAreas = rodatAreas.length > 0 ? rodatAreas : [RODAT_AREA_PATH];
       const isUnderArea = (path: string | undefined, root: string) =>
         Boolean(path && (path === root || path.startsWith(`${root}\\`)));
-      const scopedFeatures = featRes.items.filter((f) =>
-        effectiveAreas.some((p) => isUnderArea(f.areaPath, p)),
-      );
-      const scopedTasks = taskRes.items.filter(
-        (t) =>
-          effectiveAreas.some((p) => isUnderArea(t.areaPath, p)) &&
-          isUnderArea(t.iterationPath, RODAT_ITERATION_PATH),
-      );
-      setTfsFeatures(scopedFeatures);
-      setTfsTasks(scopedTasks);
+      // Persist the raw payloads — the scoped derivations below filter what
+      // the UI actually shows, while the audit banner inspects the raw lists
+      // to detect any item TFS returned outside the required Rodat scope.
+      setTfsFeaturesRaw(featRes.items);
+      setTfsTasksRaw(taskRes.items);
       setLastAreaPaths(effectiveAreas);
       setTfsLoadFailed(loadHadError);
 
       // Warm the people cache on a successful load so a future failure can
-      // degrade gracefully without emptying the person selector.
+      // degrade gracefully without emptying the person selector. Uses the
+      // scoped task list so we never cache people from out-of-scope items.
       if (!loadHadError) {
         const peopleSet = new Set<string>();
-        scopedTasks.forEach((t) => t.assignedTo && peopleSet.add(t.assignedTo));
-        featRes.items.forEach((f) => f.assignedTo && peopleSet.add(f.assignedTo));
+        taskRes.items
+          .filter(
+            (t) =>
+              effectiveAreas.some((p) => isUnderArea(t.areaPath, p)) &&
+              isUnderArea(t.iterationPath, RODAT_ITERATION_PATH),
+          )
+          .forEach((t) => t.assignedTo && peopleSet.add(t.assignedTo));
+        featRes.items
+          .filter((f) => effectiveAreas.some((p) => isUnderArea(f.areaPath, p)))
+          .forEach((f) => f.assignedTo && peopleSet.add(f.assignedTo));
         const people = Array.from(peopleSet).sort();
         writeTfsPeopleCache(conn, areaPaths, people);
         setPeopleFallbackStale(false);
