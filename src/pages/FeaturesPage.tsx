@@ -880,7 +880,7 @@ export default function FeaturesPage() {
                             groupKey: "tasksIteration" as const,
                             icon: <CalendarOff className="h-3.5 w-3.5" />,
                             label: `Tareas fuera de la iteración (${scopeCheck.tasksOutOfIteration.length})`,
-                            reason: `Esperado bajo ${RODAT_ITERATION_PATH}`,
+                            reason: `Esperado bajo ${effectiveIterationPaths.join(" o ")}`,
                             items: scopeCheck.tasksOutOfIteration.map((t) => ({
                               id: t.id,
                               type: "Tarea" as const,
