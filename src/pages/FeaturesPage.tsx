@@ -359,6 +359,27 @@ export default function FeaturesPage() {
     }
   };
 
+  // Scoped derivations — every UI consumer reads these instead of the raw
+  // payload, guaranteeing that out-of-scope items never leak into listings,
+  // KPIs, charts or the person selector. Features must live under
+  // SDES\Rodat; tasks must additionally live under iteration SDES\Rodat\4.4.
+  const isPathUnder = (path: string | undefined, root: string) =>
+    Boolean(path && (path === root || path.startsWith(`${root}\\`)));
+
+  const tfsFeatures = useMemo(
+    () => tfsFeaturesRaw.filter((f) => isPathUnder(f.areaPath, RODAT_AREA_PATH)),
+    [tfsFeaturesRaw],
+  );
+  const tfsTasks = useMemo(
+    () =>
+      tfsTasksRaw.filter(
+        (t) =>
+          isPathUnder(t.areaPath, RODAT_AREA_PATH) &&
+          isPathUnder(t.iterationPath, RODAT_ITERATION_PATH),
+      ),
+    [tfsTasksRaw],
+  );
+
   // Build unified data depending on source
   const { features, tasks } = useMemo<{ features: UnifiedFeature[]; tasks: UnifiedTask[] }>(() => {
     if (source === "tfs" && tfsFeatures.length + tfsTasks.length > 0) {
