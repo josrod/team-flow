@@ -16,10 +16,12 @@ export type Database = {
     Tables: {
       azure_devops_settings: {
         Row: {
+          area_paths: string[]
           auto_sync_enabled: boolean
           collection: string | null
           created_at: string
           id: string
+          iteration_paths: string[]
           last_diagnostic: Json | null
           last_diagnostic_at: string | null
           last_synced_at: string | null
@@ -33,10 +35,12 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          area_paths?: string[]
           auto_sync_enabled?: boolean
           collection?: string | null
           created_at?: string
           id?: string
+          iteration_paths?: string[]
           last_diagnostic?: Json | null
           last_diagnostic_at?: string | null
           last_synced_at?: string | null
@@ -50,10 +54,12 @@ export type Database = {
           user_id: string
         }
         Update: {
+          area_paths?: string[]
           auto_sync_enabled?: boolean
           collection?: string | null
           created_at?: string
           id?: string
+          iteration_paths?: string[]
           last_diagnostic?: Json | null
           last_diagnostic_at?: string | null
           last_synced_at?: string | null

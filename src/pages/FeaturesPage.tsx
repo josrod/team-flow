@@ -92,6 +92,11 @@ export default function FeaturesPage() {
   // cached people list for the person selector.
   const [lastAreaPaths, setLastAreaPaths] = useState<string[]>([]);
   const [tfsLoadFailed, setTfsLoadFailed] = useState(false);
+  // User-configured scope from the Settings page (multi-select dropdowns).
+  // Empty arrays mean "use legacy Rodat defaults". These are the source of
+  // truth for both the WIQL queries and the client-side scope audit.
+  const [configuredAreaPaths, setConfiguredAreaPaths] = useState<string[]>([]);
+  const [configuredIterationPaths, setConfiguredIterationPaths] = useState<string[]>([]);
   // True when the people list shown in the selector comes from the fallback
   // cache (i.e. the last load failed but we have a previous roster on hand).
   const [peopleFallbackStale, setPeopleFallbackStale] = useState(false);
@@ -281,7 +286,7 @@ export default function FeaturesPage() {
       if (!user) return;
       const { data } = await supabase
         .from("azure_devops_settings")
-        .select("server_url, collection, project, team, pat_encrypted")
+        .select("server_url, collection, project, team, pat_encrypted, area_paths, iteration_paths")
         .eq("user_id", user.id)
         .maybeSingle();
       if (data?.server_url && data?.collection && data?.project && data?.pat_encrypted) {
@@ -295,7 +300,15 @@ export default function FeaturesPage() {
   }, [user]);
 
   const loadFromTfs = async (
-    presetSettings?: { server_url: string | null; collection: string | null; project: string; team: string | null; pat_encrypted: string },
+    presetSettings?: {
+      server_url: string | null;
+      collection: string | null;
+      project: string;
+      team: string | null;
+      pat_encrypted: string;
+      area_paths?: string[] | null;
+      iteration_paths?: string[] | null;
+    },
     options: { forceAreaRefresh?: boolean } = {},
   ) => {
     if (!user) return;
@@ -306,7 +319,7 @@ export default function FeaturesPage() {
       if (!settings) {
         const { data } = await supabase
           .from("azure_devops_settings")
-          .select("server_url, collection, project, team, pat_encrypted")
+          .select("server_url, collection, project, team, pat_encrypted, area_paths, iteration_paths")
           .eq("user_id", user.id)
           .maybeSingle();
         settings = data ?? undefined;
@@ -330,39 +343,52 @@ export default function FeaturesPage() {
       const cleanProject = settings.project.replace(/^\/+|\/+$/g, "");
       setTfsBaseUrl(`${cleanServer}/${cleanCollection}/${encodeURIComponent(cleanProject)}`);
 
+      // User-configured scope from Settings (multi-select dropdowns). When
+      // empty, the legacy Rodat defaults apply.
+      const userAreas = (settings.area_paths ?? []).filter((p) => p && p.trim().length > 0);
+      const userIters = (settings.iteration_paths ?? []).filter((p) => p && p.trim().length > 0);
+      setConfiguredAreaPaths(userAreas);
+      setConfiguredIterationPaths(userIters);
+
       // Resolve the area paths owned by the configured team so we can scope
-      // both features and tasks to that team only.
-      let areaPaths: string[] = [];
-      if (conn.team) {
+      // both features and tasks to that team only (only used as a fallback
+      // when the user has not picked explicit areas in Settings).
+      let teamAreaPaths: string[] = [];
+      if (userAreas.length === 0 && conn.team) {
         const areaRes = await listTfsTeamAreaPaths(conn, { force: options.forceAreaRefresh });
         if (areaRes.error) {
           // Non-fatal: warn but keep going without area filtering.
           toast.warning(`No se pudieron leer las áreas del equipo: ${areaRes.error.message}`);
         }
-        areaPaths = areaRes.items;
+        teamAreaPaths = areaRes.items;
       }
 
       const [featRes, taskRes] = await Promise.all([
-        listTfsFeatures(conn, areaPaths),
-        listTfsTasks(conn),
+        listTfsFeatures(conn, teamAreaPaths, userAreas),
+        listTfsTasks(conn, userAreas, userIters),
       ]);
       const loadHadError = Boolean(featRes.error || taskRes.error);
       if (featRes.error) {
         setTfsError(featRes.error.message);
         toast.error(`TFS: ${featRes.error.message}`);
       }
-      // Client-side scope (defense in depth): always restrict to SDES\Rodat
-      // and tasks must live under iteration SDES\Rodat\4.4. If the team
-      // exposes more specific area paths inside Rodat, intersect with those.
-      const rodatAreas = areaPaths.filter(
-        (p) => p === RODAT_AREA_PATH || p.startsWith(`${RODAT_AREA_PATH}\\`),
-      );
-      const effectiveAreas = rodatAreas.length > 0 ? rodatAreas : [RODAT_AREA_PATH];
+      // Client-side scope (defense in depth): use the explicit user scope when
+      // available, otherwise fall back to Rodat areas / 4.4 iteration.
+      const effectiveAreas =
+        userAreas.length > 0
+          ? userAreas
+          : (() => {
+              const rodatAreas = teamAreaPaths.filter(
+                (p) => p === RODAT_AREA_PATH || p.startsWith(`${RODAT_AREA_PATH}\\`),
+              );
+              return rodatAreas.length > 0 ? rodatAreas : [RODAT_AREA_PATH];
+            })();
+      const effectiveIters = userIters.length > 0 ? userIters : [RODAT_ITERATION_PATH];
       const isUnderArea = (path: string | undefined, root: string) =>
         Boolean(path && (path === root || path.startsWith(`${root}\\`)));
       // Persist the raw payloads — the scoped derivations below filter what
       // the UI actually shows, while the audit banner inspects the raw lists
-      // to detect any item TFS returned outside the required Rodat scope.
+      // to detect any item TFS returned outside the required scope.
       setTfsFeaturesRaw(featRes.items);
       setTfsTasksRaw(taskRes.items);
       setLastAreaPaths(effectiveAreas);
@@ -377,14 +403,14 @@ export default function FeaturesPage() {
           .filter(
             (t) =>
               effectiveAreas.some((p) => isUnderArea(t.areaPath, p)) &&
-              isUnderArea(t.iterationPath, RODAT_ITERATION_PATH),
+              effectiveIters.some((p) => isUnderArea(t.iterationPath, p)),
           )
           .forEach((t) => t.assignedTo && peopleSet.add(t.assignedTo));
         featRes.items
           .filter((f) => effectiveAreas.some((p) => isUnderArea(f.areaPath, p)))
           .forEach((f) => f.assignedTo && peopleSet.add(f.assignedTo));
         const people = Array.from(peopleSet).sort();
-        writeTfsPeopleCache(conn, areaPaths, people);
+        writeTfsPeopleCache(conn, effectiveAreas, people);
         setPeopleFallbackStale(false);
       }
     } catch (err) {
@@ -398,23 +424,36 @@ export default function FeaturesPage() {
 
   // Scoped derivations — every UI consumer reads these instead of the raw
   // payload, guaranteeing that out-of-scope items never leak into listings,
-  // KPIs, charts or the person selector. Features must live under
-  // SDES\Rodat; tasks must additionally live under iteration SDES\Rodat\4.4.
+  // KPIs, charts or the person selector. Effective scope = the user-configured
+  // areas/iterations from Settings, falling back to the legacy Rodat defaults
+  // when nothing has been picked.
   const isPathUnder = (path: string | undefined, root: string) =>
     Boolean(path && (path === root || path.startsWith(`${root}\\`)));
 
+  const effectiveAreaPaths = useMemo(
+    () => (configuredAreaPaths.length > 0 ? configuredAreaPaths : [RODAT_AREA_PATH]),
+    [configuredAreaPaths],
+  );
+  const effectiveIterationPaths = useMemo(
+    () => (configuredIterationPaths.length > 0 ? configuredIterationPaths : [RODAT_ITERATION_PATH]),
+    [configuredIterationPaths],
+  );
+
   const tfsFeatures = useMemo(
-    () => tfsFeaturesRaw.filter((f) => isPathUnder(f.areaPath, RODAT_AREA_PATH)),
-    [tfsFeaturesRaw],
+    () =>
+      tfsFeaturesRaw.filter((f) =>
+        effectiveAreaPaths.some((root) => isPathUnder(f.areaPath, root)),
+      ),
+    [tfsFeaturesRaw, effectiveAreaPaths],
   );
   const tfsTasks = useMemo(
     () =>
       tfsTasksRaw.filter(
         (t) =>
-          isPathUnder(t.areaPath, RODAT_AREA_PATH) &&
-          isPathUnder(t.iterationPath, RODAT_ITERATION_PATH),
+          effectiveAreaPaths.some((root) => isPathUnder(t.areaPath, root)) &&
+          effectiveIterationPaths.some((root) => isPathUnder(t.iterationPath, root)),
       ),
-    [tfsTasksRaw],
+    [tfsTasksRaw, effectiveAreaPaths, effectiveIterationPaths],
   );
 
   // Build unified data depending on source
@@ -622,18 +661,19 @@ export default function FeaturesPage() {
   }, [features, activeTeam, source]);
 
   // Scope validation — audits the raw TFS payload to confirm that every
-  // Feature/Task lives under the required Rodat area path, and that every
-  // Task's iteration is under SDES\Rodat\4.4. Surfaced as a visible banner so
-  // users (and us) can verify the hard scope is being enforced end-to-end.
+  // Feature/Task lives under one of the configured area paths, and that
+  // every Task's iteration is under one of the configured iteration paths.
+  // Surfaced as a visible banner so users (and us) can verify the scope is
+  // being enforced end-to-end.
   const scopeCheck = useMemo(() => {
     const featuresOutOfArea = tfsFeaturesRaw.filter(
-      (f) => !isPathUnder(f.areaPath, RODAT_AREA_PATH),
+      (f) => !effectiveAreaPaths.some((root) => isPathUnder(f.areaPath, root)),
     );
     const tasksOutOfArea = tfsTasksRaw.filter(
-      (t) => !isPathUnder(t.areaPath, RODAT_AREA_PATH),
+      (t) => !effectiveAreaPaths.some((root) => isPathUnder(t.areaPath, root)),
     );
     const tasksOutOfIteration = tfsTasksRaw.filter(
-      (t) => !isPathUnder(t.iterationPath, RODAT_ITERATION_PATH),
+      (t) => !effectiveIterationPaths.some((root) => isPathUnder(t.iterationPath, root)),
     );
     return {
       featuresTotal: tfsFeatures.length,
@@ -648,7 +688,7 @@ export default function FeaturesPage() {
         tasksOutOfArea.length === 0 &&
         tasksOutOfIteration.length === 0,
     };
-  }, [tfsFeaturesRaw, tfsTasksRaw, tfsFeatures.length, tfsTasks.length]);
+  }, [tfsFeaturesRaw, tfsTasksRaw, tfsFeatures.length, tfsTasks.length, effectiveAreaPaths, effectiveIterationPaths]);
 
 
   const copyWorkItemLink = async (id: string, type: "feature" | "tarea") => {
@@ -757,12 +797,16 @@ export default function FeaturesPage() {
                       ? "Alcance verificado"
                       : "Elementos fuera del alcance ocultos automáticamente"}
                   </p>
-                  <Badge variant="outline" className="gap-1 font-mono text-[11px]">
-                    Área: {RODAT_AREA_PATH}
-                  </Badge>
-                  <Badge variant="outline" className="gap-1 font-mono text-[11px]">
-                    Iteración (tareas): {RODAT_ITERATION_PATH}
-                  </Badge>
+                  {effectiveAreaPaths.map((p) => (
+                    <Badge key={`area-${p}`} variant="outline" className="gap-1 font-mono text-[11px]">
+                      Área: {p}
+                    </Badge>
+                  ))}
+                  {effectiveIterationPaths.map((p) => (
+                    <Badge key={`iter-${p}`} variant="outline" className="gap-1 font-mono text-[11px]">
+                      Iteración (tareas): {p}
+                    </Badge>
+                  ))}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {scopeCheck.ok ? (
@@ -808,7 +852,7 @@ export default function FeaturesPage() {
                             groupKey: "featuresArea" as const,
                             icon: <MapPinOff className="h-3.5 w-3.5" />,
                             label: `Features fuera del área (${scopeCheck.featuresOutOfArea.length})`,
-                            reason: `Esperado bajo ${RODAT_AREA_PATH}`,
+                            reason: `Esperado bajo ${effectiveAreaPaths.join(" o ")}`,
                             items: scopeCheck.featuresOutOfArea.map((f) => ({
                               id: f.id,
                               type: "Feature" as const,
@@ -822,7 +866,7 @@ export default function FeaturesPage() {
                             groupKey: "tasksArea" as const,
                             icon: <MapPinOff className="h-3.5 w-3.5" />,
                             label: `Tareas fuera del área (${scopeCheck.tasksOutOfArea.length})`,
-                            reason: `Esperado bajo ${RODAT_AREA_PATH}`,
+                            reason: `Esperado bajo ${effectiveAreaPaths.join(" o ")}`,
                             items: scopeCheck.tasksOutOfArea.map((t) => ({
                               id: t.id,
                               type: "Tarea" as const,
@@ -836,7 +880,7 @@ export default function FeaturesPage() {
                             groupKey: "tasksIteration" as const,
                             icon: <CalendarOff className="h-3.5 w-3.5" />,
                             label: `Tareas fuera de la iteración (${scopeCheck.tasksOutOfIteration.length})`,
-                            reason: `Esperado bajo ${RODAT_ITERATION_PATH}`,
+                            reason: `Esperado bajo ${effectiveIterationPaths.join(" o ")}`,
                             items: scopeCheck.tasksOutOfIteration.map((t) => ({
                               id: t.id,
                               type: "Tarea" as const,

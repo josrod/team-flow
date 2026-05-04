@@ -758,12 +758,136 @@ const runWiqlAndFetch = async (
 export const ACTIVE_FEATURE_STATES = ["Open", "In Refinement", "In Progress"] as const;
 
 /**
- * Hard scope applied to every Features/Tasks query, regardless of the team
- * configured in Azure DevOps settings. The dashboard must only ever surface
- * work under SDES\Rodat (and, for tasks, iterations under SDES\Rodat\4.4).
+ * Default scope applied when the user has not explicitly chosen areas /
+ * iterations from the Settings page. Historically this was hard-coded;
+ * now it is the fallback only.
  */
 export const RODAT_AREA_PATH = "SDES\\Rodat";
 export const RODAT_ITERATION_PATH = "SDES\\Rodat\\4.4";
+
+// ---------------------------------------------------------------------------
+// Classification nodes — list area & iteration trees so the Settings page
+// can offer a real selector instead of free-text input. Endpoint:
+//   GET {server}/{collection}/{project}/_apis/wit/classificationnodes/{group}
+//        ?$depth=N&api-version=5.0
+// ---------------------------------------------------------------------------
+
+export type TfsClassificationGroup = "areas" | "iterations";
+
+export interface TfsClassificationNode {
+  /** Full path as TFS uses it (backslash-separated, no leading slash). */
+  path: string;
+  /** Leaf name only, useful for compact display. */
+  name: string;
+  /** Tree depth — 0 = project root. */
+  depth: number;
+}
+
+interface RawClassificationNode {
+  name: string;
+  path?: string;
+  hasChildren?: boolean;
+  children?: RawClassificationNode[];
+}
+
+/**
+ * TFS returns paths like `\SDES\Area\Rodat` (leading backslash, project name
+ * replaced by `Area`/`Iteration`). Normalise them to the same form WIQL
+ * uses: `SDES\Rodat`, `SDES\Rodat\4.4`, etc.
+ */
+const normalizeClassificationPath = (project: string, raw: string): string => {
+  const trimmed = raw.replace(/^\\+/, "");
+  const segments = trimmed.split("\\");
+  // First segment is the project, second is "Area" or "Iteration" — drop it.
+  if (segments.length >= 2 && (segments[1] === "Area" || segments[1] === "Iteration")) {
+    return [project, ...segments.slice(2)].join("\\");
+  }
+  return trimmed;
+};
+
+const flattenNodes = (
+  project: string,
+  node: RawClassificationNode,
+  depth: number,
+  out: TfsClassificationNode[],
+): void => {
+  if (node.path) {
+    out.push({
+      path: normalizeClassificationPath(project, node.path),
+      name: node.name,
+      depth,
+    });
+  }
+  for (const child of node.children ?? []) {
+    flattenNodes(project, child, depth + 1, out);
+  }
+};
+
+/**
+ * List every area or iteration node under a project as a flat array of paths
+ * (depth-first). Returns up to 10 levels of nesting which is enough for any
+ * realistic ADO tree.
+ */
+export const listTfsClassificationNodes = async (
+  serverUrl: string,
+  collection: string,
+  project: string,
+  pat: string,
+  group: TfsClassificationGroup,
+): Promise<TfsDiscoveryResult<TfsClassificationNode>> => {
+  if (!serverUrl.trim() || !collection.trim() || !project.trim() || !pat.trim()) {
+    return { items: [] };
+  }
+  const base = buildCollectionUrl(serverUrl, collection);
+  const url = `${base}/${encodeURIComponent(
+    project.trim(),
+  )}/_apis/wit/classificationnodes/${group}?$depth=10&api-version=${API_VERSION}`;
+
+  if (isMixedContent(url)) {
+    return { items: [], error: { kind: "mixed_content", url, message: "Mixed content (HTTPS → HTTP)." } };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { Authorization: buildAuthHeader(pat), Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      return {
+        items: [],
+        error: {
+          kind: res.status === 401 ? "unauthorized" : res.status === 403 ? "forbidden" : res.status === 404 ? "not_found" : "http",
+          status: res.status,
+          url,
+          message: `HTTP ${res.status} al listar ${group === "areas" ? "áreas" : "iteraciones"}.`,
+          detail: body.slice(0, 300),
+        },
+      };
+    }
+    const root = (await res.json()) as RawClassificationNode;
+    const items: TfsClassificationNode[] = [];
+    flattenNodes(project.trim(), root, 0, items);
+    return { items };
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return { items: [], error: { kind: "timeout", url, message: "Tiempo de espera agotado." } };
+    }
+    if (isNetworkLevelError(err)) {
+      return { items: [], error: { kind: "cors", url, message: "Sin respuesta (CORS, VPN o firewall)." } };
+    }
+    return {
+      items: [],
+      error: { kind: "unknown", url, message: err instanceof Error ? err.message : "Error desconocido." },
+    };
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+};
 
 /**
  * List Features in the configured project, restricted to the given team's
@@ -775,18 +899,25 @@ export const RODAT_ITERATION_PATH = "SDES\\Rodat\\4.4";
 export const listTfsFeatures = async (
   conn: TfsConnection,
   teamAreaPaths?: string[],
+  configuredAreaPaths?: string[],
 ): Promise<TfsDiscoveryResult<TfsWorkItem>> => {
   const project = conn.project.trim().replace(/'/g, "''");
   const stateList = ACTIVE_FEATURE_STATES.map((s) => `'${s.replace(/'/g, "''")}'`).join(", ");
 
-  // Hard scope: always restrict to SDES\Rodat (and descendants). If the team
-  // also exposes more specific area paths, intersect with those; otherwise
-  // fall back to the Rodat root only.
-  const rodatEsc = RODAT_AREA_PATH.replace(/'/g, "''");
-  const effectiveAreas = (teamAreaPaths ?? []).filter(
-    (p) => p === RODAT_AREA_PATH || p.startsWith(`${RODAT_AREA_PATH}\\`),
-  );
-  const areaList = effectiveAreas.length > 0 ? effectiveAreas : [RODAT_AREA_PATH];
+  // Effective scope precedence:
+  //   1. Explicit user-configured areas from Settings (Settings dropdown).
+  //   2. Team-resolved areas intersected with the legacy Rodat root.
+  //   3. Fallback to the Rodat root only.
+  const userAreas = (configuredAreaPaths ?? []).filter((p) => p.trim().length > 0);
+  let areaList: string[];
+  if (userAreas.length > 0) {
+    areaList = userAreas;
+  } else {
+    const rodatTeamAreas = (teamAreaPaths ?? []).filter(
+      (p) => p === RODAT_AREA_PATH || p.startsWith(`${RODAT_AREA_PATH}\\`),
+    );
+    areaList = rodatTeamAreas.length > 0 ? rodatTeamAreas : [RODAT_AREA_PATH];
+  }
   const areaClause = ` AND (${areaList
     .map((p) => `[System.AreaPath] UNDER '${p.replace(/'/g, "''")}'`)
     .join(" OR ")})`;
@@ -814,16 +945,26 @@ ORDER BY [System.ChangedDate] DESC`;
  */
 export const listTfsTasks = async (
   conn: TfsConnection,
+  configuredAreaPaths?: string[],
+  configuredIterationPaths?: string[],
 ): Promise<TfsDiscoveryResult<TfsWorkItem>> => {
   const project = conn.project.trim().replace(/'/g, "''");
-  const areaEsc = RODAT_AREA_PATH.replace(/'/g, "''");
-  const iterEsc = RODAT_ITERATION_PATH.replace(/'/g, "''");
+  const userAreas = (configuredAreaPaths ?? []).filter((p) => p.trim().length > 0);
+  const userIters = (configuredIterationPaths ?? []).filter((p) => p.trim().length > 0);
+  const areaList = userAreas.length > 0 ? userAreas : [RODAT_AREA_PATH];
+  const iterList = userIters.length > 0 ? userIters : [RODAT_ITERATION_PATH];
+  const areaClause = `(${areaList
+    .map((p) => `[System.AreaPath] UNDER '${p.replace(/'/g, "''")}'`)
+    .join(" OR ")})`;
+  const iterClause = `(${iterList
+    .map((p) => `[System.IterationPath] UNDER '${p.replace(/'/g, "''")}'`)
+    .join(" OR ")})`;
   const wiql = `SELECT [System.Id] FROM WorkItems
 WHERE [System.TeamProject] = '${project}'
   AND [System.WorkItemType] IN ('Task','User Story','Bug','Product Backlog Item')
   AND [System.State] <> 'Removed'
-  AND [System.AreaPath] UNDER '${areaEsc}'
-  AND [System.IterationPath] UNDER '${iterEsc}'
+  AND ${areaClause}
+  AND ${iterClause}
 ORDER BY [System.ChangedDate] DESC`;
   return runWiqlAndFetch(conn, wiql, [
     "System.Id",

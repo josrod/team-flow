@@ -27,6 +27,7 @@ import {
   listTfsCollections,
   listTfsProjects,
   listTfsTeams,
+  listTfsClassificationNodes,
   clearTfsAreaPathCache,
   type TfsProjectInfo,
   type TfsError,
@@ -36,6 +37,7 @@ import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { TfsPatDiagnosticsPanel } from "@/components/TfsPatDiagnosticsPanel";
 import { TfsFieldHint } from "@/components/TfsFieldHint";
 import { TfsAutocompleteInput } from "@/components/TfsAutocompleteInput";
+import { TfsMultiSelect } from "@/components/TfsMultiSelect";
 import { validateConnectionFields, validateServerUrl } from "@/lib/tfsValidation";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +53,8 @@ export const AzureDevOpsSettingsPage = () => {
   const [showPat, setShowPat] = useState(false);
   const [autoSync, setAutoSync] = useState(false);
   const [syncInterval, setSyncInterval] = useState("30");
+  const [areaPaths, setAreaPaths] = useState<string[]>([]);
+  const [iterationPaths, setIterationPaths] = useState<string[]>([]);
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<"idle" | "success" | "error">("idle");
@@ -92,6 +96,10 @@ export const AzureDevOpsSettingsPage = () => {
         setPat(data.pat_encrypted);
         setAutoSync(data.auto_sync_enabled);
         setSyncInterval(String(data.sync_interval_minutes));
+        const rawAreas = (data as { area_paths?: string[] | null }).area_paths;
+        const rawIters = (data as { iteration_paths?: string[] | null }).iteration_paths;
+        if (Array.isArray(rawAreas)) setAreaPaths(rawAreas);
+        if (Array.isArray(rawIters)) setIterationPaths(rawIters);
         setLastSynced(data.last_synced_at);
         setHasExisting(true);
         setConnectionStatus("success");
@@ -173,6 +181,8 @@ export const AzureDevOpsSettingsPage = () => {
           team: team.trim() || null,
           auto_sync_enabled: autoSync,
           sync_interval_minutes: Number(syncInterval),
+          area_paths: areaPaths,
+          iteration_paths: iterationPaths,
         })
         .eq("user_id", user.id);
 
@@ -184,7 +194,7 @@ export const AzureDevOpsSettingsPage = () => {
         window.clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, hasExisting]);
+  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, hasExisting]);
 
   const resetStatus = () => {
     setConnectionStatus("idle");
@@ -334,6 +344,8 @@ export const AzureDevOpsSettingsPage = () => {
         pat_encrypted: pat.trim(),
         auto_sync_enabled: autoSync,
         sync_interval_minutes: Number(syncInterval),
+        area_paths: areaPaths,
+        iteration_paths: iterationPaths,
       };
 
       if (hasExisting) {
@@ -395,6 +407,8 @@ export const AzureDevOpsSettingsPage = () => {
     setPat("");
     setAutoSync(false);
     setSyncInterval("30");
+    setAreaPaths([]);
+    setIterationPaths([]);
     setConnectionStatus("idle");
     setTfsProject(null);
     setTfsError(null);
@@ -686,6 +700,110 @@ export const AzureDevOpsSettingsPage = () => {
                 <TfsPatDiagnosticsPanel result={diagnostics} />
               </div>
             )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.05 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-display flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5" />
+              Alcance del equipo RODAT
+            </CardTitle>
+            <CardDescription>
+              Selecciona las áreas e iteraciones de Azure DevOps que se usarán al cargar
+              Features y Tareas. Si no eliges nada, se usan los valores por defecto
+              (<span className="font-mono">SDES\Rodat</span> y{" "}
+              <span className="font-mono">SDES\Rodat\4.4</span>).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div>
+              <Label htmlFor="ado-areas">Áreas (Features y Tareas)</Label>
+              <div className="mt-1">
+                <TfsMultiSelect
+                  id="ado-areas"
+                  value={areaPaths}
+                  onChange={setAreaPaths}
+                  placeholder="Selecciona una o varias áreas…"
+                  emptyHint="No se encontraron áreas para este proyecto."
+                  disabled={
+                    validateServerUrl(serverUrl).status !== "valid" ||
+                    !collection.trim() ||
+                    !project.trim() ||
+                    !pat.trim()
+                  }
+                  disabledReason="Configura servidor, colección, proyecto y PAT para cargar las áreas."
+                  loadOptions={async () => {
+                    const res = await listTfsClassificationNodes(
+                      serverUrl,
+                      collection,
+                      project,
+                      pat,
+                      "areas",
+                    );
+                    return {
+                      items: res.items.map((n) => ({
+                        path: n.path,
+                        name: n.name,
+                        depth: n.depth,
+                      })),
+                      errorMessage: res.error?.message,
+                    };
+                  }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Las features y tareas se filtrarán a estas áreas (incluye descendientes).
+              </p>
+            </div>
+
+            <Separator />
+
+            <div>
+              <Label htmlFor="ado-iterations">Iteraciones (solo Tareas)</Label>
+              <div className="mt-1">
+                <TfsMultiSelect
+                  id="ado-iterations"
+                  value={iterationPaths}
+                  onChange={setIterationPaths}
+                  placeholder="Selecciona una o varias iteraciones…"
+                  emptyHint="No se encontraron iteraciones para este proyecto."
+                  disabled={
+                    validateServerUrl(serverUrl).status !== "valid" ||
+                    !collection.trim() ||
+                    !project.trim() ||
+                    !pat.trim()
+                  }
+                  disabledReason="Configura servidor, colección, proyecto y PAT para cargar las iteraciones."
+                  loadOptions={async () => {
+                    const res = await listTfsClassificationNodes(
+                      serverUrl,
+                      collection,
+                      project,
+                      pat,
+                      "iterations",
+                    );
+                    return {
+                      items: res.items.map((n) => ({
+                        path: n.path,
+                        name: n.name,
+                        depth: n.depth,
+                      })),
+                      errorMessage: res.error?.message,
+                    };
+                  }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Las tareas se filtrarán a estas iteraciones (incluye descendientes).
+              </p>
+            </div>
           </CardContent>
         </Card>
       </motion.div>
