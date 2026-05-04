@@ -768,6 +768,83 @@ export default function FeaturesPage() {
         </Card>
       )}
 
+      {/* Effective scope summary — shows exactly which areas/iterations are
+          being applied to the queries and whether they come from the user's
+          Settings or from the legacy Rodat defaults. Helps users confirm at
+          a glance what is being filtered before reading the audit banner. */}
+      {source === "tfs" && (
+        <Card className="border bg-muted/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Layers className="h-4 w-4 text-muted-foreground" aria-hidden />
+              Alcance efectivo
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Filtros aplicados a las consultas de Features y Tareas. Cámbialos en Ajustes › Azure DevOps.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-3">
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-medium text-muted-foreground min-w-[8rem]">
+                  Áreas (Features y Tareas)
+                </span>
+                <Badge
+                  variant={configuredAreaPaths.length > 0 ? "default" : "secondary"}
+                  className="text-[10px]"
+                >
+                  {configuredAreaPaths.length > 0
+                    ? `Configurado (${configuredAreaPaths.length})`
+                    : "Por defecto"}
+                </Badge>
+              </div>
+              <div className="flex flex-wrap gap-1.5 pl-1">
+                {effectiveAreaPaths.map((p) => (
+                  <Badge
+                    key={`scope-area-${p}`}
+                    variant="outline"
+                    className="font-mono text-[11px]"
+                  >
+                    {p}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-medium text-muted-foreground min-w-[8rem]">
+                  Iteraciones (Tareas)
+                </span>
+                <Badge
+                  variant={configuredIterationPaths.length > 0 ? "default" : "secondary"}
+                  className="text-[10px]"
+                >
+                  {configuredIterationPaths.length > 0
+                    ? `Configurado (${configuredIterationPaths.length})`
+                    : "Por defecto"}
+                </Badge>
+              </div>
+              <div className="flex flex-wrap gap-1.5 pl-1">
+                {effectiveIterationPaths.map((p) => (
+                  <Badge
+                    key={`scope-iter-${p}`}
+                    variant="outline"
+                    className="font-mono text-[11px]"
+                  >
+                    {p}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            {configuredAreaPaths.length === 0 && configuredIterationPaths.length === 0 && (
+              <p className="text-[11px] text-muted-foreground">
+                No hay alcance personalizado en Ajustes; se usan los valores por defecto del equipo RODAT.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Scope validation banner — confirms that Features and Tasks are
           restricted to SDES\Rodat, and Tasks additionally to iterations
           under SDES\Rodat\4.4. Only meaningful for the TFS source. */}
