@@ -707,6 +707,110 @@ export const AzureDevOpsSettingsPage = () => {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.05 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-display flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5" />
+              Alcance del equipo RODAT
+            </CardTitle>
+            <CardDescription>
+              Selecciona las áreas e iteraciones de Azure DevOps que se usarán al cargar
+              Features y Tareas. Si no eliges nada, se usan los valores por defecto
+              (<span className="font-mono">SDES\Rodat</span> y{" "}
+              <span className="font-mono">SDES\Rodat\4.4</span>).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div>
+              <Label htmlFor="ado-areas">Áreas (Features y Tareas)</Label>
+              <div className="mt-1">
+                <TfsMultiSelect
+                  id="ado-areas"
+                  value={areaPaths}
+                  onChange={setAreaPaths}
+                  placeholder="Selecciona una o varias áreas…"
+                  emptyHint="No se encontraron áreas para este proyecto."
+                  disabled={
+                    validateServerUrl(serverUrl).status !== "valid" ||
+                    !collection.trim() ||
+                    !project.trim() ||
+                    !pat.trim()
+                  }
+                  disabledReason="Configura servidor, colección, proyecto y PAT para cargar las áreas."
+                  loadOptions={async () => {
+                    const res = await listTfsClassificationNodes(
+                      serverUrl,
+                      collection,
+                      project,
+                      pat,
+                      "areas",
+                    );
+                    return {
+                      items: res.items.map((n) => ({
+                        path: n.path,
+                        name: n.name,
+                        depth: n.depth,
+                      })),
+                      errorMessage: res.error?.message,
+                    };
+                  }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Las features y tareas se filtrarán a estas áreas (incluye descendientes).
+              </p>
+            </div>
+
+            <Separator />
+
+            <div>
+              <Label htmlFor="ado-iterations">Iteraciones (solo Tareas)</Label>
+              <div className="mt-1">
+                <TfsMultiSelect
+                  id="ado-iterations"
+                  value={iterationPaths}
+                  onChange={setIterationPaths}
+                  placeholder="Selecciona una o varias iteraciones…"
+                  emptyHint="No se encontraron iteraciones para este proyecto."
+                  disabled={
+                    validateServerUrl(serverUrl).status !== "valid" ||
+                    !collection.trim() ||
+                    !project.trim() ||
+                    !pat.trim()
+                  }
+                  disabledReason="Configura servidor, colección, proyecto y PAT para cargar las iteraciones."
+                  loadOptions={async () => {
+                    const res = await listTfsClassificationNodes(
+                      serverUrl,
+                      collection,
+                      project,
+                      pat,
+                      "iterations",
+                    );
+                    return {
+                      items: res.items.map((n) => ({
+                        path: n.path,
+                        name: n.name,
+                        depth: n.depth,
+                      })),
+                      errorMessage: res.error?.message,
+                    };
+                  }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Las tareas se filtrarán a estas iteraciones (incluye descendientes).
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
         <Card>
