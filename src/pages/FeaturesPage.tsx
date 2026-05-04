@@ -556,6 +556,31 @@ export default function FeaturesPage() {
     return features.filter((f) => f.id === activeTeam);
   }, [features, activeTeam, source]);
 
+  // Scope validation — audits the raw TFS payload to confirm that every
+  // Feature/Task lives under the required Rodat area path, and that every
+  // Task's iteration is under SDES\Rodat\4.4. Surfaced as a visible banner so
+  // users (and us) can verify the hard scope is being enforced end-to-end.
+  const scopeCheck = useMemo(() => {
+    const isUnder = (path: string | undefined, root: string) =>
+      Boolean(path && (path === root || path.startsWith(`${root}\\`)));
+    const featuresOutOfArea = tfsFeatures.filter((f) => !isUnder(f.areaPath, RODAT_AREA_PATH));
+    const tasksOutOfArea = tfsTasks.filter((t) => !isUnder(t.areaPath, RODAT_AREA_PATH));
+    const tasksOutOfIteration = tfsTasks.filter(
+      (t) => !isUnder(t.iterationPath, RODAT_ITERATION_PATH),
+    );
+    return {
+      featuresTotal: tfsFeatures.length,
+      tasksTotal: tfsTasks.length,
+      featuresOutOfArea,
+      tasksOutOfArea,
+      tasksOutOfIteration,
+      ok:
+        featuresOutOfArea.length === 0 &&
+        tasksOutOfArea.length === 0 &&
+        tasksOutOfIteration.length === 0,
+    };
+  }, [tfsFeatures, tfsTasks]);
+
 
   const copyWorkItemLink = async (id: string, type: "feature" | "tarea") => {
     if (!tfsBaseUrl) return;
