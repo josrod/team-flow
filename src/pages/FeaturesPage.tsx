@@ -221,6 +221,23 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const [draftPerson, setDraftPerson] = useState<string>(activePerson);
   const [draftSearch, setDraftSearch] = useState<string>(search);
   const [showFlatList, setShowFlatList] = useState(false);
+  type TaskStateKey = "active" | "pending" | "blocked" | "done";
+  type TaskSortKey = "total-desc" | "total-asc" | "name-asc" | "name-desc";
+  const [stateFilter, setStateFilter] = useState<Set<TaskStateKey>>(
+    () => new Set<TaskStateKey>(["active", "pending"]),
+  );
+  const [taskSort, setTaskSort] = useState<TaskSortKey>("total-desc");
+  const toggleStateFilter = (key: TaskStateKey) => {
+    setStateFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        if (next.size > 1) next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
 
   // Keep drafts in sync with applied values when manual-apply is off, so the
   // UI reflects changes driven from elsewhere (URL hydration, invalid-ID
@@ -758,24 +775,32 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   // Group filtered tasks by assignee, keeping only open/in-progress items.
   // Sorted by total desc; "Sin asignar" pushed to the end.
   const tasksByPerson = useMemo(() => {
-    const map = new Map<string, { active: UnifiedTask[]; pending: UnifiedTask[] }>();
+    const map = new Map<string, { active: UnifiedTask[]; pending: UnifiedTask[]; blocked: UnifiedTask[]; done: UnifiedTask[] }>();
     filteredTasks.forEach((t) => {
       const norm = normalizeState(t.state);
-      if (norm !== "active" && norm !== "pending") return;
+      if (!stateFilter.has(norm)) return;
       const key = t.assignee || "Sin asignar";
-      if (!map.has(key)) map.set(key, { active: [], pending: [] });
-      const bucket = map.get(key)!;
-      if (norm === "active") bucket.active.push(t);
-      else bucket.pending.push(t);
+      if (!map.has(key)) map.set(key, { active: [], pending: [], blocked: [], done: [] });
+      map.get(key)![norm].push(t);
     });
-    return Array.from(map.entries())
-      .map(([person, v]) => ({ person, ...v, total: v.active.length + v.pending.length }))
-      .sort((a, b) => {
-        if (a.person === "Sin asignar") return 1;
-        if (b.person === "Sin asignar") return -1;
-        return b.total - a.total;
-      });
-  }, [filteredTasks]);
+    const arr = Array.from(map.entries()).map(([person, v]) => ({
+      person,
+      ...v,
+      total: v.active.length + v.pending.length + v.blocked.length + v.done.length,
+    }));
+    arr.sort((a, b) => {
+      if (a.person === "Sin asignar") return 1;
+      if (b.person === "Sin asignar") return -1;
+      switch (taskSort) {
+        case "total-asc": return a.total - b.total;
+        case "name-asc": return a.person.localeCompare(b.person);
+        case "name-desc": return b.person.localeCompare(a.person);
+        case "total-desc":
+        default: return b.total - a.total;
+      }
+    });
+    return arr;
+  }, [filteredTasks, stateFilter, taskSort]);
 
   const defaultOpenPeople = useMemo(
     () => tasksByPerson.filter((p) => p.active.length > 0).map((p) => p.person),
@@ -1558,7 +1583,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <UsersIcon className="h-4 w-4" /> Tareas por persona
                 </CardTitle>
                 <CardDescription>
-                  {tasksByPerson.length} {tasksByPerson.length === 1 ? "persona" : "personas"} con tareas abiertas o en progreso
+                  {tasksByPerson.length} {tasksByPerson.length === 1 ? "persona" : "personas"} · filtrando {Array.from(stateFilter).map((k) => k === "active" ? "en progreso" : k === "pending" ? "pendientes" : k === "blocked" ? "bloqueadas" : "completadas").join(", ")}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -1589,6 +1614,47 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                     </Badge>
                   )}
                 </div>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3">
+              <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrar por estado">
+                <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">Estado</span>
+                {(["active", "pending", "blocked", "done"] as const).map((key) => {
+                  const active = stateFilter.has(key);
+                  const color = stateColorVar[key];
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => toggleStateFilter(key)}
+                      aria-pressed={active}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                        active
+                          ? "border-transparent text-foreground"
+                          : "border-border/60 text-muted-foreground hover:bg-muted/40",
+                      )}
+                      style={active ? { background: `${color}25`, color } : undefined}
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+                      {key === "active" ? "En progreso" : key === "pending" ? "Pendiente" : key === "blocked" ? "Bloqueada" : "Completada"}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="task-sort" className="text-[11px] uppercase tracking-wide text-muted-foreground">Ordenar</Label>
+                <select
+                  id="task-sort"
+                  value={taskSort}
+                  onChange={(e) => setTaskSort(e.target.value as typeof taskSort)}
+                  className="h-8 rounded-md border border-border/60 bg-background px-2 text-xs"
+                >
+                  <option value="total-desc">Más tareas</option>
+                  <option value="total-asc">Menos tareas</option>
+                  <option value="name-asc">Nombre A→Z</option>
+                  <option value="name-desc">Nombre Z→A</option>
+                </select>
               </div>
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3">
@@ -1739,7 +1805,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   )
                 ) : tasksByPerson.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-8 text-center">
-                    Nadie tiene tareas abiertas o en progreso con los filtros actuales.
+                    No hay personas con tareas que coincidan con los filtros actuales.
                   </p>
                 ) : (
                   <Accordion type="multiple" defaultValue={defaultOpenPeople} className="w-full">
@@ -1751,7 +1817,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                         .slice(0, 2)
                         .join("")
                         .toUpperCase() || "?";
-                      const items = [...group.active, ...group.pending].slice(0, 100);
+                      const items = [...group.active, ...group.pending, ...group.blocked, ...group.done].slice(0, 100);
                       return (
                         <AccordionItem key={group.person} value={group.person}>
                           <AccordionTrigger className="hover:no-underline">
@@ -1762,7 +1828,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                               <div className="min-w-0 flex-1 text-left">
                                 <p className="text-sm font-medium truncate">{group.person}</p>
                                 <p className="text-[11px] text-muted-foreground">
-                                  {group.total} {group.total === 1 ? "tarea abierta" : "tareas abiertas"}
+                                  {group.total} {group.total === 1 ? "tarea" : "tareas"}
                                 </p>
                               </div>
                               <div className="flex items-center gap-1.5 shrink-0">
@@ -1783,7 +1849,27 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     style={{ background: `${stateColorVar.pending}20`, color: stateColorVar.pending }}
                                   >
                                     <CircleDashed className="h-3 w-3" />
-                                    {group.pending.length} abiertas
+                                    {group.pending.length} pendientes
+                                  </Badge>
+                                )}
+                                {group.blocked.length > 0 && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px] gap-1"
+                                    style={{ background: `${stateColorVar.blocked}20`, color: stateColorVar.blocked }}
+                                  >
+                                    <AlertOctagon className="h-3 w-3" />
+                                    {group.blocked.length} bloqueadas
+                                  </Badge>
+                                )}
+                                {group.done.length > 0 && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px] gap-1"
+                                    style={{ background: `${stateColorVar.done}20`, color: stateColorVar.done }}
+                                  >
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    {group.done.length} hechas
                                   </Badge>
                                 )}
                               </div>
