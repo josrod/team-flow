@@ -2009,7 +2009,7 @@ interface TaskRowWithHandoverProps {
   norm: "active" | "pending" | "done" | "blocked";
   tfsBaseUrl: string | null;
   source: DataSource;
-  onCopyLink: (id: string, label: string) => void;
+  onCopyLink: (id: string, type: "feature" | "tarea") => void;
 }
 
 function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink }: TaskRowWithHandoverProps) {
