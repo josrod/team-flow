@@ -722,6 +722,52 @@ export default function FeaturesPage() {
     return features.filter((f) => f.id === activeTeam);
   }, [features, activeTeam, source]);
 
+  // Aggregated stats per section
+  const featureStats = useMemo(() => {
+    const total = filteredFeatures.length;
+    const active = filteredFeatures.filter((f) => normalizeState(f.state) === "active").length;
+    const done = filteredFeatures.filter((f) => normalizeState(f.state) === "done").length;
+    const totalTasks = filteredFeatures.reduce((acc, f) => acc + f.taskCount, 0);
+    const doneTasks = filteredFeatures.reduce((acc, f) => acc + f.doneCount, 0);
+    const avgProgress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+    return { total, active, done, avgProgress };
+  }, [filteredFeatures]);
+
+  const taskStats = useMemo(() => {
+    const counts = { active: 0, pending: 0, done: 0, blocked: 0 };
+    filteredTasks.forEach((t) => {
+      counts[normalizeState(t.state)]++;
+    });
+    return { total: filteredTasks.length, ...counts };
+  }, [filteredTasks]);
+
+  // Group filtered tasks by assignee, keeping only open/in-progress items.
+  // Sorted by total desc; "Sin asignar" pushed to the end.
+  const tasksByPerson = useMemo(() => {
+    const map = new Map<string, { active: UnifiedTask[]; pending: UnifiedTask[] }>();
+    filteredTasks.forEach((t) => {
+      const norm = normalizeState(t.state);
+      if (norm !== "active" && norm !== "pending") return;
+      const key = t.assignee || "Sin asignar";
+      if (!map.has(key)) map.set(key, { active: [], pending: [] });
+      const bucket = map.get(key)!;
+      if (norm === "active") bucket.active.push(t);
+      else bucket.pending.push(t);
+    });
+    return Array.from(map.entries())
+      .map(([person, v]) => ({ person, ...v, total: v.active.length + v.pending.length }))
+      .sort((a, b) => {
+        if (a.person === "Sin asignar") return 1;
+        if (b.person === "Sin asignar") return -1;
+        return b.total - a.total;
+      });
+  }, [filteredTasks]);
+
+  const defaultOpenPeople = useMemo(
+    () => tasksByPerson.filter((p) => p.active.length > 0).map((p) => p.person),
+    [tasksByPerson],
+  );
+
   // Scope validation — audits the raw TFS payload to confirm that every
   // Feature/Task lives under one of the configured area paths, and that
   // every Task's iteration is under one of the configured iteration paths.
