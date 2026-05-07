@@ -221,6 +221,23 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const [draftPerson, setDraftPerson] = useState<string>(activePerson);
   const [draftSearch, setDraftSearch] = useState<string>(search);
   const [showFlatList, setShowFlatList] = useState(false);
+  type TaskStateKey = "active" | "pending" | "blocked" | "done";
+  type TaskSortKey = "total-desc" | "total-asc" | "name-asc" | "name-desc";
+  const [stateFilter, setStateFilter] = useState<Set<TaskStateKey>>(
+    () => new Set<TaskStateKey>(["active", "pending"]),
+  );
+  const [taskSort, setTaskSort] = useState<TaskSortKey>("total-desc");
+  const toggleStateFilter = (key: TaskStateKey) => {
+    setStateFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        if (next.size > 1) next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
 
   // Keep drafts in sync with applied values when manual-apply is off, so the
   // UI reflects changes driven from elsewhere (URL hydration, invalid-ID
