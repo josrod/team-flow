@@ -1805,7 +1805,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   )
                 ) : tasksByPerson.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-8 text-center">
-                    Nadie tiene tareas abiertas o en progreso con los filtros actuales.
+                    No hay personas con tareas que coincidan con los filtros actuales.
                   </p>
                 ) : (
                   <Accordion type="multiple" defaultValue={defaultOpenPeople} className="w-full">
