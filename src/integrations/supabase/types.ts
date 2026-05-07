@@ -74,6 +74,45 @@ export type Database = {
         }
         Relationships: []
       }
+      task_handover_notes: {
+        Row: {
+          author_id: string
+          author_name: string | null
+          content: string
+          created_at: string
+          done: boolean
+          id: string
+          kind: string
+          task_id: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          author_id: string
+          author_name?: string | null
+          content: string
+          created_at?: string
+          done?: boolean
+          id?: string
+          kind: string
+          task_id: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          author_id?: string
+          author_name?: string | null
+          content?: string
+          created_at?: string
+          done?: boolean
+          id?: string
+          kind?: string
+          task_id?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
