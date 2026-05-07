@@ -556,51 +556,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   // Build unified data depending on source
   const { features, tasks } = useMemo<{ features: UnifiedFeature[]; tasks: UnifiedTask[] }>(() => {
     if (source === "tfs" && tfsFeatures.length + tfsTasks.length > 0) {
-      // Assign each task to exactly one feature so that the sum of per-card
-      // task counts equals the total in the upper summary banner. Priority:
-      // 1) System.Parent link, 2) exact areaPath match (first feature found).
-      // Any task that can't be matched goes to a synthetic "Sin feature" bucket
-      // so it remains visible and the totals stay consistent.
-      const featureById = new Map<number, TfsWorkItem>();
-      tfsFeatures.forEach((f) => featureById.set(f.id, f));
-      const featuresByArea = new Map<string, TfsWorkItem>();
-      tfsFeatures.forEach((f) => {
-        if (f.areaPath && !featuresByArea.has(f.areaPath)) featuresByArea.set(f.areaPath, f);
-      });
-      const tasksByFeature = new Map<string, TfsWorkItem[]>();
-      const orphanTasks: TfsWorkItem[] = [];
-      tfsTasks.forEach((t) => {
-        let target: TfsWorkItem | undefined;
-        if (t.parentId && featureById.has(t.parentId)) target = featureById.get(t.parentId);
-        else if (t.areaPath && featuresByArea.has(t.areaPath)) target = featuresByArea.get(t.areaPath);
-        if (!target) {
-          orphanTasks.push(t);
-          return;
-        }
-        const key = String(target.id);
-        if (!tasksByFeature.has(key)) tasksByFeature.set(key, []);
-        tasksByFeature.get(key)!.push(t);
-      });
-      const feats: UnifiedFeature[] = tfsFeatures.map((f) => {
-        const childTasks = tasksByFeature.get(String(f.id)) ?? [];
-        return {
-          id: String(f.id),
-          title: f.title,
-          state: f.state,
-          assignee: f.assignedTo,
-          taskCount: childTasks.length,
-          doneCount: childTasks.filter((t) => normalizeState(t.state) === "done").length,
-        };
-      });
-      if (orphanTasks.length > 0) {
-        feats.push({
-          id: "__orphans__",
-          title: "Sin feature asociada",
-          state: "Pending",
-          taskCount: orphanTasks.length,
-          doneCount: orphanTasks.filter((t) => normalizeState(t.state) === "done").length,
-        });
-      }
+      // Pure helper guarantees: sum(feature.taskCount) === tfsTasks.length.
+      const feats: UnifiedFeature[] = assignTasksToFeatures(tfsFeatures, tfsTasks);
       const tks: UnifiedTask[] = tfsTasks.map((t) => ({
         id: String(t.id),
         title: t.title,
