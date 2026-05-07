@@ -1936,6 +1936,20 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         </Card>
       </section>
       )}
+      {handoverPerson && (() => {
+        const group = tasksByPerson.find((g) => g.person === handoverPerson);
+        return (
+          <HandoverSummaryDialog
+            open={!!handoverPerson}
+            onOpenChange={(o) => !o && setHandoverPerson(null)}
+            person={handoverPerson}
+            active={group?.active ?? []}
+            pending={group?.pending ?? []}
+            blocked={group?.blocked ?? []}
+            tfsBaseUrl={tfsBaseUrl}
+          />
+        );
+      })()}
     </div>
   );
 }
