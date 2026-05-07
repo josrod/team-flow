@@ -1884,59 +1884,23 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     <TableHead>Título</TableHead>
                                     <TableHead className="w-[100px]">Tipo</TableHead>
                                     <TableHead className="w-[140px]">Estado</TableHead>
+                                    <TableHead className="w-[120px] text-right">Handover</TableHead>
                                     {source === "tfs" && tfsBaseUrl && (
                                       <TableHead className="w-[90px] text-right">Acciones</TableHead>
                                     )}
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                  {items.map((t) => {
-                                    const norm = normalizeState(t.state);
-                                    return (
-                                      <TableRow key={t.id}>
-                                        <TableCell className="font-mono text-xs text-muted-foreground">{t.id}</TableCell>
-                                        <TableCell className="font-medium text-sm">{t.title}</TableCell>
-                                        <TableCell>
-                                          <Badge variant="outline" className="text-[10px]">{t.type}</Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                          <span
-                                            className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full"
-                                            style={{ background: `${stateColorVar[norm]}20`, color: stateColorVar[norm] }}
-                                          >
-                                            <span className="h-1.5 w-1.5 rounded-full" style={{ background: stateColorVar[norm] }} />
-                                            {t.state}
-                                          </span>
-                                        </TableCell>
-                                        {source === "tfs" && tfsBaseUrl && (
-                                          <TableCell className="text-right">
-                                            <div className="flex items-center justify-end gap-0.5">
-                                              <Button asChild size="icon" variant="ghost" className="h-7 w-7" title="Abrir en Azure DevOps">
-                                                <a
-                                                  href={`${tfsBaseUrl}/_workitems/edit/${t.id}`}
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  aria-label={`Abrir tarea ${t.id} en Azure DevOps`}
-                                                >
-                                                  <ExternalLink className="h-3.5 w-3.5" />
-                                                </a>
-                                              </Button>
-                                              <Button
-                                                size="icon"
-                                                variant="ghost"
-                                                className="h-7 w-7"
-                                                title="Copiar enlace"
-                                                aria-label={`Copiar enlace de la tarea ${t.id}`}
-                                                onClick={() => copyWorkItemLink(t.id, "tarea")}
-                                              >
-                                                <Copy className="h-3.5 w-3.5" />
-                                              </Button>
-                                            </div>
-                                          </TableCell>
-                                        )}
-                                      </TableRow>
-                                    );
-                                  })}
+                                  {items.map((t) => (
+                                    <TaskRowWithHandover
+                                      key={t.id}
+                                      task={t}
+                                      norm={normalizeState(t.state)}
+                                      tfsBaseUrl={tfsBaseUrl}
+                                      source={source}
+                                      onCopyLink={copyWorkItemLink}
+                                    />
+                                  ))}
                                 </TableBody>
                               </Table>
                               {group.total > 100 && (
