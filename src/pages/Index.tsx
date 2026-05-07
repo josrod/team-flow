@@ -405,9 +405,10 @@ const Index = () => {
           </Card>
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
-            {activeHandovers.map((h, i) => {
+            {activeHandovers.map(({ handover: h, absence, isOngoing }, i) => {
               const from = members.find((m) => m.id === h.fromMemberId);
               const to = members.find((m) => m.id === h.toMemberId);
+              const topics = workTopics.filter((tp) => h.topicIds.includes(tp.id));
               return (
                 <motion.div
                   key={h.id}
@@ -415,20 +416,53 @@ const Index = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05, duration: 0.3 }}
                 >
-                  <Card className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-2 text-sm">
+                  <Card className={`hover:shadow-md transition-shadow overflow-hidden ${isOngoing ? "border-status-vacation/40 ring-1 ring-status-vacation/20" : ""}`}>
+                    <div className={`h-1 ${isOngoing ? "bg-status-vacation" : "bg-status-info/60"}`} />
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${isOngoing ? "bg-status-vacation/15 text-status-vacation" : "bg-status-info/15 text-status-info"}`}>
+                          {isOngoing ? "En curso" : "Próximo"}
+                        </span>
+                        {absence && (
+                          <span className="text-[10px] text-muted-foreground tabular-nums">
+                            {absence.startDate} → {absence.endDate}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 text-sm flex-wrap">
                         <Avatar className="h-6 w-6">
                           <AvatarFallback className="text-[10px] bg-status-sick/10 text-status-sick">{from?.name.slice(0, 2)}</AvatarFallback>
                         </Avatar>
-                        <span className="font-medium">{from?.name}</span>
+                        <span className="text-muted-foreground line-through opacity-70">{from?.name}</span>
                         <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
-                        <Avatar className="h-6 w-6">
-                          <AvatarFallback className="text-[10px] bg-status-available/10 text-status-available">{to?.name.slice(0, 2)}</AvatarFallback>
+                        <Avatar className="h-6 w-6 ring-2 ring-status-available/30">
+                          <AvatarFallback className="text-[10px] bg-status-available/15 text-status-available font-semibold">{to?.name.slice(0, 2)}</AvatarFallback>
                         </Avatar>
-                        <span className="font-medium">{to?.name}</span>
+                        <div className="flex flex-col">
+                          <span className="font-semibold leading-tight">{to?.name}</span>
+                          <span className="text-[10px] text-muted-foreground leading-tight">debe cubrir</span>
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{h.notes}</p>
+
+                      {topics.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {topics.map((tp) => (
+                            <span
+                              key={tp.id}
+                              className="text-[11px] bg-accent text-accent-foreground px-2 py-0.5 rounded-full font-medium"
+                            >
+                              {tp.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-muted-foreground italic">Sin temas asignados</p>
+                      )}
+
+                      {h.notes && (
+                        <p className="text-xs text-muted-foreground line-clamp-2 border-t pt-2">{h.notes}</p>
+                      )}
                     </CardContent>
                   </Card>
                 </motion.div>
