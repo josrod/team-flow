@@ -1817,7 +1817,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                         .slice(0, 2)
                         .join("")
                         .toUpperCase() || "?";
-                      const items = [...group.active, ...group.pending].slice(0, 100);
+                      const items = [...group.active, ...group.pending, ...group.blocked, ...group.done].slice(0, 100);
                       return (
                         <AccordionItem key={group.person} value={group.person}>
                           <AccordionTrigger className="hover:no-underline">
