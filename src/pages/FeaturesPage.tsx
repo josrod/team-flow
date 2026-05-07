@@ -1880,6 +1880,17 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                             </div>
                           </AccordionTrigger>
                           <AccordionContent>
+                            <div className="mb-2 flex justify-end">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 gap-1.5"
+                                onClick={() => setHandoverPerson(group.person)}
+                              >
+                                <FileText className="h-3.5 w-3.5" />
+                                Generar resumen de handover
+                              </Button>
+                            </div>
                             <div className="rounded-md border">
                               <Table>
                                 <TableHeader>
