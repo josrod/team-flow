@@ -20,7 +20,8 @@ import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { TaskHandoverNotes } from "@/components/TaskHandoverNotes";
-import { MessageSquarePlus, ChevronUp } from "lucide-react";
+import { HandoverSummaryDialog } from "@/components/HandoverSummaryDialog";
+import { MessageSquarePlus, ChevronUp, FileText } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, peekTfsAreaPathCache, peekTfsPeopleCache, peekTfsPeopleCacheForConnection, writeTfsPeopleCache, RODAT_AREA_PATH, RODAT_ITERATION_PATH, type TfsConnection, type TfsWorkItem } from "@/services/tfs";
