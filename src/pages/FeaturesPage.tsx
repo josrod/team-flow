@@ -775,24 +775,32 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   // Group filtered tasks by assignee, keeping only open/in-progress items.
   // Sorted by total desc; "Sin asignar" pushed to the end.
   const tasksByPerson = useMemo(() => {
-    const map = new Map<string, { active: UnifiedTask[]; pending: UnifiedTask[] }>();
+    const map = new Map<string, { active: UnifiedTask[]; pending: UnifiedTask[]; blocked: UnifiedTask[]; done: UnifiedTask[] }>();
     filteredTasks.forEach((t) => {
       const norm = normalizeState(t.state);
-      if (norm !== "active" && norm !== "pending") return;
+      if (!stateFilter.has(norm)) return;
       const key = t.assignee || "Sin asignar";
-      if (!map.has(key)) map.set(key, { active: [], pending: [] });
-      const bucket = map.get(key)!;
-      if (norm === "active") bucket.active.push(t);
-      else bucket.pending.push(t);
+      if (!map.has(key)) map.set(key, { active: [], pending: [], blocked: [], done: [] });
+      map.get(key)![norm].push(t);
     });
-    return Array.from(map.entries())
-      .map(([person, v]) => ({ person, ...v, total: v.active.length + v.pending.length }))
-      .sort((a, b) => {
-        if (a.person === "Sin asignar") return 1;
-        if (b.person === "Sin asignar") return -1;
-        return b.total - a.total;
-      });
-  }, [filteredTasks]);
+    const arr = Array.from(map.entries()).map(([person, v]) => ({
+      person,
+      ...v,
+      total: v.active.length + v.pending.length + v.blocked.length + v.done.length,
+    }));
+    arr.sort((a, b) => {
+      if (a.person === "Sin asignar") return 1;
+      if (b.person === "Sin asignar") return -1;
+      switch (taskSort) {
+        case "total-asc": return a.total - b.total;
+        case "name-asc": return a.person.localeCompare(b.person);
+        case "name-desc": return b.person.localeCompare(a.person);
+        case "total-desc":
+        default: return b.total - a.total;
+      }
+    });
+    return arr;
+  }, [filteredTasks, stateFilter, taskSort]);
 
   const defaultOpenPeople = useMemo(
     () => tasksByPerson.filter((p) => p.active.length > 0).map((p) => p.person),
