@@ -223,6 +223,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const [draftPerson, setDraftPerson] = useState<string>(activePerson);
   const [draftSearch, setDraftSearch] = useState<string>(search);
   const [showFlatList, setShowFlatList] = useState(false);
+  const [handoverPerson, setHandoverPerson] = useState<string | null>(null);
   type TaskStateKey = "active" | "pending" | "blocked" | "done";
   type TaskSortKey = "total-desc" | "total-asc" | "name-asc" | "name-desc";
   const [stateFilter, setStateFilter] = useState<Set<TaskStateKey>>(
