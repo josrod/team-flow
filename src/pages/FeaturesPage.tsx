@@ -1842,6 +1842,16 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     {group.active.length} en progreso
                                   </Badge>
                                 )}
+                                {group.pending.length > 0 && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px] gap-1"
+                                    style={{ background: `${stateColorVar.pending}20`, color: stateColorVar.pending }}
+                                  >
+                                    <CircleDashed className="h-3 w-3" />
+                                    {group.pending.length} pendientes
+                                  </Badge>
+                                )}
                                 {group.blocked.length > 0 && (
                                   <Badge
                                     variant="secondary"
