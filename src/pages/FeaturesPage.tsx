@@ -1583,7 +1583,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <UsersIcon className="h-4 w-4" /> Tareas por persona
                 </CardTitle>
                 <CardDescription>
-                  {tasksByPerson.length} {tasksByPerson.length === 1 ? "persona" : "personas"} con tareas abiertas o en progreso
+                  {tasksByPerson.length} {tasksByPerson.length === 1 ? "persona" : "personas"} · filtrando {Array.from(stateFilter).map((k) => k === "active" ? "en progreso" : k === "pending" ? "pendientes" : k === "blocked" ? "bloqueadas" : "completadas").join(", ")}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
