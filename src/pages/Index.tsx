@@ -81,10 +81,20 @@ const Index = () => {
     return { total: teamMembers.length, absent: absent.length, upcoming: upcoming.length };
   };
 
-  const activeHandovers = handovers.filter((h) => {
-    const absence = absences.find((a) => a.id === h.absenceId);
-    return absence && absence.endDate >= today;
-  });
+  const activeHandovers = handovers
+    .filter((h) => {
+      const absence = absences.find((a) => a.id === h.absenceId);
+      return absence && absence.endDate >= today;
+    })
+    .map((h) => {
+      const absence = absences.find((a) => a.id === h.absenceId);
+      const isOngoing = absence ? absence.startDate <= today && absence.endDate >= today : false;
+      return { handover: h, absence, isOngoing };
+    })
+    .sort((a, b) => {
+      if (a.isOngoing !== b.isOngoing) return a.isOngoing ? -1 : 1;
+      return (a.absence?.startDate ?? "").localeCompare(b.absence?.startDate ?? "");
+    });
 
   const reassignedTopics = workTopics
     .filter((tp) => !!tp.reassignedFrom)
