@@ -72,7 +72,20 @@ const stateLabel: Record<string, string> = {
   blocked: "Bloqueado",
 };
 
-export default function FeaturesPage() {
+interface FeaturesPageProps {
+  view?: "all" | "features" | "tasks";
+}
+
+export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
+  const showFeatures = view === "all" || view === "features";
+  const showTasks = view === "all" || view === "tasks";
+  const pageTitle = view === "tasks" ? "Tareas" : view === "features" ? "Features" : "Features & Tareas";
+  const pageSubtitle =
+    view === "tasks"
+      ? "Trabajo asignado por persona, abierto y en progreso."
+      : view === "features"
+      ? "Iniciativas del proyecto y su progreso global."
+      : "Visión general del trabajo en curso del proyecto.";
   const { teams, members, workTopics } = useApp();
   const { user } = useAuth();
 
@@ -827,9 +840,9 @@ export default function FeaturesPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold tracking-tight">Features & Tareas</h1>
+          <h1 className="text-3xl font-display font-bold tracking-tight">{pageTitle}</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Visión general del trabajo en curso del proyecto.
+            {pageSubtitle}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -1250,6 +1263,7 @@ export default function FeaturesPage() {
       {/* ============================================================ */}
       {/* SECTION 1 — Features                                          */}
       {/* ============================================================ */}
+      {showFeatures && (
       <section className="space-y-4">
         <div className="flex items-end justify-between gap-3 border-b border-border/60 pb-2">
           <div>
@@ -1391,10 +1405,12 @@ export default function FeaturesPage() {
           </CardContent>
         </Card>
       </section>
+      )}
 
       {/* ============================================================ */}
       {/* SECTION 2 — Tareas                                            */}
       {/* ============================================================ */}
+      {showTasks && (
       <section className="space-y-4">
         <div className="flex items-end justify-between gap-3 border-b border-border/60 pb-2">
           <div>
@@ -1854,6 +1870,7 @@ export default function FeaturesPage() {
           </CardContent>
         </Card>
       </section>
+      )}
     </div>
   );
 }
