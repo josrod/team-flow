@@ -1828,7 +1828,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                               <div className="min-w-0 flex-1 text-left">
                                 <p className="text-sm font-medium truncate">{group.person}</p>
                                 <p className="text-[11px] text-muted-foreground">
-                                  {group.total} {group.total === 1 ? "tarea abierta" : "tareas abiertas"}
+                                  {group.total} {group.total === 1 ? "tarea" : "tareas"}
                                 </p>
                               </div>
                               <div className="flex items-center gap-1.5 shrink-0">
