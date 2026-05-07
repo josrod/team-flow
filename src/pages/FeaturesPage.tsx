@@ -207,6 +207,7 @@ export default function FeaturesPage() {
   const [draftTeam, setDraftTeam] = useState<string>(activeTeam);
   const [draftPerson, setDraftPerson] = useState<string>(activePerson);
   const [draftSearch, setDraftSearch] = useState<string>(search);
+  const [showFlatList, setShowFlatList] = useState(false);
 
   // Keep drafts in sync with applied values when manual-apply is off, so the
   // UI reflects changes driven from elsewhere (URL hydration, invalid-ID
