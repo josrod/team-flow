@@ -1263,6 +1263,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       {/* ============================================================ */}
       {/* SECTION 1 — Features                                          */}
       {/* ============================================================ */}
+      {showFeatures && (
       <section className="space-y-4">
         <div className="flex items-end justify-between gap-3 border-b border-border/60 pb-2">
           <div>
@@ -1404,6 +1405,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
           </CardContent>
         </Card>
       </section>
+      )}
 
       {/* ============================================================ */}
       {/* SECTION 2 — Tareas                                            */}
