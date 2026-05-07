@@ -28,6 +28,7 @@ import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, peekTfsAreaPathCac
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import { assignTasksToFeatures } from "@/lib/featureAssignment";
 import { toast } from "sonner";
 import { useSearchParams, Link } from "react-router-dom";
 import { Settings as SettingsIcon } from "lucide-react";
