@@ -557,7 +557,15 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const { features, tasks } = useMemo<{ features: UnifiedFeature[]; tasks: UnifiedTask[] }>(() => {
     if (source === "tfs" && tfsFeatures.length + tfsTasks.length > 0) {
       const feats: UnifiedFeature[] = tfsFeatures.map((f) => {
-        const childTasks = tfsTasks.filter((t) => t.areaPath && f.areaPath && t.areaPath === f.areaPath);
+        // Match child tasks by parent link first (most reliable). Fall back to
+        // areaPath equality only when parentId is not populated, so the count
+        // shown in each feature card stays consistent with the totals in the
+        // tasks summary above.
+        const byParent = tfsTasks.filter((t) => t.parentId === f.id);
+        const childTasks =
+          byParent.length > 0
+            ? byParent
+            : tfsTasks.filter((t) => t.areaPath && f.areaPath && t.areaPath === f.areaPath);
         return {
           id: String(f.id),
           title: f.title,

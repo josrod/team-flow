@@ -640,6 +640,13 @@ const parseAssignedTo = (val: unknown): { name?: string; email?: string } => {
 const mapRawToWorkItem = (raw: RawWorkItem): TfsWorkItem => {
   const f = raw.fields ?? {};
   const assigned = parseAssignedTo(f["System.AssignedTo"]);
+  const parentRaw = f["System.Parent"];
+  const parentId =
+    typeof parentRaw === "number"
+      ? parentRaw
+      : typeof parentRaw === "string" && parentRaw.trim() !== ""
+        ? Number(parentRaw)
+        : undefined;
   return {
     id: raw.id,
     title: String(f["System.Title"] ?? ""),
@@ -647,6 +654,7 @@ const mapRawToWorkItem = (raw: RawWorkItem): TfsWorkItem => {
     workItemType: String(f["System.WorkItemType"] ?? ""),
     assignedTo: assigned.name,
     assignedToEmail: assigned.email,
+    parentId: parentId !== undefined && Number.isFinite(parentId) ? parentId : undefined,
     iterationPath: f["System.IterationPath"] as string | undefined,
     areaPath: f["System.AreaPath"] as string | undefined,
     tags: f["System.Tags"] as string | undefined,
@@ -972,6 +980,7 @@ ORDER BY [System.ChangedDate] DESC`;
     "System.State",
     "System.WorkItemType",
     "System.AssignedTo",
+    "System.Parent",
     "System.IterationPath",
     "System.AreaPath",
     "System.Tags",
