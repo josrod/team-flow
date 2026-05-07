@@ -1842,14 +1842,24 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     {group.active.length} en progreso
                                   </Badge>
                                 )}
-                                {group.pending.length > 0 && (
+                                {group.blocked.length > 0 && (
                                   <Badge
                                     variant="secondary"
                                     className="text-[10px] gap-1"
-                                    style={{ background: `${stateColorVar.pending}20`, color: stateColorVar.pending }}
+                                    style={{ background: `${stateColorVar.blocked}20`, color: stateColorVar.blocked }}
                                   >
-                                    <CircleDashed className="h-3 w-3" />
-                                    {group.pending.length} abiertas
+                                    <AlertOctagon className="h-3 w-3" />
+                                    {group.blocked.length} bloqueadas
+                                  </Badge>
+                                )}
+                                {group.done.length > 0 && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px] gap-1"
+                                    style={{ background: `${stateColorVar.done}20`, color: stateColorVar.done }}
+                                  >
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    {group.done.length} hechas
                                   </Badge>
                                 )}
                               </div>
