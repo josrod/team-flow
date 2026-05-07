@@ -980,6 +980,7 @@ ORDER BY [System.ChangedDate] DESC`;
     "System.State",
     "System.WorkItemType",
     "System.AssignedTo",
+    "System.Parent",
     "System.IterationPath",
     "System.AreaPath",
     "System.Tags",
