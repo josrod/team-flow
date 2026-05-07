@@ -1247,171 +1247,613 @@ export default function FeaturesPage() {
       )}
 
 
-      {/* KPI strip */}
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-accent/50">
-                <Layers className="h-4 w-4 text-accent-foreground" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{features.length}</p>
-                <p className="text-xs text-muted-foreground">Features</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-accent/50">
-                <ListChecks className="h-4 w-4 text-accent-foreground" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{tasks.length}</p>
-                <p className="text-xs text-muted-foreground">Tareas totales</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg" style={{ background: `${stateColorVar.active}20` }}>
-                <Loader2 className="h-4 w-4" style={{ color: stateColorVar.active }} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {tasks.filter((t) => normalizeState(t.state) === "active").length}
-                </p>
-                <p className="text-xs text-muted-foreground">En ejecución</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg" style={{ background: `${stateColorVar.done}20` }}>
-                <ListChecks className="h-4 w-4" style={{ color: stateColorVar.done }} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {tasks.filter((t) => normalizeState(t.state) === "done").length}
-                </p>
-                <p className="text-xs text-muted-foreground">Completadas</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* ============================================================ */}
+      {/* SECTION 1 — Features                                          */}
+      {/* ============================================================ */}
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-3 border-b border-border/60 pb-2">
+          <div>
+            <h2 className="text-xl font-display font-semibold tracking-tight flex items-center gap-2">
+              <Layers className="h-5 w-5 text-muted-foreground" /> Features
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Iniciativas del proyecto y su progreso global.
+            </p>
+          </div>
+        </div>
 
-      {/* Features section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Layers className="h-4 w-4" /> Features del proyecto
-          </CardTitle>
-          <CardDescription>Progreso por feature con tareas asociadas</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {filteredFeatures.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">No hay features para mostrar.</p>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {filteredFeatures.map((f) => {
-                const norm = normalizeState(f.state);
-                const pct = f.taskCount > 0 ? Math.round((f.doneCount / f.taskCount) * 100) : 0;
-                return (
-                  <div key={f.id} className="border border-border rounded-lg p-4 hover:border-primary/40 transition-colors">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h3 className="font-medium text-sm leading-snug line-clamp-2">{f.title}</h3>
-                      <Badge
-                        variant="secondary"
-                        className="shrink-0 text-[10px]"
-                        style={{ background: `${stateColorVar[norm]}20`, color: stateColorVar[norm] }}
-                      >
-                        {stateLabel[norm]}
-                      </Badge>
-                    </div>
-                    {f.assignee && (
-                      <p className="text-xs text-muted-foreground mb-3 truncate">👤 {f.assignee}</p>
-                    )}
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                      <span>{f.doneCount} / {f.taskCount} tareas</span>
-                      <span className="font-medium">{pct}%</span>
-                    </div>
-                    <Progress value={pct} className="h-1.5" />
-                    {source === "tfs" && tfsBaseUrl && (
-                      <div className="mt-3 flex items-center gap-1.5">
-                        <Button
-                          asChild
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 px-2 text-xs flex-1 justify-center"
-                        >
-                          <a
-                            href={`${tfsBaseUrl}/_workitems/edit/${f.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label={`Abrir feature ${f.id} en Azure DevOps`}
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                            Abrir en Azure DevOps
-                          </a>
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 shrink-0"
-                          title="Copiar enlace"
-                          aria-label={`Copiar enlace de la feature ${f.id}`}
-                          onClick={() => copyWorkItemLink(f.id, "feature")}
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {/* Feature stats */}
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-accent/50">
+                  <Layers className="h-4 w-4 text-accent-foreground" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{featureStats.total}</p>
+                  <p className="text-xs text-muted-foreground">Features</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg" style={{ background: `${stateColorVar.active}20` }}>
+                  <PlayCircle className="h-4 w-4" style={{ color: stateColorVar.active }} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{featureStats.active}</p>
+                  <p className="text-xs text-muted-foreground">Activas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg" style={{ background: `${stateColorVar.done}20` }}>
+                  <CheckCircle2 className="h-4 w-4" style={{ color: stateColorVar.done }} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{featureStats.done}</p>
+                  <p className="text-xs text-muted-foreground">Completadas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <CircleDashed className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{featureStats.avgProgress}%</p>
+                  <p className="text-xs text-muted-foreground">Avance medio</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* Visual: what's running right now */}
-      <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Distribución por estado</CardTitle>
-            <CardDescription>Qué se está ejecutando ahora mismo</CardDescription>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Layers className="h-4 w-4" /> Features del proyecto
+            </CardTitle>
+            <CardDescription>Progreso por feature con tareas asociadas</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={240}>
-              <PieChart>
-                <Pie
-                  data={stateDistribution.filter((d) => d.value > 0)}
-                  dataKey="value"
-                  nameKey="name"
-                  outerRadius={80}
-                  innerRadius={45}
-                  paddingAngle={2}
-                >
-                  {stateDistribution.map((d) => (
-                    <Cell key={d.key} fill={d.fill} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
-                />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-              </PieChart>
-            </ResponsiveContainer>
+            {filteredFeatures.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-6 text-center">No hay features para mostrar.</p>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {filteredFeatures.map((f) => {
+                  const norm = normalizeState(f.state);
+                  const pct = f.taskCount > 0 ? Math.round((f.doneCount / f.taskCount) * 100) : 0;
+                  return (
+                    <div key={f.id} className="border border-border rounded-lg p-4 hover:border-primary/40 transition-colors">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <h3 className="font-medium text-sm leading-snug line-clamp-2">{f.title}</h3>
+                        <Badge
+                          variant="secondary"
+                          className="shrink-0 text-[10px]"
+                          style={{ background: `${stateColorVar[norm]}20`, color: stateColorVar[norm] }}
+                        >
+                          {stateLabel[norm]}
+                        </Badge>
+                      </div>
+                      {f.assignee && (
+                        <p className="text-xs text-muted-foreground mb-3 truncate">👤 {f.assignee}</p>
+                      )}
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                        <span>{f.doneCount} / {f.taskCount} tareas</span>
+                        <span className="font-medium">{pct}%</span>
+                      </div>
+                      <Progress value={pct} className="h-1.5" />
+                      {source === "tfs" && tfsBaseUrl && (
+                        <div className="mt-3 flex items-center gap-1.5">
+                          <Button
+                            asChild
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-xs flex-1 justify-center"
+                          >
+                            <a
+                              href={`${tfsBaseUrl}/_workitems/edit/${f.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={`Abrir feature ${f.id} en Azure DevOps`}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              Abrir en Azure DevOps
+                            </a>
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 shrink-0"
+                            title="Copiar enlace"
+                            aria-label={`Copiar enlace de la feature ${f.id}`}
+                            onClick={() => copyWorkItemLink(f.id, "feature")}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
+      </section>
 
+      {/* ============================================================ */}
+      {/* SECTION 2 — Tareas                                            */}
+      {/* ============================================================ */}
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-3 border-b border-border/60 pb-2">
+          <div>
+            <h2 className="text-xl font-display font-semibold tracking-tight flex items-center gap-2">
+              <ListChecks className="h-5 w-5 text-muted-foreground" /> Tareas
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Distribución del trabajo por persona — solo abiertas y en progreso.
+            </p>
+          </div>
+        </div>
+
+        {/* Task stats */}
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-5">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-accent/50">
+                  <ListChecks className="h-4 w-4 text-accent-foreground" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{taskStats.total}</p>
+                  <p className="text-xs text-muted-foreground">Total</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg" style={{ background: `${stateColorVar.pending}20` }}>
+                  <CircleDashed className="h-4 w-4" style={{ color: stateColorVar.pending }} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{taskStats.pending}</p>
+                  <p className="text-xs text-muted-foreground">Abiertas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg" style={{ background: `${stateColorVar.active}20` }}>
+                  <PlayCircle className="h-4 w-4" style={{ color: stateColorVar.active }} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{taskStats.active}</p>
+                  <p className="text-xs text-muted-foreground">En progreso</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg" style={{ background: `${stateColorVar.blocked}20` }}>
+                  <AlertOctagon className="h-4 w-4" style={{ color: stateColorVar.blocked }} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{taskStats.blocked}</p>
+                  <p className="text-xs text-muted-foreground">Bloqueadas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg" style={{ background: `${stateColorVar.done}20` }}>
+                  <CheckCircle2 className="h-4 w-4" style={{ color: stateColorVar.done }} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{taskStats.done}</p>
+                  <p className="text-xs text-muted-foreground">Completadas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts */}
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Distribución por estado</CardTitle>
+              <CardDescription>Qué se está ejecutando ahora mismo</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={240}>
+                <PieChart>
+                  <Pie
+                    data={stateDistribution.filter((d) => d.value > 0)}
+                    dataKey="value"
+                    nameKey="name"
+                    outerRadius={80}
+                    innerRadius={45}
+                    paddingAngle={2}
+                  >
+                    {stateDistribution.map((d) => (
+                      <Cell key={d.key} fill={d.fill} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <UsersIcon className="h-4 w-4" /> Carga por persona
+              </CardTitle>
+              <CardDescription>Top {workloadByPerson.length} con más tareas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={workloadByPerson} layout="vertical" margin={{ left: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis type="number" tick={{ fontSize: 11 }} />
+                  <YAxis dataKey="name" type="category" width={90} tick={{ fontSize: 11 }} />
+                  <Tooltip
+                    contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
+                  />
+                  <Bar dataKey="active" stackId="a" fill={stateColorVar.active} name="Activo" />
+                  <Bar dataKey="pending" stackId="a" fill={stateColorVar.pending} name="Pendiente" />
+                  <Bar dataKey="blocked" stackId="a" fill={stateColorVar.blocked} name="Bloqueado" />
+                  <Bar dataKey="done" stackId="a" fill={stateColorVar.done} name="Hecho" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters + tasks per person accordion */}
+        <Card>
+          <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <UsersIcon className="h-4 w-4" /> Tareas por persona
+                </CardTitle>
+                <CardDescription>
+                  {tasksByPerson.length} {tasksByPerson.length === 1 ? "persona" : "personas"} con tareas abiertas o en progreso
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    value={manualApply ? draftSearch : search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Buscar tarea..."
+                    className="pl-8 h-9 w-56"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <PersonCombobox
+                    value={manualApply ? draftPerson : activePerson}
+                    onChange={setActivePerson}
+                    people={peopleForTab}
+                  />
+                  {peopleFallbackStale && (
+                    <Badge
+                      variant="outline"
+                      className="gap-1 border-status-vacation/40 text-status-vacation"
+                      title="No se pudo actualizar la lista de personas. Se está mostrando el último listado en caché."
+                      aria-live="polite"
+                    >
+                      <AlertTriangle className="h-3 w-3" />
+                      <span className="text-[10px]">Caché</span>
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="manual-apply"
+                  checked={manualApply}
+                  onCheckedChange={(checked) => {
+                    setManualApply(checked);
+                    if (checked) {
+                      setDraftTeam(activeTeam);
+                      setDraftPerson(activePerson);
+                      setDraftSearch(search);
+                    }
+                  }}
+                />
+                <Label htmlFor="manual-apply" className="text-xs text-muted-foreground cursor-pointer">
+                  Confirmar cambios antes de aplicar
+                </Label>
+                {hasPendingChanges && (
+                  <Badge variant="secondary" className="text-[10px]">Cambios sin aplicar</Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5">
+                {manualApply && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8"
+                      onClick={discardDraft}
+                      disabled={!hasPendingChanges}
+                    >
+                      <Undo2 className="h-3.5 w-3.5" />
+                      <span className="ml-1.5">Descartar</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-8"
+                      onClick={applyDraft}
+                      disabled={!hasPendingChanges}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      <span className="ml-1.5">Aplicar</span>
+                    </Button>
+                  </>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8"
+                  onClick={() => setShowFlatList((v) => !v)}
+                >
+                  {showFlatList ? "Vista por persona" : "Ver listado plano"}
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={manualApply ? draftTeam : activeTeam} onValueChange={setActiveTeam}>
+              <TabsList>
+                <TabsTrigger value="all">Todos</TabsTrigger>
+                {teams.map((team) => (
+                  <TabsTrigger key={team.id} value={team.id}>{team.name}</TabsTrigger>
+                ))}
+              </TabsList>
+
+              <TabsContent value={activeTeam} className="mt-4">
+                {showFlatList ? (
+                  filteredTasks.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-8 text-center">
+                      No hay tareas que coincidan con los filtros.
+                    </p>
+                  ) : (
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[60px]">#</TableHead>
+                            <TableHead>Título</TableHead>
+                            <TableHead className="w-[100px]">Tipo</TableHead>
+                            <TableHead className="w-[120px]">Estado</TableHead>
+                            <TableHead className="w-[180px]">Asignado a</TableHead>
+                            {source === "tfs" && tfsBaseUrl && (
+                              <TableHead className="w-[90px] text-right">Acciones</TableHead>
+                            )}
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredTasks.slice(0, 100).map((t) => {
+                            const norm = normalizeState(t.state);
+                            return (
+                              <TableRow key={t.id}>
+                                <TableCell className="font-mono text-xs text-muted-foreground">{t.id}</TableCell>
+                                <TableCell className="font-medium text-sm">{t.title}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="text-[10px]">{t.type}</Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <span
+                                    className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full"
+                                    style={{ background: `${stateColorVar[norm]}20`, color: stateColorVar[norm] }}
+                                  >
+                                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: stateColorVar[norm] }} />
+                                    {t.state}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-sm">
+                                  {t.assignee || <span className="text-muted-foreground italic">Sin asignar</span>}
+                                </TableCell>
+                                {source === "tfs" && tfsBaseUrl && (
+                                  <TableCell className="text-right">
+                                    <div className="flex items-center justify-end gap-0.5">
+                                      <Button asChild size="icon" variant="ghost" className="h-7 w-7" title="Abrir en Azure DevOps">
+                                        <a
+                                          href={`${tfsBaseUrl}/_workitems/edit/${t.id}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          aria-label={`Abrir tarea ${t.id} en Azure DevOps`}
+                                        >
+                                          <ExternalLink className="h-3.5 w-3.5" />
+                                        </a>
+                                      </Button>
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-7 w-7"
+                                        title="Copiar enlace"
+                                        aria-label={`Copiar enlace de la tarea ${t.id}`}
+                                        onClick={() => copyWorkItemLink(t.id, "tarea")}
+                                      >
+                                        <Copy className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                )}
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                      {filteredTasks.length > 100 && (
+                        <p className="text-xs text-muted-foreground text-center py-2 border-t">
+                          Mostrando 100 de {filteredTasks.length} tareas — afina los filtros para ver más.
+                        </p>
+                      )}
+                    </div>
+                  )
+                ) : tasksByPerson.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-8 text-center">
+                    Nadie tiene tareas abiertas o en progreso con los filtros actuales.
+                  </p>
+                ) : (
+                  <Accordion type="multiple" defaultValue={defaultOpenPeople} className="w-full">
+                    {tasksByPerson.map((group) => {
+                      const initials = group.person
+                        .split(/\s+/)
+                        .map((p) => p[0])
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .join("")
+                        .toUpperCase() || "?";
+                      const items = [...group.active, ...group.pending].slice(0, 100);
+                      return (
+                        <AccordionItem key={group.person} value={group.person}>
+                          <AccordionTrigger className="hover:no-underline">
+                            <div className="flex items-center gap-3 flex-1 min-w-0 pr-2">
+                              <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0">
+                                {group.person === "Sin asignar" ? <UserIcon className="h-4 w-4" /> : initials}
+                              </div>
+                              <div className="min-w-0 flex-1 text-left">
+                                <p className="text-sm font-medium truncate">{group.person}</p>
+                                <p className="text-[11px] text-muted-foreground">
+                                  {group.total} {group.total === 1 ? "tarea abierta" : "tareas abiertas"}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {group.active.length > 0 && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px] gap-1"
+                                    style={{ background: `${stateColorVar.active}20`, color: stateColorVar.active }}
+                                  >
+                                    <PlayCircle className="h-3 w-3" />
+                                    {group.active.length} en progreso
+                                  </Badge>
+                                )}
+                                {group.pending.length > 0 && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px] gap-1"
+                                    style={{ background: `${stateColorVar.pending}20`, color: stateColorVar.pending }}
+                                  >
+                                    <CircleDashed className="h-3 w-3" />
+                                    {group.pending.length} abiertas
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div className="rounded-md border">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-[60px]">#</TableHead>
+                                    <TableHead>Título</TableHead>
+                                    <TableHead className="w-[100px]">Tipo</TableHead>
+                                    <TableHead className="w-[140px]">Estado</TableHead>
+                                    {source === "tfs" && tfsBaseUrl && (
+                                      <TableHead className="w-[90px] text-right">Acciones</TableHead>
+                                    )}
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {items.map((t) => {
+                                    const norm = normalizeState(t.state);
+                                    return (
+                                      <TableRow key={t.id}>
+                                        <TableCell className="font-mono text-xs text-muted-foreground">{t.id}</TableCell>
+                                        <TableCell className="font-medium text-sm">{t.title}</TableCell>
+                                        <TableCell>
+                                          <Badge variant="outline" className="text-[10px]">{t.type}</Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                          <span
+                                            className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full"
+                                            style={{ background: `${stateColorVar[norm]}20`, color: stateColorVar[norm] }}
+                                          >
+                                            <span className="h-1.5 w-1.5 rounded-full" style={{ background: stateColorVar[norm] }} />
+                                            {t.state}
+                                          </span>
+                                        </TableCell>
+                                        {source === "tfs" && tfsBaseUrl && (
+                                          <TableCell className="text-right">
+                                            <div className="flex items-center justify-end gap-0.5">
+                                              <Button asChild size="icon" variant="ghost" className="h-7 w-7" title="Abrir en Azure DevOps">
+                                                <a
+                                                  href={`${tfsBaseUrl}/_workitems/edit/${t.id}`}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  aria-label={`Abrir tarea ${t.id} en Azure DevOps`}
+                                                >
+                                                  <ExternalLink className="h-3.5 w-3.5" />
+                                                </a>
+                                              </Button>
+                                              <Button
+                                                size="icon"
+                                                variant="ghost"
+                                                className="h-7 w-7"
+                                                title="Copiar enlace"
+                                                aria-label={`Copiar enlace de la tarea ${t.id}`}
+                                                onClick={() => copyWorkItemLink(t.id, "tarea")}
+                                              >
+                                                <Copy className="h-3.5 w-3.5" />
+                                              </Button>
+                                            </div>
+                                          </TableCell>
+                                        )}
+                                      </TableRow>
+                                    );
+                                  })}
+                                </TableBody>
+                              </Table>
+                              {group.total > 100 && (
+                                <p className="text-xs text-muted-foreground text-center py-2 border-t">
+                                  Mostrando 100 de {group.total} tareas — afina los filtros para ver más.
+                                </p>
+                              )}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      );
+                    })}
+                  </Accordion>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </section>
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
