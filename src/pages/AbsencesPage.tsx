@@ -519,6 +519,11 @@ export default function AbsencesPage() {
         </TabsContent>
       </Tabs>
       <AbsenceImportDialog open={importOpen} onOpenChange={setImportOpen} />
+      <AbsenceHandoverSummaryDialog
+        open={!!summaryAbsence}
+        onOpenChange={(o) => !o && setSummaryAbsence(null)}
+        absence={summaryAbsence}
+      />
     </div>
   );
 }
