@@ -36,6 +36,7 @@ export default function AbsencesPage() {
   const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [selectedAbsenceType, setSelectedAbsenceType] = useState("all");
+  const [summaryAbsence, setSummaryAbsence] = useState<Absence | null>(null);
 
   const filteredMemberIds = useMemo(() => {
     if (selectedTeam === "all") return members.map((m) => m.id);
