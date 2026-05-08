@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Download, Upload, Palmtree, Pencil, Stethoscope, Trash2, Plane, FolderKanban, Baby } from "lucide-react";
+import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Download, Upload, Palmtree, Pencil, Stethoscope, Trash2, Plane, FolderKanban, Baby, FileText } from "lucide-react";
 import { AbsenceImportDialog } from "@/components/AbsenceImportDialog";
+import { AbsenceHandoverSummaryDialog } from "@/components/AbsenceHandoverSummaryDialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format, differenceInDays, eachDayOfInterval, startOfMonth, endOfMonth, parseISO, addMonths, subMonths } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -35,6 +36,7 @@ export default function AbsencesPage() {
   const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [selectedAbsenceType, setSelectedAbsenceType] = useState("all");
+  const [summaryAbsence, setSummaryAbsence] = useState<Absence | null>(null);
 
   const filteredMemberIds = useMemo(() => {
     if (selectedTeam === "all") return members.map((m) => m.id);
@@ -470,6 +472,15 @@ export default function AbsencesPage() {
                           <span className="font-medium">{member?.name}</span>
                           <div className="flex items-center gap-0.5">
                             <StatusBadge status={a.type} />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-primary"
+                              title="Generar resumen de handover"
+                              onClick={() => setSummaryAbsence(a)}
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                            </Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => openEdit(a)}>
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
@@ -508,6 +519,11 @@ export default function AbsencesPage() {
         </TabsContent>
       </Tabs>
       <AbsenceImportDialog open={importOpen} onOpenChange={setImportOpen} />
+      <AbsenceHandoverSummaryDialog
+        open={!!summaryAbsence}
+        onOpenChange={(o) => !o && setSummaryAbsence(null)}
+        absence={summaryAbsence}
+      />
     </div>
   );
 }
