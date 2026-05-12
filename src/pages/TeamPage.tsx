@@ -408,7 +408,8 @@ export default function TeamPage() {
               <div className="grid grid-cols-2 gap-4 mt-6 relative">
                 <div className="col-span-2 flex items-center justify-between">
                   <h3 className="text-sm font-semibold">Configuración de Capacidad</h3>
-                  {(selectedMember.maxCapacity !== undefined || selectedMember.baseCapacity !== undefined) && (
+                  {((selectedMember.maxCapacity !== undefined && selectedMember.maxCapacity !== 40 && selectedMember.maxCapacity !== 0) || 
+                    (selectedMember.baseCapacity !== undefined && selectedMember.baseCapacity !== Math.round((selectedMember.maxCapacity ?? 40) * 0.8) && selectedMember.baseCapacity !== 0)) && (
                     <Button 
                       variant="ghost" 
                       size="sm" 
