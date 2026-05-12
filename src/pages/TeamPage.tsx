@@ -490,10 +490,21 @@ export default function TeamPage() {
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                     <AlertDialogAction 
                       onClick={() => {
+                        const previousMax = selectedMember.maxCapacity;
+                        const previousBase = selectedMember.baseCapacity;
                         const updated = { ...selectedMember, maxCapacity: undefined, baseCapacity: undefined };
                         updateMember(updated);
                         setSelectedMember(updated);
-                        toast.success("Capacidad restablecida");
+                        toast.success("Capacidad restablecida", {
+                          action: {
+                            label: "Deshacer",
+                            onClick: () => {
+                              const restored = { ...selectedMember, maxCapacity: previousMax, baseCapacity: previousBase };
+                              updateMember(restored);
+                              setSelectedMember(restored);
+                            }
+                          }
+                        });
                       }}
                     >
                       Restablecer
