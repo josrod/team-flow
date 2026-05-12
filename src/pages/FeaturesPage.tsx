@@ -32,6 +32,7 @@ import { assignTasksToFeatures } from "@/lib/featureAssignment";
 import { toast } from "sonner";
 import { useSearchParams, Link } from "react-router-dom";
 import { Settings as SettingsIcon } from "lucide-react";
+import { WorkloadMatrix } from "@/components/WorkloadMatrix";
 
 type DataSource = "tfs" | "local";
 
@@ -77,15 +78,18 @@ const stateLabel: Record<string, string> = {
 };
 
 interface FeaturesPageProps {
-  view?: "all" | "features" | "tasks";
+  view?: "all" | "features" | "tasks" | "workload";
 }
 
 export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const showFeatures = view === "all" || view === "features";
   const showTasks = view === "all" || view === "tasks";
-  const pageTitle = view === "tasks" ? "Tareas" : view === "features" ? "Features" : "Features & Tareas";
+  const showWorkload = view === "workload";
+  const pageTitle = view === "workload" ? "Carga & Capacidad" : view === "tasks" ? "Tareas" : view === "features" ? "Features" : "Features & Tareas";
   const pageSubtitle =
-    view === "tasks"
+    view === "workload"
+      ? "Disponibilidad y carga de trabajo agrupada por semana."
+      : view === "tasks"
       ? "Trabajo asignado por persona, abierto y en progreso."
       : view === "features"
       ? "Iniciativas del proyecto y su progreso global."
@@ -1928,6 +1932,13 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         </Card>
       </section>
       )}
+
+      {showWorkload && (
+        <section className="space-y-6">
+          <WorkloadMatrix tasks={tfsTasksRaw} />
+        </section>
+      )}
+
       {handoverPerson && (() => {
         const group = tasksByPerson.find((g) => g.person === handoverPerson);
         return (
