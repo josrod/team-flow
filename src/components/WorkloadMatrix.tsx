@@ -128,23 +128,26 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
   };
 
   const getCapacityForWeek = (memberId: string, weekStartIso: string, weekEndIso: string) => {
-    const baseCapacity = 40;
+    const weeklyHours = 40;
     
     const memberAbsences = absences.filter(a => a.memberId === memberId && a.startDate <= weekEndIso && a.endDate >= weekStartIso);
     
-    if (memberAbsences.length === 0) return baseCapacity;
-
     let absenceDays = 0;
-    for (let d = new Date(weekStartIso); d <= new Date(weekEndIso); d.setDate(d.getDate() + 1)) {
-      const isoD = d.toISOString().split("T")[0];
-      const dayOfWeek = d.getDay();
-      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
-      
-      const isAbsent = memberAbsences.some(a => a.startDate <= isoD && a.endDate >= isoD);
-      if (isAbsent) absenceDays++;
+    if (memberAbsences.length > 0) {
+      for (let d = new Date(weekStartIso); d <= new Date(weekEndIso); d.setDate(d.getDate() + 1)) {
+        const isoD = d.toISOString().split("T")[0];
+        const dayOfWeek = d.getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+        
+        const isAbsent = memberAbsences.some(a => a.startDate <= isoD && a.endDate >= isoD);
+        if (isAbsent) absenceDays++;
+      }
     }
 
-    return Math.max(0, baseCapacity - (absenceDays * 8));
+    const maxCapacity = Math.max(0, weeklyHours - (absenceDays * 8));
+    const baseCapacity = maxCapacity * 0.8; // 80% is the standard base productive capacity
+
+    return { baseCapacity, maxCapacity };
   };
 
   const selectedCellData = selectedCell ? getEffortForWeek(selectedCell.memberId, selectedCell.weekStart, selectedCell.weekEnd) : null;
@@ -177,13 +180,13 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
                 </TableCell>
                 {weeks.map(w => {
                   const { effort } = getEffortForWeek(member.id, w.isoStart, w.isoEnd);
-                  const capacity = getCapacityForWeek(member.id, w.isoStart, w.isoEnd);
-                  const pct = capacity > 0 ? (effort / capacity) * 100 : effort > 0 ? 100 : 0;
+                  const { baseCapacity, maxCapacity } = getCapacityForWeek(member.id, w.isoStart, w.isoEnd);
+                  const pct = maxCapacity > 0 ? (effort / maxCapacity) * 100 : effort > 0 ? 100 : 0;
                   
                   let bgClass = "bg-green-500";
-                  if (pct >= 80 && pct <= 100) bgClass = "bg-yellow-500";
-                  if (pct > 100) bgClass = "bg-red-500";
-                  if (capacity === 0) bgClass = "bg-gray-300";
+                  if (effort >= baseCapacity && effort <= maxCapacity) bgClass = "bg-yellow-500";
+                  if (effort > maxCapacity) bgClass = "bg-red-500";
+                  if (maxCapacity === 0) bgClass = "bg-gray-300";
 
                   return (
                     <TableCell 
@@ -192,11 +195,26 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
                       onClick={() => setSelectedCell({ memberId: member.id, weekStart: w.isoStart, weekEnd: w.isoEnd })}
                     >
                       <div className="space-y-1.5 px-2">
-                        <div className="flex justify-between text-xs text-muted-foreground font-medium">
-                          <span>{effort}h</span>
-                          <span>{capacity}h cap.</span>
+                        <div className="flex justify-between text-[10px] text-muted-foreground font-medium leading-none">
+                          <span className="text-foreground text-xs">{effort}h</span>
+                          <span className="flex gap-1" title="Base / Max">
+                            <span>B:{baseCapacity}h</span>
+                            <span>M:{maxCapacity}h</span>
+                          </span>
                         </div>
-                        <Progress value={Math.min(pct, 100)} className="h-2.5" indicatorClassName={bgClass} />
+                        <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-secondary">
+                          <div 
+                            className={`h-full transition-all ${bgClass}`} 
+                            style={{ width: `${Math.min(pct, 100)}%` }} 
+                          />
+                          {maxCapacity > 0 && (
+                            <div 
+                              className="absolute top-0 bottom-0 w-0.5 bg-foreground/40 z-10" 
+                              style={{ left: '80%' }}
+                              title={`Base Capacity (${baseCapacity}h)`}
+                            />
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                   );
