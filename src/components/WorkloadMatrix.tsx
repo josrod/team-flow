@@ -140,7 +140,8 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
   };
 
   const getCapacityForWeek = (memberId: string, weekStartIso: string, weekEndIso: string) => {
-    const weeklyHours = 40;
+    const member = rodatMembers.find(m => m.id === memberId);
+    const weeklyHours = member?.maxCapacity ?? 40;
     
     const memberAbsences = absences.filter(a => a.memberId === memberId && a.startDate <= weekEndIso && a.endDate >= weekStartIso);
     
@@ -156,8 +157,10 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
       }
     }
 
-    const maxCapacity = Math.max(0, weeklyHours - (absenceDays * 8));
-    const baseCapacity = maxCapacity * 0.8; // 80% is the standard base productive capacity
+    const absenceHours = absenceDays * (weeklyHours / 5);
+    const maxCapacity = Math.max(0, weeklyHours - absenceHours);
+    const baseCapacityMultiplier = member?.baseCapacity ? member.baseCapacity / weeklyHours : 0.8;
+    const baseCapacity = Math.round(maxCapacity * baseCapacityMultiplier);
 
     return { baseCapacity, maxCapacity };
   };

@@ -8,6 +8,8 @@ export interface TeamMember {
   role: string;
   teamId: string;
   avatar?: string;
+  baseCapacity?: number; // base/optimal weekly capacity (e.g., 32h)
+  maxCapacity?: number; // max weekly capacity (e.g., 40h)
 }
 
 export interface WorkTopic {
