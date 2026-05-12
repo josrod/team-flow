@@ -167,7 +167,66 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
   return (
     <Card className="border-primary/20 shadow-sm mt-6">
       <CardHeader>
-        <CardTitle className="text-xl font-display">Carga de Trabajo y Disponibilidad</CardTitle>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <CardTitle className="text-xl font-display">Carga de Trabajo y Disponibilidad</CardTitle>
+          <div className="flex items-center gap-3">
+            <Popover open={memberSelectOpen} onOpenChange={setMemberSelectOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" role="combobox" className="w-[200px] justify-between h-9 text-sm">
+                  {selectedMemberIds.length === 0 
+                    ? "Todos los miembros" 
+                    : `${selectedMemberIds.length} seleccionados`}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[200px] p-0" align="end">
+                <Command>
+                  <CommandInput placeholder="Buscar miembro..." />
+                  <CommandList>
+                    <CommandEmpty>No hay resultados.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        onSelect={() => {
+                          setSelectedMemberIds([]);
+                          setMemberSelectOpen(false);
+                        }}
+                      >
+                        <Check className={cn("mr-2 h-4 w-4", selectedMemberIds.length === 0 ? "opacity-100" : "opacity-0")} />
+                        Todos los miembros
+                      </CommandItem>
+                      {members.map((m) => (
+                        <CommandItem
+                          key={m.id}
+                          onSelect={() => {
+                            if (selectedMemberIds.includes(m.id)) {
+                              setSelectedMemberIds(selectedMemberIds.filter(id => id !== m.id));
+                            } else {
+                              setSelectedMemberIds([...selectedMemberIds, m.id]);
+                            }
+                          }}
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", selectedMemberIds.includes(m.id) ? "opacity-100" : "opacity-0")} />
+                          {m.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            
+            <Select value={String(weeksCount)} onValueChange={(val) => setWeeksCount(Number(val))}>
+              <SelectTrigger className="w-[130px] h-9 text-sm">
+                <SelectValue placeholder="Semanas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="2">2 Semanas</SelectItem>
+                <SelectItem value="4">4 Semanas</SelectItem>
+                <SelectItem value="6">6 Semanas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="overflow-x-auto">
         <Table>
