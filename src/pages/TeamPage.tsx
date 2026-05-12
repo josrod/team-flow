@@ -280,6 +280,12 @@ export default function TeamPage() {
                     max={168}
                     value={selectedMember.maxCapacity ?? 40}
                     onChange={(e) => {
+                      if (e.target.value === "") {
+                        const updated = { ...selectedMember, maxCapacity: undefined };
+                        updateMember(updated);
+                        setSelectedMember(updated);
+                        return;
+                      }
                       const val = parseInt(e.target.value);
                       if (isNaN(val) || val < 0) return;
                       const updated = { ...selectedMember, maxCapacity: val };
@@ -297,6 +303,12 @@ export default function TeamPage() {
                     max={selectedMember.maxCapacity ?? 40}
                     value={selectedMember.baseCapacity ?? Math.round((selectedMember.maxCapacity ?? 40) * 0.8)}
                     onChange={(e) => {
+                      if (e.target.value === "") {
+                        const updated = { ...selectedMember, baseCapacity: undefined };
+                        updateMember(updated);
+                        setSelectedMember(updated);
+                        return;
+                      }
                       const val = parseInt(e.target.value);
                       if (isNaN(val) || val < 0) return;
                       const updated = { ...selectedMember, baseCapacity: val };
