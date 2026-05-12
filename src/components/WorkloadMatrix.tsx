@@ -8,6 +8,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getTaskDueDate } from "@/services/workloadService";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
+import { Button } from "@/components/ui/button";
+import { Check, ChevronsUpDown, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 import {
   Table,
@@ -26,9 +32,15 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
   const { members, absences } = useApp();
   const [selectedCell, setSelectedCell] = useState<{ memberId: string; weekStart: string; weekEnd: string } | null>(null);
   const [taskDueDates, setTaskDueDates] = useState<Record<string, string>>({});
+  const [weeksCount, setWeeksCount] = useState<number>(4);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [memberSelectOpen, setMemberSelectOpen] = useState(false);
 
   // Consider all members for the team workload
-  const rodatMembers = members; 
+  const rodatMembers = useMemo(() => {
+    if (selectedMemberIds.length === 0) return members;
+    return members.filter((m) => selectedMemberIds.includes(m.id));
+  }, [members, selectedMemberIds]);
 
   const weeks = useMemo(() => {
     const today = new Date();
@@ -37,7 +49,7 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
     today.setHours(0, 0, 0, 0);
 
     const ws = [];
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < weeksCount; i++) {
       const wStart = new Date(today);
       wStart.setDate(today.getDate() + (i * 7));
       const wEnd = new Date(wStart);
@@ -51,7 +63,7 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
       });
     }
     return ws;
-  }, []);
+  }, [weeksCount]);
 
   useEffect(() => {
     let isMounted = true;
@@ -155,7 +167,66 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
   return (
     <Card className="border-primary/20 shadow-sm mt-6">
       <CardHeader>
-        <CardTitle className="text-xl font-display">Carga de Trabajo y Disponibilidad</CardTitle>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <CardTitle className="text-xl font-display">Carga de Trabajo y Disponibilidad</CardTitle>
+          <div className="flex items-center gap-3">
+            <Popover open={memberSelectOpen} onOpenChange={setMemberSelectOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" role="combobox" className="w-[200px] justify-between h-9 text-sm">
+                  {selectedMemberIds.length === 0 
+                    ? "Todos los miembros" 
+                    : `${selectedMemberIds.length} seleccionados`}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[200px] p-0" align="end">
+                <Command>
+                  <CommandInput placeholder="Buscar miembro..." />
+                  <CommandList>
+                    <CommandEmpty>No hay resultados.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        onSelect={() => {
+                          setSelectedMemberIds([]);
+                          setMemberSelectOpen(false);
+                        }}
+                      >
+                        <Check className={cn("mr-2 h-4 w-4", selectedMemberIds.length === 0 ? "opacity-100" : "opacity-0")} />
+                        Todos los miembros
+                      </CommandItem>
+                      {members.map((m) => (
+                        <CommandItem
+                          key={m.id}
+                          onSelect={() => {
+                            if (selectedMemberIds.includes(m.id)) {
+                              setSelectedMemberIds(selectedMemberIds.filter(id => id !== m.id));
+                            } else {
+                              setSelectedMemberIds([...selectedMemberIds, m.id]);
+                            }
+                          }}
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", selectedMemberIds.includes(m.id) ? "opacity-100" : "opacity-0")} />
+                          {m.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            
+            <Select value={String(weeksCount)} onValueChange={(val) => setWeeksCount(Number(val))}>
+              <SelectTrigger className="w-[130px] h-9 text-sm">
+                <SelectValue placeholder="Semanas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="2">2 Semanas</SelectItem>
+                <SelectItem value="4">4 Semanas</SelectItem>
+                <SelectItem value="6">6 Semanas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="overflow-x-auto">
         <Table>
