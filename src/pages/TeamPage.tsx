@@ -20,7 +20,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { MemberStatus, TeamMember, WorkTopic, WorkTopicStatus } from "@/types";
-import { Search, Plus, Pencil, Trash2, X, Check, ArrowRightLeft, RotateCcw } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, X, Check, ArrowRightLeft, RotateCcw, Settings2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { memberSchema, topicSchema } from "@/lib/validation";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -58,6 +59,11 @@ export default function TeamPage() {
   const [editRoleValue, setEditRoleValue] = useState("");
   const [pendingTeamId, setPendingTeamId] = useState<string | null>(null);
   const [resetCapacityConfirm, setResetCapacityConfirm] = useState(false);
+
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [bulkSelectedMembers, setBulkSelectedMembers] = useState<string[]>([]);
+  const [bulkMaxCapacity, setBulkMaxCapacity] = useState<string>("");
+  const [bulkBaseCapacity, setBulkBaseCapacity] = useState<string>("");
 
   const [topicFormOpen, setTopicFormOpen] = useState(false);
   const [editingTopic, setEditingTopic] = useState<WorkTopic | null>(null);
