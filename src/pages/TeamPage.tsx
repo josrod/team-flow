@@ -20,7 +20,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { MemberStatus, TeamMember, WorkTopic, WorkTopicStatus } from "@/types";
-import { Search, Plus, Pencil, Trash2, X, Check, ArrowRightLeft } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, X, Check, ArrowRightLeft, RotateCcw } from "lucide-react";
 import { memberSchema, topicSchema } from "@/lib/validation";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -57,6 +57,7 @@ export default function TeamPage() {
   const [editingRole, setEditingRole] = useState(false);
   const [editRoleValue, setEditRoleValue] = useState("");
   const [pendingTeamId, setPendingTeamId] = useState<string | null>(null);
+  const [resetCapacityConfirm, setResetCapacityConfirm] = useState(false);
 
   const [topicFormOpen, setTopicFormOpen] = useState(false);
   const [editingTopic, setEditingTopic] = useState<WorkTopic | null>(null);
@@ -271,7 +272,20 @@ export default function TeamPage() {
                 </div>
                </SheetHeader>
 
-              <div className="grid grid-cols-2 gap-4 mt-6">
+              <div className="grid grid-cols-2 gap-4 mt-6 relative">
+                <div className="col-span-2 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">Configuración de Capacidad</h3>
+                  {(selectedMember.maxCapacity !== undefined || selectedMember.baseCapacity !== undefined) && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => setResetCapacityConfirm(true)}
+                    >
+                      <RotateCcw className="h-3 w-3 mr-1" /> Restablecer
+                    </Button>
+                  )}
+                </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">Capacidad Máxima (h/sem)</Label>
                   <Input 
@@ -319,6 +333,30 @@ export default function TeamPage() {
                   />
                 </div>
               </div>
+
+              <AlertDialog open={resetCapacityConfirm} onOpenChange={setResetCapacityConfirm}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Restablecer capacidad?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      ¿Estás seguro de que quieres restablecer la capacidad de {selectedMember.name} a los valores por defecto (Máx: 40h, Base: 32h)?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => {
+                        const updated = { ...selectedMember, maxCapacity: undefined, baseCapacity: undefined };
+                        updateMember(updated);
+                        setSelectedMember(updated);
+                        toast.success("Capacidad restablecida");
+                      }}
+                    >
+                      Restablecer
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
 
               {teams.length > 1 && (
                 <div className="mt-4">
