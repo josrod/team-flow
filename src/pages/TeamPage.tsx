@@ -105,6 +105,28 @@ export default function TeamPage() {
       toast.error("Capacidad base inválida");
       return;
     }
+    
+    if (maxVal !== undefined && baseVal !== undefined && baseVal > maxVal) {
+      toast.error("La capacidad base no puede ser mayor que la capacidad máxima");
+      return;
+    }
+
+    let hasConflict = false;
+    bulkSelectedMembers.forEach(id => {
+      const member = teamMembers.find(m => m.id === id);
+      if (member) {
+        const finalMax = maxVal !== undefined ? maxVal : (member.maxCapacity ?? 40);
+        const finalBase = baseVal !== undefined ? baseVal : (member.baseCapacity ?? Math.round((member.maxCapacity ?? 40) * 0.8));
+        if (finalBase > finalMax) {
+          hasConflict = true;
+        }
+      }
+    });
+
+    if (hasConflict) {
+      toast.error("Para algunos miembros, la nueva configuración hace que la capacidad base supere a la máxima. Revisa los valores.");
+      return;
+    }
 
     bulkSelectedMembers.forEach(id => {
       const member = teamMembers.find(m => m.id === id);
@@ -413,6 +435,11 @@ export default function TeamPage() {
                       }
                       const val = parseInt(e.target.value);
                       if (isNaN(val) || val < 0) return;
+                      const currentBase = selectedMember.baseCapacity ?? Math.round((selectedMember.maxCapacity ?? 40) * 0.8);
+                      if (val < currentBase) {
+                        toast.error("La capacidad máxima no puede ser menor que la base");
+                        return;
+                      }
                       const updated = { ...selectedMember, maxCapacity: val };
                       updateMember(updated);
                       setSelectedMember(updated);
@@ -436,6 +463,11 @@ export default function TeamPage() {
                       }
                       const val = parseInt(e.target.value);
                       if (isNaN(val) || val < 0) return;
+                      const currentMax = selectedMember.maxCapacity ?? 40;
+                      if (val > currentMax) {
+                        toast.error("La capacidad base no puede ser mayor que la máxima");
+                        return;
+                      }
                       const updated = { ...selectedMember, baseCapacity: val };
                       updateMember(updated);
                       setSelectedMember(updated);
