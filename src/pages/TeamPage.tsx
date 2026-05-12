@@ -271,6 +271,43 @@ export default function TeamPage() {
                 </div>
                </SheetHeader>
 
+              <div className="grid grid-cols-2 gap-4 mt-6">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Capacidad Máxima (h/sem)</Label>
+                  <Input 
+                    type="number" 
+                    min={0}
+                    max={168}
+                    value={selectedMember.maxCapacity ?? 40}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      if (isNaN(val) || val < 0) return;
+                      const updated = { ...selectedMember, maxCapacity: val };
+                      updateMember(updated);
+                      setSelectedMember(updated);
+                    }}
+                    className="h-8 text-sm mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Capacidad Base (h/sem)</Label>
+                  <Input 
+                    type="number" 
+                    min={0}
+                    max={selectedMember.maxCapacity ?? 40}
+                    value={selectedMember.baseCapacity ?? Math.round((selectedMember.maxCapacity ?? 40) * 0.8)}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      if (isNaN(val) || val < 0) return;
+                      const updated = { ...selectedMember, baseCapacity: val };
+                      updateMember(updated);
+                      setSelectedMember(updated);
+                    }}
+                    className="h-8 text-sm mt-1"
+                  />
+                </div>
+              </div>
+
               {teams.length > 1 && (
                 <div className="mt-4">
                   <Label className="text-xs text-muted-foreground">{t.team}</Label>
