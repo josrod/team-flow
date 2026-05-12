@@ -176,20 +176,90 @@ export default function TeamPage() {
           <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight">{team.name}</h1>
           <p className="text-muted-foreground mt-1">{teamMembers.length} {t.members.toLowerCase()}</p>
         </div>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> {t.add}</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle className="font-display">{t.newMember}</DialogTitle></DialogHeader>
-            <div className="space-y-3">
-              <div><Label>{t.name}</Label><Input value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={100} /></div>
-              <div><Label>{t.role}</Label><Input value={newRole} onChange={(e) => setNewRole(e.target.value)} maxLength={50} /></div>
-              <Button onClick={handleAdd} className="w-full">{t.add}</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="rounded-xl shadow-sm" onClick={() => setBulkEditOpen(true)}>
+            <Settings2 className="h-4 w-4 mr-1" /> Edición en Bloque
+          </Button>
+          <Dialog open={addOpen} onOpenChange={setAddOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> {t.add}</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle className="font-display">{t.newMember}</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <div><Label>{t.name}</Label><Input value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={100} /></div>
+                <div><Label>{t.role}</Label><Input value={newRole} onChange={(e) => setNewRole(e.target.value)} maxLength={50} /></div>
+                <Button onClick={handleAdd} className="w-full">{t.add}</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      <Dialog open={bulkEditOpen} onOpenChange={setBulkEditOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader><DialogTitle>Edición en Bloque de Capacidades</DialogTitle></DialogHeader>
+          <div className="space-y-6 mt-2">
+            <div>
+              <Label className="mb-2 block">Miembros ({bulkSelectedMembers.length} seleccionados)</Label>
+              <div className="max-h-[200px] overflow-y-auto p-2 border rounded-md grid grid-cols-2 gap-2">
+                {teamMembers.map(m => (
+                  <div key={m.id} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`bulk-member-${m.id}`}
+                      checked={bulkSelectedMembers.includes(m.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) setBulkSelectedMembers([...bulkSelectedMembers, m.id]);
+                        else setBulkSelectedMembers(bulkSelectedMembers.filter(id => id !== m.id));
+                      }}
+                    />
+                    <label htmlFor={`bulk-member-${m.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
+                      {m.name}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setBulkSelectedMembers(teamMembers.map(m => m.id))}>Seleccionar Todos</Button>
+                <Button variant="outline" size="sm" onClick={() => setBulkSelectedMembers([])}>Deseleccionar Todos</Button>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Capacidad Máxima (h/sem)</Label>
+                <Input 
+                  type="number" 
+                  min={0}
+                  max={168}
+                  placeholder="Ej. 40"
+                  value={bulkMaxCapacity}
+                  onChange={(e) => setBulkMaxCapacity(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>Capacidad Base (h/sem)</Label>
+                <Input 
+                  type="number" 
+                  min={0}
+                  max={168}
+                  placeholder="Ej. 32"
+                  value={bulkBaseCapacity}
+                  onChange={(e) => setBulkBaseCapacity(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            
+            <p className="text-xs text-muted-foreground">
+              Nota: Los campos vacíos no modificarán el valor actual del miembro.
+            </p>
+
+            <Button onClick={handleBulkEdit} className="w-full">Aplicar Cambios</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 min-w-0">
