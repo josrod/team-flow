@@ -41,6 +41,7 @@ const App = () => (
                   <Route path="/handovers" element={<ProtectedRoute><AppLayout><HandoversPage /></AppLayout></ProtectedRoute>} />
                   <Route path="/features" element={<ProtectedRoute><AppLayout><FeaturesPage view="features" /></AppLayout></ProtectedRoute>} />
                   <Route path="/tasks" element={<ProtectedRoute><AppLayout><TasksPage /></AppLayout></ProtectedRoute>} />
+                  <Route path="/workload" element={<ProtectedRoute><AppLayout><FeaturesPage view="workload" /></AppLayout></ProtectedRoute>} />
                   <Route path="/settings/azure-devops" element={<ProtectedRoute><AppLayout><AzureDevOpsSettingsPage /></AppLayout></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
