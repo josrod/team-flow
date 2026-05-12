@@ -89,6 +89,41 @@ export default function TeamPage() {
     setAddOpen(false);
   };
 
+  const handleBulkEdit = () => {
+    if (bulkSelectedMembers.length === 0) {
+      toast.error("Selecciona al menos un miembro");
+      return;
+    }
+    const maxVal = bulkMaxCapacity === "" ? undefined : parseInt(bulkMaxCapacity);
+    const baseVal = bulkBaseCapacity === "" ? undefined : parseInt(bulkBaseCapacity);
+    
+    if (maxVal !== undefined && (isNaN(maxVal) || maxVal < 0)) {
+      toast.error("Capacidad máxima inválida");
+      return;
+    }
+    if (baseVal !== undefined && (isNaN(baseVal) || baseVal < 0)) {
+      toast.error("Capacidad base inválida");
+      return;
+    }
+
+    bulkSelectedMembers.forEach(id => {
+      const member = teamMembers.find(m => m.id === id);
+      if (member) {
+        updateMember({
+          ...member,
+          maxCapacity: maxVal !== undefined ? maxVal : member.maxCapacity,
+          baseCapacity: baseVal !== undefined ? baseVal : member.baseCapacity,
+        });
+      }
+    });
+
+    toast.success(`Capacidad actualizada para ${bulkSelectedMembers.length} miembros`);
+    setBulkEditOpen(false);
+    setBulkSelectedMembers([]);
+    setBulkMaxCapacity("");
+    setBulkBaseCapacity("");
+  };
+
   const openNewTopic = () => {
     setEditingTopic(null);
     setTopicName("");
