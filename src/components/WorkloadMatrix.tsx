@@ -32,9 +32,15 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
   const { members, absences } = useApp();
   const [selectedCell, setSelectedCell] = useState<{ memberId: string; weekStart: string; weekEnd: string } | null>(null);
   const [taskDueDates, setTaskDueDates] = useState<Record<string, string>>({});
+  const [weeksCount, setWeeksCount] = useState<number>(4);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [memberSelectOpen, setMemberSelectOpen] = useState(false);
 
   // Consider all members for the team workload
-  const rodatMembers = members; 
+  const rodatMembers = useMemo(() => {
+    if (selectedMemberIds.length === 0) return members;
+    return members.filter((m) => selectedMemberIds.includes(m.id));
+  }, [members, selectedMemberIds]);
 
   const weeks = useMemo(() => {
     const today = new Date();
@@ -43,7 +49,7 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
     today.setHours(0, 0, 0, 0);
 
     const ws = [];
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < weeksCount; i++) {
       const wStart = new Date(today);
       wStart.setDate(today.getDate() + (i * 7));
       const wEnd = new Date(wStart);
@@ -57,7 +63,7 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
       });
     }
     return ws;
-  }, []);
+  }, [weeksCount]);
 
   useEffect(() => {
     let isMounted = true;
