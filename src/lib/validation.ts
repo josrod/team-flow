@@ -22,6 +22,8 @@ const teamMemberSchema = z.object({
   role: z.string(),
   teamId: z.string(),
   avatar: z.string().optional(),
+  baseCapacity: z.number().optional(),
+  maxCapacity: z.number().optional(),
 });
 
 const teamSchema = z.object({
