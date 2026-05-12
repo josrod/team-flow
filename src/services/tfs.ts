@@ -606,6 +606,9 @@ export interface TfsWorkItem {
   areaPath?: string;
   tags?: string;
   url?: string;
+  effort?: number;
+  originalEstimate?: number;
+  remainingWork?: number;
 }
 
 interface WiqlResultRef {
@@ -659,6 +662,9 @@ const mapRawToWorkItem = (raw: RawWorkItem): TfsWorkItem => {
     areaPath: f["System.AreaPath"] as string | undefined,
     tags: f["System.Tags"] as string | undefined,
     url: raw.url,
+    effort: typeof f["Microsoft.VSTS.Scheduling.Effort"] === "number" ? f["Microsoft.VSTS.Scheduling.Effort"] : undefined,
+    originalEstimate: typeof f["Microsoft.VSTS.Scheduling.OriginalEstimate"] === "number" ? f["Microsoft.VSTS.Scheduling.OriginalEstimate"] : undefined,
+    remainingWork: typeof f["Microsoft.VSTS.Scheduling.RemainingWork"] === "number" ? f["Microsoft.VSTS.Scheduling.RemainingWork"] : undefined,
   };
 };
 
@@ -984,6 +990,9 @@ ORDER BY [System.ChangedDate] DESC`;
     "System.IterationPath",
     "System.AreaPath",
     "System.Tags",
+    "Microsoft.VSTS.Scheduling.Effort",
+    "Microsoft.VSTS.Scheduling.OriginalEstimate",
+    "Microsoft.VSTS.Scheduling.RemainingWork",
   ]);
 };
 
