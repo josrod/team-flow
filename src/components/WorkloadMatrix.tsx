@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useApp } from "@/context/AppContext";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { getTaskDueDate } from "@/services/workloadService";
 
 import {
   Table,
@@ -23,7 +24,8 @@ interface WorkloadMatrixProps {
 
 export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
   const { members, absences } = useApp();
-  const [selectedCell, setSelectedCell] = useState<{ memberId: string; weekStart: string } | null>(null);
+  const [selectedCell, setSelectedCell] = useState<{ memberId: string; weekStart: string; weekEnd: string } | null>(null);
+  const [taskDueDates, setTaskDueDates] = useState<Record<string, string>>({});
 
   // Consider all members for the team workload
   const rodatMembers = members; 
@@ -51,7 +53,38 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
     return ws;
   }, []);
 
-  const getEffortForWeek = (memberId: string, weekStartIso: string) => {
+  useEffect(() => {
+    let isMounted = true;
+    const fetchDueDates = async () => {
+      const newDueDates: Record<string, string> = {};
+      const tasksWithoutEffort = tasks.filter(t => !(t.remainingWork || t.effort || t.originalEstimate));
+      
+      const promises = tasksWithoutEffort.map(async (t) => {
+        try {
+          const dueDate = await getTaskDueDate(t.id);
+          if (dueDate) {
+            newDueDates[t.id] = dueDate;
+          }
+        } catch (e) {
+          // ignore
+        }
+      });
+
+      await Promise.all(promises);
+
+      if (isMounted) {
+        setTaskDueDates(prev => ({ ...prev, ...newDueDates }));
+      }
+    };
+
+    if (tasks.length > 0) {
+      fetchDueDates();
+    }
+
+    return () => { isMounted = false; };
+  }, [tasks]);
+
+  const getEffortForWeek = (memberId: string, weekStartIso: string, weekEndIso: string) => {
     const memberName = rodatMembers.find(m => m.id === memberId)?.name;
     const memberTasks = tasks.filter(t => 
       t.assignedTo === memberName && 
@@ -60,12 +93,38 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
       !t.state.toLowerCase().includes("removed")
     );
     
-    const totalEffort = memberTasks.reduce((acc, t) => acc + (t.remainingWork || t.effort || t.originalEstimate || 0), 0);
-    
+    let effortForWeek = 0;
+    const weekTasks: TfsWorkItem[] = [];
     const weekIndex = weeks.findIndex(w => w.isoStart === weekStartIso);
-    // Simplification: dump all currently open assigned effort into the first week.
-    if (weekIndex === 0) return { effort: totalEffort, tasks: memberTasks };
-    return { effort: 0, tasks: [] };
+
+    for (const t of memberTasks) {
+      const explicitEffort = t.remainingWork || t.effort || t.originalEstimate || 0;
+      
+      if (explicitEffort > 0) {
+        // Use effort field when available. Defaulting to first week for simplicity.
+        if (weekIndex === 0) {
+          effortForWeek += explicitEffort;
+          weekTasks.push(t);
+        }
+      } else {
+        // Fall back to the internal due-date API when effort isn't available
+        const dueDate = taskDueDates[t.id];
+        if (dueDate) {
+          if (dueDate >= weekStartIso && dueDate <= weekEndIso) {
+            effortForWeek += 8; // Fallback default effort
+            weekTasks.push(t);
+          }
+        } else {
+          // If no due date resolved yet, put it in the first week
+          if (weekIndex === 0) {
+            effortForWeek += 8; // Fallback default effort
+            weekTasks.push(t);
+          }
+        }
+      }
+    }
+    
+    return { effort: effortForWeek, tasks: weekTasks };
   };
 
   const getCapacityForWeek = (memberId: string, weekStartIso: string, weekEndIso: string) => {
@@ -88,7 +147,7 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
     return Math.max(0, baseCapacity - (absenceDays * 8));
   };
 
-  const selectedCellData = selectedCell ? getEffortForWeek(selectedCell.memberId, selectedCell.weekStart) : null;
+  const selectedCellData = selectedCell ? getEffortForWeek(selectedCell.memberId, selectedCell.weekStart, selectedCell.weekEnd) : null;
 
   return (
     <Card className="border-primary/20 shadow-sm mt-6">
@@ -117,7 +176,7 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
                   </div>
                 </TableCell>
                 {weeks.map(w => {
-                  const { effort } = getEffortForWeek(member.id, w.isoStart);
+                  const { effort } = getEffortForWeek(member.id, w.isoStart, w.isoEnd);
                   const capacity = getCapacityForWeek(member.id, w.isoStart, w.isoEnd);
                   const pct = capacity > 0 ? (effort / capacity) * 100 : effort > 0 ? 100 : 0;
                   
@@ -130,7 +189,7 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
                     <TableCell 
                       key={w.isoStart} 
                       className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => setSelectedCell({ memberId: member.id, weekStart: w.isoStart })}
+                      onClick={() => setSelectedCell({ memberId: member.id, weekStart: w.isoStart, weekEnd: w.isoEnd })}
                     >
                       <div className="space-y-1.5 px-2">
                         <div className="flex justify-between text-xs text-muted-foreground font-medium">
