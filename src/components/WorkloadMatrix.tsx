@@ -8,6 +8,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getTaskDueDate } from "@/services/workloadService";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
+import { Button } from "@/components/ui/button";
+import { Check, ChevronsUpDown, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 import {
   Table,
