@@ -129,8 +129,9 @@ describe("Capacity Management", () => {
     });
 
     // Now toggle the switch to show all tasks
-    const toggle = screen.getByRole("switch");
-    fireEvent.click(toggle);
+    const toggle = document.getElementById("show-all-tasks");
+    expect(toggle).not.toBeNull();
+    fireEvent.click(toggle!);
 
     // Effort should now be 15h (10h In Progress + 5h Pending) - Done tasks are excluded because of isActiveTask
     await waitFor(() => {
