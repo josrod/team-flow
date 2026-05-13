@@ -421,7 +421,7 @@ const Index = () => {
                     <CardContent className="p-4 space-y-3">
                       <div className="flex items-center justify-between gap-2">
                         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${isOngoing ? "bg-status-vacation/15 text-status-vacation" : "bg-status-info/15 text-status-info"}`}>
-                          {isOngoing ? "En curso" : "Próximo"}
+                          {isOngoing ? t.ongoing : t.upcomingStatus}
                         </span>
                         {absence && (
                           <span className="text-[10px] text-muted-foreground tabular-nums">
