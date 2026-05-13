@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useApp } from "@/context/AppContext";
+import { useLang } from "@/context/LanguageContext";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { TfsWorkItem } from "@/services/tfs";
