@@ -113,8 +113,9 @@ describe("Capacity Management", () => {
     const cellWith10h = screen.getAllByText("10h")[0].closest("td");
     fireEvent.click(cellWith10h!);
 
-    // Modal should show only "Task 1"
+    // Modal should show only "Task 1" and the title should indicate "In Progress"
     await waitFor(() => {
+      expect(screen.queryByText("Task Details (In Progress) - Carlos")).not.toBeNull();
       expect(screen.queryAllByText("[1] Task 1").length).toBeGreaterThan(0);
       expect(screen.queryAllByText("[2] Task 2").length).toBe(0);
       expect(screen.queryAllByText("[3] Task 3").length).toBe(0);
@@ -143,8 +144,9 @@ describe("Capacity Management", () => {
     const cellWith15h = screen.getAllByText("15h")[0].closest("td");
     fireEvent.click(cellWith15h!);
 
-    // Modal should show Task 1 and Task 2
+    // Modal should show Task 1 and Task 2 and the title should indicate "All"
     await waitFor(() => {
+      expect(screen.queryByText("Task Details (All) - Carlos")).not.toBeNull();
       expect(screen.queryAllByText("[1] Task 1").length).toBeGreaterThan(0);
       expect(screen.queryAllByText("[2] Task 2").length).toBeGreaterThan(0);
       expect(screen.queryAllByText("[3] Task 3").length).toBe(0);
