@@ -33,45 +33,48 @@ vi.mock("@/context/AuthContext", () => ({
 }));
 
 // Mock LanguageContext using real translations for assertions
-const en = translations.en;
-
-vi.mock("@/context/LanguageContext", () => ({
-  useLang: () => ({
-    t: {
-      teamNotFound: en.teamNotFound,
-      members: en.members,
-      add: en.add,
-      newMember: en.newMember,
-      name: en.name,
-      role: en.role,
-      search: en.search,
-      all: en.all,
-      available: en.available,
-      vacation: en.vacation,
-      sickLeave: en.sickLeave,
-      team: en.team,
-      workTopics: en.workTopics,
-      addTopic: en.addTopic,
-      confirmMove: en.confirmMove,
-      confirmMoveDesc: en.confirmMoveDesc,
-      cancel: en.cancel,
-      confirm: en.confirm,
-      resetCapacityConfirmTitle: en.resetCapacityConfirmTitle,
-      resetCapacityConfirmDesc: en.resetCapacityConfirmDesc,
-      capacityConfig: en.capacityConfig,
-      maxCapacity: en.maxCapacity,
-      baseCapacity: en.baseCapacity,
-      resetCapacity: en.resetCapacity,
-      undo: en.undo,
-      taskDetailInProgress: en.taskDetailInProgress,
-      taskDetailAll: en.taskDetailAll,
-      inProgressTasksCount: en.inProgressTasksCount,
-      allTasksCount: en.allTasksCount,
-      onlyInProgress: en.onlyInProgress,
-      allTasks: en.allTasks,
-    }
-  })
-}));
+vi.mock("@/context/LanguageContext", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/context/LanguageContext")>();
+  const en = actual.translations.en;
+  return {
+    ...actual,
+    useLang: () => ({
+      t: {
+        teamNotFound: en.teamNotFound,
+        members: en.members,
+        add: en.add,
+        newMember: en.newMember,
+        name: en.name,
+        role: en.role,
+        search: en.search,
+        all: en.all,
+        available: en.available,
+        vacation: en.vacation,
+        sickLeave: en.sickLeave,
+        team: en.team,
+        workTopics: en.workTopics,
+        addTopic: en.addTopic,
+        confirmMove: en.confirmMove,
+        confirmMoveDesc: en.confirmMoveDesc,
+        cancel: en.cancel,
+        confirm: en.confirm,
+        resetCapacityConfirmTitle: en.resetCapacityConfirmTitle,
+        resetCapacityConfirmDesc: en.resetCapacityConfirmDesc,
+        capacityConfig: en.capacityConfig,
+        maxCapacity: en.maxCapacity,
+        baseCapacity: en.baseCapacity,
+        resetCapacity: en.resetCapacity,
+        undo: en.undo,
+        taskDetailInProgress: en.taskDetailInProgress,
+        taskDetailAll: en.taskDetailAll,
+        inProgressTasksCount: en.inProgressTasksCount,
+        allTasksCount: en.allTasksCount,
+        onlyInProgress: en.onlyInProgress,
+        allTasks: en.allTasks,
+      }
+    })
+  };
+});
 
 const TestMatrixWrapper = ({ initialTasks = [] }: { initialTasks?: TfsWorkItem[] }) => {
   const [showAllTasks, setShowAllTasks] = useState(false);
