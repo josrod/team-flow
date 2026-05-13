@@ -69,7 +69,8 @@ vi.mock("@/context/LanguageContext", () => ({
   })
 }));
 
-const TestMatrixWrapper = () => {
+const TestMatrixWrapper = ({ initialTasks = [] }: { initialTasks?: TfsWorkItem[] }) => {
+  const [showAllTasks, setShowAllTasks] = useState(false);
   return (
     <AppProvider>
       <MemoryRouter initialEntries={["/team/team-1"]}>
@@ -77,7 +78,10 @@ const TestMatrixWrapper = () => {
           <Route path="/team/:teamId" element={<TeamPage />} />
         </Routes>
       </MemoryRouter>
-      <WorkloadMatrix tasks={[]} />
+      <WorkloadMatrix tasks={initialTasks} showAllTasks={showAllTasks} onShowAllTasksChange={setShowAllTasks} />
+    </AppProvider>
+  );
+};
     </AppProvider>
   );
 };
