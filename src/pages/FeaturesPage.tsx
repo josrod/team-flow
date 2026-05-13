@@ -88,9 +88,11 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const showTasks = view === "all" || view === "tasks";
   const showWorkload = view === "workload";
   const pageTitle = view === "workload" ? "Carga & Capacidad" : view === "tasks" ? "Tareas" : view === "features" ? "Features" : "Features & Tareas";
+  
+  const [showAllWorkloadTasks, setShowAllWorkloadTasks] = useState(false);
   const pageSubtitle =
     view === "workload"
-      ? t.workloadSubtitle
+      ? showAllWorkloadTasks ? t.workloadSubtitleAll : t.workloadSubtitle
       : view === "tasks"
       ? "Trabajo asignado por persona, abierto y en progreso."
       : view === "features"
