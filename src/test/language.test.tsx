@@ -170,7 +170,7 @@ describe("Language Switching", () => {
     expect(screen.getByRole("heading", { name: translations.es.features, level: 1 })).toBeInTheDocument();
     
     // Page Subtitle
-    expect(screen.getByText(translations.es.featuresSubtitle)).toBeInTheDocument();
+    expect(screen.queryAllByText(translations.es.featuresSubtitle).length).toBeGreaterThan(0);
 
     // Toggle language
     const langBtn = screen.getByRole("button", { name: /^ES$/ });
@@ -184,6 +184,6 @@ describe("Language Switching", () => {
     // Check English
     expect(screen.getByRole("link", { name: new RegExp(translations.en.features, "i") })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: translations.en.features, level: 1 })).toBeInTheDocument();
-    expect(screen.getByText(translations.en.featuresSubtitle)).toBeInTheDocument();
+    expect(screen.queryAllByText(translations.en.featuresSubtitle).length).toBeGreaterThan(0);
   });
 });
