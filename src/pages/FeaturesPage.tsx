@@ -741,10 +741,10 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
 
   const workloadByPerson = useMemo(() => {
     const map: Record<string, { active: number; pending: number; done: number; blocked: number }> = {};
-    filteredTasks.forEach((t) => {
-      const name = t.assignee || "Sin asignar";
+    filteredTasks.forEach((task) => {
+      const name = task.assignee || t.unassigned;
       if (!map[name]) map[name] = { active: 0, pending: 0, done: 0, blocked: 0 };
-      map[name][normalizeState(t.state)]++;
+      map[name][normalizeState(task.state)]++;
     });
     return Object.entries(map)
       .map(([name, v]) => ({ name, ...v, total: v.active + v.pending + v.done + v.blocked }))
@@ -780,12 +780,12 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   // Sorted by total desc; "Sin asignar" pushed to the end.
   const tasksByPerson = useMemo(() => {
     const map = new Map<string, { active: UnifiedTask[]; pending: UnifiedTask[]; blocked: UnifiedTask[]; done: UnifiedTask[] }>();
-    filteredTasks.forEach((t) => {
-      const norm = normalizeState(t.state);
+    filteredTasks.forEach((task) => {
+      const norm = normalizeState(task.state);
       if (!stateFilter.has(norm)) return;
-      const key = t.assignee || "Sin asignar";
+      const key = task.assignee || t.unassigned;
       if (!map.has(key)) map.set(key, { active: [], pending: [], blocked: [], done: [] });
-      map.get(key)![norm].push(t);
+      map.get(key)![norm].push(task);
     });
     const arr = Array.from(map.entries()).map(([person, v]) => ({
       person,
@@ -793,8 +793,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       total: v.active.length + v.pending.length + v.blocked.length + v.done.length,
     }));
     arr.sort((a, b) => {
-      if (a.person === "Sin asignar") return 1;
-      if (b.person === "Sin asignar") return -1;
+      if (a.person === t.unassigned) return 1;
+      if (b.person === t.unassigned) return -1;
       switch (taskSort) {
         case "total-asc": return a.total - b.total;
         case "name-asc": return a.person.localeCompare(b.person);
@@ -858,9 +858,9 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         document.execCommand("copy");
         document.body.removeChild(textarea);
       }
-      toast.success(`Enlace de la ${type} #${id} copiado`);
+      toast.success(t.linkCopied.replace("{type}", type).replace("{id}", id));
     } catch {
-      toast.error("No se pudo copiar el enlace");
+      toast.error(t.linkCopyFailed);
     }
   };
 
@@ -930,7 +930,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
               <div className="space-y-1">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Layers className="h-4 w-4 text-muted-foreground" aria-hidden />
-                  Alcance efectivo
+                  {t.effectiveScope}
                 </CardTitle>
                 <CardDescription className="text-xs">
                   {t.filtersApplied}
@@ -1052,7 +1052,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 when TFS returned items outside the scope. */}
             <div className="flex flex-wrap items-center gap-2 border-t pt-3">
               <span className="text-xs font-medium text-muted-foreground">
-                Resultado con este alcance
+                {t.resultWithScope}
               </span>
               <Badge variant="secondary" className="gap-1.5">
                 <Layers className="h-3 w-3" aria-hidden />
@@ -1140,11 +1140,11 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                     </>
                   ) : (
                     <>
-                      Mostrando {scopeCheck.featuresTotal} de {scopeCheck.featuresRawTotal} features
+                      {t.showingXofYFeatures.replace("{x}", String(scopeCheck.featuresTotal)).replace("{y}", String(scopeCheck.featuresRawTotal))}
                       {" "}y {scopeCheck.tasksTotal} de {scopeCheck.tasksRawTotal} tareas.
-                      {" "}Excluidas: {scopeCheck.featuresOutOfArea.length} features fuera del área,
-                      {" "}{scopeCheck.tasksOutOfArea.length} tareas fuera del área,
-                      {" "}{scopeCheck.tasksOutOfIteration.length} tareas fuera de la iteración.
+                      {" "}{t.excludedOutOfAreaFeatures.replace("{count}", String(scopeCheck.featuresOutOfArea.length))}
+                      {" "}{t.excludedOutOfAreaTasks.replace("{count}", String(scopeCheck.tasksOutOfArea.length))}
+                      {" "}{t.excludedOutOfIterTasks.replace("{count}", String(scopeCheck.tasksOutOfIteration.length))}
                     </>
                   )}
                 </p>
@@ -1162,7 +1162,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                       aria-label="Mostrar detalle de elementos ocultos"
                     >
                       <EyeOff className="h-3.5 w-3.5" />
-                      Ver auditoría de elementos ocultos
+                      {t.viewHiddenAudit}
                       {" "}
                       ({scopeCheck.featuresOutOfArea.length +
                         scopeCheck.tasksOutOfArea.length +
@@ -1419,7 +1419,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                             variant="ghost"
                             className="h-7 w-7 shrink-0"
                             title="Copiar enlace"
-                            aria-label={`Copiar enlace de la feature ${f.id}`}
+                            aria-label={t.copyLinkFeature.replace("{id}", f.id)}
                             onClick={() => copyWorkItemLink(f.id, "feature")}
                           >
                             <Copy className="h-3 w-3" />
@@ -1447,7 +1447,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
               <ListChecks className="h-5 w-5 text-muted-foreground" /> Tareas
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Distribución del trabajo por persona — solo abiertas y en progreso.
+              {t.workDistribution}
             </p>
           </div>
         </div>
@@ -1587,7 +1587,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <UsersIcon className="h-4 w-4" /> {t.tasksPerPerson}
                 </CardTitle>
                 <CardDescription>
-                  {tasksByPerson.length} {tasksByPerson.length === 1 ? "persona" : "personas"} · filtrando {Array.from(stateFilter).map((k) => k === "active" ? "en progreso" : k === "pending" ? "pendientes" : k === "blocked" ? "bloqueadas" : "completadas").join(", ")}
+                  {tasksByPerson.length === 1 ? t.personCount.replace("{count}", String(tasksByPerson.length)) : t.personsCount.replace("{count}", String(tasksByPerson.length))} · {t.filtering} {Array.from(stateFilter).map((k) => k === "active" ? t.inProgressPlural : k === "pending" ? t.pendingPlural : k === "blocked" ? t.blockedPlural : t.completedPlural).join(", ")}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -1676,10 +1676,10 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   }}
                 />
                 <Label htmlFor="manual-apply" className="text-xs text-muted-foreground cursor-pointer">
-                  Confirmar cambios antes de aplicar
+                  {t.confirmChangesBeforeApply}
                 </Label>
                 {hasPendingChanges && (
-                  <Badge variant="secondary" className="text-[10px]">Cambios sin aplicar</Badge>
+                  <Badge variant="secondary" className="text-[10px]">{t.unappliedChanges}</Badge>
                 )}
               </div>
               <div className="flex items-center gap-1.5">
@@ -1693,7 +1693,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                       disabled={!hasPendingChanges}
                     >
                       <Undo2 className="h-3.5 w-3.5" />
-                      <span className="ml-1.5">Descartar</span>
+                      <span className="ml-1.5">{t.discard}</span>
                     </Button>
                     <Button
                       size="sm"
@@ -1702,7 +1702,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                       disabled={!hasPendingChanges}
                     >
                       <Check className="h-3.5 w-3.5" />
-                      <span className="ml-1.5">Aplicar</span>
+                      <span className="ml-1.5">{t.apply}</span>
                     </Button>
                   </>
                 )}
@@ -1712,7 +1712,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   className="h-8"
                   onClick={() => setShowFlatList((v) => !v)}
                 >
-                  {showFlatList ? "Vista por persona" : "Ver listado plano"}
+                  {showFlatList ? t.viewByPerson : t.viewFlatList}
                 </Button>
               </div>
             </div>
@@ -1748,14 +1748,14 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredTasks.slice(0, 100).map((t) => {
-                            const norm = normalizeState(t.state);
+                          {filteredTasks.slice(0, 100).map((task) => {
+                            const norm = normalizeState(task.state);
                             return (
-                              <TableRow key={t.id}>
-                                <TableCell className="font-mono text-xs text-muted-foreground">{t.id}</TableCell>
-                                <TableCell className="font-medium text-sm">{t.title}</TableCell>
+                              <TableRow key={task.id}>
+                                <TableCell className="font-mono text-xs text-muted-foreground">{task.id}</TableCell>
+                                <TableCell className="font-medium text-sm">{task.title}</TableCell>
                                 <TableCell>
-                                  <Badge variant="outline" className="text-[10px]">{t.type}</Badge>
+                                  <Badge variant="outline" className="text-[10px]">{task.type}</Badge>
                                 </TableCell>
                                 <TableCell>
                                   <span
@@ -1763,21 +1763,21 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     style={{ background: `${stateColorVar[norm]}20`, color: stateColorVar[norm] }}
                                   >
                                     <span className="h-1.5 w-1.5 rounded-full" style={{ background: stateColorVar[norm] }} />
-                                    {t.state}
+                                    {task.state}
                                   </span>
                                 </TableCell>
                                 <TableCell className="text-sm">
-                                  {t.assignee || <span className="text-muted-foreground italic">Sin asignar</span>}
+                                  {task.assignee || <span className="text-muted-foreground italic">{t.unassigned}</span>}
                                 </TableCell>
                                 {source === "tfs" && tfsBaseUrl && (
                                   <TableCell className="text-right">
                                     <div className="flex items-center justify-end gap-0.5">
                                       <Button asChild size="icon" variant="ghost" className="h-7 w-7" title="Abrir en Azure DevOps">
                                         <a
-                                          href={`${tfsBaseUrl}/_workitems/edit/${t.id}`}
+                                          href={`${tfsBaseUrl}/_workitems/edit/${task.id}`}
                                           target="_blank"
                                           rel="noopener noreferrer"
-                                          aria-label={`Abrir tarea ${t.id} en Azure DevOps`}
+                                          aria-label={`Abrir tarea ${task.id} en Azure DevOps`}
                                         >
                                           <ExternalLink className="h-3.5 w-3.5" />
                                         </a>
@@ -1787,8 +1787,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                         variant="ghost"
                                         className="h-7 w-7"
                                         title="Copiar enlace"
-                                        aria-label={`Copiar enlace de la tarea ${t.id}`}
-                                        onClick={() => copyWorkItemLink(t.id, "tarea")}
+                                        aria-label={t.copyLinkTask.replace("{id}", task.id)}
+                                        onClick={() => copyWorkItemLink(task.id, "tarea")}
                                       >
                                         <Copy className="h-3.5 w-3.5" />
                                       </Button>
@@ -1802,14 +1802,14 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                       </Table>
                       {filteredTasks.length > 100 && (
                         <p className="text-xs text-muted-foreground text-center py-2 border-t">
-                          Mostrando 100 de {filteredTasks.length} tareas — afina los filtros para ver más.
+                          {t.showingMaxOf.replace("{max}", "100").replace("{total}", String(filteredTasks.length))}
                         </p>
                       )}
                     </div>
                   )
                 ) : tasksByPerson.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-8 text-center">
-                    No hay personas con tareas que coincidan con los filtros actuales.
+                    {t.noPersonsMatching}
                   </p>
                 ) : (
                   <Accordion type="multiple" defaultValue={defaultOpenPeople} className="w-full">
@@ -1827,7 +1827,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                           <AccordionTrigger className="hover:no-underline">
                             <div className="flex items-center gap-3 flex-1 min-w-0 pr-2">
                               <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0">
-                                {group.person === "Sin asignar" ? <UserIcon className="h-4 w-4" /> : initials}
+                                {group.person === t.unassigned ? <UserIcon className="h-4 w-4" /> : initials}
                               </div>
                               <div className="min-w-0 flex-1 text-left">
                                 <p className="text-sm font-medium truncate">{group.person}</p>
@@ -1920,7 +1920,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                               </Table>
                               {group.total > 100 && (
                                 <p className="text-xs text-muted-foreground text-center py-2 border-t">
-                                  Mostrando 100 de {group.total} tareas — afina los filtros para ver más.
+                                  {t.showingMaxOf.replace("{max}", "100").replace("{total}", String(group.total))}
                                 </p>
                               )}
                             </div>
@@ -1974,8 +1974,9 @@ interface PersonComboboxProps {
 
 function PersonCombobox({ value, onChange, people }: PersonComboboxProps) {
   const [open, setOpen] = useState(false);
+  const { t } = useLang();
   const isAll = value === "all";
-  const label = isAll ? `Todas las personas (${people.length})` : value;
+  const label = isAll ? t.allPersonsCount.replace("{count}", String(people.length)) : value;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -2003,7 +2004,7 @@ function PersonCombobox({ value, onChange, people }: PersonComboboxProps) {
       </PopoverTrigger>
       <PopoverContent className="w-60 p-0" align="end">
         <Command>
-          <CommandInput placeholder="Buscar persona..." />
+          <CommandInput placeholder={t.searchPerson} />
           <CommandList>
             <CommandEmpty>Sin coincidencias.</CommandEmpty>
             <CommandGroup>
@@ -2015,7 +2016,7 @@ function PersonCombobox({ value, onChange, people }: PersonComboboxProps) {
                 }}
               >
                 <Check className={cn("mr-2 h-4 w-4", isAll ? "opacity-100" : "opacity-0")} />
-                Todas las personas
+                {t.allPersons}
               </CommandItem>
               {people.map((p) => (
                 <CommandItem
@@ -2099,7 +2100,7 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink }: Tas
                 variant="ghost"
                 className="h-7 w-7"
                 title="Copiar enlace"
-                aria-label={`Copiar enlace de la tarea ${task.id}`}
+                aria-label={t.copyLinkTask.replace("{id}", task.id)}
                 onClick={() => onCopyLink(task.id, "tarea")}
               >
                 <Copy className="h-3.5 w-3.5" />
