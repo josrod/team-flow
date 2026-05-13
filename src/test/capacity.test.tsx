@@ -195,4 +195,33 @@ describe("Capacity Management", () => {
       expect(screen.queryAllByText("M:45h").length).toBe(0);
     });
   });
+
+  it("should accurately count only 'In Progress' tasks and sum their hours correctly", async () => {
+    const mockTasks: TfsWorkItem[] = [
+      { id: 1, title: "Task 1", state: "In Progress", workItemType: "Task", assignedTo: "Carlos", remainingWork: 8, effort: 8, originalEstimate: 8, url: "" },
+      { id: 2, title: "Task 2", state: "IN progress ", workItemType: "Task", assignedTo: "Carlos", remainingWork: 4, effort: 4, originalEstimate: 4, url: "" },
+      { id: 3, title: "Task 3", state: "Pending", workItemType: "Task", assignedTo: "Carlos", remainingWork: 20, effort: 20, originalEstimate: 20, url: "" },
+      { id: 4, title: "Task 4", state: "Done", workItemType: "Task", assignedTo: "Carlos", remainingWork: 5, effort: 5, originalEstimate: 5, url: "" }
+    ];
+
+    render(<TestMatrixWrapper initialTasks={mockTasks} />);
+    
+    // Select first member in team page
+    const members = await screen.findAllByText("Carlos");
+    fireEvent.click(members[0]);
+
+    // Check effort indicator for "Carlos"
+    // There are 2 "In Progress" tasks (case insensitive mapping via isTaskInProgress)
+    // Total 'In Progress' hours = 8 + 4 = 12h
+    await waitFor(() => {
+      // It should display exactly '2 In Progress'
+      expect(screen.queryAllByText("2 In Progress").length).toBeGreaterThan(0);
+      
+      // And the total effort rendered in the matrix cell should be 12h
+      expect(screen.queryAllByText("12h").length).toBeGreaterThan(0);
+      
+      // The pending (20h) and done (5h) should not be included by default
+      expect(screen.queryAllByText("32h").length).toBe(0);
+    });
+  });
 });
