@@ -407,7 +407,7 @@ export default function TeamPage() {
 
               <div className="grid grid-cols-2 gap-4 mt-6 relative">
                 <div className="col-span-2 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold">Configuración de Capacidad</h3>
+                  <h3 className="text-sm font-semibold">{t.capacityConfig}</h3>
                   {((selectedMember.maxCapacity !== undefined && selectedMember.maxCapacity !== 40 && selectedMember.maxCapacity !== 0) || 
                     (selectedMember.baseCapacity !== undefined && selectedMember.baseCapacity !== Math.round((selectedMember.maxCapacity ?? 40) * 0.8) && selectedMember.baseCapacity !== 0)) && (
                     <Button 
@@ -416,12 +416,12 @@ export default function TeamPage() {
                       className="h-7 text-xs text-muted-foreground hover:text-foreground"
                       onClick={() => setResetCapacityConfirm(true)}
                     >
-                      <RotateCcw className="h-3 w-3 mr-1" /> Restablecer
+                      <RotateCcw className="h-3 w-3 mr-1" /> {t.resetCapacity}
                     </Button>
                   )}
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">Capacidad Máxima (h/sem)</Label>
+                  <Label className="text-xs text-muted-foreground">{t.maxCapacity}</Label>
                   <Input 
                     type="number" 
                     min={0}
