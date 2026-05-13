@@ -373,15 +373,15 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
             <ScrollArea className="h-[400px] mt-4 pr-4">
               {selectedCellData && selectedCellData.tasks.length > 0 ? (
                 <div className="space-y-4">
-                  {selectedCellData.tasks.map(t => (
-                    <div key={t.id} className="p-4 rounded-lg border bg-card text-card-foreground shadow-sm">
+                  {selectedCellData.tasks.map(task => (
+                    <div key={task.id} className="p-4 rounded-lg border bg-card text-card-foreground shadow-sm">
                       <div className="flex flex-col gap-2">
-                        <p className="font-medium">[{t.id}] {t.title}</p>
+                        <p className="font-medium">[{task.id}] {task.title}</p>
                         <div className="flex items-center gap-2">
-                          <Badge variant="secondary">{t.state}</Badge>
-                          <Badge variant="outline">{t.workItemType}</Badge>
+                          <Badge variant="secondary">{task.state}</Badge>
+                          <Badge variant="outline">{task.workItemType}</Badge>
                           <span className="text-sm font-semibold ml-auto">
-                            {t.effortHours.replace("{hours}", String(t.remainingWork || t.effort || t.originalEstimate || 0))}
+                            {t.effortHours.replace("{hours}", String(task.remainingWork || task.effort || task.originalEstimate || 0))}
                           </span>
                         </div>
                       </div>

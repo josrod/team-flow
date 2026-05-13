@@ -973,7 +973,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-medium text-muted-foreground min-w-[8rem]">
-                  Áreas (Features y Tareas)
+                  {t.adoAreas}
                 </span>
                 <Badge
                   variant={configuredAreaPaths.length > 0 ? "default" : "secondary"}
@@ -1011,7 +1011,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-medium text-muted-foreground min-w-[8rem]">
-                  Iteraciones (Tareas)
+                  {t.iterationsTasks}
                 </span>
                 <Badge
                   variant={configuredIterationPaths.length > 0 ? "default" : "secondary"}
@@ -1315,7 +1315,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{featureStats.total}</p>
-                  <p className="text-xs text-muted-foreground">Features</p>
+                  <p className="text-xs text-muted-foreground">{t.features}</p>
                 </div>
               </div>
             </CardContent>
@@ -1370,7 +1370,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
           </CardHeader>
           <CardContent>
             {filteredFeatures.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-6 text-center">No hay features para mostrar.</p>
+              <p className="text-sm text-muted-foreground py-6 text-center">{t.noFeaturesToShow}</p>
             ) : (
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {filteredFeatures.map((f) => {
