@@ -186,4 +186,46 @@ describe("Language Switching", () => {
     expect(screen.getByRole("heading", { name: translations.en.features, level: 1 })).toBeInTheDocument();
     expect(screen.queryAllByText(translations.en.featuresSubtitle).length).toBeGreaterThan(0);
   });
+
+  it("should toggle language back and forth correctly on Tasks page", async () => {
+    render(
+      <MemoryRouter initialEntries={["/tasks"]}>
+        <LanguageProvider>
+          <ThemeProvider>
+            <AppProvider>
+              <AppLayout>
+                <Routes>
+                  <Route path="/tasks" element={<FeaturesPage view="tasks" />} />
+                </Routes>
+              </AppLayout>
+            </AppProvider>
+          </ThemeProvider>
+        </LanguageProvider>
+      </MemoryRouter>
+    );
+
+    // 1. Initial state is ES
+    expect(screen.getByRole("link", { name: new RegExp(translations.es.tasks, "i") })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: translations.es.tasks, level: 1 })).toBeInTheDocument();
+    expect(screen.getByText(translations.es.tasksSubtitle)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^ES$/ })).toBeInTheDocument();
+
+    // 2. Toggle to EN
+    fireEvent.click(screen.getByRole("button", { name: /^ES$/ }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^EN$/ })).toBeInTheDocument();
+    });
+    expect(screen.getByRole("link", { name: new RegExp(translations.en.tasks, "i") })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: translations.en.tasks, level: 1 })).toBeInTheDocument();
+    expect(screen.getByText(translations.en.tasksSubtitle)).toBeInTheDocument();
+
+    // 3. Toggle back to ES
+    fireEvent.click(screen.getByRole("button", { name: /^EN$/ }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^ES$/ })).toBeInTheDocument();
+    });
+    expect(screen.getByRole("link", { name: new RegExp(translations.es.tasks, "i") })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: translations.es.tasks, level: 1 })).toBeInTheDocument();
+    expect(screen.getByText(translations.es.tasksSubtitle)).toBeInTheDocument();
+  });
 });
