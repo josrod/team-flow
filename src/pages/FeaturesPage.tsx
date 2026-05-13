@@ -97,6 +97,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       : "Visión general del trabajo en curso del proyecto.";
   const { teams, members, workTopics } = useApp();
   const { user } = useAuth();
+  const { t } = useLang();
 
   const [source, setSource] = useState<DataSource>("local");
   const [loading, setLoading] = useState(false);
