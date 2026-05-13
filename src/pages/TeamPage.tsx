@@ -375,7 +375,7 @@ export default function TeamPage() {
                           maxLength={50}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
-                              if (editRoleValue.trim().length < 2) { toast.error("El rol debe tener al menos 2 caracteres"); return; }
+                              if (editRoleValue.trim().length < 2) { toast.error(t.errRoleMinLength); return; }
                               const updated = { ...selectedMember, role: editRoleValue.trim() };
                               updateMember(updated);
                               setSelectedMember(updated);
