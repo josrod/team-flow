@@ -86,7 +86,7 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
       ws.push({
         start: wStart,
         end: wEnd,
-        label: `Semana ${wStart.getDate()}/${wStart.getMonth() + 1}`,
+        label: t.weekDate.replace("{date}", `${wStart.getDate()}/${wStart.getMonth() + 1}`),
         isoStart: wStart.toISOString().split("T")[0],
         isoEnd: wEnd.toISOString().split("T")[0]
       });
@@ -199,22 +199,22 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
     <Card className="border-primary/20 shadow-sm mt-6">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <CardTitle className="text-xl font-display">Carga de Trabajo y Disponibilidad</CardTitle>
+          <CardTitle className="text-xl font-display">{t.workloadAndCapacity}</CardTitle>
           <div className="flex items-center gap-3">
             <Popover open={memberSelectOpen} onOpenChange={setMemberSelectOpen}>
               <PopoverTrigger asChild>
                 <Button variant="outline" role="combobox" className="w-[200px] justify-between h-9 text-sm">
                   {selectedMemberIds.length === 0 
-                    ? "Todos los miembros" 
-                    : `${selectedMemberIds.length} seleccionados`}
+                    ? t.allMembers 
+                    : t.selectedCount.replace("{count}", String(selectedMemberIds.length))}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[200px] p-0" align="end">
                 <Command>
-                  <CommandInput placeholder="Buscar miembro..." />
+                  <CommandInput placeholder={t.searchMember} />
                   <CommandList>
-                    <CommandEmpty>No hay resultados.</CommandEmpty>
+                    <CommandEmpty>{t.noResults}</CommandEmpty>
                     <CommandGroup>
                       <CommandItem
                         onSelect={() => {
@@ -223,7 +223,7 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
                         }}
                       >
                         <Check className={cn("mr-2 h-4 w-4", selectedMemberIds.length === 0 ? "opacity-100" : "opacity-0")} />
-                        Todos los miembros
+                        {t.allMembers}
                       </CommandItem>
                       {members.map((m) => (
                         <CommandItem
@@ -272,12 +272,12 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
             
             <Select value={String(weeksCount)} onValueChange={(val) => setWeeksCount(Number(val))}>
               <SelectTrigger className="w-[130px] h-9 text-sm">
-                <SelectValue placeholder="Semanas" />
+                <SelectValue placeholder={t.weeks} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="2">2 Semanas</SelectItem>
-                <SelectItem value="4">4 Semanas</SelectItem>
-                <SelectItem value="6">6 Semanas</SelectItem>
+                <SelectItem value="2">{t.nWeeks.replace("{count}", "2")}</SelectItem>
+                <SelectItem value="4">{t.nWeeks.replace("{count}", "4")}</SelectItem>
+                <SelectItem value="6">{t.nWeeks.replace("{count}", "6")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -287,7 +287,7 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[250px]">Miembro</TableHead>
+              <TableHead className="w-[250px]">{t.member}</TableHead>
               {weeks.map(w => (
                 <TableHead key={w.isoStart} className="text-center">{w.label}</TableHead>
               ))}
@@ -381,7 +381,7 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
                           <Badge variant="secondary">{t.state}</Badge>
                           <Badge variant="outline">{t.workItemType}</Badge>
                           <span className="text-sm font-semibold ml-auto">
-                            Esfuerzo: {t.remainingWork || t.effort || t.originalEstimate || 0}h
+                            {t.effortHours.replace("{hours}", String(t.remainingWork || t.effort || t.originalEstimate || 0))}
                           </span>
                         </div>
                       </div>
@@ -389,7 +389,7 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground py-8">No hay tareas asignadas para esta semana.</p>
+                <p className="text-center text-muted-foreground py-8">{t.noTasksThisWeek}</p>
               )}
             </ScrollArea>
           </DialogContent>
