@@ -2072,7 +2072,7 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink }: Tas
             className="h-7 gap-1 text-xs"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
-            aria-label={open ? "Ocultar handover" : "Añadir handover"}
+            aria-label={open ? t.hideHandover : t.addHandover}
           >
             {open ? <ChevronUp className="h-3.5 w-3.5" /> : <MessageSquarePlus className="h-3.5 w-3.5" />}
             {open ? "Cerrar" : "Handover"}
