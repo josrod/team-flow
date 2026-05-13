@@ -1652,7 +1652,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   onChange={(e) => setTaskSort(e.target.value as typeof taskSort)}
                   className="h-8 rounded-md border border-border/60 bg-background px-2 text-xs"
                 >
-                  <option value="total-desc">Más tareas</option>
+                  <option value="total-desc">{t.moreTasks}</option>
                   <option value="total-asc">Menos tareas</option>
                   <option value="name-asc">Nombre A→Z</option>
                   <option value="name-desc">Nombre Z→A</option>
