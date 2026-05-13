@@ -1736,7 +1736,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                         <TableHeader>
                           <TableRow>
                             <TableHead className="w-[60px]">#</TableHead>
-                            <TableHead>Título</TableHead>
+                            <TableHead>{t.title}</TableHead>
                             <TableHead className="w-[100px]">Tipo</TableHead>
                             <TableHead className="w-[120px]">Estado</TableHead>
                             <TableHead className="w-[180px]">Asignado a</TableHead>
