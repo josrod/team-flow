@@ -295,7 +295,7 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
           </TableHeader>
           <TableBody>
             {rodatMembers.map(member => {
-              const relevantTasksCount = tasks.filter(t => t.assignedTo === member.name && (showAllTasks ? isActiveTask(t.state) : isTaskInProgress(t.state))).length;
+              const relevantTasksCount = taskCountsByMember[member.name] || 0;
               return (
               <TableRow key={member.id}>
                 <TableCell className="font-medium">
