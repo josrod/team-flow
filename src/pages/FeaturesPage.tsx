@@ -1748,14 +1748,14 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredTasks.slice(0, 100).map((t) => {
-                            const norm = normalizeState(t.state);
+                          {filteredTasks.slice(0, 100).map((task) => {
+                            const norm = normalizeState(task.state);
                             return (
-                              <TableRow key={t.id}>
-                                <TableCell className="font-mono text-xs text-muted-foreground">{t.id}</TableCell>
-                                <TableCell className="font-medium text-sm">{t.title}</TableCell>
+                              <TableRow key={task.id}>
+                                <TableCell className="font-mono text-xs text-muted-foreground">{task.id}</TableCell>
+                                <TableCell className="font-medium text-sm">{task.title}</TableCell>
                                 <TableCell>
-                                  <Badge variant="outline" className="text-[10px]">{t.type}</Badge>
+                                  <Badge variant="outline" className="text-[10px]">{task.type}</Badge>
                                 </TableCell>
                                 <TableCell>
                                   <span
@@ -1763,21 +1763,21 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     style={{ background: `${stateColorVar[norm]}20`, color: stateColorVar[norm] }}
                                   >
                                     <span className="h-1.5 w-1.5 rounded-full" style={{ background: stateColorVar[norm] }} />
-                                    {t.state}
+                                    {task.state}
                                   </span>
                                 </TableCell>
                                 <TableCell className="text-sm">
-                                  {t.assignee || <span className="text-muted-foreground italic">{t.unassigned}</span>}
+                                  {task.assignee || <span className="text-muted-foreground italic">{t.unassigned}</span>}
                                 </TableCell>
                                 {source === "tfs" && tfsBaseUrl && (
                                   <TableCell className="text-right">
                                     <div className="flex items-center justify-end gap-0.5">
                                       <Button asChild size="icon" variant="ghost" className="h-7 w-7" title="Abrir en Azure DevOps">
                                         <a
-                                          href={`${tfsBaseUrl}/_workitems/edit/${t.id}`}
+                                          href={`${tfsBaseUrl}/_workitems/edit/${task.id}`}
                                           target="_blank"
                                           rel="noopener noreferrer"
-                                          aria-label={`Abrir tarea ${t.id} en Azure DevOps`}
+                                          aria-label={`Abrir tarea ${task.id} en Azure DevOps`}
                                         >
                                           <ExternalLink className="h-3.5 w-3.5" />
                                         </a>
@@ -1787,8 +1787,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                         variant="ghost"
                                         className="h-7 w-7"
                                         title="Copiar enlace"
-                                        aria-label={t.copyLinkTask.replace("{id}", t.id)}
-                                        onClick={() => copyWorkItemLink(t.id, "tarea")}
+                                        aria-label={t.copyLinkTask.replace("{id}", task.id)}
+                                        onClick={() => copyWorkItemLink(task.id, "tarea")}
                                       >
                                         <Copy className="h-3.5 w-3.5" />
                                       </Button>
@@ -1974,6 +1974,7 @@ interface PersonComboboxProps {
 
 function PersonCombobox({ value, onChange, people }: PersonComboboxProps) {
   const [open, setOpen] = useState(false);
+  const { t } = useLang();
   const isAll = value === "all";
   const label = isAll ? t.allPersonsCount.replace("{count}", String(people.length)) : value;
 
