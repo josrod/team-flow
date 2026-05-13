@@ -885,7 +885,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
             )}
           >
             <Loader2 className="h-3 w-3 animate-spin" />
-            <span>Precargando áreas…</span>
+            <span>{t.preloadingAreas}</span>
           </div>
           {/* Fallback warning — shown when prefetch failed but we still have
               a cached set of area paths keeping the selector usable. */}
