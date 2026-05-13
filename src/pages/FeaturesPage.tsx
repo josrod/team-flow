@@ -1190,12 +1190,12 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                             icon: <MapPinOff className="h-3.5 w-3.5" />,
                             label: `Tareas fuera del área (${scopeCheck.tasksOutOfArea.length})`,
                             reason: `Esperado bajo ${effectiveAreaPaths.join(" o ")}`,
-                            items: scopeCheck.tasksOutOfArea.map((t) => ({
-                              id: t.id,
+                            items: scopeCheck.tasksOutOfArea.map((task) => ({
+                              id: task.id,
                               type: "Tarea" as const,
-                              title: t.title,
+                              title: task.title,
                               detailLabel: "Área",
-                              detailValue: t.areaPath ?? t.noArea,
+                              detailValue: task.areaPath ?? t.noArea,
                             })),
                           },
                           {
