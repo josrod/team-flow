@@ -15,6 +15,8 @@ import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, Command
 import { Button } from "@/components/ui/button";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 import {
   Table,
