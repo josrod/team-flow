@@ -242,6 +242,8 @@ const translations = {
     hideHandover: "Ocultar handover",
     addHandover: "Añadir handover",
     generalOverview: "Visión general del trabajo en curso del proyecto.",
+    workloadSubtitle: "Disponibilidad y carga de trabajo agrupada por semana (solo tareas In Progress).",
+    taskDetailInProgress: "Detalle de Tareas (In Progress) - {name}",
     addTeam: "Añadir equipo",
     ongoing: "En curso",
     upcomingStatus: "Próximo",
