@@ -1118,7 +1118,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <p className="text-sm font-medium">
                     {scopeCheck.ok
                       ? "Alcance verificado"
-                      : "Elementos fuera del alcance ocultos automáticamente"}
+                      : t.outOfScopeHidden}
                   </p>
                   {effectiveAreaPaths.map((p) => (
                     <Badge key={`area-${p}`} variant="outline" className="gap-1 font-mono text-[11px]">
