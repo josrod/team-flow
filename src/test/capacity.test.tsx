@@ -223,5 +223,17 @@ describe("Capacity Management", () => {
       // The pending (20h) and done (5h) should not be included by default
       expect(screen.queryAllByText("32h").length).toBe(0);
     });
+
+    // Open the cell details to check the order/list of tasks
+    const cellWith12h = screen.getAllByText("12h")[0].closest("td");
+    fireEvent.click(cellWith12h!);
+
+    // Modal should show only "Task 1" and "Task 2"
+    await waitFor(() => {
+      expect(screen.queryAllByText("[1] Task 1").length).toBeGreaterThan(0);
+      expect(screen.queryAllByText("[2] Task 2").length).toBeGreaterThan(0);
+      expect(screen.queryAllByText("[3] Task 3").length).toBe(0);
+      expect(screen.queryAllByText("[4] Task 4").length).toBe(0);
+    });
   });
 });
