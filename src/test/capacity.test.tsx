@@ -82,9 +82,6 @@ const TestMatrixWrapper = ({ initialTasks = [] }: { initialTasks?: TfsWorkItem[]
     </AppProvider>
   );
 };
-    </AppProvider>
-  );
-};
 
 describe("Capacity Management", () => {
   beforeEach(() => {
