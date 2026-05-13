@@ -258,7 +258,7 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
           </TableHeader>
           <TableBody>
             {rodatMembers.map(member => {
-              const memberInProgressTasksCount = tasks.filter(t => t.assignedTo === member.name && isTaskInProgress(t.state)).length;
+              const relevantTasksCount = tasks.filter(t => t.assignedTo === member.name && (showAllTasks ? isActiveTask(t.state) : isTaskInProgress(t.state))).length;
               return (
               <TableRow key={member.id}>
                 <TableCell className="font-medium">
@@ -268,9 +268,9 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
                     </Avatar>
                     <div className="flex flex-col min-w-0">
                       <span className="truncate" title={member.name}>{member.name}</span>
-                      {memberInProgressTasksCount > 0 && (
+                      {relevantTasksCount > 0 && (
                         <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                          {t.inProgressTasksCount.replace("{count}", String(memberInProgressTasksCount))}
+                          {(showAllTasks ? t.allTasksCount : t.inProgressTasksCount).replace("{count}", String(relevantTasksCount))}
                         </span>
                       )}
                     </div>
