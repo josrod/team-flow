@@ -1523,8 +1523,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Distribución por estado</CardTitle>
-              <CardDescription>Qué se está ejecutando ahora mismo</CardDescription>
+              <CardTitle className="text-base">{t.statusDistribution}</CardTitle>
+              <CardDescription>{t.statusDistributionDesc}</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={240}>
