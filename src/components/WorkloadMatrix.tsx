@@ -103,7 +103,7 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
     const memberName = rodatMembers.find(m => m.id === memberId)?.name;
     const memberTasks = tasks.filter(t => 
       t.assignedTo === memberName && 
-      t.state.toLowerCase() === "in progress"
+      isTaskInProgress(t.state)
     );
     
     let effortForWeek = 0;
