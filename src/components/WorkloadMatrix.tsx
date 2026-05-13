@@ -30,6 +30,7 @@ interface WorkloadMatrixProps {
 }
 
 export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
+  const { t } = useLang();
   const { members, absences } = useApp();
   const [selectedCell, setSelectedCell] = useState<{ memberId: string; weekStart: string; weekEnd: string } | null>(null);
   const [taskDueDates, setTaskDueDates] = useState<Record<string, string>>({});
