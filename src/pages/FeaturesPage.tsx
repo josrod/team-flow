@@ -429,7 +429,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         settings = data ?? undefined;
       }
       if (!settings?.server_url || !settings?.collection || !settings?.project || !settings?.pat_encrypted) {
-        setTfsError("Configuración de Azure DevOps incompleta. Mostrando datos locales.");
+        setTfsError(t.errIncompleteAdoConfig);
         setSource("local");
         return;
       }
