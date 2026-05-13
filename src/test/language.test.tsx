@@ -84,13 +84,13 @@ describe("Language Switching", () => {
     expect(screen.getByText("Trabajo asignado por persona, abierto y en progreso.")).toBeInTheDocument();
 
     // Toggle language
-    const langBtn = screen.getByRole("button", { name: /ES/i });
+    const langBtn = screen.getByRole("button", { name: /^ES$/ });
     fireEvent.click(langBtn);
 
     // Wait for translation
     await waitFor(() => {
       // Button should say EN
-      expect(screen.getByRole("button", { name: /EN/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /^EN$/ })).toBeInTheDocument();
     });
 
     // Check English
@@ -130,12 +130,12 @@ describe("Language Switching", () => {
     expect(screen.getByRole("heading", { name: "Carga de Trabajo y Disponibilidad" })).toBeInTheDocument();
 
     // Toggle language
-    const langBtn = screen.getByRole("button", { name: /ES/i });
+    const langBtn = screen.getByRole("button", { name: /^ES$/ });
     fireEvent.click(langBtn);
 
     // Wait for EN
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /EN/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /^EN$/ })).toBeInTheDocument();
     });
 
     // Check English
