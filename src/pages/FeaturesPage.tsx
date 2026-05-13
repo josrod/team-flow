@@ -90,7 +90,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const pageTitle = view === "workload" ? "Carga & Capacidad" : view === "tasks" ? "Tareas" : view === "features" ? "Features" : "Features & Tareas";
   const pageSubtitle =
     view === "workload"
-      ? "Disponibilidad y carga de trabajo agrupada por semana (solo tareas In Progress)."
+      ? t.workloadSubtitle
       : view === "tasks"
       ? "Trabajo asignado por persona, abierto y en progreso."
       : view === "features"
