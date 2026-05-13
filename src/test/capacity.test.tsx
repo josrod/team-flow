@@ -221,7 +221,7 @@ describe("Capacity Management", () => {
     // Total 'In Progress' hours = 8 + 4 = 12h
     await waitFor(() => {
       // It should display exactly '2 In Progress'
-      expect(screen.queryAllByText("2 In Progress").length).toBeGreaterThan(0);
+      expect(screen.queryAllByText(en.inProgressTasksCount.replace("{count}", "2")).length).toBeGreaterThan(0);
       
       // And the total effort rendered in the matrix cell should be 12h
       expect(screen.queryAllByText("12h").length).toBeGreaterThan(0);
