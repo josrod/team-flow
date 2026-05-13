@@ -187,7 +187,7 @@ describe("Capacity Management", () => {
     fireEvent.click(resetButton);
     
     // Wait for confirmation dialog and click the confirm button
-    const confirmReset = await screen.findByRole("button", { name: "Reset" });
+    const confirmReset = await screen.findByRole("button", { name: en.resetCapacity });
     fireEvent.click(confirmReset);
     
     // The capacity input should go back to 40
