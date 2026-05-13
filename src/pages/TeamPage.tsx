@@ -348,7 +348,7 @@ export default function TeamPage() {
                           }}
                         />
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                          if (editNameValue.trim().length < 2) { toast.error("El nombre debe tener al menos 2 caracteres"); return; }
+                          if (editNameValue.trim().length < 2) { toast.error(t.errNameMinLength); return; }
                           const updated = { ...selectedMember, name: editNameValue.trim() };
                           updateMember(updated);
                           setSelectedMember(updated);
