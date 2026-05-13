@@ -742,7 +742,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const workloadByPerson = useMemo(() => {
     const map: Record<string, { active: number; pending: number; done: number; blocked: number }> = {};
     filteredTasks.forEach((t) => {
-      const name = t.assignee || "Sin asignar";
+      const name = t.assignee || t.unassigned;
       if (!map[name]) map[name] = { active: 0, pending: 0, done: 0, blocked: 0 };
       map[name][normalizeState(t.state)]++;
     });
@@ -783,7 +783,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
     filteredTasks.forEach((t) => {
       const norm = normalizeState(t.state);
       if (!stateFilter.has(norm)) return;
-      const key = t.assignee || "Sin asignar";
+      const key = t.assignee || t.unassigned;
       if (!map.has(key)) map.set(key, { active: [], pending: [], blocked: [], done: [] });
       map.get(key)![norm].push(t);
     });
@@ -793,8 +793,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       total: v.active.length + v.pending.length + v.blocked.length + v.done.length,
     }));
     arr.sort((a, b) => {
-      if (a.person === "Sin asignar") return 1;
-      if (b.person === "Sin asignar") return -1;
+      if (a.person === t.unassigned) return 1;
+      if (b.person === t.unassigned) return -1;
       switch (taskSort) {
         case "total-asc": return a.total - b.total;
         case "name-asc": return a.person.localeCompare(b.person);
@@ -858,9 +858,9 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         document.execCommand("copy");
         document.body.removeChild(textarea);
       }
-      toast.success(`Enlace de la ${type} #${id} copiado`);
+      toast.success(t.linkCopied.replace("{type}", type).replace("{id}", id));
     } catch {
-      toast.error("No se pudo copiar el enlace");
+      toast.error(t.linkCopyFailed);
     }
   };
 
@@ -930,7 +930,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
               <div className="space-y-1">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Layers className="h-4 w-4 text-muted-foreground" aria-hidden />
-                  Alcance efectivo
+                  {t.effectiveScope}
                 </CardTitle>
                 <CardDescription className="text-xs">
                   {t.filtersApplied}
@@ -1052,7 +1052,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 when TFS returned items outside the scope. */}
             <div className="flex flex-wrap items-center gap-2 border-t pt-3">
               <span className="text-xs font-medium text-muted-foreground">
-                Resultado con este alcance
+                {t.resultWithScope}
               </span>
               <Badge variant="secondary" className="gap-1.5">
                 <Layers className="h-3 w-3" aria-hidden />
@@ -1140,11 +1140,11 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                     </>
                   ) : (
                     <>
-                      Mostrando {scopeCheck.featuresTotal} de {scopeCheck.featuresRawTotal} features
+                      {t.showingXofYFeatures.replace("{x}", String(scopeCheck.featuresTotal)).replace("{y}", String(scopeCheck.featuresRawTotal))}
                       {" "}y {scopeCheck.tasksTotal} de {scopeCheck.tasksRawTotal} tareas.
-                      {" "}Excluidas: {scopeCheck.featuresOutOfArea.length} features fuera del área,
-                      {" "}{scopeCheck.tasksOutOfArea.length} tareas fuera del área,
-                      {" "}{scopeCheck.tasksOutOfIteration.length} tareas fuera de la iteración.
+                      {" "}{t.excludedOutOfAreaFeatures.replace("{count}", String(scopeCheck.featuresOutOfArea.length))}
+                      {" "}{t.excludedOutOfAreaTasks.replace("{count}", String(scopeCheck.tasksOutOfArea.length))}
+                      {" "}{t.excludedOutOfIterTasks.replace("{count}", String(scopeCheck.tasksOutOfIteration.length))}
                     </>
                   )}
                 </p>
