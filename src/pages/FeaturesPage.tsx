@@ -1939,7 +1939,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
 
       {showWorkload && (
         <section className="space-y-6">
-          <WorkloadMatrix tasks={tfsTasksRaw} />
+          <WorkloadMatrix tasks={tfsTasksRaw} showAllTasks={showAllWorkloadTasks} onShowAllTasksChange={setShowAllWorkloadTasks} />
         </section>
       )}
 
