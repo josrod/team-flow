@@ -895,11 +895,11 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
             <Badge
               variant="outline"
               className="gap-1.5 border-status-vacation/40 text-status-vacation"
-              title="No se pudo actualizar la lista de áreas del equipo. Se está usando la última versión en caché."
+              title={t.errTeamAreasUpdate}
               aria-live="polite"
             >
               <AlertTriangle className="h-3 w-3" />
-              <span className="text-xs">Usando caché</span>
+              <span className="text-xs">{t.usingCache}</span>
             </Badge>
           )}
           {tfsConnConfigured && (
