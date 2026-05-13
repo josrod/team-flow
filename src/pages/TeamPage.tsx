@@ -91,23 +91,23 @@ export default function TeamPage() {
 
   const handleBulkEdit = () => {
     if (bulkSelectedMembers.length === 0) {
-      toast.error("Selecciona al menos un miembro");
+      toast.error(t.errSelectMember);
       return;
     }
     const maxVal = bulkMaxCapacity === "" ? undefined : parseInt(bulkMaxCapacity);
     const baseVal = bulkBaseCapacity === "" ? undefined : parseInt(bulkBaseCapacity);
     
     if (maxVal !== undefined && (isNaN(maxVal) || maxVal < 0)) {
-      toast.error("Capacidad máxima inválida");
+      toast.error(t.errInvalidMaxCapacity);
       return;
     }
     if (baseVal !== undefined && (isNaN(baseVal) || baseVal < 0)) {
-      toast.error("Capacidad base inválida");
+      toast.error(t.errInvalidBaseCapacity);
       return;
     }
     
     if (maxVal !== undefined && baseVal !== undefined && baseVal > maxVal) {
-      toast.error("La capacidad base no puede ser mayor que la capacidad máxima");
+      toast.error(t.errBaseGtMax);
       return;
     }
 
