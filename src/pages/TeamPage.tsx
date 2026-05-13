@@ -449,7 +449,7 @@ export default function TeamPage() {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">Capacidad Base (h/sem)</Label>
+                  <Label className="text-xs text-muted-foreground">{t.baseCapacity}</Label>
                   <Input 
                     type="number" 
                     min={0}
