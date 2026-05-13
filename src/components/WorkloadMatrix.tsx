@@ -222,6 +222,16 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
                 </Command>
               </PopoverContent>
             </Popover>
+            <div className="flex items-center space-x-2 mr-2">
+              <Switch 
+                id="show-all-tasks" 
+                checked={showAllTasks} 
+                onCheckedChange={onShowAllTasksChange} 
+              />
+              <Label htmlFor="show-all-tasks" className="text-sm font-normal cursor-pointer">
+                {showAllTasks ? t.allTasks : t.onlyInProgress}
+              </Label>
+            </div>
             
             <Select value={String(weeksCount)} onValueChange={(val) => setWeeksCount(Number(val))}>
               <SelectTrigger className="w-[130px] h-9 text-sm">
