@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
+import { useLang } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -82,6 +83,7 @@ interface FeaturesPageProps {
 }
 
 export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
+  const { t } = useLang();
   const showFeatures = view === "all" || view === "features";
   const showTasks = view === "all" || view === "tasks";
   const showWorkload = view === "workload";
@@ -93,7 +95,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       ? "Trabajo asignado por persona, abierto y en progreso."
       : view === "features"
       ? "Iniciativas del proyecto y su progreso global."
-      : "Visión general del trabajo en curso del proyecto.";
+      : t.generalOverview;
   const { teams, members, workTopics } = useApp();
   const { user } = useAuth();
 
@@ -427,7 +429,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         settings = data ?? undefined;
       }
       if (!settings?.server_url || !settings?.collection || !settings?.project || !settings?.pat_encrypted) {
-        setTfsError("Configuración de Azure DevOps incompleta. Mostrando datos locales.");
+        setTfsError(t.errIncompleteAdoConfig);
         setSource("local");
         return;
       }
@@ -885,7 +887,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
             )}
           >
             <Loader2 className="h-3 w-3 animate-spin" />
-            <span>Precargando áreas…</span>
+            <span>{t.preloadingAreas}</span>
           </div>
           {/* Fallback warning — shown when prefetch failed but we still have
               a cached set of area paths keeping the selector usable. */}
@@ -893,11 +895,11 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
             <Badge
               variant="outline"
               className="gap-1.5 border-status-vacation/40 text-status-vacation"
-              title="No se pudo actualizar la lista de áreas del equipo. Se está usando la última versión en caché."
+              title={t.errTeamAreasUpdate}
               aria-live="polite"
             >
               <AlertTriangle className="h-3 w-3" />
-              <span className="text-xs">Usando caché</span>
+              <span className="text-xs">{t.usingCache}</span>
             </Badge>
           )}
           {tfsConnConfigured && (
@@ -1116,7 +1118,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <p className="text-sm font-medium">
                     {scopeCheck.ok
                       ? "Alcance verificado"
-                      : "Elementos fuera del alcance ocultos automáticamente"}
+                      : t.outOfScopeHidden}
                   </p>
                   {effectiveAreaPaths.map((p) => (
                     <Badge key={`area-${p}`} variant="outline" className="gap-1 font-mono text-[11px]">
@@ -1179,7 +1181,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                               type: "Feature" as const,
                               title: f.title,
                               detailLabel: "Área",
-                              detailValue: f.areaPath ?? "(sin área)",
+                              detailValue: f.areaPath ?? t.noArea,
                             })),
                           },
                           {
@@ -1188,12 +1190,12 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                             icon: <MapPinOff className="h-3.5 w-3.5" />,
                             label: `Tareas fuera del área (${scopeCheck.tasksOutOfArea.length})`,
                             reason: `Esperado bajo ${effectiveAreaPaths.join(" o ")}`,
-                            items: scopeCheck.tasksOutOfArea.map((t) => ({
-                              id: t.id,
+                            items: scopeCheck.tasksOutOfArea.map((task) => ({
+                              id: task.id,
                               type: "Tarea" as const,
-                              title: t.title,
+                              title: task.title,
                               detailLabel: "Área",
-                              detailValue: t.areaPath ?? "(sin área)",
+                              detailValue: task.areaPath ?? t.noArea,
                             })),
                           },
                           {
@@ -1202,12 +1204,12 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                             icon: <CalendarOff className="h-3.5 w-3.5" />,
                             label: `Tareas fuera de la iteración (${scopeCheck.tasksOutOfIteration.length})`,
                             reason: `Esperado bajo ${effectiveIterationPaths.join(" o ")}`,
-                            items: scopeCheck.tasksOutOfIteration.map((t) => ({
-                              id: t.id,
+                            items: scopeCheck.tasksOutOfIteration.map((task) => ({
+                              id: task.id,
                               type: "Tarea" as const,
-                              title: t.title,
+                              title: task.title,
                               detailLabel: "Iteración",
-                              detailValue: t.iterationPath ?? "(sin iteración)",
+                              detailValue: task.iterationPath ?? t.noIteration,
                             })),
                           },
                         ])
@@ -1247,7 +1249,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       </Badge>
                                       <div className="min-w-0 flex-1">
                                         <p className="truncate text-foreground" title={it.title}>
-                                          {it.title || "(sin título)"}
+                                          {it.title || t.noTitle}
                                         </p>
                                         <p
                                           className="truncate font-mono text-[11px] text-muted-foreground"
@@ -1521,8 +1523,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Distribución por estado</CardTitle>
-              <CardDescription>Qué se está ejecutando ahora mismo</CardDescription>
+              <CardTitle className="text-base">{t.statusDistribution}</CardTitle>
+              <CardDescription>{t.statusDistributionDesc}</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={240}>
@@ -1553,7 +1555,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
               <CardTitle className="text-base flex items-center gap-2">
                 <UsersIcon className="h-4 w-4" /> Carga por persona
               </CardTitle>
-              <CardDescription>Top {workloadByPerson.length} con más tareas</CardDescription>
+              <CardDescription>{t.topTasks.replace('{count}', String(workloadByPerson.length))}</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={240}>
@@ -1606,11 +1608,11 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                     <Badge
                       variant="outline"
                       className="gap-1 border-status-vacation/40 text-status-vacation"
-                      title="No se pudo actualizar la lista de personas. Se está mostrando el último listado en caché."
+                      title={t.errPeopleUpdate}
                       aria-live="polite"
                     >
                       <AlertTriangle className="h-3 w-3" />
-                      <span className="text-[10px]">Caché</span>
+                      <span className="text-[10px]">{t.cache}</span>
                     </Badge>
                   )}
                 </div>
@@ -1650,7 +1652,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   onChange={(e) => setTaskSort(e.target.value as typeof taskSort)}
                   className="h-8 rounded-md border border-border/60 bg-background px-2 text-xs"
                 >
-                  <option value="total-desc">Más tareas</option>
+                  <option value="total-desc">{t.moreTasks}</option>
                   <option value="total-asc">Menos tareas</option>
                   <option value="name-asc">Nombre A→Z</option>
                   <option value="name-desc">Nombre Z→A</option>
@@ -1734,7 +1736,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                         <TableHeader>
                           <TableRow>
                             <TableHead className="w-[60px]">#</TableHead>
-                            <TableHead>Título</TableHead>
+                            <TableHead>{t.title}</TableHead>
                             <TableHead className="w-[100px]">Tipo</TableHead>
                             <TableHead className="w-[120px]">Estado</TableHead>
                             <TableHead className="w-[180px]">Asignado a</TableHead>
@@ -1892,7 +1894,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                 <TableHeader>
                                   <TableRow>
                                     <TableHead className="w-[60px]">#</TableHead>
-                                    <TableHead>Título</TableHead>
+                                    <TableHead>{t.title}</TableHead>
                                     <TableHead className="w-[100px]">Tipo</TableHead>
                                     <TableHead className="w-[140px]">Estado</TableHead>
                                     <TableHead className="w-[120px] text-right">Handover</TableHead>
@@ -2044,6 +2046,7 @@ interface TaskRowWithHandoverProps {
 
 function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink }: TaskRowWithHandoverProps) {
   const [open, setOpen] = useState(false);
+  const { t } = useLang();
   const showActions = source === "tfs" && !!tfsBaseUrl;
   const colSpan = 5 + (showActions ? 1 : 0);
   return (
@@ -2070,7 +2073,7 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink }: Tas
             className="h-7 gap-1 text-xs"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
-            aria-label={open ? "Ocultar handover" : "Añadir handover"}
+            aria-label={open ? t.hideHandover : t.addHandover}
           >
             {open ? <ChevronUp className="h-3.5 w-3.5" /> : <MessageSquarePlus className="h-3.5 w-3.5" />}
             {open ? "Cerrar" : "Handover"}

@@ -220,7 +220,7 @@ export default function TeamPage() {
 
       <Dialog open={bulkEditOpen} onOpenChange={setBulkEditOpen}>
         <DialogContent className="max-w-xl">
-          <DialogHeader><DialogTitle>Edición en Bloque de Capacidades</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t.bulkCapacityEditTitle}</DialogTitle></DialogHeader>
           <div className="space-y-6 mt-2">
             <div>
               <Label className="mb-2 block">Miembros ({bulkSelectedMembers.length} seleccionados)</Label>

@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BookOpen, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
+import { useLang } from "@/context/LanguageContext";
 
 interface TfsCorsGuideDialogProps {
   origin: string;
@@ -47,6 +48,7 @@ const CodeBlock = ({ code }: { code: string }) => {
 };
 
 export const TfsCorsGuideDialog = ({ origin }: TfsCorsGuideDialogProps) => {
+  const { t } = useLang();
   const iisWebConfig = `<!-- web.config en la raíz del sitio TFS -->
 <configuration>
   <system.webServer>
@@ -157,8 +159,8 @@ location / {
 
         <div className="border-t pt-3 mt-2 space-y-1.5 text-xs text-muted-foreground">
           <p>
-            <strong className="text-foreground">Cómo verificar:</strong> abre DevTools → Network,
-            pulsa <em>Probar conexión</em> y comprueba que la petición OPTIONS (preflight) recibe{" "}
+            <strong className="text-foreground">{t.checkHowTo}</strong> abre DevTools → Network,
+            {t.checkCorsDetails}{" "}
             <code className="bg-muted px-1 rounded">204</code> con la cabecera{" "}
             <code className="bg-muted px-1 rounded">Access-Control-Allow-Origin</code>.
           </p>
