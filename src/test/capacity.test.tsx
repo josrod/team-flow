@@ -51,6 +51,13 @@ vi.mock("@/context/LanguageContext", () => ({
       confirmMoveDesc: "Move {name} to {team}?",
       cancel: "Cancel",
       confirm: "Confirm",
+      resetCapacityConfirmTitle: "Reset capacity?",
+      resetCapacityConfirmDesc: "Are you sure you want to reset {name}'s capacity?",
+      capacityConfig: "Capacity Configuration",
+      maxCapacity: "Max Capacity (h/week)",
+      baseCapacity: "Base Capacity (h/week)",
+      resetCapacity: "Reset",
+      undo: "Undo"
     }
   })
 }));
