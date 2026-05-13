@@ -75,13 +75,13 @@ describe("Language Switching", () => {
 
     // Default is ES
     // Sidebar items
-    expect(screen.getByRole("link", { name: /Tareas/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: new RegExp(translations.es.tasks, "i") })).toBeInTheDocument();
     
     // Page Title
-    expect(screen.getByRole("heading", { name: "Tareas", level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: translations.es.tasks, level: 1 })).toBeInTheDocument();
     
     // Page Subtitle
-    expect(screen.getByText("Trabajo asignado por persona, abierto y en progreso.")).toBeInTheDocument();
+    expect(screen.getByText(translations.es.tasksSubtitle)).toBeInTheDocument();
 
     // Toggle language
     const langBtn = screen.getByRole("button", { name: /^ES$/ });
@@ -94,9 +94,9 @@ describe("Language Switching", () => {
     });
 
     // Check English
-    expect(screen.getByRole("link", { name: /Tasks/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Tasks", level: 1 })).toBeInTheDocument();
-    expect(screen.getByText("Assigned work per person, open and in progress.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: new RegExp(translations.en.tasks, "i") })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: translations.en.tasks, level: 1 })).toBeInTheDocument();
+    expect(screen.getByText(translations.en.tasksSubtitle)).toBeInTheDocument();
   });
 
   it("should translate Workload page titles and sidebar when switching language", async () => {
