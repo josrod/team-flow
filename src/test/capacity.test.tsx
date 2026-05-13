@@ -6,6 +6,8 @@ import { WorkloadMatrix } from "@/components/WorkloadMatrix";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { TfsWorkItem } from "@/services/tfs";
 import { useState } from "react";
+import { translations } from "@/context/LanguageContext";
+
 // Mock resize observer
 window.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
@@ -30,44 +32,18 @@ vi.mock("@/context/AuthContext", () => ({
   })
 }));
 
-// Mock LanguageContext
-vi.mock("@/context/LanguageContext", () => ({
-  useLang: () => ({
-    t: {
-      teamNotFound: "Team not found",
-      members: "Members",
-      add: "Add",
-      newMember: "New Member",
-      name: "Name",
-      role: "Role",
-      search: "Search",
-      all: "All",
-      available: "Available",
-      vacation: "Vacation",
-      sickLeave: "Sick Leave",
-      team: "Team",
-      workTopics: "Work Topics",
-      addTopic: "Add Topic",
-      confirmMove: "Move member?",
-      confirmMoveDesc: "Move {name} to {team}?",
-      cancel: "Cancel",
-      confirm: "Confirm",
-      resetCapacityConfirmTitle: "Reset capacity?",
-      resetCapacityConfirmDesc: "Are you sure you want to reset {name}'s capacity?",
-      capacityConfig: "Capacity Configuration",
-      maxCapacity: "Max Capacity (h/week)",
-      baseCapacity: "Base Capacity (h/week)",
-      resetCapacity: "Reset",
-      undo: "Undo",
-      taskDetailInProgress: "Task Details (In Progress) - {name}",
-      taskDetailAll: "Task Details (All) - {name}",
-      inProgressTasksCount: "{count} In Progress",
-      allTasksCount: "{count} Tasks",
-      onlyInProgress: "Only In Progress",
-      allTasks: "All tasks",
-    }
-  })
-}));
+// Mock LanguageContext using real translations for assertions
+vi.mock("@/context/LanguageContext", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/context/LanguageContext")>();
+  return {
+    ...actual,
+    useLang: () => ({
+      lang: "en" as const,
+      toggleLang: vi.fn(),
+      t: actual.translations.en,
+    })
+  };
+});
 
 const TestMatrixWrapper = ({ initialTasks = [] }: { initialTasks?: TfsWorkItem[] }) => {
   const [showAllTasks, setShowAllTasks] = useState(false);
@@ -104,7 +80,7 @@ describe("Capacity Management", () => {
     // Check effort indicator for "Carlos" (10h from 'In Progress' task)
     await waitFor(() => {
       // It should display '1 In Progress' label
-      expect(screen.queryAllByText("1 In Progress").length).toBeGreaterThan(0);
+      expect(screen.queryAllByText(translations.en.inProgressTasksCount.replace("{count}", "1")).length).toBeGreaterThan(0);
       // And the total effort rendered in the matrix cell should be 10h
       expect(screen.queryAllByText("10h").length).toBeGreaterThan(0);
     });
@@ -115,7 +91,7 @@ describe("Capacity Management", () => {
 
     // Modal should show only "Task 1" and the title should indicate "In Progress"
     await waitFor(() => {
-      expect(screen.queryByText("Task Details (In Progress) - Carlos")).not.toBeNull();
+      expect(screen.queryByText(translations.en.taskDetailInProgress.replace("{name}", "Carlos"))).not.toBeNull();
       expect(screen.queryAllByText("[1] Task 1").length).toBeGreaterThan(0);
       expect(screen.queryAllByText("[2] Task 2").length).toBe(0);
       expect(screen.queryAllByText("[3] Task 3").length).toBe(0);
@@ -126,7 +102,7 @@ describe("Capacity Management", () => {
     fireEvent.keyDown(activeDialog, { key: "Escape", code: "Escape" });
     await waitFor(() => {
       // The task detail modal should be closed
-      expect(screen.queryByText("Task Details (In Progress) - Carlos")).toBeNull();
+      expect(screen.queryByText(translations.en.taskDetailInProgress.replace("{name}", "Carlos"))).toBeNull();
     });
 
     // Now toggle the switch to show all tasks
@@ -136,7 +112,7 @@ describe("Capacity Management", () => {
 
     // Effort should now be 15h (10h In Progress + 5h Pending) - Done tasks are excluded because of isActiveTask
     await waitFor(() => {
-      expect(screen.queryAllByText("2 Tasks").length).toBeGreaterThan(0); // Label changes to "{count} Tasks"
+      expect(screen.queryAllByText(translations.en.allTasksCount.replace("{count}", "2")).length).toBeGreaterThan(0); // Label changes to "{count} Tasks"
       expect(screen.queryAllByText("15h").length).toBeGreaterThan(0);
     });
 
@@ -146,7 +122,7 @@ describe("Capacity Management", () => {
 
     // Modal should show Task 1 and Task 2 and the title should indicate "All"
     await waitFor(() => {
-      expect(screen.queryByText("Task Details (All) - Carlos")).not.toBeNull();
+      expect(screen.queryByText(translations.en.taskDetailAll.replace("{name}", "Carlos"))).not.toBeNull();
       expect(screen.queryAllByText("[1] Task 1").length).toBeGreaterThan(0);
       expect(screen.queryAllByText("[2] Task 2").length).toBeGreaterThan(0);
       expect(screen.queryAllByText("[3] Task 3").length).toBe(0);
@@ -183,7 +159,7 @@ describe("Capacity Management", () => {
     fireEvent.click(resetButton);
     
     // Wait for confirmation dialog and click the confirm button
-    const confirmReset = await screen.findByRole("button", { name: "Reset" });
+    const confirmReset = await screen.findByRole("button", { name: translations.en.resetCapacity });
     fireEvent.click(confirmReset);
     
     // The capacity input should go back to 40
@@ -217,7 +193,7 @@ describe("Capacity Management", () => {
     // Total 'In Progress' hours = 8 + 4 = 12h
     await waitFor(() => {
       // It should display exactly '2 In Progress'
-      expect(screen.queryAllByText("2 In Progress").length).toBeGreaterThan(0);
+      expect(screen.queryAllByText(translations.en.inProgressTasksCount.replace("{count}", "2")).length).toBeGreaterThan(0);
       
       // And the total effort rendered in the matrix cell should be 12h
       expect(screen.queryAllByText("12h").length).toBeGreaterThan(0);

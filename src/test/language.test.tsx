@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
-import { LanguageProvider } from "@/context/LanguageContext";
+import { LanguageProvider, translations } from "@/context/LanguageContext";
 import { AppProvider } from "@/context/AppContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AppLayout } from "@/components/AppLayout";
@@ -75,13 +75,13 @@ describe("Language Switching", () => {
 
     // Default is ES
     // Sidebar items
-    expect(screen.getByRole("link", { name: /Tareas/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: new RegExp(translations.es.tasks, "i") })).toBeInTheDocument();
     
     // Page Title
-    expect(screen.getByRole("heading", { name: "Tareas", level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: translations.es.tasks, level: 1 })).toBeInTheDocument();
     
     // Page Subtitle
-    expect(screen.getByText("Trabajo asignado por persona, abierto y en progreso.")).toBeInTheDocument();
+    expect(screen.getByText(translations.es.tasksSubtitle)).toBeInTheDocument();
 
     // Toggle language
     const langBtn = screen.getByRole("button", { name: /^ES$/ });
@@ -94,9 +94,9 @@ describe("Language Switching", () => {
     });
 
     // Check English
-    expect(screen.getByRole("link", { name: /Tasks/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Tasks", level: 1 })).toBeInTheDocument();
-    expect(screen.getByText("Assigned work per person, open and in progress.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: new RegExp(translations.en.tasks, "i") })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: translations.en.tasks, level: 1 })).toBeInTheDocument();
+    expect(screen.getByText(translations.en.tasksSubtitle)).toBeInTheDocument();
   });
 
   it("should translate Workload page titles and sidebar when switching language", async () => {
@@ -118,16 +118,16 @@ describe("Language Switching", () => {
 
     // Default is ES
     // Sidebar
-    expect(screen.getByRole("link", { name: /Carga & Capacidad/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: new RegExp(translations.es.workload, "i") })).toBeInTheDocument();
     
     // Page Title
-    expect(screen.getByRole("heading", { name: "Carga & Capacidad", level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: translations.es.workload, level: 1 })).toBeInTheDocument();
     
     // Page Subtitle
-    expect(screen.getByText("Disponibilidad y carga de trabajo agrupada por semana (solo tareas In Progress).")).toBeInTheDocument();
+    expect(screen.getByText(translations.es.workloadSubtitle)).toBeInTheDocument();
 
     // Inside WorkloadMatrix
-    expect(screen.getByRole("heading", { name: "Carga de Trabajo y Disponibilidad" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: translations.es.workloadAndCapacity })).toBeInTheDocument();
 
     // Toggle language
     const langBtn = screen.getByRole("button", { name: /^ES$/ });
@@ -139,9 +139,9 @@ describe("Language Switching", () => {
     });
 
     // Check English
-    expect(screen.getByRole("link", { name: /Workload & Capacity/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Workload & Capacity", level: 1 })).toBeInTheDocument();
-    expect(screen.getByText("Availability and workload grouped by week (only In Progress tasks).")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Workload and Availability" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: new RegExp(translations.en.workload, "i") })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: translations.en.workload, level: 1 })).toBeInTheDocument();
+    expect(screen.getByText(translations.en.workloadSubtitle)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: translations.en.workloadAndCapacity })).toBeInTheDocument();
   });
 });

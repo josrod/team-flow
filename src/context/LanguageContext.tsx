@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState } from "react";
 
 type Lang = "es" | "en";
 
-const translations = {
+export const translations = {
   es: {
     dashboard: "Dashboard",
     dashboardDesc: "Resumen general de tus equipos",
