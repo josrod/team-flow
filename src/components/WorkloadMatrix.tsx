@@ -45,9 +45,21 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
 
   // Consider all members for the team workload
   const rodatMembers = useMemo(() => {
-    if (selectedMemberIds.length === 0) return members;
-    return members.filter((m) => selectedMemberIds.includes(m.id));
-  }, [members, selectedMemberIds]);
+    let result = members;
+    if (selectedMemberIds.length > 0) {
+      result = members.filter((m) => selectedMemberIds.includes(m.id));
+    }
+    
+    if (sortOrder !== "default") {
+      result = [...result].sort((a, b) => {
+        const countA = tasks.filter(t => t.assignedTo === a.name && (showAllTasks ? isActiveTask(t.state) : isTaskInProgress(t.state))).length;
+        const countB = tasks.filter(t => t.assignedTo === b.name && (showAllTasks ? isActiveTask(t.state) : isTaskInProgress(t.state))).length;
+        return sortOrder === "tasks-asc" ? countA - countB : countB - countA;
+      });
+    }
+    
+    return result;
+  }, [members, selectedMemberIds, sortOrder, tasks, showAllTasks]);
 
   const weeks = useMemo(() => {
     const today = new Date();
