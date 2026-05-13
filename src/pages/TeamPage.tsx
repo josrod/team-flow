@@ -124,7 +124,7 @@ export default function TeamPage() {
     });
 
     if (hasConflict) {
-      toast.error("Para algunos miembros, la nueva configuración hace que la capacidad base supere a la máxima. Revisa los valores.");
+      toast.error(t.errBulkConflict);
       return;
     }
 
