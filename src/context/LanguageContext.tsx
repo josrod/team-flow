@@ -515,6 +515,7 @@ const translations = {
     generalOverview: "General overview of the project's ongoing work.",
     workloadSubtitle: "Availability and workload grouped by week (only In Progress tasks).",
     taskDetailInProgress: "Task Details (In Progress) - {name}",
+    inProgressTasksCount: "{count} In Progress",
     addTeam: "Add team",
     ongoing: "Ongoing",
     upcomingStatus: "Upcoming",
