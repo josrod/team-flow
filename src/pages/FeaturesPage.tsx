@@ -933,7 +933,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   Alcance efectivo
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Filtros aplicados a las consultas de Features y Tareas. Cámbialos en Ajustes › Azure DevOps.
+                  {t.filtersApplied}
                 </CardDescription>
               </div>
               <Button
@@ -973,7 +973,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-medium text-muted-foreground min-w-[8rem]">
-                  Áreas (Features y Tareas)
+                  {t.adoAreas}
                 </span>
                 <Badge
                   variant={configuredAreaPaths.length > 0 ? "default" : "secondary"}
@@ -1011,7 +1011,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-medium text-muted-foreground min-w-[8rem]">
-                  Iteraciones (Tareas)
+                  {t.iterationsTasks}
                 </span>
                 <Badge
                   variant={configuredIterationPaths.length > 0 ? "default" : "secondary"}
@@ -1056,11 +1056,11 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
               </span>
               <Badge variant="secondary" className="gap-1.5">
                 <Layers className="h-3 w-3" aria-hidden />
-                {scopeCheck.featuresTotal} {scopeCheck.featuresTotal === 1 ? "feature" : "features"}
+                {scopeCheck.featuresTotal === 1 ? t.featureCount.replace("{count}", String(scopeCheck.featuresTotal)) : t.featuresCount.replace("{count}", String(scopeCheck.featuresTotal))}
               </Badge>
               <Badge variant="secondary" className="gap-1.5">
                 <ListChecks className="h-3 w-3" aria-hidden />
-                {scopeCheck.tasksTotal} {scopeCheck.tasksTotal === 1 ? "tarea" : "tareas"}
+                {scopeCheck.tasksTotal === 1 ? t.taskCount.replace("{count}", String(scopeCheck.tasksTotal)) : t.tasksCountPlural.replace("{count}", String(scopeCheck.tasksTotal))}
               </Badge>
               {!scopeCheck.ok && (
                 <Badge variant="outline" className="gap-1.5 text-muted-foreground">
@@ -1176,7 +1176,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                             key: "features-area",
                             groupKey: "featuresArea" as const,
                             icon: <MapPinOff className="h-3.5 w-3.5" />,
-                            label: `Features fuera del área (${scopeCheck.featuresOutOfArea.length})`,
+                            label: t.featuresOutOfArea.replace("{count}", String(scopeCheck.featuresOutOfArea.length)),
                             reason: `Esperado bajo ${effectiveAreaPaths.join(" o ")}`,
                             items: scopeCheck.featuresOutOfArea.map((f) => ({
                               id: f.id,
@@ -1190,7 +1190,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                             key: "tasks-area",
                             groupKey: "tasksArea" as const,
                             icon: <MapPinOff className="h-3.5 w-3.5" />,
-                            label: `Tareas fuera del área (${scopeCheck.tasksOutOfArea.length})`,
+                            label: t.tasksOutOfArea.replace("{count}", String(scopeCheck.tasksOutOfArea.length)),
                             reason: `Esperado bajo ${effectiveAreaPaths.join(" o ")}`,
                             items: scopeCheck.tasksOutOfArea.map((task) => ({
                               id: task.id,
@@ -1204,7 +1204,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                             key: "tasks-iteration",
                             groupKey: "tasksIteration" as const,
                             icon: <CalendarOff className="h-3.5 w-3.5" />,
-                            label: `Tareas fuera de la iteración (${scopeCheck.tasksOutOfIteration.length})`,
+                            label: t.tasksOutOfIteration.replace("{count}", String(scopeCheck.tasksOutOfIteration.length)),
                             reason: `Esperado bajo ${effectiveIterationPaths.join(" o ")}`,
                             items: scopeCheck.tasksOutOfIteration.map((task) => ({
                               id: task.id,
@@ -1315,7 +1315,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{featureStats.total}</p>
-                  <p className="text-xs text-muted-foreground">Features</p>
+                  <p className="text-xs text-muted-foreground">{t.features}</p>
                 </div>
               </div>
             </CardContent>
@@ -1364,13 +1364,13 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Layers className="h-4 w-4" /> Features del proyecto
+              <Layers className="h-4 w-4" /> {t.projectFeatures}
             </CardTitle>
-            <CardDescription>Progreso por feature con tareas asociadas</CardDescription>
+            <CardDescription>{t.featureProgress}</CardDescription>
           </CardHeader>
           <CardContent>
             {filteredFeatures.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-6 text-center">No hay features para mostrar.</p>
+              <p className="text-sm text-muted-foreground py-6 text-center">{t.noFeaturesToShow}</p>
             ) : (
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {filteredFeatures.map((f) => {
@@ -1555,7 +1555,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <UsersIcon className="h-4 w-4" /> Carga por persona
+                <UsersIcon className="h-4 w-4" /> {t.loadPerPerson}
               </CardTitle>
               <CardDescription>{t.topTasks.replace('{count}', String(workloadByPerson.length))}</CardDescription>
             </CardHeader>
@@ -1584,7 +1584,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <UsersIcon className="h-4 w-4" /> Tareas por persona
+                  <UsersIcon className="h-4 w-4" /> {t.tasksPerPerson}
                 </CardTitle>
                 <CardDescription>
                   {tasksByPerson.length} {tasksByPerson.length === 1 ? "persona" : "personas"} · filtrando {Array.from(stateFilter).map((k) => k === "active" ? "en progreso" : k === "pending" ? "pendientes" : k === "blocked" ? "bloqueadas" : "completadas").join(", ")}
