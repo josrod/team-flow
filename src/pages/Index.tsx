@@ -322,7 +322,7 @@ const Index = () => {
             >
               <CardContent className="p-6 text-center">
                 <Plus className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
-                <p className="text-sm text-muted-foreground">Añadir equipo</p>
+                <p className="text-sm text-muted-foreground">{t.addTeam}</p>
               </CardContent>
             </Card>
           )}
