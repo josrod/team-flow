@@ -75,8 +75,8 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
     let isMounted = true;
     const fetchDueDates = async () => {
       const newDueDates: Record<string, string> = {};
-      const inProgressTasks = tasks.filter(t => isTaskInProgress(t.state));
-      const tasksWithoutEffort = inProgressTasks.filter(t => !(t.remainingWork || t.effort || t.originalEstimate));
+      const relevantTasks = tasks.filter(t => showAllTasks ? isActiveTask(t.state) : isTaskInProgress(t.state));
+      const tasksWithoutEffort = relevantTasks.filter(t => !(t.remainingWork || t.effort || t.originalEstimate));
       
       const promises = tasksWithoutEffort.map(async (t) => {
         try {
@@ -101,7 +101,7 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
     }
 
     return () => { isMounted = false; };
-  }, [tasks]);
+  }, [tasks, showAllTasks]);
 
   const getEffortForWeek = (memberId: string, weekStartIso: string, weekEndIso: string) => {
     const memberName = rodatMembers.find(m => m.id === memberId)?.name;
