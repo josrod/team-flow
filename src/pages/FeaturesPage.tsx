@@ -1195,7 +1195,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                               type: "Tarea" as const,
                               title: t.title,
                               detailLabel: "Área",
-                              detailValue: t.areaPath ?? "(sin área)",
+                              detailValue: t.areaPath ?? t.noArea,
                             })),
                           },
                           {
