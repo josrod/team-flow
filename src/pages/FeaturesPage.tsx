@@ -1555,7 +1555,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
               <CardTitle className="text-base flex items-center gap-2">
                 <UsersIcon className="h-4 w-4" /> Carga por persona
               </CardTitle>
-              <CardDescription>Top {workloadByPerson.length} con más tareas</CardDescription>
+              <CardDescription>{t.topTasks.replace('{count}', String(workloadByPerson.length))}</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={240}>
