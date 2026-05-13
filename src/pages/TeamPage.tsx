@@ -338,7 +338,7 @@ export default function TeamPage() {
                           maxLength={100}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
-                              if (editNameValue.trim().length < 2) { toast.error("El nombre debe tener al menos 2 caracteres"); return; }
+                              if (editNameValue.trim().length < 2) { toast.error(t.errNameMinLength); return; }
                               const updated = { ...selectedMember, name: editNameValue.trim() };
                               updateMember(updated);
                               setSelectedMember(updated);
