@@ -41,6 +41,7 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
   const [weeksCount, setWeeksCount] = useState<number>(4);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [memberSelectOpen, setMemberSelectOpen] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"default" | "tasks-desc" | "tasks-asc">("default");
 
   // Consider all members for the team workload
   const rodatMembers = useMemo(() => {
