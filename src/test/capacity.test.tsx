@@ -51,6 +51,13 @@ vi.mock("@/context/LanguageContext", () => ({
       confirmMoveDesc: "Move {name} to {team}?",
       cancel: "Cancel",
       confirm: "Confirm",
+      resetCapacityConfirmTitle: "Reset capacity?",
+      resetCapacityConfirmDesc: "Are you sure you want to reset {name}'s capacity?",
+      capacityConfig: "Capacity Configuration",
+      maxCapacity: "Max Capacity (h/week)",
+      baseCapacity: "Base Capacity (h/week)",
+      resetCapacity: "Reset",
+      undo: "Undo"
     }
   })
 }));
@@ -82,7 +89,7 @@ describe("Capacity Management", () => {
     
     // Find capacity inputs
     const inputs = await screen.findAllByRole("spinbutton");
-    const maxCapacityInput = inputs.find(i => i.getAttribute("max") === "168" || i.previousElementSibling?.textContent?.includes("Capacidad Máxima"));
+    const maxCapacityInput = inputs.find(i => i.getAttribute("max") === "168" || i.previousElementSibling?.textContent?.includes("Max Capacity"));
     
     expect(maxCapacityInput).toBeDefined();
     
@@ -90,7 +97,7 @@ describe("Capacity Management", () => {
     fireEvent.change(maxCapacityInput!, { target: { value: "45" } });
     
     // Now the reset button should appear
-    const resetButtons = await screen.findAllByRole("button", { name: /Restablecer/i });
+    const resetButtons = await screen.findAllByRole("button", { name: /Reset/i });
     expect(resetButtons.length).toBeGreaterThan(0);
     const resetButton = resetButtons[0];
     
@@ -103,7 +110,7 @@ describe("Capacity Management", () => {
     fireEvent.click(resetButton);
     
     // Wait for confirmation dialog and click the confirm button
-    const confirmReset = await screen.findByRole("button", { name: "Restablecer" });
+    const confirmReset = await screen.findByRole("button", { name: "Reset" });
     fireEvent.click(confirmReset);
     
     // The capacity input should go back to 40

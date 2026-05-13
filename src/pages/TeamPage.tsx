@@ -91,23 +91,23 @@ export default function TeamPage() {
 
   const handleBulkEdit = () => {
     if (bulkSelectedMembers.length === 0) {
-      toast.error("Selecciona al menos un miembro");
+      toast.error(t.errSelectMember);
       return;
     }
     const maxVal = bulkMaxCapacity === "" ? undefined : parseInt(bulkMaxCapacity);
     const baseVal = bulkBaseCapacity === "" ? undefined : parseInt(bulkBaseCapacity);
     
     if (maxVal !== undefined && (isNaN(maxVal) || maxVal < 0)) {
-      toast.error("Capacidad máxima inválida");
+      toast.error(t.errInvalidMaxCapacity);
       return;
     }
     if (baseVal !== undefined && (isNaN(baseVal) || baseVal < 0)) {
-      toast.error("Capacidad base inválida");
+      toast.error(t.errInvalidBaseCapacity);
       return;
     }
     
     if (maxVal !== undefined && baseVal !== undefined && baseVal > maxVal) {
-      toast.error("La capacidad base no puede ser mayor que la capacidad máxima");
+      toast.error(t.errBaseGtMax);
       return;
     }
 
@@ -124,7 +124,7 @@ export default function TeamPage() {
     });
 
     if (hasConflict) {
-      toast.error("Para algunos miembros, la nueva configuración hace que la capacidad base supere a la máxima. Revisa los valores.");
+      toast.error(t.errBulkConflict);
       return;
     }
 
@@ -139,7 +139,7 @@ export default function TeamPage() {
       }
     });
 
-    toast.success(`Capacidad actualizada para ${bulkSelectedMembers.length} miembros`);
+    toast.success(t.capacityUpdated.replace('{count}', String(bulkSelectedMembers.length)));
     setBulkEditOpen(false);
     setBulkSelectedMembers([]);
     setBulkMaxCapacity("");
@@ -338,7 +338,7 @@ export default function TeamPage() {
                           maxLength={100}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
-                              if (editNameValue.trim().length < 2) { toast.error("El nombre debe tener al menos 2 caracteres"); return; }
+                              if (editNameValue.trim().length < 2) { toast.error(t.errNameMinLength); return; }
                               const updated = { ...selectedMember, name: editNameValue.trim() };
                               updateMember(updated);
                               setSelectedMember(updated);
@@ -348,7 +348,7 @@ export default function TeamPage() {
                           }}
                         />
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                          if (editNameValue.trim().length < 2) { toast.error("El nombre debe tener al menos 2 caracteres"); return; }
+                          if (editNameValue.trim().length < 2) { toast.error(t.errNameMinLength); return; }
                           const updated = { ...selectedMember, name: editNameValue.trim() };
                           updateMember(updated);
                           setSelectedMember(updated);
@@ -375,7 +375,7 @@ export default function TeamPage() {
                           maxLength={50}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
-                              if (editRoleValue.trim().length < 2) { toast.error("El rol debe tener al menos 2 caracteres"); return; }
+                              if (editRoleValue.trim().length < 2) { toast.error(t.errRoleMinLength); return; }
                               const updated = { ...selectedMember, role: editRoleValue.trim() };
                               updateMember(updated);
                               setSelectedMember(updated);
@@ -385,7 +385,7 @@ export default function TeamPage() {
                           }}
                         />
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
-                          if (editRoleValue.trim().length < 2) { toast.error("El rol debe tener al menos 2 caracteres"); return; }
+                          if (editRoleValue.trim().length < 2) { toast.error(t.errRoleMinLength); return; }
                           const updated = { ...selectedMember, role: editRoleValue.trim() };
                           updateMember(updated);
                           setSelectedMember(updated);
@@ -407,7 +407,7 @@ export default function TeamPage() {
 
               <div className="grid grid-cols-2 gap-4 mt-6 relative">
                 <div className="col-span-2 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold">Configuración de Capacidad</h3>
+                  <h3 className="text-sm font-semibold">{t.capacityConfig}</h3>
                   {((selectedMember.maxCapacity !== undefined && selectedMember.maxCapacity !== 40 && selectedMember.maxCapacity !== 0) || 
                     (selectedMember.baseCapacity !== undefined && selectedMember.baseCapacity !== Math.round((selectedMember.maxCapacity ?? 40) * 0.8) && selectedMember.baseCapacity !== 0)) && (
                     <Button 
@@ -416,12 +416,12 @@ export default function TeamPage() {
                       className="h-7 text-xs text-muted-foreground hover:text-foreground"
                       onClick={() => setResetCapacityConfirm(true)}
                     >
-                      <RotateCcw className="h-3 w-3 mr-1" /> Restablecer
+                      <RotateCcw className="h-3 w-3 mr-1" /> {t.resetCapacity}
                     </Button>
                   )}
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">Capacidad Máxima (h/sem)</Label>
+                  <Label className="text-xs text-muted-foreground">{t.maxCapacity}</Label>
                   <Input 
                     type="number" 
                     min={0}
@@ -438,7 +438,7 @@ export default function TeamPage() {
                       if (isNaN(val) || val < 0) return;
                       const currentBase = selectedMember.baseCapacity ?? Math.round((selectedMember.maxCapacity ?? 40) * 0.8);
                       if (val < currentBase) {
-                        toast.error("La capacidad máxima no puede ser menor que la base");
+                        toast.error(t.errMaxLtBase);
                         return;
                       }
                       const updated = { ...selectedMember, maxCapacity: val };
@@ -449,7 +449,7 @@ export default function TeamPage() {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">Capacidad Base (h/sem)</Label>
+                  <Label className="text-xs text-muted-foreground">{t.baseCapacity}</Label>
                   <Input 
                     type="number" 
                     min={0}
@@ -466,7 +466,7 @@ export default function TeamPage() {
                       if (isNaN(val) || val < 0) return;
                       const currentMax = selectedMember.maxCapacity ?? 40;
                       if (val > currentMax) {
-                        toast.error("La capacidad base no puede ser mayor que la máxima");
+                        toast.error(t.errBaseGtMaxSingle);
                         return;
                       }
                       const updated = { ...selectedMember, baseCapacity: val };
@@ -481,13 +481,13 @@ export default function TeamPage() {
               <AlertDialog open={resetCapacityConfirm} onOpenChange={setResetCapacityConfirm}>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>¿Restablecer capacidad?</AlertDialogTitle>
+                    <AlertDialogTitle>{t.resetCapacityConfirmTitle}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      ¿Estás seguro de que quieres restablecer la capacidad de {selectedMember.name} a los valores por defecto (Máx: 40h, Base: 32h)?
+                      {t.resetCapacityConfirmDesc.replace('{name}', selectedMember.name)}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
                     <AlertDialogAction 
                       onClick={() => {
                         const previousMax = selectedMember.maxCapacity;
@@ -495,9 +495,9 @@ export default function TeamPage() {
                         const updated = { ...selectedMember, maxCapacity: undefined, baseCapacity: undefined };
                         updateMember(updated);
                         setSelectedMember(updated);
-                        toast.success("Capacidad restablecida", {
+                        toast.success(t.capacityResetSuccess, {
                           action: {
-                            label: "Deshacer",
+                            label: t.undo,
                             onClick: () => {
                               const restored = { ...selectedMember, maxCapacity: previousMax, baseCapacity: previousBase };
                               updateMember(restored);
@@ -507,7 +507,7 @@ export default function TeamPage() {
                         });
                       }}
                     >
-                      Restablecer
+                      {t.resetCapacity}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
