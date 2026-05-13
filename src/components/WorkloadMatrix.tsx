@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useApp } from "@/context/AppContext";
+import { useLang } from "@/context/LanguageContext";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { TfsWorkItem } from "@/services/tfs";
@@ -29,6 +30,7 @@ interface WorkloadMatrixProps {
 }
 
 export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
+  const { t } = useLang();
   const { members, absences } = useApp();
   const [selectedCell, setSelectedCell] = useState<{ memberId: string; weekStart: string; weekEnd: string } | null>(null);
   const [taskDueDates, setTaskDueDates] = useState<Record<string, string>>({});
@@ -301,7 +303,7 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
-                Detalle de Tareas (In Progress) - {selectedCell && rodatMembers.find(m => m.id === selectedCell.memberId)?.name}
+                {t.taskDetailInProgress.replace("{name}", selectedCell ? rodatMembers.find(m => m.id === selectedCell.memberId)?.name || "" : "")}
               </DialogTitle>
               <DialogDescription>
                 {selectedCell && weeks.find(w => w.isoStart === selectedCell.weekStart)?.label}

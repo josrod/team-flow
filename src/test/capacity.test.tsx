@@ -57,7 +57,8 @@ vi.mock("@/context/LanguageContext", () => ({
       maxCapacity: "Max Capacity (h/week)",
       baseCapacity: "Base Capacity (h/week)",
       resetCapacity: "Reset",
-      undo: "Undo"
+      undo: "Undo",
+      taskDetailInProgress: "Task Details (In Progress) - {name}"
     }
   })
 }));
