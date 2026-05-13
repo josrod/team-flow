@@ -304,7 +304,8 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
                   );
                 })}
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
 
