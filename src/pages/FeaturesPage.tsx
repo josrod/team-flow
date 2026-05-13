@@ -83,6 +83,7 @@ interface FeaturesPageProps {
 }
 
 export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
+  const { t } = useLang();
   const showFeatures = view === "all" || view === "features";
   const showTasks = view === "all" || view === "tasks";
   const showWorkload = view === "workload";
