@@ -94,7 +94,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       ? "Trabajo asignado por persona, abierto y en progreso."
       : view === "features"
       ? "Iniciativas del proyecto y su progreso global."
-      : "Visión general del trabajo en curso del proyecto.";
+      : t.generalOverview;
   const { teams, members, workTopics } = useApp();
   const { user } = useAuth();
   const { t } = useLang();
