@@ -159,8 +159,8 @@ location / {
 
         <div className="border-t pt-3 mt-2 space-y-1.5 text-xs text-muted-foreground">
           <p>
-            <strong className="text-foreground">Cómo verificar:</strong> abre DevTools → Network,
-            pulsa <em>Probar conexión</em> y comprueba que la petición OPTIONS (preflight) recibe{" "}
+            <strong className="text-foreground">{t.checkHowTo}</strong> abre DevTools → Network,
+            {t.checkCorsDetails}{" "}
             <code className="bg-muted px-1 rounded">204</code> con la cabecera{" "}
             <code className="bg-muted px-1 rounded">Access-Control-Allow-Origin</code>.
           </p>
