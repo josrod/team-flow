@@ -481,13 +481,13 @@ export default function TeamPage() {
               <AlertDialog open={resetCapacityConfirm} onOpenChange={setResetCapacityConfirm}>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>¿Restablecer capacidad?</AlertDialogTitle>
+                    <AlertDialogTitle>{t.resetCapacityConfirmTitle}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      ¿Estás seguro de que quieres restablecer la capacidad de {selectedMember.name} a los valores por defecto (Máx: 40h, Base: 32h)?
+                      {t.resetCapacityConfirmDesc.replace('{name}', selectedMember.name)}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
                     <AlertDialogAction 
                       onClick={() => {
                         const previousMax = selectedMember.maxCapacity;
@@ -495,9 +495,9 @@ export default function TeamPage() {
                         const updated = { ...selectedMember, maxCapacity: undefined, baseCapacity: undefined };
                         updateMember(updated);
                         setSelectedMember(updated);
-                        toast.success("Capacidad restablecida", {
+                        toast.success(t.capacityResetSuccess, {
                           action: {
-                            label: "Deshacer",
+                            label: t.undo,
                             onClick: () => {
                               const restored = { ...selectedMember, maxCapacity: previousMax, baseCapacity: previousBase };
                               updateMember(restored);
@@ -507,7 +507,7 @@ export default function TeamPage() {
                         });
                       }}
                     >
-                      Restablecer
+                      {t.resetCapacity}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
