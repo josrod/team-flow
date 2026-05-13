@@ -1608,11 +1608,11 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                     <Badge
                       variant="outline"
                       className="gap-1 border-status-vacation/40 text-status-vacation"
-                      title="No se pudo actualizar la lista de personas. Se está mostrando el último listado en caché."
+                      title={t.errPeopleUpdate}
                       aria-live="polite"
                     >
                       <AlertTriangle className="h-3 w-3" />
-                      <span className="text-[10px]">Caché</span>
+                      <span className="text-[10px]">{t.cache}</span>
                     </Badge>
                   )}
                 </div>
