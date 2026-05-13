@@ -301,7 +301,7 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
-                Detalle de Tareas - {selectedCell && rodatMembers.find(m => m.id === selectedCell.memberId)?.name}
+                Detalle de Tareas (In Progress) - {selectedCell && rodatMembers.find(m => m.id === selectedCell.memberId)?.name}
               </DialogTitle>
               <DialogDescription>
                 {selectedCell && weeks.find(w => w.isoStart === selectedCell.weekStart)?.label}
