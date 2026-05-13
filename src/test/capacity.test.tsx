@@ -74,35 +74,35 @@ describe("Capacity Management", () => {
     render(<TestMatrixWrapper initialTasks={mockTasks} />);
     
     // Select first member in team page
-    const members = await scretranslations.en.findAllByText("Carlos");
+    const members = await screen.findAllByText("Carlos");
     fireEvent.click(members[0]);
 
     // Check effort indicator for "Carlos" (10h from 'In Progress' task)
     await waitFor(() => {
       // It should display '1 In Progress' label
-      expect(scretranslations.en.queryAllByText(translations.en.inProgressTasksCount.replace("{count}", "1")).length).toBeGreaterThan(0);
+      expect(screen.queryAllByText(translations.en.inProgressTasksCount.replace("{count}", "1")).length).toBeGreaterThan(0);
       // And the total effort rendered in the matrix cell should be 10h
-      expect(scretranslations.en.queryAllByText("10h").length).toBeGreaterThan(0);
+      expect(screen.queryAllByText("10h").length).toBeGreaterThan(0);
     });
 
     // Click on the matrix cell to open the modal
-    const cellWith10h = scretranslations.en.getAllByText("10h")[0].closest("td");
+    const cellWith10h = screen.getAllByText("10h")[0].closest("td");
     fireEvent.click(cellWith10h!);
 
     // Modal should show only "Task 1" and the title should indicate "In Progress"
     await waitFor(() => {
-      expect(scretranslations.en.queryByText(translations.en.taskDetailInProgress.replace("{name}", "Carlos"))).not.toBeNull();
-      expect(scretranslations.en.queryAllByText("[1] Task 1").length).toBeGreaterThan(0);
-      expect(scretranslations.en.queryAllByText("[2] Task 2").length).toBe(0);
-      expect(scretranslations.en.queryAllByText("[3] Task 3").length).toBe(0);
+      expect(screen.queryByText(translations.en.taskDetailInProgress.replace("{name}", "Carlos"))).not.toBeNull();
+      expect(screen.queryAllByText("[1] Task 1").length).toBeGreaterThan(0);
+      expect(screen.queryAllByText("[2] Task 2").length).toBe(0);
+      expect(screen.queryAllByText("[3] Task 3").length).toBe(0);
     });
 
     // Close the modal by pressing escape on the dialog itself
-    const activeDialog = scretranslations.en.getByRole("dialog");
+    const activeDialog = screen.getByRole("dialog");
     fireEvent.keyDown(activeDialog, { key: "Escape", code: "Escape" });
     await waitFor(() => {
       // The task detail modal should be closed
-      expect(scretranslations.en.queryByText(translations.en.taskDetailInProgress.replace("{name}", "Carlos"))).toBeNull();
+      expect(screen.queryByText(translations.en.taskDetailInProgress.replace("{name}", "Carlos"))).toBeNull();
     });
 
     // Now toggle the switch to show all tasks
@@ -112,20 +112,20 @@ describe("Capacity Management", () => {
 
     // Effort should now be 15h (10h In Progress + 5h Pending) - Done tasks are excluded because of isActiveTask
     await waitFor(() => {
-      expect(scretranslations.en.queryAllByText(translations.en.allTasksCount.replace("{count}", "2")).length).toBeGreaterThan(0); // Label changes to "{count} Tasks"
-      expect(scretranslations.en.queryAllByText("15h").length).toBeGreaterThan(0);
+      expect(screen.queryAllByText(translations.en.allTasksCount.replace("{count}", "2")).length).toBeGreaterThan(0); // Label changes to "{count} Tasks"
+      expect(screen.queryAllByText("15h").length).toBeGreaterThan(0);
     });
 
     // Click on the matrix cell again
-    const cellWith15h = scretranslations.en.getAllByText("15h")[0].closest("td");
+    const cellWith15h = screen.getAllByText("15h")[0].closest("td");
     fireEvent.click(cellWith15h!);
 
     // Modal should show Task 1 and Task 2 and the title should indicate "All"
     await waitFor(() => {
-      expect(scretranslations.en.queryByText(translations.en.taskDetailAll.replace("{name}", "Carlos"))).not.toBeNull();
-      expect(scretranslations.en.queryAllByText("[1] Task 1").length).toBeGreaterThan(0);
-      expect(scretranslations.en.queryAllByText("[2] Task 2").length).toBeGreaterThan(0);
-      expect(scretranslations.en.queryAllByText("[3] Task 3").length).toBe(0);
+      expect(screen.queryByText(translations.en.taskDetailAll.replace("{name}", "Carlos"))).not.toBeNull();
+      expect(screen.queryAllByText("[1] Task 1").length).toBeGreaterThan(0);
+      expect(screen.queryAllByText("[2] Task 2").length).toBeGreaterThan(0);
+      expect(screen.queryAllByText("[3] Task 3").length).toBe(0);
     });
   });
 
@@ -133,11 +133,11 @@ describe("Capacity Management", () => {
     render(<TestMatrixWrapper />);
     
     // Select first member in team page
-    const members = await scretranslations.en.findAllByText("Carlos"); // First mock member
+    const members = await screen.findAllByText("Carlos"); // First mock member
     fireEvent.click(members[0]);
     
     // Find capacity inputs
-    const inputs = await scretranslations.en.findAllByRole("spinbutton");
+    const inputs = await screen.findAllByRole("spinbutton");
     const maxCapacityInput = inputs.find(i => i.getAttribute("max") === "168" || i.previousElementSibling?.textContent?.includes("Max Capacity"));
     
     expect(maxCapacityInput).toBeDefined();
@@ -146,20 +146,20 @@ describe("Capacity Management", () => {
     fireEvent.change(maxCapacityInput!, { target: { value: "45" } });
     
     // Now the reset button should appear
-    const resetButtons = await scretranslations.en.findAllByRole("button", { name: /Reset/i });
+    const resetButtons = await screen.findAllByRole("button", { name: /Reset/i });
     expect(resetButtons.length).toBeGreaterThan(0);
     const resetButton = resetButtons[0];
     
     // Verify matrix reflects the changed capacity (4 weeks = at least 4 cells)
     await waitFor(() => {
-      expect(scretranslations.en.queryAllByText("M:45h").length).toBeGreaterThan(0);
+      expect(screen.queryAllByText("M:45h").length).toBeGreaterThan(0);
     });
     
     // Click reset
     fireEvent.click(resetButton);
     
     // Wait for confirmation dialog and click the confirm button
-    const confirmReset = await scretranslations.en.findByRole("button", { name: translations.en.resetCapacity });
+    const confirmReset = await screen.findByRole("button", { name: translations.en.resetCapacity });
     fireEvent.click(confirmReset);
     
     // The capacity input should go back to 40
@@ -169,8 +169,8 @@ describe("Capacity Management", () => {
     
     // The matrix should reflect the default max capacity (40h) again
     await waitFor(() => {
-      expect(scretranslations.en.queryAllByText("M:40h").length).toBeGreaterThan(0);
-      expect(scretranslations.en.queryAllByText("M:45h").length).toBe(0);
+      expect(screen.queryAllByText("M:40h").length).toBeGreaterThan(0);
+      expect(screen.queryAllByText("M:45h").length).toBe(0);
     });
   });
 
@@ -185,7 +185,7 @@ describe("Capacity Management", () => {
     render(<TestMatrixWrapper initialTasks={mockTasks} />);
     
     // Select first member in team page
-    const members = await scretranslations.en.findAllByText("Carlos");
+    const members = await screen.findAllByText("Carlos");
     fireEvent.click(members[0]);
 
     // Check effort indicator for "Carlos"
@@ -193,25 +193,25 @@ describe("Capacity Management", () => {
     // Total 'In Progress' hours = 8 + 4 = 12h
     await waitFor(() => {
       // It should display exactly '2 In Progress'
-      expect(scretranslations.en.queryAllByText(translations.en.inProgressTasksCount.replace("{count}", "2")).length).toBeGreaterThan(0);
+      expect(screen.queryAllByText(translations.en.inProgressTasksCount.replace("{count}", "2")).length).toBeGreaterThan(0);
       
       // And the total effort rendered in the matrix cell should be 12h
-      expect(scretranslations.en.queryAllByText("12h").length).toBeGreaterThan(0);
+      expect(screen.queryAllByText("12h").length).toBeGreaterThan(0);
       
       // The pending (20h) and done (5h) should not be included by default
-      expect(scretranslations.en.queryAllByText("32h").length).toBe(0);
+      expect(screen.queryAllByText("32h").length).toBe(0);
     });
 
     // Open the cell details to check the order/list of tasks
-    const cellWith12h = scretranslations.en.getAllByText("12h")[0].closest("td");
+    const cellWith12h = screen.getAllByText("12h")[0].closest("td");
     fireEvent.click(cellWith12h!);
 
     // Modal should show only "Task 1" and "Task 2"
     await waitFor(() => {
-      expect(scretranslations.en.queryAllByText("[1] Task 1").length).toBeGreaterThan(0);
-      expect(scretranslations.en.queryAllByText("[2] Task 2").length).toBeGreaterThan(0);
-      expect(scretranslations.en.queryAllByText("[3] Task 3").length).toBe(0);
-      expect(scretranslations.en.queryAllByText("[4] Task 4").length).toBe(0);
+      expect(screen.queryAllByText("[1] Task 1").length).toBeGreaterThan(0);
+      expect(screen.queryAllByText("[2] Task 2").length).toBeGreaterThan(0);
+      expect(screen.queryAllByText("[3] Task 3").length).toBe(0);
+      expect(screen.queryAllByText("[4] Task 4").length).toBe(0);
     });
   });
 });
