@@ -139,7 +139,7 @@ export default function TeamPage() {
       }
     });
 
-    toast.success(`Capacidad actualizada para ${bulkSelectedMembers.length} miembros`);
+    toast.success(t.capacityUpdated.replace('{count}', String(bulkSelectedMembers.length)));
     setBulkEditOpen(false);
     setBulkSelectedMembers([]);
     setBulkMaxCapacity("");
