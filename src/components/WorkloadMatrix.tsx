@@ -3,7 +3,7 @@ import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { TfsWorkItem, isTaskInProgress } from "@/services/tfs";
+import { TfsWorkItem, isTaskInProgress, isActiveTask } from "@/services/tfs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
