@@ -69,7 +69,8 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
     let isMounted = true;
     const fetchDueDates = async () => {
       const newDueDates: Record<string, string> = {};
-      const tasksWithoutEffort = tasks.filter(t => !(t.remainingWork || t.effort || t.originalEstimate));
+      const inProgressTasks = tasks.filter(t => t.state.toLowerCase() === "in progress");
+      const tasksWithoutEffort = inProgressTasks.filter(t => !(t.remainingWork || t.effort || t.originalEstimate));
       
       const promises = tasksWithoutEffort.map(async (t) => {
         try {
