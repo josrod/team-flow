@@ -108,7 +108,7 @@ describe("Capacity Management", () => {
     // Check effort indicator for "Carlos" (10h from 'In Progress' task)
     await waitFor(() => {
       // It should display '1 In Progress' label
-      expect(screen.queryAllByText("1 In Progress").length).toBeGreaterThan(0);
+      expect(screen.queryAllByText(en.inProgressTasksCount.replace("{count}", "1")).length).toBeGreaterThan(0);
       // And the total effort rendered in the matrix cell should be 10h
       expect(screen.queryAllByText("10h").length).toBeGreaterThan(0);
     });
@@ -119,7 +119,7 @@ describe("Capacity Management", () => {
 
     // Modal should show only "Task 1" and the title should indicate "In Progress"
     await waitFor(() => {
-      expect(screen.queryByText("Task Details (In Progress) - Carlos")).not.toBeNull();
+      expect(screen.queryByText(en.taskDetailInProgress.replace("{name}", "Carlos"))).not.toBeNull();
       expect(screen.queryAllByText("[1] Task 1").length).toBeGreaterThan(0);
       expect(screen.queryAllByText("[2] Task 2").length).toBe(0);
       expect(screen.queryAllByText("[3] Task 3").length).toBe(0);
@@ -130,7 +130,7 @@ describe("Capacity Management", () => {
     fireEvent.keyDown(activeDialog, { key: "Escape", code: "Escape" });
     await waitFor(() => {
       // The task detail modal should be closed
-      expect(screen.queryByText("Task Details (In Progress) - Carlos")).toBeNull();
+      expect(screen.queryByText(en.taskDetailInProgress.replace("{name}", "Carlos"))).toBeNull();
     });
 
     // Now toggle the switch to show all tasks
@@ -140,7 +140,7 @@ describe("Capacity Management", () => {
 
     // Effort should now be 15h (10h In Progress + 5h Pending) - Done tasks are excluded because of isActiveTask
     await waitFor(() => {
-      expect(screen.queryAllByText("2 Tasks").length).toBeGreaterThan(0); // Label changes to "{count} Tasks"
+      expect(screen.queryAllByText(en.allTasksCount.replace("{count}", "2")).length).toBeGreaterThan(0); // Label changes to "{count} Tasks"
       expect(screen.queryAllByText("15h").length).toBeGreaterThan(0);
     });
 
@@ -150,7 +150,7 @@ describe("Capacity Management", () => {
 
     // Modal should show Task 1 and Task 2 and the title should indicate "All"
     await waitFor(() => {
-      expect(screen.queryByText("Task Details (All) - Carlos")).not.toBeNull();
+      expect(screen.queryByText(en.taskDetailAll.replace("{name}", "Carlos"))).not.toBeNull();
       expect(screen.queryAllByText("[1] Task 1").length).toBeGreaterThan(0);
       expect(screen.queryAllByText("[2] Task 2").length).toBeGreaterThan(0);
       expect(screen.queryAllByText("[3] Task 3").length).toBe(0);
