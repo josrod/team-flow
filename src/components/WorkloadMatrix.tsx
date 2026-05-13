@@ -41,12 +41,25 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
   const [weeksCount, setWeeksCount] = useState<number>(4);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [memberSelectOpen, setMemberSelectOpen] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"default" | "tasks-desc" | "tasks-asc">("default");
 
   // Consider all members for the team workload
   const rodatMembers = useMemo(() => {
-    if (selectedMemberIds.length === 0) return members;
-    return members.filter((m) => selectedMemberIds.includes(m.id));
-  }, [members, selectedMemberIds]);
+    let result = members;
+    if (selectedMemberIds.length > 0) {
+      result = members.filter((m) => selectedMemberIds.includes(m.id));
+    }
+    
+    if (sortOrder !== "default") {
+      result = [...result].sort((a, b) => {
+        const countA = tasks.filter(t => t.assignedTo === a.name && (showAllTasks ? isActiveTask(t.state) : isTaskInProgress(t.state))).length;
+        const countB = tasks.filter(t => t.assignedTo === b.name && (showAllTasks ? isActiveTask(t.state) : isTaskInProgress(t.state))).length;
+        return sortOrder === "tasks-asc" ? countA - countB : countB - countA;
+      });
+    }
+    
+    return result;
+  }, [members, selectedMemberIds, sortOrder, tasks, showAllTasks]);
 
   const weeks = useMemo(() => {
     const today = new Date();
@@ -231,6 +244,20 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
               <Label htmlFor="show-all-tasks" className="text-sm font-normal cursor-pointer">
                 {showAllTasks ? t.allTasks : t.onlyInProgress}
               </Label>
+            </div>
+            
+            <div className="flex items-center space-x-2 mr-2">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wide hidden sm:block">{t.sortBy}</Label>
+              <Select value={sortOrder} onValueChange={(val: any) => setSortOrder(val)}>
+                <SelectTrigger className="w-[140px] h-9 text-sm">
+                  <SelectValue placeholder={t.sortBy} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">{t.defaultSort}</SelectItem>
+                  <SelectItem value="tasks-desc">{t.moreTasks}</SelectItem>
+                  <SelectItem value="tasks-asc">{t.lessTasks}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
             <Select value={String(weeksCount)} onValueChange={(val) => setWeeksCount(Number(val))}>
