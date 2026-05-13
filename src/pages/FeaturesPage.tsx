@@ -1162,7 +1162,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                       aria-label="Mostrar detalle de elementos ocultos"
                     >
                       <EyeOff className="h-3.5 w-3.5" />
-                      Ver auditoría de elementos ocultos
+                      {t.viewHiddenAudit}
                       {" "}
                       ({scopeCheck.featuresOutOfArea.length +
                         scopeCheck.tasksOutOfArea.length +
@@ -1419,7 +1419,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                             variant="ghost"
                             className="h-7 w-7 shrink-0"
                             title="Copiar enlace"
-                            aria-label={`Copiar enlace de la feature ${f.id}`}
+                            aria-label={t.copyLinkFeature.replace("{id}", f.id)}
                             onClick={() => copyWorkItemLink(f.id, "feature")}
                           >
                             <Copy className="h-3 w-3" />
@@ -1447,7 +1447,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
               <ListChecks className="h-5 w-5 text-muted-foreground" /> Tareas
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Distribución del trabajo por persona — solo abiertas y en progreso.
+              {t.workDistribution}
             </p>
           </div>
         </div>
@@ -1587,7 +1587,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <UsersIcon className="h-4 w-4" /> {t.tasksPerPerson}
                 </CardTitle>
                 <CardDescription>
-                  {tasksByPerson.length} {tasksByPerson.length === 1 ? "persona" : "personas"} · filtrando {Array.from(stateFilter).map((k) => k === "active" ? "en progreso" : k === "pending" ? "pendientes" : k === "blocked" ? "bloqueadas" : "completadas").join(", ")}
+                  {tasksByPerson.length === 1 ? t.personCount.replace("{count}", String(tasksByPerson.length)) : t.personsCount.replace("{count}", String(tasksByPerson.length))} · {t.filtering} {Array.from(stateFilter).map((k) => k === "active" ? t.inProgressPlural : k === "pending" ? t.pendingPlural : k === "blocked" ? t.blockedPlural : t.completedPlural).join(", ")}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -1676,10 +1676,10 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   }}
                 />
                 <Label htmlFor="manual-apply" className="text-xs text-muted-foreground cursor-pointer">
-                  Confirmar cambios antes de aplicar
+                  {t.confirmChangesBeforeApply}
                 </Label>
                 {hasPendingChanges && (
-                  <Badge variant="secondary" className="text-[10px]">Cambios sin aplicar</Badge>
+                  <Badge variant="secondary" className="text-[10px]">{t.unappliedChanges}</Badge>
                 )}
               </div>
               <div className="flex items-center gap-1.5">
@@ -1693,7 +1693,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                       disabled={!hasPendingChanges}
                     >
                       <Undo2 className="h-3.5 w-3.5" />
-                      <span className="ml-1.5">Descartar</span>
+                      <span className="ml-1.5">{t.discard}</span>
                     </Button>
                     <Button
                       size="sm"
@@ -1702,7 +1702,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                       disabled={!hasPendingChanges}
                     >
                       <Check className="h-3.5 w-3.5" />
-                      <span className="ml-1.5">Aplicar</span>
+                      <span className="ml-1.5">{t.apply}</span>
                     </Button>
                   </>
                 )}
@@ -1712,7 +1712,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   className="h-8"
                   onClick={() => setShowFlatList((v) => !v)}
                 >
-                  {showFlatList ? "Vista por persona" : "Ver listado plano"}
+                  {showFlatList ? t.viewByPerson : t.viewFlatList}
                 </Button>
               </div>
             </div>
@@ -1767,7 +1767,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                   </span>
                                 </TableCell>
                                 <TableCell className="text-sm">
-                                  {t.assignee || <span className="text-muted-foreground italic">Sin asignar</span>}
+                                  {t.assignee || <span className="text-muted-foreground italic">{t.unassigned}</span>}
                                 </TableCell>
                                 {source === "tfs" && tfsBaseUrl && (
                                   <TableCell className="text-right">
@@ -1787,7 +1787,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                         variant="ghost"
                                         className="h-7 w-7"
                                         title="Copiar enlace"
-                                        aria-label={`Copiar enlace de la tarea ${t.id}`}
+                                        aria-label={t.copyLinkTask.replace("{id}", t.id)}
                                         onClick={() => copyWorkItemLink(t.id, "tarea")}
                                       >
                                         <Copy className="h-3.5 w-3.5" />
@@ -1802,14 +1802,14 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                       </Table>
                       {filteredTasks.length > 100 && (
                         <p className="text-xs text-muted-foreground text-center py-2 border-t">
-                          Mostrando 100 de {filteredTasks.length} tareas — afina los filtros para ver más.
+                          {t.showingMaxOf.replace("{max}", "100").replace("{total}", String(filteredTasks.length))}
                         </p>
                       )}
                     </div>
                   )
                 ) : tasksByPerson.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-8 text-center">
-                    No hay personas con tareas que coincidan con los filtros actuales.
+                    {t.noPersonsMatching}
                   </p>
                 ) : (
                   <Accordion type="multiple" defaultValue={defaultOpenPeople} className="w-full">
@@ -1827,7 +1827,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                           <AccordionTrigger className="hover:no-underline">
                             <div className="flex items-center gap-3 flex-1 min-w-0 pr-2">
                               <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0">
-                                {group.person === "Sin asignar" ? <UserIcon className="h-4 w-4" /> : initials}
+                                {group.person === t.unassigned ? <UserIcon className="h-4 w-4" /> : initials}
                               </div>
                               <div className="min-w-0 flex-1 text-left">
                                 <p className="text-sm font-medium truncate">{group.person}</p>
@@ -1920,7 +1920,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                               </Table>
                               {group.total > 100 && (
                                 <p className="text-xs text-muted-foreground text-center py-2 border-t">
-                                  Mostrando 100 de {group.total} tareas — afina los filtros para ver más.
+                                  {t.showingMaxOf.replace("{max}", "100").replace("{total}", String(group.total))}
                                 </p>
                               )}
                             </div>
@@ -1975,7 +1975,7 @@ interface PersonComboboxProps {
 function PersonCombobox({ value, onChange, people }: PersonComboboxProps) {
   const [open, setOpen] = useState(false);
   const isAll = value === "all";
-  const label = isAll ? `Todas las personas (${people.length})` : value;
+  const label = isAll ? t.allPersonsCount.replace("{count}", String(people.length)) : value;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -2003,7 +2003,7 @@ function PersonCombobox({ value, onChange, people }: PersonComboboxProps) {
       </PopoverTrigger>
       <PopoverContent className="w-60 p-0" align="end">
         <Command>
-          <CommandInput placeholder="Buscar persona..." />
+          <CommandInput placeholder={t.searchPerson} />
           <CommandList>
             <CommandEmpty>Sin coincidencias.</CommandEmpty>
             <CommandGroup>
@@ -2015,7 +2015,7 @@ function PersonCombobox({ value, onChange, people }: PersonComboboxProps) {
                 }}
               >
                 <Check className={cn("mr-2 h-4 w-4", isAll ? "opacity-100" : "opacity-0")} />
-                Todas las personas
+                {t.allPersons}
               </CommandItem>
               {people.map((p) => (
                 <CommandItem
@@ -2099,7 +2099,7 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink }: Tas
                 variant="ghost"
                 className="h-7 w-7"
                 title="Copiar enlace"
-                aria-label={`Copiar enlace de la tarea ${task.id}`}
+                aria-label={t.copyLinkTask.replace("{id}", task.id)}
                 onClick={() => onCopyLink(task.id, "tarea")}
               >
                 <Copy className="h-3.5 w-3.5" />
