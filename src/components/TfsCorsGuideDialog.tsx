@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BookOpen, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
+import { useLang } from "@/context/LanguageContext";
 
 interface TfsCorsGuideDialogProps {
   origin: string;
