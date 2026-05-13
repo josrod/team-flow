@@ -327,7 +327,7 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
-                {t.taskDetailInProgress.replace("{name}", selectedCell ? rodatMembers.find(m => m.id === selectedCell.memberId)?.name || "" : "")}
+                {(showAllTasks ? t.taskDetailAll : t.taskDetailInProgress).replace("{name}", selectedCell ? rodatMembers.find(m => m.id === selectedCell.memberId)?.name || "" : "")}
               </DialogTitle>
               <DialogDescription>
                 {selectedCell && weeks.find(w => w.isoStart === selectedCell.weekStart)?.label}
