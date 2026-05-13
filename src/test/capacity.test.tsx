@@ -223,7 +223,6 @@ describe("Capacity Management", () => {
       // The pending (20h) and done (5h) should not be included by default
       expect(screen.queryAllByText("32h").length).toBe(0);
     });
-    });
 
     // Open the cell details to check the order/list of tasks
     const cellWith12h = screen.getAllByText("12h")[0].closest("td");
