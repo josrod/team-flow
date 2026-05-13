@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
-import { LanguageProvider } from "@/context/LanguageContext";
+import { LanguageProvider, translations } from "@/context/LanguageContext";
 import { AppProvider } from "@/context/AppContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AppLayout } from "@/components/AppLayout";
