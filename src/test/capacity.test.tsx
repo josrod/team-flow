@@ -6,6 +6,8 @@ import { WorkloadMatrix } from "@/components/WorkloadMatrix";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { TfsWorkItem } from "@/services/tfs";
 import { useState } from "react";
+import { translations } from "@/context/LanguageContext";
+
 // Mock resize observer
 window.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
@@ -30,41 +32,43 @@ vi.mock("@/context/AuthContext", () => ({
   })
 }));
 
-// Mock LanguageContext
+// Mock LanguageContext using real translations for assertions
+const en = translations.en;
+
 vi.mock("@/context/LanguageContext", () => ({
   useLang: () => ({
     t: {
-      teamNotFound: "Team not found",
-      members: "Members",
-      add: "Add",
-      newMember: "New Member",
-      name: "Name",
-      role: "Role",
-      search: "Search",
-      all: "All",
-      available: "Available",
-      vacation: "Vacation",
-      sickLeave: "Sick Leave",
-      team: "Team",
-      workTopics: "Work Topics",
-      addTopic: "Add Topic",
-      confirmMove: "Move member?",
-      confirmMoveDesc: "Move {name} to {team}?",
-      cancel: "Cancel",
-      confirm: "Confirm",
-      resetCapacityConfirmTitle: "Reset capacity?",
-      resetCapacityConfirmDesc: "Are you sure you want to reset {name}'s capacity?",
-      capacityConfig: "Capacity Configuration",
-      maxCapacity: "Max Capacity (h/week)",
-      baseCapacity: "Base Capacity (h/week)",
-      resetCapacity: "Reset",
-      undo: "Undo",
-      taskDetailInProgress: "Task Details (In Progress) - {name}",
-      taskDetailAll: "Task Details (All) - {name}",
-      inProgressTasksCount: "{count} In Progress",
-      allTasksCount: "{count} Tasks",
-      onlyInProgress: "Only In Progress",
-      allTasks: "All tasks",
+      teamNotFound: en.teamNotFound,
+      members: en.members,
+      add: en.add,
+      newMember: en.newMember,
+      name: en.name,
+      role: en.role,
+      search: en.search,
+      all: en.all,
+      available: en.available,
+      vacation: en.vacation,
+      sickLeave: en.sickLeave,
+      team: en.team,
+      workTopics: en.workTopics,
+      addTopic: en.addTopic,
+      confirmMove: en.confirmMove,
+      confirmMoveDesc: en.confirmMoveDesc,
+      cancel: en.cancel,
+      confirm: en.confirm,
+      resetCapacityConfirmTitle: en.resetCapacityConfirmTitle,
+      resetCapacityConfirmDesc: en.resetCapacityConfirmDesc,
+      capacityConfig: en.capacityConfig,
+      maxCapacity: en.maxCapacity,
+      baseCapacity: en.baseCapacity,
+      resetCapacity: en.resetCapacity,
+      undo: en.undo,
+      taskDetailInProgress: en.taskDetailInProgress,
+      taskDetailAll: en.taskDetailAll,
+      inProgressTasksCount: en.inProgressTasksCount,
+      allTasksCount: en.allTasksCount,
+      onlyInProgress: en.onlyInProgress,
+      allTasks: en.allTasks,
     }
   })
 }));
