@@ -244,6 +244,7 @@ const translations = {
     generalOverview: "Visión general del trabajo en curso del proyecto.",
     workloadSubtitle: "Disponibilidad y carga de trabajo agrupada por semana (solo tareas In Progress).",
     taskDetailInProgress: "Detalle de Tareas (In Progress) - {name}",
+    inProgressTasksCount: "{count} In Progress",
     addTeam: "Añadir equipo",
     ongoing: "En curso",
     upcomingStatus: "Próximo",
