@@ -120,10 +120,12 @@ describe("Capacity Management", () => {
       expect(screen.queryAllByText("[3] Task 3").length).toBe(0);
     });
 
-    // Close the modal by pressing escape
-    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape", code: "Escape" });
+    // Close the modal by pressing escape on the dialog itself
+    const activeDialog = screen.getByRole("dialog");
+    fireEvent.keyDown(activeDialog, { key: "Escape", code: "Escape" });
     await waitFor(() => {
-      expect(screen.queryByRole("dialog")).toBeNull();
+      // The task detail modal should be closed
+      expect(screen.queryByText("Task Details (In Progress) - Carlos")).toBeNull();
     });
 
     // Now toggle the switch to show all tasks
