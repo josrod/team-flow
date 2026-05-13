@@ -3,7 +3,7 @@ import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { TfsWorkItem } from "@/services/tfs";
+import { TfsWorkItem, isTaskInProgress } from "@/services/tfs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -71,7 +71,7 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
     let isMounted = true;
     const fetchDueDates = async () => {
       const newDueDates: Record<string, string> = {};
-      const inProgressTasks = tasks.filter(t => t.state.toLowerCase() === "in progress");
+      const inProgressTasks = tasks.filter(t => isTaskInProgress(t.state));
       const tasksWithoutEffort = inProgressTasks.filter(t => !(t.remainingWork || t.effort || t.originalEstimate));
       
       const promises = tasksWithoutEffort.map(async (t) => {
@@ -103,7 +103,7 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
     const memberName = rodatMembers.find(m => m.id === memberId)?.name;
     const memberTasks = tasks.filter(t => 
       t.assignedTo === memberName && 
-      t.state.toLowerCase() === "in progress"
+      isTaskInProgress(t.state)
     );
     
     let effortForWeek = 0;

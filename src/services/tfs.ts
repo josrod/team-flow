@@ -772,6 +772,13 @@ const runWiqlAndFetch = async (
 export const ACTIVE_FEATURE_STATES = ["Open", "In Refinement", "In Progress"] as const;
 
 /**
+ * Helper to check if a work item is currently "In Progress"
+ */
+export const isTaskInProgress = (state: string) => {
+  return state.trim().toLowerCase() === "in progress";
+};
+
+/**
  * Default scope applied when the user has not explicitly chosen areas /
  * iterations from the Settings page. Historically this was hard-coded;
  * now it is the fallback only.
