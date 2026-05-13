@@ -1249,7 +1249,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       </Badge>
                                       <div className="min-w-0 flex-1">
                                         <p className="truncate text-foreground" title={it.title}>
-                                          {it.title || "(sin título)"}
+                                          {it.title || t.noTitle}
                                         </p>
                                         <p
                                           className="truncate font-mono text-[11px] text-muted-foreground"
