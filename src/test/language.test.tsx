@@ -118,16 +118,16 @@ describe("Language Switching", () => {
 
     // Default is ES
     // Sidebar
-    expect(screen.getByRole("link", { name: /Carga & Capacidad/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: new RegExp(translations.es.workload, "i") })).toBeInTheDocument();
     
     // Page Title
-    expect(screen.getByRole("heading", { name: "Carga & Capacidad", level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: translations.es.workload, level: 1 })).toBeInTheDocument();
     
     // Page Subtitle
-    expect(screen.getByText("Disponibilidad y carga de trabajo agrupada por semana (solo tareas In Progress).")).toBeInTheDocument();
+    expect(screen.getByText(translations.es.workloadSubtitle)).toBeInTheDocument();
 
     // Inside WorkloadMatrix
-    expect(screen.getByRole("heading", { name: "Carga de Trabajo y Disponibilidad" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: translations.es.workloadAndCapacity })).toBeInTheDocument();
 
     // Toggle language
     const langBtn = screen.getByRole("button", { name: /^ES$/ });
@@ -139,9 +139,9 @@ describe("Language Switching", () => {
     });
 
     // Check English
-    expect(screen.getByRole("link", { name: /Workload & Capacity/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Workload & Capacity", level: 1 })).toBeInTheDocument();
-    expect(screen.getByText("Availability and workload grouped by week (only In Progress tasks).")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Workload and Availability" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: new RegExp(translations.en.workload, "i") })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: translations.en.workload, level: 1 })).toBeInTheDocument();
+    expect(screen.getByText(translations.en.workloadSubtitle)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: translations.en.workloadAndCapacity })).toBeInTheDocument();
   });
 });
