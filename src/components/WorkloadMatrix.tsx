@@ -3,7 +3,7 @@ import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { TfsWorkItem, isTaskInProgress } from "@/services/tfs";
+import { TfsWorkItem, isTaskInProgress, isActiveTask } from "@/services/tfs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,8 @@ import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, Command
 import { Button } from "@/components/ui/button";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 import {
   Table,
@@ -27,9 +29,11 @@ import {
 
 interface WorkloadMatrixProps {
   tasks: TfsWorkItem[];
+  showAllTasks?: boolean;
+  onShowAllTasksChange?: (val: boolean) => void;
 }
 
-export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
+export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChange }: WorkloadMatrixProps) {
   const { t } = useLang();
   const { members, absences } = useApp();
   const [selectedCell, setSelectedCell] = useState<{ memberId: string; weekStart: string; weekEnd: string } | null>(null);
@@ -71,8 +75,8 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
     let isMounted = true;
     const fetchDueDates = async () => {
       const newDueDates: Record<string, string> = {};
-      const inProgressTasks = tasks.filter(t => isTaskInProgress(t.state));
-      const tasksWithoutEffort = inProgressTasks.filter(t => !(t.remainingWork || t.effort || t.originalEstimate));
+      const relevantTasks = tasks.filter(t => showAllTasks ? isActiveTask(t.state) : isTaskInProgress(t.state));
+      const tasksWithoutEffort = relevantTasks.filter(t => !(t.remainingWork || t.effort || t.originalEstimate));
       
       const promises = tasksWithoutEffort.map(async (t) => {
         try {
@@ -97,13 +101,13 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
     }
 
     return () => { isMounted = false; };
-  }, [tasks]);
+  }, [tasks, showAllTasks]);
 
   const getEffortForWeek = (memberId: string, weekStartIso: string, weekEndIso: string) => {
     const memberName = rodatMembers.find(m => m.id === memberId)?.name;
     const memberTasks = tasks.filter(t => 
       t.assignedTo === memberName && 
-      isTaskInProgress(t.state)
+      (showAllTasks ? isActiveTask(t.state) : isTaskInProgress(t.state))
     );
     
     let effortForWeek = 0;
@@ -218,6 +222,16 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
                 </Command>
               </PopoverContent>
             </Popover>
+            <div className="flex items-center space-x-2 mr-2">
+              <Switch 
+                id="show-all-tasks" 
+                checked={showAllTasks} 
+                onCheckedChange={onShowAllTasksChange} 
+              />
+              <Label htmlFor="show-all-tasks" className="text-sm font-normal cursor-pointer">
+                {showAllTasks ? t.allTasks : t.onlyInProgress}
+              </Label>
+            </div>
             
             <Select value={String(weeksCount)} onValueChange={(val) => setWeeksCount(Number(val))}>
               <SelectTrigger className="w-[130px] h-9 text-sm">
@@ -244,7 +258,7 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
           </TableHeader>
           <TableBody>
             {rodatMembers.map(member => {
-              const memberInProgressTasksCount = tasks.filter(t => t.assignedTo === member.name && isTaskInProgress(t.state)).length;
+              const relevantTasksCount = tasks.filter(t => t.assignedTo === member.name && (showAllTasks ? isActiveTask(t.state) : isTaskInProgress(t.state))).length;
               return (
               <TableRow key={member.id}>
                 <TableCell className="font-medium">
@@ -254,9 +268,9 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
                     </Avatar>
                     <div className="flex flex-col min-w-0">
                       <span className="truncate" title={member.name}>{member.name}</span>
-                      {memberInProgressTasksCount > 0 && (
+                      {relevantTasksCount > 0 && (
                         <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                          {t.inProgressTasksCount.replace("{count}", String(memberInProgressTasksCount))}
+                          {(showAllTasks ? t.allTasksCount : t.inProgressTasksCount).replace("{count}", String(relevantTasksCount))}
                         </span>
                       )}
                     </div>
@@ -313,7 +327,7 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
-                {t.taskDetailInProgress.replace("{name}", selectedCell ? rodatMembers.find(m => m.id === selectedCell.memberId)?.name || "" : "")}
+                {(showAllTasks ? t.taskDetailAll : t.taskDetailInProgress).replace("{name}", selectedCell ? rodatMembers.find(m => m.id === selectedCell.memberId)?.name || "" : "")}
               </DialogTitle>
               <DialogDescription>
                 {selectedCell && weeks.find(w => w.isoStart === selectedCell.weekStart)?.label}

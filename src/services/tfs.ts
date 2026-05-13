@@ -779,6 +779,14 @@ export const isTaskInProgress = (state: string) => {
 };
 
 /**
+ * Helper to check if a work item is an active task (not done, closed, removed, etc.)
+ */
+export const isActiveTask = (state: string) => {
+  const s = state.trim().toLowerCase();
+  return !s.includes("done") && !s.includes("closed") && !s.includes("removed") && !s.includes("completed") && !s.includes("cut");
+};
+
+/**
  * Default scope applied when the user has not explicitly chosen areas /
  * iterations from the Settings page. Historically this was hard-coded;
  * now it is the fallback only.
