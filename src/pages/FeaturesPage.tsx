@@ -741,10 +741,10 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
 
   const workloadByPerson = useMemo(() => {
     const map: Record<string, { active: number; pending: number; done: number; blocked: number }> = {};
-    filteredTasks.forEach((t) => {
-      const name = t.assignee || t.unassigned;
+    filteredTasks.forEach((task) => {
+      const name = task.assignee || t.unassigned;
       if (!map[name]) map[name] = { active: 0, pending: 0, done: 0, blocked: 0 };
-      map[name][normalizeState(t.state)]++;
+      map[name][normalizeState(task.state)]++;
     });
     return Object.entries(map)
       .map(([name, v]) => ({ name, ...v, total: v.active + v.pending + v.done + v.blocked }))
@@ -780,12 +780,12 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   // Sorted by total desc; "Sin asignar" pushed to the end.
   const tasksByPerson = useMemo(() => {
     const map = new Map<string, { active: UnifiedTask[]; pending: UnifiedTask[]; blocked: UnifiedTask[]; done: UnifiedTask[] }>();
-    filteredTasks.forEach((t) => {
-      const norm = normalizeState(t.state);
+    filteredTasks.forEach((task) => {
+      const norm = normalizeState(task.state);
       if (!stateFilter.has(norm)) return;
-      const key = t.assignee || t.unassigned;
+      const key = task.assignee || t.unassigned;
       if (!map.has(key)) map.set(key, { active: [], pending: [], blocked: [], done: [] });
-      map.get(key)![norm].push(t);
+      map.get(key)![norm].push(task);
     });
     const arr = Array.from(map.entries()).map(([person, v]) => ({
       person,
