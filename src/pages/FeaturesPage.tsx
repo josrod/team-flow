@@ -1204,12 +1204,12 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                             icon: <CalendarOff className="h-3.5 w-3.5" />,
                             label: `Tareas fuera de la iteración (${scopeCheck.tasksOutOfIteration.length})`,
                             reason: `Esperado bajo ${effectiveIterationPaths.join(" o ")}`,
-                            items: scopeCheck.tasksOutOfIteration.map((t) => ({
-                              id: t.id,
+                            items: scopeCheck.tasksOutOfIteration.map((task) => ({
+                              id: task.id,
                               type: "Tarea" as const,
-                              title: t.title,
+                              title: task.title,
                               detailLabel: "Iteración",
-                              detailValue: t.iterationPath ?? "(sin iteración)",
+                              detailValue: task.iterationPath ?? t.noIteration,
                             })),
                           },
                         ])
