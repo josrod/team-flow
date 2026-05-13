@@ -90,9 +90,9 @@ describe("Capacity Management", () => {
 
   it("should render only 'In Progress' tasks by default and toggle to all active tasks", async () => {
     const mockTasks: TfsWorkItem[] = [
-      { id: "1", title: "Task 1", state: "In Progress", workItemType: "Task", assignedTo: "Carlos", remainingWork: 10, effort: 10, originalEstimate: 10, url: "" },
-      { id: "2", title: "Task 2", state: "Pending", workItemType: "Task", assignedTo: "Carlos", remainingWork: 5, effort: 5, originalEstimate: 5, url: "" },
-      { id: "3", title: "Task 3", state: "Done", workItemType: "Task", assignedTo: "Carlos", remainingWork: 2, effort: 2, originalEstimate: 2, url: "" }
+      { id: 1, title: "Task 1", state: "In Progress", workItemType: "Task", assignedTo: "Carlos", remainingWork: 10, effort: 10, originalEstimate: 10, url: "" },
+      { id: 2, title: "Task 2", state: "Pending", workItemType: "Task", assignedTo: "Carlos", remainingWork: 5, effort: 5, originalEstimate: 5, url: "" },
+      { id: 3, title: "Task 3", state: "Done", workItemType: "Task", assignedTo: "Carlos", remainingWork: 2, effort: 2, originalEstimate: 2, url: "" }
     ];
 
     render(<TestMatrixWrapper initialTasks={mockTasks} />);
