@@ -43,6 +43,16 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
   const [memberSelectOpen, setMemberSelectOpen] = useState(false);
   const [sortOrder, setSortOrder] = useState<"default" | "tasks-desc" | "tasks-asc">("default");
 
+  const taskCountsByMember = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const t of tasks) {
+      if (t.assignedTo && (showAllTasks ? isActiveTask(t.state) : isTaskInProgress(t.state))) {
+        counts[t.assignedTo] = (counts[t.assignedTo] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [tasks, showAllTasks]);
+
   // Consider all members for the team workload
   const rodatMembers = useMemo(() => {
     let result = members;
@@ -52,14 +62,14 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
     
     if (sortOrder !== "default") {
       result = [...result].sort((a, b) => {
-        const countA = tasks.filter(t => t.assignedTo === a.name && (showAllTasks ? isActiveTask(t.state) : isTaskInProgress(t.state))).length;
-        const countB = tasks.filter(t => t.assignedTo === b.name && (showAllTasks ? isActiveTask(t.state) : isTaskInProgress(t.state))).length;
+        const countA = taskCountsByMember[a.name] || 0;
+        const countB = taskCountsByMember[b.name] || 0;
         return sortOrder === "tasks-asc" ? countA - countB : countB - countA;
       });
     }
     
     return result;
-  }, [members, selectedMemberIds, sortOrder, tasks, showAllTasks]);
+  }, [members, selectedMemberIds, sortOrder, taskCountsByMember]);
 
   const weeks = useMemo(() => {
     const today = new Date();
