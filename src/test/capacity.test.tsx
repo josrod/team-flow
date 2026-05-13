@@ -35,43 +35,12 @@ vi.mock("@/context/AuthContext", () => ({
 // Mock LanguageContext using real translations for assertions
 vi.mock("@/context/LanguageContext", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/context/LanguageContext")>();
-  const en = actual.translations.en;
   return {
     ...actual,
     useLang: () => ({
-      t: {
-        teamNotFound: translations.en.teamNotFound,
-        members: translations.en.members,
-        add: translations.en.add,
-        newMember: translations.en.newMember,
-        name: translations.en.name,
-        role: translations.en.role,
-        search: translations.en.search,
-        all: translations.en.all,
-        available: translations.en.available,
-        vacation: translations.en.vacation,
-        sickLeave: translations.en.sickLeave,
-        team: translations.en.team,
-        workTopics: translations.en.workTopics,
-        addTopic: translations.en.addTopic,
-        confirmMove: translations.en.confirmMove,
-        confirmMoveDesc: translations.en.confirmMoveDesc,
-        cancel: translations.en.cancel,
-        confirm: translations.en.confirm,
-        resetCapacityConfirmTitle: translations.en.resetCapacityConfirmTitle,
-        resetCapacityConfirmDesc: translations.en.resetCapacityConfirmDesc,
-        capacityConfig: translations.en.capacityConfig,
-        maxCapacity: translations.en.maxCapacity,
-        baseCapacity: translations.en.baseCapacity,
-        resetCapacity: translations.en.resetCapacity,
-        undo: translations.en.undo,
-        taskDetailInProgress: translations.en.taskDetailInProgress,
-        taskDetailAll: translations.en.taskDetailAll,
-        inProgressTasksCount: translations.en.inProgressTasksCount,
-        allTasksCount: translations.en.allTasksCount,
-        onlyInProgress: translations.en.onlyInProgress,
-        allTasks: translations.en.allTasks,
-      }
+      lang: "en" as const,
+      toggleLang: vi.fn(),
+      t: actual.translations.en,
     })
   };
 });
