@@ -466,7 +466,7 @@ export default function TeamPage() {
                       if (isNaN(val) || val < 0) return;
                       const currentMax = selectedMember.maxCapacity ?? 40;
                       if (val > currentMax) {
-                        toast.error("La capacidad base no puede ser mayor que la máxima");
+                        toast.error(t.errBaseGtMaxSingle);
                         return;
                       }
                       const updated = { ...selectedMember, baseCapacity: val };
