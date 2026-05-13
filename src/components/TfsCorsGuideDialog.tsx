@@ -48,6 +48,7 @@ const CodeBlock = ({ code }: { code: string }) => {
 };
 
 export const TfsCorsGuideDialog = ({ origin }: TfsCorsGuideDialogProps) => {
+  const { t } = useLang();
   const iisWebConfig = `<!-- web.config en la raíz del sitio TFS -->
 <configuration>
   <system.webServer>
