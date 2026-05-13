@@ -144,4 +144,46 @@ describe("Language Switching", () => {
     expect(screen.getByText(translations.en.workloadSubtitle)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: translations.en.workloadAndCapacity })).toBeInTheDocument();
   });
+
+  it("should translate Features page titles and sidebar when switching language", async () => {
+    render(
+      <MemoryRouter initialEntries={["/features"]}>
+        <LanguageProvider>
+          <ThemeProvider>
+            <AppProvider>
+              <AppLayout>
+                <Routes>
+                  <Route path="/features" element={<FeaturesPage view="features" />} />
+                </Routes>
+              </AppLayout>
+            </AppProvider>
+          </ThemeProvider>
+        </LanguageProvider>
+      </MemoryRouter>
+    );
+
+    // Default is ES
+    // Sidebar
+    expect(screen.getByRole("link", { name: new RegExp(translations.es.features, "i") })).toBeInTheDocument();
+    
+    // Page Title
+    expect(screen.getByRole("heading", { name: translations.es.features, level: 1 })).toBeInTheDocument();
+    
+    // Page Subtitle
+    expect(screen.getByText(translations.es.featuresSubtitle)).toBeInTheDocument();
+
+    // Toggle language
+    const langBtn = screen.getByRole("button", { name: /^ES$/ });
+    fireEvent.click(langBtn);
+
+    // Wait for EN
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^EN$/ })).toBeInTheDocument();
+    });
+
+    // Check English
+    expect(screen.getByRole("link", { name: new RegExp(translations.en.features, "i") })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: translations.en.features, level: 1 })).toBeInTheDocument();
+    expect(screen.getByText(translations.en.featuresSubtitle)).toBeInTheDocument();
+  });
 });
