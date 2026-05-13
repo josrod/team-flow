@@ -87,16 +87,16 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const showFeatures = view === "all" || view === "features";
   const showTasks = view === "all" || view === "tasks";
   const showWorkload = view === "workload";
-  const pageTitle = view === "workload" ? "Carga & Capacidad" : view === "tasks" ? "Tareas" : view === "features" ? "Features" : "Features & Tareas";
+  const pageTitle = view === "workload" ? t.workload : view === "tasks" ? t.tasks : view === "features" ? t.features : t.featuresAndTasks;
   
   const [showAllWorkloadTasks, setShowAllWorkloadTasks] = useState(false);
   const pageSubtitle =
     view === "workload"
       ? showAllWorkloadTasks ? t.workloadSubtitleAll : t.workloadSubtitle
       : view === "tasks"
-      ? "Trabajo asignado por persona, abierto y en progreso."
+      ? t.tasksSubtitle
       : view === "features"
-      ? "Iniciativas del proyecto y su progreso global."
+      ? t.featuresSubtitle
       : t.generalOverview;
   const { teams, members, workTopics } = useApp();
   const { user } = useAuth();
