@@ -243,14 +243,23 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rodatMembers.map(member => (
+            {rodatMembers.map(member => {
+              const memberInProgressTasksCount = tasks.filter(t => t.assignedTo === member.name && isTaskInProgress(t.state)).length;
+              return (
               <TableRow key={member.id}>
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="h-8 w-8 shrink-0">
                       <AvatarFallback className="bg-primary/10 text-primary font-bold">{member.name.slice(0, 2)}</AvatarFallback>
                     </Avatar>
-                    <span className="truncate" title={member.name}>{member.name}</span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="truncate" title={member.name}>{member.name}</span>
+                      {memberInProgressTasksCount > 0 && (
+                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                          {t.inProgressTasksCount.replace("{count}", String(memberInProgressTasksCount))}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </TableCell>
                 {weeks.map(w => {
@@ -295,7 +304,8 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
                   );
                 })}
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
 
