@@ -69,7 +69,8 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
     let isMounted = true;
     const fetchDueDates = async () => {
       const newDueDates: Record<string, string> = {};
-      const tasksWithoutEffort = tasks.filter(t => !(t.remainingWork || t.effort || t.originalEstimate));
+      const inProgressTasks = tasks.filter(t => t.state.toLowerCase() === "in progress");
+      const tasksWithoutEffort = inProgressTasks.filter(t => !(t.remainingWork || t.effort || t.originalEstimate));
       
       const promises = tasksWithoutEffort.map(async (t) => {
         try {
@@ -100,9 +101,7 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
     const memberName = rodatMembers.find(m => m.id === memberId)?.name;
     const memberTasks = tasks.filter(t => 
       t.assignedTo === memberName && 
-      !t.state.toLowerCase().includes("done") && 
-      !t.state.toLowerCase().includes("closed") && 
-      !t.state.toLowerCase().includes("removed")
+      t.state.toLowerCase() === "in progress"
     );
     
     let effortForWeek = 0;
@@ -302,7 +301,7 @@ export function WorkloadMatrix({ tasks }: WorkloadMatrixProps) {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
-                Detalle de Tareas - {selectedCell && rodatMembers.find(m => m.id === selectedCell.memberId)?.name}
+                Detalle de Tareas (In Progress) - {selectedCell && rodatMembers.find(m => m.id === selectedCell.memberId)?.name}
               </DialogTitle>
               <DialogDescription>
                 {selectedCell && weeks.find(w => w.isoStart === selectedCell.weekStart)?.label}
