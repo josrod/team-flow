@@ -24,6 +24,7 @@ const teamMemberSchema = z.object({
   avatar: z.string().optional(),
   baseCapacity: z.number().optional(),
   maxCapacity: z.number().optional(),
+  loginName: z.string().optional(),
 });
 
 const teamSchema = z.object({

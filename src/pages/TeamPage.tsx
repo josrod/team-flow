@@ -53,6 +53,7 @@ export default function TeamPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
+  const [newLoginName, setNewLoginName] = useState("");
   const [editingName, setEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState("");
   const [editingRole, setEditingRole] = useState(false);
@@ -83,9 +84,15 @@ export default function TeamPage() {
       toast.error(result.error.errors[0].message);
       return;
     }
-    addMember({ name: result.data.name, role: result.data.role, teamId });
+    addMember({
+      name: result.data.name,
+      role: result.data.role,
+      teamId,
+      loginName: newLoginName.trim() ? newLoginName.trim() : undefined,
+    });
     setNewName("");
     setNewRole("");
+    setNewLoginName("");
     setAddOpen(false);
   };
 
@@ -211,6 +218,15 @@ export default function TeamPage() {
               <div className="space-y-3">
                 <div><Label>{t.name}</Label><Input value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={100} /></div>
                 <div><Label>{t.role}</Label><Input value={newRole} onChange={(e) => setNewRole(e.target.value)} maxLength={50} /></div>
+                <div>
+                  <Label>{t.loginName}</Label>
+                  <Input
+                    value={newLoginName}
+                    onChange={(e) => setNewLoginName(e.target.value)}
+                    maxLength={50}
+                    placeholder={t.loginNamePlaceholder}
+                  />
+                </div>
                 <Button onClick={handleAdd} className="w-full">{t.add}</Button>
               </div>
             </DialogContent>
@@ -310,6 +326,9 @@ export default function TeamPage() {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{m.name}</p>
                   <p className="text-xs text-muted-foreground">{m.role}</p>
+                  {m.loginName && (
+                    <p className="text-[10px] text-muted-foreground/70 font-mono truncate">@{m.loginName}</p>
+                  )}
                 </div>
                 <StatusBadge status={getMemberStatus(m.id)} />
               </CardContent>
@@ -404,6 +423,25 @@ export default function TeamPage() {
                   </div>
                 </div>
                </SheetHeader>
+
+              <div className="mt-4">
+                <Label className="text-xs text-muted-foreground">{t.loginName}</Label>
+                <Input
+                  value={selectedMember.loginName ?? ""}
+                  placeholder={t.loginNamePlaceholder}
+                  maxLength={50}
+                  className="h-8 text-sm mt-1 font-mono"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const updated = {
+                      ...selectedMember,
+                      loginName: value.trim() ? value.trim() : undefined,
+                    };
+                    updateMember(updated);
+                    setSelectedMember(updated);
+                  }}
+                />
+              </div>
 
               <div className="grid grid-cols-2 gap-4 mt-6 relative">
                 <div className="col-span-2 flex items-center justify-between">
