@@ -611,7 +611,11 @@ export function TeamPulseDashboard() {
     return handovers
       .filter((h) => {
         const a = absencesById.get(h.absenceId);
-        return a ? activeTypes.has(a.type as AbsenceType) : true;
+        if (a && !activeTypes.has(a.type as AbsenceType)) return false;
+        return (
+          scopedMemberIds.has(h.fromMemberId) ||
+          scopedMemberIds.has(h.toMemberId)
+        );
       })
       .slice()
       .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
