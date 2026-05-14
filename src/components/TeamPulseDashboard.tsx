@@ -579,6 +579,10 @@ export function TeamPulseDashboard() {
   // ---- Handover list ----
   const handoverList = useMemo(() => {
     return handovers
+      .filter((h) => {
+        const a = absencesById.get(h.absenceId);
+        return a ? activeTypes.has(a.type as AbsenceType) : true;
+      })
       .slice()
       .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
       .map((h) => {
@@ -602,7 +606,7 @@ export function TeamPulseDashboard() {
               : `${topicNames[0]} +${topicNames.length - 1} más`,
         };
       });
-  }, [handovers, membersById, absencesById, workTopics]);
+  }, [handovers, membersById, absencesById, workTopics, activeTypes]);
 
   // ----------------------------------------------------------------------------
   // Render
