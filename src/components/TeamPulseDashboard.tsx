@@ -536,12 +536,12 @@ export function TeamPulseDashboard() {
     const out: { date: string; count: number }[] = [];
     for (let i = 0; i < FORECAST_DAYS; i++) {
       const iso = isoDayOffset(i);
-      const count = members.filter((m) => isAbsentOn(m.id, iso, filteredAbsences))
+      const count = scopedMembers.filter((m) => isAbsentOn(m.id, iso, filteredAbsences))
         .length;
       out.push({ date: formatShortDate(iso), count });
     }
     return out;
-  }, [members, filteredAbsences]);
+  }, [scopedMembers, filteredAbsences]);
 
   // ---- Effort by role ----
   const effortByRole = useMemo(() => {
