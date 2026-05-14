@@ -402,6 +402,7 @@ export function TeamPulseDashboard() {
   const { teams, members, workTopics, absences, handovers } = useApp();
   const [tab, setTab] = useState<"pulse" | "flow" | "handovers">("pulse");
   const [selectedHandoverId, setSelectedHandoverId] = useState<string | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | "all">("all");
   const [activeTypes, setActiveTypes] = useState<Set<AbsenceType>>(
     () => new Set(ALL_ABSENCE_TYPES)
   );
@@ -434,20 +435,40 @@ export function TeamPulseDashboard() {
     return map;
   }, [absences]);
 
+  // Scope by selected team
+  const scopedMembers = useMemo(
+    () =>
+      selectedTeamId === "all"
+        ? members
+        : members.filter((m) => m.teamId === selectedTeamId),
+    [members, selectedTeamId]
+  );
+  const scopedTeams = useMemo(
+    () =>
+      selectedTeamId === "all"
+        ? teams
+        : teams.filter((t) => t.id === selectedTeamId),
+    [teams, selectedTeamId]
+  );
+  const scopedMemberIds = useMemo(
+    () => new Set(scopedMembers.map((m) => m.id)),
+    [scopedMembers]
+  );
+
   const absentMembers = useMemo(
-    () => members.filter((m) => isAbsentOn(m.id, today, filteredAbsences)),
-    [members, filteredAbsences, today]
+    () => scopedMembers.filter((m) => isAbsentOn(m.id, today, filteredAbsences)),
+    [scopedMembers, filteredAbsences, today]
   );
   const availableMembers = useMemo(
-    () => members.filter((m) => !isAbsentOn(m.id, today, filteredAbsences)),
-    [members, filteredAbsences, today]
+    () => scopedMembers.filter((m) => !isAbsentOn(m.id, today, filteredAbsences)),
+    [scopedMembers, filteredAbsences, today]
   );
 
   const effortByMember = useMemo(() => {
     const map = new Map<string, number>();
-    for (const m of members) map.set(m.id, effortFromTopics(m.id, workTopics));
+    for (const m of scopedMembers) map.set(m.id, effortFromTopics(m.id, workTopics));
     return map;
-  }, [members, workTopics]);
+  }, [scopedMembers, workTopics]);
 
   const totalEffort = availableMembers.reduce(
     (s, m) => s + (effortByMember.get(m.id) ?? 0),
@@ -476,7 +497,7 @@ export function TeamPulseDashboard() {
 
   // ---- Team radial ----
   const teamRadial = useMemo(() => {
-    return teams.map((t, i) => {
+    return scopedTeams.map((t, i) => {
       const teamMembers = availableMembers.filter((m) => m.teamId === t.id);
       const effort = teamMembers.reduce(
         (s, m) => s + (effortByMember.get(m.id) ?? 0),
@@ -490,7 +511,7 @@ export function TeamPulseDashboard() {
         fill: TEAM_PALETTE[i % TEAM_PALETTE.length],
       };
     });
-  }, [teams, availableMembers, effortByMember]);
+  }, [scopedTeams, availableMembers, effortByMember]);
 
   // ---- Individual radial top 8 ----
   const individualRadial = useMemo(() => {
@@ -515,17 +536,17 @@ export function TeamPulseDashboard() {
     const out: { date: string; count: number }[] = [];
     for (let i = 0; i < FORECAST_DAYS; i++) {
       const iso = isoDayOffset(i);
-      const count = members.filter((m) => isAbsentOn(m.id, iso, filteredAbsences))
+      const count = scopedMembers.filter((m) => isAbsentOn(m.id, iso, filteredAbsences))
         .length;
       out.push({ date: formatShortDate(iso), count });
     }
     return out;
-  }, [members, filteredAbsences]);
+  }, [scopedMembers, filteredAbsences]);
 
   // ---- Effort by role ----
   const effortByRole = useMemo(() => {
     const map = new Map<string, { role: string; effort: number; capacity: number }>();
-    for (const m of members) {
+    for (const m of scopedMembers) {
       const entry =
         map.get(m.role) ?? { role: m.role, effort: 0, capacity: 0 };
       entry.effort += effortByMember.get(m.id) ?? 0;
@@ -533,24 +554,25 @@ export function TeamPulseDashboard() {
       map.set(m.role, entry);
     }
     return Array.from(map.values()).sort((a, b) => b.effort - a.effort);
-  }, [members, effortByMember]);
+  }, [scopedMembers, effortByMember]);
 
   // ---- Cumulative topic flow (4 weeks: W-1, W0, W+1, W+2) ----
   // We don't store historical snapshots, so use current counts as W0 and
   // simulate movement using absences active each week (proxy for throughput).
   const topicFlow = useMemo(() => {
+    const scopedTopics = workTopics.filter((t) => scopedMemberIds.has(t.memberId));
     const current = {
-      completed: workTopics.filter((t) => t.status === "completed").length,
-      inProgress: workTopics.filter((t) => t.status === "in-progress").length,
-      pending: workTopics.filter((t) => t.status === "pending").length,
-      backlog: workTopics.filter((t) => t.status === "blocked").length,
+      completed: scopedTopics.filter((t) => t.status === "completed").length,
+      inProgress: scopedTopics.filter((t) => t.status === "in-progress").length,
+      pending: scopedTopics.filter((t) => t.status === "pending").length,
+      backlog: scopedTopics.filter((t) => t.status === "blocked").length,
     };
 
     const buildWeek = (offsetWeeks: number, label: string) => {
       // Simple proxy: throughput shrinks when more absences fall in that week.
       const weekStart = isoDayOffset(offsetWeeks * 7);
       const weekEnd = isoDayOffset(offsetWeeks * 7 + 6);
-      const absentDaysInWeek = members.reduce((sum, m) => {
+      const absentDaysInWeek = scopedMembers.reduce((sum, m) => {
         let days = 0;
         for (let d = 0; d < 7; d++) {
           const iso = isoDayOffset(offsetWeeks * 7 + d);
@@ -558,7 +580,7 @@ export function TeamPulseDashboard() {
         }
         return sum + days;
       }, 0);
-      const stress = Math.min(1, absentDaysInWeek / Math.max(1, members.length * 7));
+      const stress = Math.min(1, absentDaysInWeek / Math.max(1, scopedMembers.length * 7));
       // Past weeks: less completed, more pending. Future weeks: more completed.
       const shift = offsetWeeks; // -1, 0, 1, 2
       return {
@@ -582,14 +604,18 @@ export function TeamPulseDashboard() {
       buildWeek(1, "W+1"),
       buildWeek(2, "W+2"),
     ];
-  }, [workTopics, members, filteredAbsences]);
+  }, [workTopics, scopedMembers, scopedMemberIds, filteredAbsences]);
 
   // ---- Handover list ----
   const handoverList = useMemo(() => {
     return handovers
       .filter((h) => {
         const a = absencesById.get(h.absenceId);
-        return a ? activeTypes.has(a.type as AbsenceType) : true;
+        if (a && !activeTypes.has(a.type as AbsenceType)) return false;
+        return (
+          scopedMemberIds.has(h.fromMemberId) ||
+          scopedMemberIds.has(h.toMemberId)
+        );
       })
       .slice()
       .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
@@ -616,7 +642,7 @@ export function TeamPulseDashboard() {
               : `${topicNames[0]} +${topicNames.length - 1} más`,
         };
       });
-  }, [handovers, membersById, absencesById, workTopics, activeTypes]);
+  }, [handovers, membersById, absencesById, workTopics, activeTypes, scopedMemberIds]);
 
   // ----------------------------------------------------------------------------
   // Render
@@ -654,6 +680,34 @@ export function TeamPulseDashboard() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* TEAM SELECTOR */}
+      <div style={styles.filterBar}>
+        <span style={styles.filterLabel}>Team scope</span>
+        {[{ id: "all", name: "All teams" }, ...teams].map((t) => {
+          const active = selectedTeamId === t.id;
+          const idx = teams.findIndex((x) => x.id === t.id);
+          const color =
+            t.id === "all"
+              ? "#06d6a0"
+              : TEAM_PALETTE[Math.max(0, idx) % TEAM_PALETTE.length];
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setSelectedTeamId(t.id)}
+              style={styles.filterChip(color, active)}
+              aria-pressed={active}
+            >
+              <span style={styles.filterDot(color, active)} />
+              {t.name}
+            </button>
+          );
+        })}
+        <span style={{ ...styles.monoNum, marginLeft: "auto" }}>
+          {scopedMembers.length} members
+        </span>
       </div>
 
       {/* ABSENCE TYPE FILTERS */}
