@@ -646,6 +646,44 @@ export function TeamPulseDashboard() {
         </div>
       </div>
 
+      {/* ABSENCE TYPE FILTERS */}
+      <div style={styles.filterBar}>
+        <span style={styles.filterLabel}>Absence types</span>
+        {ALL_ABSENCE_TYPES.map((t) => {
+          const active = activeTypes.has(t);
+          const color = ABSENCE_COLORS[t];
+          return (
+            <button
+              key={t}
+              type="button"
+              onClick={() => toggleType(t)}
+              style={styles.filterChip(color, active)}
+              aria-pressed={active}
+            >
+              <span style={styles.filterDot(color, active)} />
+              {ABSENCE_LABELS[t]}
+            </button>
+          );
+        })}
+        {activeTypes.size < ALL_ABSENCE_TYPES.length ? (
+          <button
+            type="button"
+            onClick={() => setActiveTypes(new Set(ALL_ABSENCE_TYPES))}
+            style={styles.filterAction}
+          >
+            Mostrar todos
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setActiveTypes(new Set())}
+            style={{ ...styles.filterAction, color: "#6b8f82" }}
+          >
+            Ocultar todos
+          </button>
+        )}
+      </div>
+
       {/* KPI STRIP */}
       <div style={styles.kpiGrid}>
         <div style={styles.kpiCard}>
