@@ -280,7 +280,65 @@ const styles = {
     color: "#6b8f82",
     fontSize: 13,
   },
+  filterBar: {
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap" as const,
+    gap: 8,
+    marginBottom: 18,
+    padding: "12px 16px",
+    background: "rgba(255,255,255,0.025)",
+    border: "1px solid rgba(255,255,255,0.05)",
+    borderRadius: 14,
+  },
+  filterLabel: {
+    fontSize: 11,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.08em",
+    color: "#6b8f82",
+    marginRight: 4,
+  },
+  filterChip: (color: string, active: boolean) => ({
+    border: `1px solid ${active ? `${color}88` : "rgba(255,255,255,0.08)"}`,
+    background: active ? `${color}22` : "transparent",
+    color: active ? color : "#6b8f82",
+    padding: "5px 12px",
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: "pointer",
+    transition: "all 140ms ease",
+    fontFamily: "inherit",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+  }),
+  filterDot: (color: string, active: boolean) => ({
+    width: 8,
+    height: 8,
+    borderRadius: 2,
+    background: active ? color : "rgba(255,255,255,0.15)",
+  }),
+  filterAction: {
+    marginLeft: "auto",
+    background: "transparent",
+    border: "none",
+    color: "#06d6a0",
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    padding: "4px 8px",
+  },
 };
+
+const ALL_ABSENCE_TYPES: AbsenceType[] = [
+  "vacation",
+  "sick-leave",
+  "work-travel",
+  "other-project",
+  "parental-leave",
+];
 
 // ----------------------------------------------------------------------------
 // Subcomponents
