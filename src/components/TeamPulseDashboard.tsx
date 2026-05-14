@@ -427,12 +427,12 @@ export function TeamPulseDashboard() {
   }, [absences]);
 
   const absentMembers = useMemo(
-    () => members.filter((m) => isAbsentOn(m.id, today, absences)),
-    [members, absences, today]
+    () => members.filter((m) => isAbsentOn(m.id, today, filteredAbsences)),
+    [members, filteredAbsences, today]
   );
   const availableMembers = useMemo(
-    () => members.filter((m) => !isAbsentOn(m.id, today, absences)),
-    [members, absences, today]
+    () => members.filter((m) => !isAbsentOn(m.id, today, filteredAbsences)),
+    [members, filteredAbsences, today]
   );
 
   const effortByMember = useMemo(() => {
