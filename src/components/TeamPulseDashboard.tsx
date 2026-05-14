@@ -642,7 +642,7 @@ export function TeamPulseDashboard() {
               : `${topicNames[0]} +${topicNames.length - 1} más`,
         };
       });
-  }, [handovers, membersById, absencesById, workTopics, activeTypes]);
+  }, [handovers, membersById, absencesById, workTopics, activeTypes, scopedMemberIds]);
 
   // ----------------------------------------------------------------------------
   // Render
