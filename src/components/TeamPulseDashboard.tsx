@@ -394,6 +394,23 @@ function Avatar({
 export function TeamPulseDashboard() {
   const { teams, members, workTopics, absences, handovers } = useApp();
   const [tab, setTab] = useState<"pulse" | "flow" | "handovers">("pulse");
+  const [activeTypes, setActiveTypes] = useState<Set<AbsenceType>>(
+    () => new Set(ALL_ABSENCE_TYPES)
+  );
+
+  const toggleType = (t: AbsenceType) => {
+    setActiveTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(t)) next.delete(t);
+      else next.add(t);
+      return next;
+    });
+  };
+
+  const filteredAbsences = useMemo(
+    () => absences.filter((a) => activeTypes.has(a.type as AbsenceType)),
+    [absences, activeTypes]
+  );
 
   const today = isoDayOffset(0);
 
