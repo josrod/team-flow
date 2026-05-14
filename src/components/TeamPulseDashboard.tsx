@@ -825,7 +825,11 @@ export function TeamPulseDashboard() {
 
       {/* TAB: PULSE */}
       {tab === "pulse" && (
-        <>
+        <section
+          id="pulse-panel-pulse"
+          role="tabpanel"
+          aria-labelledby="pulse-tab-pulse"
+        >
           <div style={styles.twoCol}>
             {/* Team Utilization radial */}
             <div style={styles.card}>
