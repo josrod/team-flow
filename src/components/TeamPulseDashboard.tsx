@@ -466,9 +466,9 @@ export function TeamPulseDashboard() {
 
   const effortByMember = useMemo(() => {
     const map = new Map<string, number>();
-    for (const m of members) map.set(m.id, effortFromTopics(m.id, workTopics));
+    for (const m of scopedMembers) map.set(m.id, effortFromTopics(m.id, workTopics));
     return map;
-  }, [members, workTopics]);
+  }, [scopedMembers, workTopics]);
 
   const totalEffort = availableMembers.reduce(
     (s, m) => s + (effortByMember.get(m.id) ?? 0),
