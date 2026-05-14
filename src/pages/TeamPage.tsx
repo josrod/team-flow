@@ -424,6 +424,25 @@ export default function TeamPage() {
                 </div>
                </SheetHeader>
 
+              <div className="mt-4">
+                <Label className="text-xs text-muted-foreground">{t.loginName}</Label>
+                <Input
+                  value={selectedMember.loginName ?? ""}
+                  placeholder={t.loginNamePlaceholder}
+                  maxLength={50}
+                  className="h-8 text-sm mt-1 font-mono"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const updated = {
+                      ...selectedMember,
+                      loginName: value.trim() ? value.trim() : undefined,
+                    };
+                    updateMember(updated);
+                    setSelectedMember(updated);
+                  }}
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4 mt-6 relative">
                 <div className="col-span-2 flex items-center justify-between">
                   <h3 className="text-sm font-semibold">{t.capacityConfig}</h3>
