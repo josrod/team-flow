@@ -1,5 +1,5 @@
 import { read as readXlsx, utils as xlsxUtils } from "xlsx";
-import { format, isValid, parseISO, addDays, differenceInCalendarDays } from "date-fns";
+import { format, isValid, parseISO, differenceInCalendarDays } from "date-fns";
 import type { AbsenceType, TeamMember } from "@/types";
 
 export interface InventAbsentRow {
@@ -216,5 +216,5 @@ export async function parseInventAbsentFile(
   return { absences, unmatched, skipped };
 }
 
-// Re-export to silence unused import warnings in some build configs.
-export const __test = { mapActivityKind, oaDateToIso, parseCellDate, addDays };
+
+
