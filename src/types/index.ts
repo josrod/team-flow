@@ -10,6 +10,7 @@ export interface TeamMember {
   avatar?: string;
   baseCapacity?: number; // base/optimal weekly capacity (e.g., 32h)
   maxCapacity?: number; // max weekly capacity (e.g., 40h)
+  loginName?: string; // Windows login name without domain (e.g. "jsmith")
 }
 
 export interface WorkTopic {
