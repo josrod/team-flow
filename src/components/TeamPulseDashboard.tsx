@@ -1118,12 +1118,17 @@ export function TeamPulseDashboard() {
               />
             </AreaChart>
           </ResponsiveContainer>
-        </div>
+        </section>
       )}
 
       {/* TAB: HANDOVERS */}
       {tab === "handovers" && (
-        <div style={styles.card}>
+        <section
+          id="pulse-panel-handovers"
+          role="tabpanel"
+          aria-labelledby="pulse-tab-handovers"
+          style={styles.card}
+        >
           <h2 style={styles.cardTitle}>Active Handovers</h2>
           <p style={styles.cardDesc}>
             Work topic reassignments during absences — click any item for details
