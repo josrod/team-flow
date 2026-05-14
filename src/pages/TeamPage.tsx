@@ -53,6 +53,7 @@ export default function TeamPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
+  const [newLoginName, setNewLoginName] = useState("");
   const [editingName, setEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState("");
   const [editingRole, setEditingRole] = useState(false);
@@ -83,9 +84,15 @@ export default function TeamPage() {
       toast.error(result.error.errors[0].message);
       return;
     }
-    addMember({ name: result.data.name, role: result.data.role, teamId });
+    addMember({
+      name: result.data.name,
+      role: result.data.role,
+      teamId,
+      loginName: newLoginName.trim() ? newLoginName.trim() : undefined,
+    });
     setNewName("");
     setNewRole("");
+    setNewLoginName("");
     setAddOpen(false);
   };
 
