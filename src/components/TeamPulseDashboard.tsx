@@ -647,38 +647,68 @@ export function TeamPulseDashboard() {
   // ----------------------------------------------------------------------------
   // Render
   // ----------------------------------------------------------------------------
+  const tabDefs = [
+    { id: "pulse", label: "Pulse" },
+    { id: "flow", label: "Topic Flow" },
+    { id: "handovers", label: "Handovers" },
+  ] as const;
+  type TabId = (typeof tabDefs)[number]["id"];
+
+  const handleTabKey = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft" && e.key !== "Home" && e.key !== "End") return;
+    e.preventDefault();
+    const idx = tabDefs.findIndex((t) => t.id === tab);
+    let nextIdx = idx;
+    if (e.key === "ArrowRight") nextIdx = (idx + 1) % tabDefs.length;
+    else if (e.key === "ArrowLeft") nextIdx = (idx - 1 + tabDefs.length) % tabDefs.length;
+    else if (e.key === "Home") nextIdx = 0;
+    else if (e.key === "End") nextIdx = tabDefs.length - 1;
+    const nextId = tabDefs[nextIdx].id;
+    setTab(nextId);
+    // Move focus to the newly-active tab
+    requestAnimationFrame(() => {
+      const btn = document.getElementById(`pulse-tab-${nextId}`);
+      btn?.focus();
+    });
+  };
+
   return (
     <div style={styles.root}>
       {/* HEADER */}
       <div style={styles.header}>
         <div style={styles.brand}>
-          <div style={styles.logoBox}>
+          <div style={styles.logoBox} aria-hidden="true">
             <PulseLogo />
           </div>
           <div>
             <h1 style={styles.title}>Team Pulse</h1>
             <div style={{ marginTop: 4 }}>
-              <span style={styles.subtitleBadge}>
+              <span style={styles.subtitleBadge} aria-live="polite">
                 {availableMembers.length} available · {absentMembers.length} absent
               </span>
             </div>
           </div>
         </div>
-        <div style={styles.tabBar}>
-          {([
-            { id: "pulse", label: "Pulse" },
-            { id: "flow", label: "Topic Flow" },
-            { id: "handovers", label: "Handovers" },
-          ] as const).map((tb) => (
-            <button
-              key={tb.id}
-              type="button"
-              onClick={() => setTab(tb.id)}
-              style={styles.tab(tab === tb.id)}
-            >
-              {tb.label}
-            </button>
-          ))}
+        <div style={styles.tabBar} role="tablist" aria-label="Dashboard sections">
+          {tabDefs.map((tb) => {
+            const active = tab === tb.id;
+            return (
+              <button
+                key={tb.id}
+                id={`pulse-tab-${tb.id}`}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                aria-controls={`pulse-panel-${tb.id}`}
+                tabIndex={active ? 0 : -1}
+                onClick={() => setTab(tb.id as TabId)}
+                onKeyDown={handleTabKey}
+                style={styles.tab(active)}
+              >
+                {tb.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -795,7 +825,11 @@ export function TeamPulseDashboard() {
 
       {/* TAB: PULSE */}
       {tab === "pulse" && (
-        <>
+        <section
+          id="pulse-panel-pulse"
+          role="tabpanel"
+          aria-labelledby="pulse-tab-pulse"
+        >
           <div style={styles.twoCol}>
             {/* Team Utilization radial */}
             <div style={styles.card}>
@@ -997,12 +1031,17 @@ export function TeamPulseDashboard() {
               </ResponsiveContainer>
             )}
           </div>
-        </>
+        </section>
       )}
 
       {/* TAB: TOPIC FLOW */}
       {tab === "flow" && (
-        <div style={styles.card}>
+        <section
+          id="pulse-panel-flow"
+          role="tabpanel"
+          aria-labelledby="pulse-tab-flow"
+          style={styles.card}
+        >
           <h2 style={styles.cardTitle}>Cumulative Topic Flow</h2>
           <p style={styles.cardDesc}>
             WorkTopic statuses stacked over time — historical snapshots are simulated; W0 is current
@@ -1079,12 +1118,17 @@ export function TeamPulseDashboard() {
               />
             </AreaChart>
           </ResponsiveContainer>
-        </div>
+        </section>
       )}
 
       {/* TAB: HANDOVERS */}
       {tab === "handovers" && (
-        <div style={styles.card}>
+        <section
+          id="pulse-panel-handovers"
+          role="tabpanel"
+          aria-labelledby="pulse-tab-handovers"
+          style={styles.card}
+        >
           <h2 style={styles.cardTitle}>Active Handovers</h2>
           <p style={styles.cardDesc}>
             Work topic reassignments during absences — click any item for details
@@ -1138,7 +1182,7 @@ export function TeamPulseDashboard() {
               })}
             </div>
           )}
-        </div>
+        </section>
       )}
 
       {/* HANDOVER DETAIL DRAWER */}
