@@ -1031,12 +1031,17 @@ export function TeamPulseDashboard() {
               </ResponsiveContainer>
             )}
           </div>
-        </>
+        </section>
       )}
 
       {/* TAB: TOPIC FLOW */}
       {tab === "flow" && (
-        <div style={styles.card}>
+        <section
+          id="pulse-panel-flow"
+          role="tabpanel"
+          aria-labelledby="pulse-tab-flow"
+          style={styles.card}
+        >
           <h2 style={styles.cardTitle}>Cumulative Topic Flow</h2>
           <p style={styles.cardDesc}>
             WorkTopic statuses stacked over time — historical snapshots are simulated; W0 is current
