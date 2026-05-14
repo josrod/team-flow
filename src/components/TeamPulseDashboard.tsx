@@ -497,7 +497,7 @@ export function TeamPulseDashboard() {
 
   // ---- Team radial ----
   const teamRadial = useMemo(() => {
-    return teams.map((t, i) => {
+    return scopedTeams.map((t, i) => {
       const teamMembers = availableMembers.filter((m) => m.teamId === t.id);
       const effort = teamMembers.reduce(
         (s, m) => s + (effortByMember.get(m.id) ?? 0),
@@ -511,7 +511,7 @@ export function TeamPulseDashboard() {
         fill: TEAM_PALETTE[i % TEAM_PALETTE.length],
       };
     });
-  }, [teams, availableMembers, effortByMember]);
+  }, [scopedTeams, availableMembers, effortByMember]);
 
   // ---- Individual radial top 8 ----
   const individualRadial = useMemo(() => {
