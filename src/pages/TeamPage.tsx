@@ -326,6 +326,9 @@ export default function TeamPage() {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{m.name}</p>
                   <p className="text-xs text-muted-foreground">{m.role}</p>
+                  {m.loginName && (
+                    <p className="text-[10px] text-muted-foreground/70 font-mono truncate">@{m.loginName}</p>
+                  )}
                 </div>
                 <StatusBadge status={getMemberStatus(m.id)} />
               </CardContent>
