@@ -218,6 +218,15 @@ export default function TeamPage() {
               <div className="space-y-3">
                 <div><Label>{t.name}</Label><Input value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={100} /></div>
                 <div><Label>{t.role}</Label><Input value={newRole} onChange={(e) => setNewRole(e.target.value)} maxLength={50} /></div>
+                <div>
+                  <Label>{t.loginName}</Label>
+                  <Input
+                    value={newLoginName}
+                    onChange={(e) => setNewLoginName(e.target.value)}
+                    maxLength={50}
+                    placeholder={t.loginNamePlaceholder}
+                  />
+                </div>
                 <Button onClick={handleAdd} className="w-full">{t.add}</Button>
               </div>
             </DialogContent>
