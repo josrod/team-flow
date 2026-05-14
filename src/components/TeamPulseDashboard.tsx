@@ -401,6 +401,7 @@ function Avatar({
 export function TeamPulseDashboard() {
   const { teams, members, workTopics, absences, handovers } = useApp();
   const [tab, setTab] = useState<"pulse" | "flow" | "handovers">("pulse");
+  const [selectedHandoverId, setSelectedHandoverId] = useState<string | null>(null);
   const [activeTypes, setActiveTypes] = useState<Set<AbsenceType>>(
     () => new Set(ALL_ABSENCE_TYPES)
   );
