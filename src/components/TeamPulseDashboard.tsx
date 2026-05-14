@@ -1182,7 +1182,7 @@ export function TeamPulseDashboard() {
               })}
             </div>
           )}
-        </div>
+        </section>
       )}
 
       {/* HANDOVER DETAIL DRAWER */}
