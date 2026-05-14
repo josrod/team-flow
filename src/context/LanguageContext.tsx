@@ -170,6 +170,17 @@ export const translations = {
     importErrInvalidStart: "Fecha inicio inválida",
     importErrInvalidEnd: "Fecha fin inválida",
     importErrDateOrder: "Inicio posterior al fin",
+    // Invent format
+    importModeGeneric: "Genérico (CSV / Excel)",
+    importModeInvent: "Formato Invent",
+    importInventDropzone: "Arrastra el fichero Absent.xlsx exportado de Invent",
+    importInventFormats: "Solo .xlsx",
+    importInventSummary: "{imported} ausencias listas · {unmatched} sin coincidencia · {skipped} filas descartadas",
+    importInventNoLogin: "Login no encontrado",
+    importInventLoginCol: "Login",
+    importInventMemberCol: "Miembro",
+    loginName: "Login de usuario",
+    loginNamePlaceholder: "ej. jsmith",
     // Azure DevOps / TFS
     adoTitle: "Azure DevOps / TFS",
     adoDesc: "Conecta con Azure DevOps Server (TFS on-premise) o Azure DevOps cloud",
