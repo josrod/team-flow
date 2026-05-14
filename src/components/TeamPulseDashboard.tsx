@@ -546,7 +546,7 @@ export function TeamPulseDashboard() {
   // ---- Effort by role ----
   const effortByRole = useMemo(() => {
     const map = new Map<string, { role: string; effort: number; capacity: number }>();
-    for (const m of members) {
+    for (const m of scopedMembers) {
       const entry =
         map.get(m.role) ?? { role: m.role, effort: 0, capacity: 0 };
       entry.effort += effortByMember.get(m.id) ?? 0;
@@ -554,7 +554,7 @@ export function TeamPulseDashboard() {
       map.set(m.role, entry);
     }
     return Array.from(map.values()).sort((a, b) => b.effort - a.effort);
-  }, [members, effortByMember]);
+  }, [scopedMembers, effortByMember]);
 
   // ---- Cumulative topic flow (4 weeks: W-1, W0, W+1, W+2) ----
   // We don't store historical snapshots, so use current counts as W0 and
