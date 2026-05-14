@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, FileSpreadsheet, AlertTriangle, CheckCircle2, X } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
@@ -14,8 +15,11 @@ import { parse as parseCsv } from "papaparse";
 import { read as readXlsx, utils as xlsxUtils } from "xlsx";
 import { parseISO, isValid, format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { parseInventAbsentFile, type ParseResult } from "@/services/inventAbsentParser";
+import type { AbsenceType } from "@/types";
 
 type Step = "upload" | "mapping" | "preview";
+type Mode = "generic" | "invent";
 
 interface RawRow {
   [key: string]: string;
@@ -37,32 +41,20 @@ type FieldKey = (typeof REQUIRED_FIELDS)[number];
 function tryParseDate(raw: string): string | null {
   if (!raw) return null;
   const trimmed = raw.trim();
-
-  // Try ISO format yyyy-MM-dd
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
     const d = parseISO(trimmed);
     return isValid(d) ? format(d, "yyyy-MM-dd") : null;
   }
-
-  // Try dd/MM/yyyy
   const ddMmYyyy = trimmed.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
   if (ddMmYyyy) {
     const [, day, month, year] = ddMmYyyy;
     const d = new Date(Number(year), Number(month) - 1, Number(day));
     return isValid(d) ? format(d, "yyyy-MM-dd") : null;
   }
-
-  // Try MM/dd/yyyy
-  const mmDdYyyy = trimmed.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
-  if (mmDdYyyy) {
-    const d = new Date(trimmed);
-    return isValid(d) ? format(d, "yyyy-MM-dd") : null;
-  }
-
   return null;
 }
 
-function normalizeType(raw: string): "vacation" | "sick-leave" | "work-travel" | "other-project" | "parental-leave" | null {
+function normalizeType(raw: string): AbsenceType | null {
   const lower = raw.toLowerCase().trim();
   if (["vacation", "vacaciones", "holiday", "pto", "annual leave"].includes(lower)) return "vacation";
   if (["sick", "sick-leave", "sick leave", "baja", "enfermedad", "medical"].includes(lower)) return "sick-leave";
@@ -76,6 +68,7 @@ export function AbsenceImportDialog({ open, onOpenChange }: { open: boolean; onO
   const { members, addAbsence } = useApp();
   const { t } = useLang();
 
+  const [mode, setMode] = useState<Mode>("generic");
   const [step, setStep] = useState<Step>("upload");
   const [rawRows, setRawRows] = useState<RawRow[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
@@ -86,6 +79,7 @@ export function AbsenceImportDialog({ open, onOpenChange }: { open: boolean; onO
     endDate: "",
   });
   const [fileName, setFileName] = useState("");
+  const [inventResult, setInventResult] = useState<ParseResult | null>(null);
 
   const reset = useCallback(() => {
     setStep("upload");
@@ -93,6 +87,7 @@ export function AbsenceImportDialog({ open, onOpenChange }: { open: boolean; onO
     setColumns([]);
     setMapping({ memberName: "", type: "", startDate: "", endDate: "" });
     setFileName("");
+    setInventResult(null);
   }, []);
 
   const handleClose = useCallback((val: boolean) => {
@@ -100,9 +95,48 @@ export function AbsenceImportDialog({ open, onOpenChange }: { open: boolean; onO
     onOpenChange(val);
   }, [onOpenChange, reset]);
 
-  const handleFile = useCallback((file: File) => {
+  const autoMap = (cols: string[]) => {
+    const lowerCols = cols.map((c) => c.toLowerCase());
+    const newMapping: Record<FieldKey, string> = { memberName: "", type: "", startDate: "", endDate: "" };
+
+    const namePatterns = ["name", "nombre", "member", "miembro", "persona", "employee", "empleado"];
+    const typePatterns = ["type", "tipo", "kind", "clase", "category"];
+    const startPatterns = ["start", "inicio", "from", "desde", "begin", "fecha inicio", "start date"];
+    const endPatterns = ["end", "fin", "to", "hasta", "fecha fin", "end date"];
+
+    const findMatch = (patterns: string[]) => {
+      for (const p of patterns) {
+        const idx = lowerCols.findIndex((c) => c.includes(p));
+        if (idx !== -1) return cols[idx];
+      }
+      return "";
+    };
+
+    newMapping.memberName = findMatch(namePatterns);
+    newMapping.type = findMatch(typePatterns);
+    newMapping.startDate = findMatch(startPatterns);
+    newMapping.endDate = findMatch(endPatterns);
+    setMapping(newMapping);
+  };
+
+  const handleFile = useCallback(async (file: File) => {
     setFileName(file.name);
     const ext = file.name.split(".").pop()?.toLowerCase();
+
+    if (mode === "invent") {
+      if (ext !== "xlsx") {
+        toast.error(t.importUnsupportedFormat);
+        return;
+      }
+      try {
+        const result = await parseInventAbsentFile(file, members);
+        setInventResult(result);
+        setStep("preview");
+      } catch {
+        toast.error(t.importParseError);
+      }
+      return;
+    }
 
     if (ext === "csv" || ext === "txt") {
       const reader = new FileReader();
@@ -141,34 +175,10 @@ export function AbsenceImportDialog({ open, onOpenChange }: { open: boolean; onO
     } else {
       toast.error(t.importUnsupportedFormat);
     }
-  }, [t]);
-
-  const autoMap = (cols: string[]) => {
-    const lowerCols = cols.map((c) => c.toLowerCase());
-    const newMapping: Record<FieldKey, string> = { memberName: "", type: "", startDate: "", endDate: "" };
-
-    const namePatterns = ["name", "nombre", "member", "miembro", "persona", "employee", "empleado"];
-    const typePatterns = ["type", "tipo", "kind", "clase", "category"];
-    const startPatterns = ["start", "inicio", "from", "desde", "begin", "fecha inicio", "start date"];
-    const endPatterns = ["end", "fin", "to", "hasta", "fecha fin", "end date"];
-
-    const findMatch = (patterns: string[]) => {
-      for (const p of patterns) {
-        const idx = lowerCols.findIndex((c) => c.includes(p));
-        if (idx !== -1) return cols[idx];
-      }
-      return "";
-    };
-
-    newMapping.memberName = findMatch(namePatterns);
-    newMapping.type = findMatch(typePatterns);
-    newMapping.startDate = findMatch(startPatterns);
-    newMapping.endDate = findMatch(endPatterns);
-    setMapping(newMapping);
-  };
+  }, [mode, members, t]);
 
   const mappedData: MappedAbsence[] = useMemo(() => {
-    if (step !== "preview") return [];
+    if (step !== "preview" || mode !== "generic") return [];
     return rawRows.map((row) => {
       const errors: string[] = [];
       const memberName = (row[mapping.memberName] ?? "").trim();
@@ -201,7 +211,7 @@ export function AbsenceImportDialog({ open, onOpenChange }: { open: boolean; onO
         memberId: member?.id,
       };
     });
-  }, [step, rawRows, mapping, members, t]);
+  }, [step, mode, rawRows, mapping, members, t]);
 
   const validCount = mappedData.filter((r) => r.valid).length;
   const invalidCount = mappedData.length - validCount;
@@ -214,7 +224,7 @@ export function AbsenceImportDialog({ open, onOpenChange }: { open: boolean; onO
     for (const row of validRows) {
       addAbsence({
         memberId: row.memberId!,
-        type: row.type as "vacation" | "sick-leave" | "work-travel" | "other-project" | "parental-leave",
+        type: row.type as AbsenceType,
         startDate: row.startDate,
         endDate: row.endDate,
       });
@@ -222,6 +232,33 @@ export function AbsenceImportDialog({ open, onOpenChange }: { open: boolean; onO
     }
     toast.success(`📥 ${imported} ${t.importSuccess}`);
     handleClose(false);
+  };
+
+  const handleInventImport = () => {
+    if (!inventResult) return;
+    let imported = 0;
+    for (const a of inventResult.absences) {
+      addAbsence({
+        memberId: a.memberId,
+        type: a.type,
+        startDate: a.startDate,
+        endDate: a.endDate,
+      });
+      imported++;
+    }
+    toast.success(`📥 ${imported} ${t.importSuccess}`);
+    handleClose(false);
+  };
+
+  const openFilePicker = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = mode === "invent" ? ".xlsx" : ".csv,.xlsx,.xls";
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) handleFile(file);
+    };
+    input.click();
   };
 
   return (
@@ -235,33 +272,37 @@ export function AbsenceImportDialog({ open, onOpenChange }: { open: boolean; onO
         </DialogHeader>
 
         {step === "upload" && (
-          <div
-            className="border-2 border-dashed border-muted-foreground/25 rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
-            onClick={() => {
-              const input = document.createElement("input");
-              input.type = "file";
-              input.accept = ".csv,.xlsx,.xls";
-              input.onchange = (e) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
+          <div className="space-y-4">
+            <Tabs value={mode} onValueChange={(v) => { setMode(v as Mode); reset(); }}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="generic">{t.importModeGeneric}</TabsTrigger>
+                <TabsTrigger value="invent">{t.importModeInvent}</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <div
+              className="border-2 border-dashed border-muted-foreground/25 rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
+              onClick={openFilePicker}
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const file = e.dataTransfer.files[0];
                 if (file) handleFile(file);
-              };
-              input.click();
-            }}
-            onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-            onDrop={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const file = e.dataTransfer.files[0];
-              if (file) handleFile(file);
-            }}
-          >
-            <Upload className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
-            <p className="font-medium">{t.importDropzone}</p>
-            <p className="text-sm text-muted-foreground mt-1">{t.importFormats}</p>
+              }}
+            >
+              <Upload className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
+              <p className="font-medium">
+                {mode === "invent" ? t.importInventDropzone : t.importDropzone}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {mode === "invent" ? t.importInventFormats : t.importFormats}
+              </p>
+            </div>
           </div>
         )}
 
-        {step === "mapping" && (
+        {step === "mapping" && mode === "generic" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
@@ -328,7 +369,7 @@ export function AbsenceImportDialog({ open, onOpenChange }: { open: boolean; onO
           </div>
         )}
 
-        {step === "preview" && (
+        {step === "preview" && mode === "generic" && (
           <div className="space-y-3 flex-1 min-h-0 flex flex-col">
             <div className="flex items-center gap-3 flex-wrap">
               <Badge variant="outline" className="gap-1">
@@ -379,6 +420,64 @@ export function AbsenceImportDialog({ open, onOpenChange }: { open: boolean; onO
 
             <Button onClick={handleImport} disabled={validCount === 0} className="w-full">
               {t.importConfirm} ({validCount})
+            </Button>
+          </div>
+        )}
+
+        {step === "preview" && mode === "invent" && inventResult && (
+          <div className="space-y-3 flex-1 min-h-0 flex flex-col">
+            <div className="flex items-center gap-3 flex-wrap">
+              <p className="text-xs text-muted-foreground flex-1">
+                {fileName} —{" "}
+                {t.importInventSummary
+                  .replace("{imported}", String(inventResult.absences.length))
+                  .replace("{unmatched}", String(inventResult.unmatched.length))
+                  .replace("{skipped}", String(inventResult.skipped))}
+              </p>
+              <Button variant="ghost" size="sm" onClick={reset}>
+                <X className="h-4 w-4 mr-1" /> {t.importChangeFile}
+              </Button>
+            </div>
+
+            <ScrollArea className="flex-1 min-h-0 border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs py-1 px-2">{t.importInventLoginCol}</TableHead>
+                    <TableHead className="text-xs py-1 px-2">{t.importInventMemberCol}</TableHead>
+                    <TableHead className="text-xs py-1 px-2">{t.type}</TableHead>
+                    <TableHead className="text-xs py-1 px-2">{t.start}</TableHead>
+                    <TableHead className="text-xs py-1 px-2">{t.end}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {inventResult.absences.map((a, i) => (
+                    <TableRow key={`ok-${i}`}>
+                      <TableCell className="text-xs py-1 px-2 font-mono">{a.loginName}</TableCell>
+                      <TableCell className="text-xs py-1 px-2">{a.memberName}</TableCell>
+                      <TableCell className="text-xs py-1 px-2">{a.type}</TableCell>
+                      <TableCell className="text-xs py-1 px-2">{a.startDate}</TableCell>
+                      <TableCell className="text-xs py-1 px-2">{a.endDate}</TableCell>
+                    </TableRow>
+                  ))}
+                  {inventResult.unmatched.map((u, i) => (
+                    <TableRow key={`ko-${i}`} className="bg-destructive/5">
+                      <TableCell className="text-xs py-1 px-2 font-mono">{u.loginName}</TableCell>
+                      <TableCell colSpan={4} className="text-xs py-1 px-2 text-destructive">
+                        {t.importInventNoLogin}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+
+            <Button
+              onClick={handleInventImport}
+              disabled={inventResult.absences.length === 0}
+              className="w-full"
+            >
+              {t.importConfirm} ({inventResult.absences.length})
             </Button>
           </div>
         )}
