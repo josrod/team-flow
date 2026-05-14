@@ -560,18 +560,19 @@ export function TeamPulseDashboard() {
   // We don't store historical snapshots, so use current counts as W0 and
   // simulate movement using absences active each week (proxy for throughput).
   const topicFlow = useMemo(() => {
+    const scopedTopics = workTopics.filter((t) => scopedMemberIds.has(t.memberId));
     const current = {
-      completed: workTopics.filter((t) => t.status === "completed").length,
-      inProgress: workTopics.filter((t) => t.status === "in-progress").length,
-      pending: workTopics.filter((t) => t.status === "pending").length,
-      backlog: workTopics.filter((t) => t.status === "blocked").length,
+      completed: scopedTopics.filter((t) => t.status === "completed").length,
+      inProgress: scopedTopics.filter((t) => t.status === "in-progress").length,
+      pending: scopedTopics.filter((t) => t.status === "pending").length,
+      backlog: scopedTopics.filter((t) => t.status === "blocked").length,
     };
 
     const buildWeek = (offsetWeeks: number, label: string) => {
       // Simple proxy: throughput shrinks when more absences fall in that week.
       const weekStart = isoDayOffset(offsetWeeks * 7);
       const weekEnd = isoDayOffset(offsetWeeks * 7 + 6);
-      const absentDaysInWeek = members.reduce((sum, m) => {
+      const absentDaysInWeek = scopedMembers.reduce((sum, m) => {
         let days = 0;
         for (let d = 0; d < 7; d++) {
           const iso = isoDayOffset(offsetWeeks * 7 + d);
@@ -579,7 +580,7 @@ export function TeamPulseDashboard() {
         }
         return sum + days;
       }, 0);
-      const stress = Math.min(1, absentDaysInWeek / Math.max(1, members.length * 7));
+      const stress = Math.min(1, absentDaysInWeek / Math.max(1, scopedMembers.length * 7));
       // Past weeks: less completed, more pending. Future weeks: more completed.
       const shift = offsetWeeks; // -1, 0, 1, 2
       return {
@@ -603,7 +604,7 @@ export function TeamPulseDashboard() {
       buildWeek(1, "W+1"),
       buildWeek(2, "W+2"),
     ];
-  }, [workTopics, members, filteredAbsences]);
+  }, [workTopics, scopedMembers, scopedMemberIds, filteredAbsences]);
 
   // ---- Handover list ----
   const handoverList = useMemo(() => {
