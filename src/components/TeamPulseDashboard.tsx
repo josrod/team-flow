@@ -574,7 +574,7 @@ export function TeamPulseDashboard() {
       buildWeek(1, "W+1"),
       buildWeek(2, "W+2"),
     ];
-  }, [workTopics, members, absences]);
+  }, [workTopics, members, filteredAbsences]);
 
   // ---- Handover list ----
   const handoverList = useMemo(() => {
