@@ -598,6 +598,8 @@ export function TeamPulseDashboard() {
           toName: toMember?.name ?? "—",
           date: h.createdAt.slice(0, 10),
           absenceType: (absence?.type ?? "vacation") as AbsenceType,
+          notes: h.notes ?? "",
+          topicNames,
           topicLabel:
             topicNames.length === 0
               ? h.notes || "Sin tareas asociadas"
