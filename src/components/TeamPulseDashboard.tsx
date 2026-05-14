@@ -14,6 +14,13 @@ import {
   Legend,
 } from "recharts";
 import { useApp } from "@/context/AppContext";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import type { AbsenceType, TeamMember, WorkTopic } from "@/types";
 
 // ----------------------------------------------------------------------------
@@ -394,6 +401,7 @@ function Avatar({
 export function TeamPulseDashboard() {
   const { teams, members, workTopics, absences, handovers } = useApp();
   const [tab, setTab] = useState<"pulse" | "flow" | "handovers">("pulse");
+  const [selectedHandoverId, setSelectedHandoverId] = useState<string | null>(null);
   const [activeTypes, setActiveTypes] = useState<Set<AbsenceType>>(
     () => new Set(ALL_ABSENCE_TYPES)
   );
@@ -598,6 +606,8 @@ export function TeamPulseDashboard() {
           toName: toMember?.name ?? "—",
           date: h.createdAt.slice(0, 10),
           absenceType: (absence?.type ?? "vacation") as AbsenceType,
+          notes: h.notes ?? "",
+          topicNames,
           topicLabel:
             topicNames.length === 0
               ? h.notes || "Sin tareas asociadas"
@@ -1022,7 +1032,9 @@ export function TeamPulseDashboard() {
       {tab === "handovers" && (
         <div style={styles.card}>
           <h2 style={styles.cardTitle}>Active Handovers</h2>
-          <p style={styles.cardDesc}>Work topic reassignments during absences</p>
+          <p style={styles.cardDesc}>
+            Work topic reassignments during absences — click any item for details
+          </p>
           {handoverList.length === 0 ? (
             <div style={styles.emptyState}>No handovers registered yet</div>
           ) : (
@@ -1030,12 +1042,36 @@ export function TeamPulseDashboard() {
               {handoverList.map((h) => {
                 const color = ABSENCE_COLORS[h.absenceType] || "#06d6a0";
                 return (
-                  <div key={h.id} style={styles.handoverItem}>
+                  <button
+                    key={h.id}
+                    type="button"
+                    onClick={() => setSelectedHandoverId(h.id)}
+                    style={{
+                      ...styles.handoverItem,
+                      width: "100%",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      color: "#e6f4ef",
+                    }}
+                    aria-label={`Open handover from ${h.fromName} to ${h.toName}`}
+                  >
                     <div style={styles.handoverHeader}>
                       <span style={styles.typeBadge(color)}>
                         {ABSENCE_LABELS[h.absenceType] || h.absenceType}
                       </span>
                       <span style={styles.monoNum}>{formatShortDate(h.date)}</span>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          fontSize: 11,
+                          color: "#6b8f82",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.08em",
+                        }}
+                      >
+                        Ver detalles →
+                      </span>
                     </div>
                     <div style={styles.flowRow}>
                       <Avatar name={h.fromName} color="#6b8f82" strikethrough />
@@ -1043,13 +1079,131 @@ export function TeamPulseDashboard() {
                       <Avatar name={h.toName} color={color} />
                     </div>
                     <div style={styles.topicChip}>{h.topicLabel}</div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
           )}
         </div>
       )}
+
+      {/* HANDOVER DETAIL DRAWER */}
+      <Sheet
+        open={selectedHandoverId !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedHandoverId(null);
+        }}
+      >
+        <SheetContent
+          side="right"
+          className="border-l-0 sm:max-w-md"
+          style={{
+            background: "linear-gradient(160deg, #0a1a15 0%, #0f2620 100%)",
+            color: "#e6f4ef",
+            fontFamily:
+              "'Outfit', system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+            borderLeft: "1px solid rgba(255,255,255,0.06)",
+          }}
+        >
+          {(() => {
+            const detail = handoverList.find((h) => h.id === selectedHandoverId);
+            if (!detail) return null;
+            const color = ABSENCE_COLORS[detail.absenceType] || "#06d6a0";
+            return (
+              <>
+                <SheetHeader>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                    <span style={styles.typeBadge(color)}>
+                      {ABSENCE_LABELS[detail.absenceType] || detail.absenceType}
+                    </span>
+                    <span style={styles.monoNum}>
+                      {formatShortDate(detail.date)}
+                    </span>
+                  </div>
+                  <SheetTitle style={{ color: "#e6f4ef", marginTop: 12 }}>
+                    Handover detail
+                  </SheetTitle>
+                  <SheetDescription style={{ color: "#6b8f82" }}>
+                    Reassignment from {detail.fromName} to {detail.toName}
+                  </SheetDescription>
+                </SheetHeader>
+
+                <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 22 }}>
+                  <div>
+                    <div style={styles.kpiLabel}>Flow</div>
+                    <div style={{ ...styles.flowRow, marginTop: 8 }}>
+                      <Avatar name={detail.fromName} color="#6b8f82" strikethrough />
+                      <span style={{ color, fontSize: 18 }}>→</span>
+                      <Avatar name={detail.toName} color={color} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={styles.kpiLabel}>
+                      Topics ({detail.topicNames.length})
+                    </div>
+                    {detail.topicNames.length === 0 ? (
+                      <div style={{ ...styles.topicChip, marginTop: 8 }}>
+                        No topics associated with this handover
+                      </div>
+                    ) : (
+                      <ul
+                        style={{
+                          listStyle: "none",
+                          padding: 0,
+                          margin: "8px 0 0",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 8,
+                        }}
+                      >
+                        {detail.topicNames.map((name, i) => (
+                          <li
+                            key={`${name}-${i}`}
+                            style={{
+                              ...styles.topicChip,
+                              marginTop: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
+                            }}
+                          >
+                            <span
+                              style={{
+                                ...styles.monoNum,
+                                color: "#6b8f82",
+                                minWidth: 22,
+                              }}
+                            >
+                              {String(i + 1).padStart(2, "0")}
+                            </span>
+                            <span>{name}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  <div>
+                    <div style={styles.kpiLabel}>Notes</div>
+                    <div
+                      style={{
+                        ...styles.topicChip,
+                        marginTop: 8,
+                        whiteSpace: "pre-wrap",
+                        color: detail.notes ? "#cfe2db" : "#6b8f82",
+                        fontStyle: detail.notes ? "normal" : "italic",
+                      }}
+                    >
+                      {detail.notes || "No notes added for this handover"}
+                    </div>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
