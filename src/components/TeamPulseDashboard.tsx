@@ -546,7 +546,7 @@ export function TeamPulseDashboard() {
         let days = 0;
         for (let d = 0; d < 7; d++) {
           const iso = isoDayOffset(offsetWeeks * 7 + d);
-          if (isAbsentOn(m.id, iso, absences)) days++;
+          if (isAbsentOn(m.id, iso, filteredAbsences)) days++;
         }
         return sum + days;
       }, 0);
