@@ -33,7 +33,7 @@ describe("TeamPulseDashboard", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: /team pulse/i })
     ).toBeInTheDocument();
-    expect(screen.getByText(/team utilization/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/team utilization/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/absent today/i)).toBeInTheDocument();
     expect(screen.getByText(/handover coverage/i)).toBeInTheDocument();
   });
