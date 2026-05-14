@@ -402,6 +402,7 @@ export function TeamPulseDashboard() {
   const { teams, members, workTopics, absences, handovers } = useApp();
   const [tab, setTab] = useState<"pulse" | "flow" | "handovers">("pulse");
   const [selectedHandoverId, setSelectedHandoverId] = useState<string | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | "all">("all");
   const [activeTypes, setActiveTypes] = useState<Set<AbsenceType>>(
     () => new Set(ALL_ABSENCE_TYPES)
   );
@@ -434,13 +435,33 @@ export function TeamPulseDashboard() {
     return map;
   }, [absences]);
 
+  // Scope by selected team
+  const scopedMembers = useMemo(
+    () =>
+      selectedTeamId === "all"
+        ? members
+        : members.filter((m) => m.teamId === selectedTeamId),
+    [members, selectedTeamId]
+  );
+  const scopedTeams = useMemo(
+    () =>
+      selectedTeamId === "all"
+        ? teams
+        : teams.filter((t) => t.id === selectedTeamId),
+    [teams, selectedTeamId]
+  );
+  const scopedMemberIds = useMemo(
+    () => new Set(scopedMembers.map((m) => m.id)),
+    [scopedMembers]
+  );
+
   const absentMembers = useMemo(
-    () => members.filter((m) => isAbsentOn(m.id, today, filteredAbsences)),
-    [members, filteredAbsences, today]
+    () => scopedMembers.filter((m) => isAbsentOn(m.id, today, filteredAbsences)),
+    [scopedMembers, filteredAbsences, today]
   );
   const availableMembers = useMemo(
-    () => members.filter((m) => !isAbsentOn(m.id, today, filteredAbsences)),
-    [members, filteredAbsences, today]
+    () => scopedMembers.filter((m) => !isAbsentOn(m.id, today, filteredAbsences)),
+    [scopedMembers, filteredAbsences, today]
   );
 
   const effortByMember = useMemo(() => {
