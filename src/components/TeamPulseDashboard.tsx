@@ -682,6 +682,34 @@ export function TeamPulseDashboard() {
         </div>
       </div>
 
+      {/* TEAM SELECTOR */}
+      <div style={styles.filterBar}>
+        <span style={styles.filterLabel}>Team scope</span>
+        {[{ id: "all", name: "All teams" }, ...teams].map((t) => {
+          const active = selectedTeamId === t.id;
+          const idx = teams.findIndex((x) => x.id === t.id);
+          const color =
+            t.id === "all"
+              ? "#06d6a0"
+              : TEAM_PALETTE[Math.max(0, idx) % TEAM_PALETTE.length];
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setSelectedTeamId(t.id)}
+              style={styles.filterChip(color, active)}
+              aria-pressed={active}
+            >
+              <span style={styles.filterDot(color, active)} />
+              {t.name}
+            </button>
+          );
+        })}
+        <span style={{ ...styles.monoNum, marginLeft: "auto" }}>
+          {scopedMembers.length} members
+        </span>
+      </div>
+
       {/* ABSENCE TYPE FILTERS */}
       <div style={styles.filterBar}>
         <span style={styles.filterLabel}>Absence types</span>
