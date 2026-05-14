@@ -280,7 +280,65 @@ const styles = {
     color: "#6b8f82",
     fontSize: 13,
   },
+  filterBar: {
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap" as const,
+    gap: 8,
+    marginBottom: 18,
+    padding: "12px 16px",
+    background: "rgba(255,255,255,0.025)",
+    border: "1px solid rgba(255,255,255,0.05)",
+    borderRadius: 14,
+  },
+  filterLabel: {
+    fontSize: 11,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.08em",
+    color: "#6b8f82",
+    marginRight: 4,
+  },
+  filterChip: (color: string, active: boolean) => ({
+    border: `1px solid ${active ? `${color}88` : "rgba(255,255,255,0.08)"}`,
+    background: active ? `${color}22` : "transparent",
+    color: active ? color : "#6b8f82",
+    padding: "5px 12px",
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: "pointer",
+    transition: "all 140ms ease",
+    fontFamily: "inherit",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+  }),
+  filterDot: (color: string, active: boolean) => ({
+    width: 8,
+    height: 8,
+    borderRadius: 2,
+    background: active ? color : "rgba(255,255,255,0.15)",
+  }),
+  filterAction: {
+    marginLeft: "auto",
+    background: "transparent",
+    border: "none",
+    color: "#06d6a0",
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    padding: "4px 8px",
+  },
 };
+
+const ALL_ABSENCE_TYPES: AbsenceType[] = [
+  "vacation",
+  "sick-leave",
+  "work-travel",
+  "other-project",
+  "parental-leave",
+];
 
 // ----------------------------------------------------------------------------
 // Subcomponents
@@ -336,6 +394,23 @@ function Avatar({
 export function TeamPulseDashboard() {
   const { teams, members, workTopics, absences, handovers } = useApp();
   const [tab, setTab] = useState<"pulse" | "flow" | "handovers">("pulse");
+  const [activeTypes, setActiveTypes] = useState<Set<AbsenceType>>(
+    () => new Set(ALL_ABSENCE_TYPES)
+  );
+
+  const toggleType = (t: AbsenceType) => {
+    setActiveTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(t)) next.delete(t);
+      else next.add(t);
+      return next;
+    });
+  };
+
+  const filteredAbsences = useMemo(
+    () => absences.filter((a) => activeTypes.has(a.type as AbsenceType)),
+    [absences, activeTypes]
+  );
 
   const today = isoDayOffset(0);
 
@@ -352,12 +427,12 @@ export function TeamPulseDashboard() {
   }, [absences]);
 
   const absentMembers = useMemo(
-    () => members.filter((m) => isAbsentOn(m.id, today, absences)),
-    [members, absences, today]
+    () => members.filter((m) => isAbsentOn(m.id, today, filteredAbsences)),
+    [members, filteredAbsences, today]
   );
   const availableMembers = useMemo(
-    () => members.filter((m) => !isAbsentOn(m.id, today, absences)),
-    [members, absences, today]
+    () => members.filter((m) => !isAbsentOn(m.id, today, filteredAbsences)),
+    [members, filteredAbsences, today]
   );
 
   const effortByMember = useMemo(() => {
@@ -432,12 +507,12 @@ export function TeamPulseDashboard() {
     const out: { date: string; count: number }[] = [];
     for (let i = 0; i < FORECAST_DAYS; i++) {
       const iso = isoDayOffset(i);
-      const count = members.filter((m) => isAbsentOn(m.id, iso, absences))
+      const count = members.filter((m) => isAbsentOn(m.id, iso, filteredAbsences))
         .length;
       out.push({ date: formatShortDate(iso), count });
     }
     return out;
-  }, [members, absences]);
+  }, [members, filteredAbsences]);
 
   // ---- Effort by role ----
   const effortByRole = useMemo(() => {
@@ -471,7 +546,7 @@ export function TeamPulseDashboard() {
         let days = 0;
         for (let d = 0; d < 7; d++) {
           const iso = isoDayOffset(offsetWeeks * 7 + d);
-          if (isAbsentOn(m.id, iso, absences)) days++;
+          if (isAbsentOn(m.id, iso, filteredAbsences)) days++;
         }
         return sum + days;
       }, 0);
@@ -499,11 +574,15 @@ export function TeamPulseDashboard() {
       buildWeek(1, "W+1"),
       buildWeek(2, "W+2"),
     ];
-  }, [workTopics, members, absences]);
+  }, [workTopics, members, filteredAbsences]);
 
   // ---- Handover list ----
   const handoverList = useMemo(() => {
     return handovers
+      .filter((h) => {
+        const a = absencesById.get(h.absenceId);
+        return a ? activeTypes.has(a.type as AbsenceType) : true;
+      })
       .slice()
       .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
       .map((h) => {
@@ -527,7 +606,7 @@ export function TeamPulseDashboard() {
               : `${topicNames[0]} +${topicNames.length - 1} más`,
         };
       });
-  }, [handovers, membersById, absencesById, workTopics]);
+  }, [handovers, membersById, absencesById, workTopics, activeTypes]);
 
   // ----------------------------------------------------------------------------
   // Render
@@ -565,6 +644,44 @@ export function TeamPulseDashboard() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* ABSENCE TYPE FILTERS */}
+      <div style={styles.filterBar}>
+        <span style={styles.filterLabel}>Absence types</span>
+        {ALL_ABSENCE_TYPES.map((t) => {
+          const active = activeTypes.has(t);
+          const color = ABSENCE_COLORS[t];
+          return (
+            <button
+              key={t}
+              type="button"
+              onClick={() => toggleType(t)}
+              style={styles.filterChip(color, active)}
+              aria-pressed={active}
+            >
+              <span style={styles.filterDot(color, active)} />
+              {ABSENCE_LABELS[t]}
+            </button>
+          );
+        })}
+        {activeTypes.size < ALL_ABSENCE_TYPES.length ? (
+          <button
+            type="button"
+            onClick={() => setActiveTypes(new Set(ALL_ABSENCE_TYPES))}
+            style={styles.filterAction}
+          >
+            Mostrar todos
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setActiveTypes(new Set())}
+            style={{ ...styles.filterAction, color: "#6b8f82" }}
+          >
+            Ocultar todos
+          </button>
+        )}
       </div>
 
       {/* KPI STRIP */}
