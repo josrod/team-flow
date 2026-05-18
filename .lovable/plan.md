@@ -1,30 +1,30 @@
-Aquí tienes la propuesta para la nueva sección de **Carga de Trabajo y Disponibilidad** centrada en el equipo Rodat. He incluido tus preferencias sobre medir por semanas calendario y comparar contra una capacidad máxima.
+# Arreglar filtro por equipo en la página de Tareas
 
-### 1. Ubicación y Estructura Visual
-- **Nueva Pestaña/Vista**: Añadiremos una pestaña llamada "Carga & Capacidad" dentro de la vista del equipo (o una página dedicada).
-- **Matriz de Capacidad**: Una tabla interactiva donde las **filas** son los miembros del equipo y las **columnas** son las próximas 4 o 6 semanas calendario.
-- **Celdas de Ocupación**: Cada celda mostrará una barra de progreso que indica el porcentaje de ocupación (`Esfuerzo Asignado / Capacidad Disponible`).
-  - 🟢 **Verde (< 80%)**: Carga saludable.
-  - 🟡 **Amarillo (80% - 100%)**: Carga óptima / Al límite.
-  - 🔴 **Rojo (> 100%)**: Sobreasignación (Cuello de botella).
-  - 🔘 **Gris / Rayado**: Semanas con capacidad reducida por vacaciones/bajas.
-- **Detalle de Tareas**: Al hacer clic en la celda de una persona en una semana específica, se abrirá un panel lateral (o modal) listando las tareas exactas que causan esa carga, mostrando su *due date* o *effort*.
+## Problema
 
-### 2. Cálculo de Capacidad y Ausencias
-- Definiremos una **Capacidad Base** (por ejemplo, 40 horas o 10 puntos por semana por persona). Permitiremos ajustar este valor base si es necesario.
-- Usaremos el sistema de **Ausencias** existente (`AppContext`) para reducir dinámicamente la capacidad. Si alguien tiene 2 días de vacaciones en una semana, su capacidad disponible para esa semana bajará automáticamente un 40%.
+En `/tasks`, al seleccionar un equipo (p. ej. RODAT) no pasa nada en la sección "Tareas por persona". La causa está en `src/pages/FeaturesPage.tsx` (líneas 718–729): el filtro por equipo solo se aplica cuando `source === "local"`, y se omite en modo TFS (Azure DevOps) con el comentario *"TFS tasks don't have team mapping"*.
 
-### 3. Origen de los Datos (Doble Enfoque)
-Como solicitaste, dejaremos preparadas ambas vías de obtención de datos para que podamos decidir o usar una combinación:
-- **Vía TFS/Azure DevOps**: Modificaremos la consulta actual (WIQL) en `src/services/tfs.ts` para extraer los campos de `Microsoft.VSTS.Scheduling.Effort`, `OriginalEstimate` y `RemainingWork` de las tareas asignadas.
-- **Vía API Interna (Due Date)**: Crearemos un servicio simulado (*mock*) preparado para hacer la llamada a la API interna enviando los IDs de las tareas, que devolverá la fecha de entrega (`dueDate`).
-- El cálculo de carga distribuirá el "Effort" de la tarea en la semana correspondiente a su "Due Date" (o distribuido a lo largo de las semanas si no hay fecha exacta).
+Sin embargo, sí podemos mapear cada tarea TFS al equipo a través de su `assignee` (nombre) → `members` → `teamId`, igual que se hace para `tasksByPerson`.
 
-### Siguientes Pasos
-Para proceder con la implementación técnica, me encargaré de:
-1. Crear el componente visual de la **Matriz de Capacidad** (`WorkloadMatrix.tsx`).
-2. Actualizar el cliente de TFS (`tfs.ts`) para incluir los campos de esfuerzo.
-3. Crear el servicio base para la **API interna** de fechas de entrega.
-4. Conectar la lógica de ausencias para calcular la capacidad real por semana.
+## Cambio
 
-¿Te parece bien este plan? Si estás de acuerdo, presiona "Implement plan" para empezar a codificar.
+En `filteredTasks` (en `src/pages/FeaturesPage.tsx`), eliminar la condición `source === "local"` del filtro por equipo para que también aplique en modo TFS:
+
+```text
+if (activeTeam !== "all") {
+  const owner = members.find((m) => m.name === t.assignee);
+  if (!owner || owner.teamId !== activeTeam) return false;
+}
+```
+
+Esto:
+- Excluye tareas cuyo `assignee` no pertenece al equipo seleccionado.
+- Excluye tareas sin asignado (o con asignado desconocido) cuando hay un equipo activo, lo que coincide con la expectativa de "ver solo RODAT".
+
+No se tocan otros filtros (persona, búsqueda) ni la lógica de `tasksByPerson`, que ya deriva de `filteredTasks`.
+
+## Verificación
+
+- Cambiar a la pestaña Tareas con source TFS, seleccionar RODAT y confirmar que "Tareas por persona" solo muestra miembros de RODAT.
+- Volver a "Todos los equipos" y verificar que se restauran todas las personas.
+- Ejecutar la suite de tests existente para descartar regresiones.
