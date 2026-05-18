@@ -717,16 +717,16 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   // Filtered tasks
   const filteredTasks = useMemo(() => {
     return tasks.filter((t) => {
-      // team filter (local mode only — TFS tasks don't have team mapping)
-      if (source === "local" && activeTeam !== "all") {
+      // Team filter — map assignee name → member → teamId in both local and TFS modes
+      if (activeTeam !== "all") {
         const owner = members.find((m) => m.name === t.assignee);
-        if (owner?.teamId !== activeTeam) return false;
+        if (!owner || owner.teamId !== activeTeam) return false;
       }
       if (activePerson !== "all" && t.assignee !== activePerson) return false;
       if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
-  }, [tasks, activeTeam, activePerson, search, source, members]);
+  }, [tasks, activeTeam, activePerson, search, members]);
 
   // Stats for visuals
   const stateDistribution = useMemo(() => {
