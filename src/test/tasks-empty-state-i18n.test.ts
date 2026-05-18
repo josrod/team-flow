@@ -4,8 +4,16 @@ import { translations } from "@/context/LanguageContext";
 // Mirrors the placeholder substitution used in FeaturesPage's empty state
 // for "Tareas por persona". Keeping it pure makes it easy to verify all
 // filter combinations across both languages without rendering the page.
+type EmptyStateStrings = {
+  noPersonsMatching: string;
+  noTasksForTeam: string;
+  noTasksForPerson: string;
+  noTasksForTeamAndPerson: string;
+  clearFiltersCta: string;
+};
+
 function buildEmptyMessage(
-  t: typeof translations.es,
+  t: EmptyStateStrings,
   opts: { teamName?: string | null; personName?: string | null },
 ): string {
   const { teamName, personName } = opts;
