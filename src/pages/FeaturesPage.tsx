@@ -1726,12 +1726,38 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
           </CardHeader>
           <CardContent>
             <Tabs value={manualApply ? draftTeam : activeTeam} onValueChange={setActiveTeam}>
-              <TabsList>
-                <TabsTrigger value="all">Todos</TabsTrigger>
-                {teams.map((team) => (
-                  <TabsTrigger key={team.id} value={team.id}>{team.name}</TabsTrigger>
-                ))}
-              </TabsList>
+              <div className="flex flex-wrap items-center gap-2">
+                <TabsList>
+                  <TabsTrigger value="all">Todos</TabsTrigger>
+                  {teams.map((team) => (
+                    <TabsTrigger key={team.id} value={team.id}>{team.name}</TabsTrigger>
+                  ))}
+                </TabsList>
+                {(() => {
+                  const effectiveTeam = manualApply ? draftTeam : activeTeam;
+                  if (effectiveTeam === "all") return null;
+                  const teamName = teams.find((tm) => tm.id === effectiveTeam)?.name ?? effectiveTeam;
+                  return (
+                    <Badge
+                      variant="secondary"
+                      className="gap-1 pl-2 pr-1 py-1"
+                      aria-label={`Equipo activo: ${teamName}`}
+                    >
+                      <span className="text-xs font-medium">Equipo: {teamName}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-4 w-4 hover:bg-transparent"
+                        onClick={() => setActiveTeam("all")}
+                        aria-label={`Quitar filtro del equipo ${teamName}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  );
+                })()}
+              </div>
+
 
               <TabsContent value={activeTeam} className="mt-4">
                 {showFlatList ? (
