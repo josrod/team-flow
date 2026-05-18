@@ -1854,7 +1854,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   (() => {
                     const teamName = activeTeam !== "all" ? teams.find((tm) => tm.id === activeTeam)?.name : null;
                     const personName = activePerson !== "all" ? activePerson : null;
-                    const searchQuery = search.trim() || null;
+                    // Use the debounced value so the message matches the list.
+                    const searchQuery = debouncedSearch.trim() || null;
                     const sub = (tpl: string) =>
                       tpl
                         .replace("{team}", teamName ?? "")
