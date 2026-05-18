@@ -1853,14 +1853,30 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                       message = t.noTasksForPerson.replace("{person}", personName);
                     }
                     const hasActiveFilter = Boolean(teamName || personName || search);
+                    const messageId = "tasks-by-person-empty-message";
                     return (
-                      <div className="flex flex-col items-center gap-3 py-10 text-center">
-                        <UserIcon className="h-8 w-8 text-muted-foreground/40" aria-hidden="true" />
-                        <p className="text-sm text-muted-foreground max-w-md">{message}</p>
+                      <div
+                        role="status"
+                        aria-live="polite"
+                        aria-atomic="true"
+                        aria-labelledby={messageId}
+                        className="flex flex-col items-center gap-3 py-10 text-center focus:outline-none"
+                      >
+                        <UserIcon
+                          className="h-8 w-8 text-muted-foreground/60"
+                          aria-hidden="true"
+                          focusable="false"
+                        />
+                        <p id={messageId} className="text-sm text-muted-foreground max-w-md">
+                          {message}
+                        </p>
                         {hasActiveFilter && (
                           <Button
                             variant="outline"
                             size="sm"
+                            type="button"
+                            aria-label={t.clearFiltersCta}
+                            className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             onClick={() => {
                               setSearchParams({});
                               setDraftTeam("all");
@@ -1868,6 +1884,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                               setDraftSearch("");
                             }}
                           >
+                            <X className="mr-1 h-4 w-4" aria-hidden="true" focusable="false" />
                             {t.clearFiltersCta}
                           </Button>
                         )}
