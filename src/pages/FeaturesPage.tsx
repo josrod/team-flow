@@ -1815,9 +1815,39 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                     </div>
                   )
                 ) : tasksByPerson.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-8 text-center">
-                    {t.noPersonsMatching}
-                  </p>
+                  (() => {
+                    const teamName = activeTeam !== "all" ? teams.find((tm) => tm.id === activeTeam)?.name : null;
+                    const personName = activePerson !== "all" ? activePerson : null;
+                    let message = t.noPersonsMatching;
+                    if (teamName && personName) {
+                      message = t.noTasksForTeamAndPerson.replace("{person}", personName).replace("{team}", teamName);
+                    } else if (teamName) {
+                      message = t.noTasksForTeam.replace("{team}", teamName);
+                    } else if (personName) {
+                      message = t.noTasksForPerson.replace("{person}", personName);
+                    }
+                    const hasActiveFilter = Boolean(teamName || personName || search);
+                    return (
+                      <div className="flex flex-col items-center gap-3 py-10 text-center">
+                        <UserIcon className="h-8 w-8 text-muted-foreground/40" aria-hidden="true" />
+                        <p className="text-sm text-muted-foreground max-w-md">{message}</p>
+                        {hasActiveFilter && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSearchParams({});
+                              setDraftTeam("all");
+                              setDraftPerson("all");
+                              setDraftSearch("");
+                            }}
+                          >
+                            {t.clearFiltersCta}
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })()
                 ) : (
                   <Accordion type="multiple" defaultValue={defaultOpenPeople} className="w-full">
                     {tasksByPerson.map((group) => {
