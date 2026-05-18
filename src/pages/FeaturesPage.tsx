@@ -169,6 +169,16 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const activePerson = searchParams.get("person") ?? "all";
   const search = searchParams.get("q") ?? "";
 
+  // Debounced version of `search` used for filtering and for the empty-state
+  // message. This keeps the visible result list and the empty message perfectly
+  // in sync — both reflect the same (slightly delayed) query the user typed —
+  // and avoids re-filtering on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+  useEffect(() => {
+    const handle = window.setTimeout(() => setDebouncedSearch(search), 200);
+    return () => window.clearTimeout(handle);
+  }, [search]);
+
   // Persist last-used filters in localStorage so the user keeps their context
   // when navigating away and back to the dashboard. The URL still wins when
   // present (so shared/bookmarked links keep working).
@@ -723,7 +733,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
 
   // Filtered tasks
   const filteredTasks = useMemo(() => {
-    const searchLower = search ? search.toLowerCase() : "";
+    const searchLower = debouncedSearch ? debouncedSearch.toLowerCase() : "";
     return tasks.filter((t) => {
       // Team filter — map assignee name → teamId in both local and TFS modes
       if (activeTeam !== "all") {
@@ -733,7 +743,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       if (searchLower && !t.title.toLowerCase().includes(searchLower)) return false;
       return true;
     });
-  }, [tasks, activeTeam, activePerson, search, teamIdByAssignee]);
+  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee]);
 
   // Stats for visuals
   const stateDistribution = useMemo(() => {
@@ -1844,7 +1854,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   (() => {
                     const teamName = activeTeam !== "all" ? teams.find((tm) => tm.id === activeTeam)?.name : null;
                     const personName = activePerson !== "all" ? activePerson : null;
-                    const searchQuery = search.trim() || null;
+                    // Use the debounced value so the message matches the list.
+                    const searchQuery = debouncedSearch.trim() || null;
                     const sub = (tpl: string) =>
                       tpl
                         .replace("{team}", teamName ?? "")
