@@ -169,6 +169,16 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const activePerson = searchParams.get("person") ?? "all";
   const search = searchParams.get("q") ?? "";
 
+  // Debounced version of `search` used for filtering and for the empty-state
+  // message. This keeps the visible result list and the empty message perfectly
+  // in sync — both reflect the same (slightly delayed) query the user typed —
+  // and avoids re-filtering on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+  useEffect(() => {
+    const handle = window.setTimeout(() => setDebouncedSearch(search), 200);
+    return () => window.clearTimeout(handle);
+  }, [search]);
+
   // Persist last-used filters in localStorage so the user keeps their context
   // when navigating away and back to the dashboard. The URL still wins when
   // present (so shared/bookmarked links keep working).
