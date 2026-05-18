@@ -714,19 +714,26 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   }, [source, tfsConn, activeTeam]);
 
 
+  // Precomputed lookup: assignee name → teamId. O(1) lookups inside filteredTasks.
+  const teamIdByAssignee = useMemo(() => {
+    const map = new Map<string, string>();
+    members.forEach((m) => map.set(m.name, m.teamId));
+    return map;
+  }, [members]);
+
   // Filtered tasks
   const filteredTasks = useMemo(() => {
+    const searchLower = search ? search.toLowerCase() : "";
     return tasks.filter((t) => {
-      // Team filter — map assignee name → member → teamId in both local and TFS modes
+      // Team filter — map assignee name → teamId in both local and TFS modes
       if (activeTeam !== "all") {
-        const owner = members.find((m) => m.name === t.assignee);
-        if (!owner || owner.teamId !== activeTeam) return false;
+        if (teamIdByAssignee.get(t.assignee) !== activeTeam) return false;
       }
       if (activePerson !== "all" && t.assignee !== activePerson) return false;
-      if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
+      if (searchLower && !t.title.toLowerCase().includes(searchLower)) return false;
       return true;
     });
-  }, [tasks, activeTeam, activePerson, search, members]);
+  }, [tasks, activeTeam, activePerson, search, teamIdByAssignee]);
 
   // Stats for visuals
   const stateDistribution = useMemo(() => {
