@@ -1844,15 +1844,29 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   (() => {
                     const teamName = activeTeam !== "all" ? teams.find((tm) => tm.id === activeTeam)?.name : null;
                     const personName = activePerson !== "all" ? activePerson : null;
+                    const searchQuery = search.trim() || null;
+                    const sub = (tpl: string) =>
+                      tpl
+                        .replace("{team}", teamName ?? "")
+                        .replace("{person}", personName ?? "")
+                        .replace("{q}", searchQuery ?? "");
                     let message = t.noPersonsMatching;
-                    if (teamName && personName) {
-                      message = t.noTasksForTeamAndPerson.replace("{person}", personName).replace("{team}", teamName);
+                    if (teamName && personName && searchQuery) {
+                      message = sub(t.noTasksForTeamPersonAndSearch);
+                    } else if (teamName && searchQuery) {
+                      message = sub(t.noTasksForTeamAndSearch);
+                    } else if (personName && searchQuery) {
+                      message = sub(t.noTasksForPersonAndSearch);
+                    } else if (teamName && personName) {
+                      message = sub(t.noTasksForTeamAndPerson);
                     } else if (teamName) {
-                      message = t.noTasksForTeam.replace("{team}", teamName);
+                      message = sub(t.noTasksForTeam);
                     } else if (personName) {
-                      message = t.noTasksForPerson.replace("{person}", personName);
+                      message = sub(t.noTasksForPerson);
+                    } else if (searchQuery) {
+                      message = sub(t.noTasksForSearch);
                     }
-                    const hasActiveFilter = Boolean(teamName || personName || search);
+                    const hasActiveFilter = Boolean(teamName || personName || searchQuery);
                     const messageId = "tasks-by-person-empty-message";
                     return (
                       <div
