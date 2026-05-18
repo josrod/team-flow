@@ -130,3 +130,87 @@ describe("Tasks page — empty state messaging in 'Tareas por persona'", () => {
     });
   });
 });
+
+describe("Tasks page — empty-state message updates as user types (debounced)", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  // Helper: find the role="status" container whose text matches a regex.
+  // Used to disambiguate from other live regions on the page.
+  const findStatusContaining = async (re: RegExp) => {
+    return await waitFor(
+      () => {
+        const statuses = screen.queryAllByRole("status");
+        const match = statuses.find((el) => re.test(el.textContent ?? ""));
+        if (!match) throw new Error(`No status region matches ${re}`);
+        return match;
+      },
+      { timeout: 1500 },
+    );
+  };
+
+  it("updates the message when typing a search-only query", async () => {
+    renderTasks("/tasks");
+
+    const input = (await screen.findByPlaceholderText(/Buscar tarea/i)) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "zzznomatchzzz1" } });
+
+    const status1 = await findStatusContaining(/zzznomatchzzz1/);
+    expect(status1).toHaveAttribute("aria-live", "polite");
+
+    // Now type a different query — the empty-state message must reflect it
+    // after the debounce window elapses.
+    fireEvent.change(input, { target: { value: "zzznomatchzzz2" } });
+    const status2 = await findStatusContaining(/zzznomatchzzz2/);
+    expect(status2.textContent).not.toMatch(/zzznomatchzzz1/);
+  });
+
+  it("updates the message for a team + search combination", async () => {
+    renderTasks("/tasks?team=team-1");
+
+    const input = (await screen.findByPlaceholderText(/Buscar tarea/i)) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "zzznoteammatch" } });
+
+    const status = await findStatusContaining(/zzznoteammatch/);
+    // Must mention the active team name (RODAT = team-1 in mock-data).
+    expect(status.textContent).toMatch(/RODAT/);
+    expect(status.textContent).toMatch(/zzznoteammatch/);
+  });
+
+  it("updates the message for a person + search combination", async () => {
+    // Carlos is the first mock member and belongs to team-1.
+    renderTasks("/tasks?person=Carlos");
+
+    const input = (await screen.findByPlaceholderText(/Buscar tarea/i)) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "zzznopersonmatch" } });
+
+    const status = await findStatusContaining(/zzznopersonmatch/);
+    expect(status.textContent).toMatch(/Carlos/);
+    expect(status.textContent).toMatch(/zzznopersonmatch/);
+  });
+
+  it("clearing the search restores the previous (team-only) message", async () => {
+    renderTasks("/tasks?team=team-1");
+
+    const input = (await screen.findByPlaceholderText(/Buscar tarea/i)) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "zzznoteammatch" } });
+
+    // Combined state appears
+    await findStatusContaining(/zzznoteammatch/);
+
+    // Clear the search input — message should drop the query reference but
+    // keep the team scope (RODAT still mentioned, query gone).
+    fireEvent.change(input, { target: { value: "" } });
+    await waitFor(
+      () => {
+        const statuses = screen.queryAllByRole("status");
+        const teamOnly = statuses.find(
+          (el) => /RODAT/.test(el.textContent ?? "") && !/zzznoteammatch/.test(el.textContent ?? ""),
+        );
+        expect(teamOnly).toBeDefined();
+      },
+      { timeout: 1500 },
+    );
+  });
+});
