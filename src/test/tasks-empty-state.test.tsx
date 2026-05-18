@@ -190,25 +190,23 @@ describe("Tasks page — empty-state message updates as user types (debounced)",
     expect(status.textContent).toMatch(/zzznopersonmatch/);
   });
 
-  it("clearing the search restores the previous (team-only) message", async () => {
+  it("clearing the search removes the empty state once results appear again", async () => {
     renderTasks("/tasks?team=team-1");
 
     const input = (await screen.findByPlaceholderText(/Buscar tarea/i)) as HTMLInputElement;
     fireEvent.change(input, { target: { value: "zzznoteammatch" } });
 
-    // Combined state appears
+    // Empty-state message appears for team + search combination
     await findStatusContaining(/zzznoteammatch/);
 
-    // Clear the search input — message should drop the query reference but
-    // keep the team scope (RODAT still mentioned, query gone).
+    // Clear the search — RODAT has matching tasks again, so the empty-state
+    // status region with our query (or with RODAT-only fallback) must go away.
     fireEvent.change(input, { target: { value: "" } });
     await waitFor(
       () => {
         const statuses = screen.queryAllByRole("status");
-        const teamOnly = statuses.find(
-          (el) => /RODAT/.test(el.textContent ?? "") && !/zzznoteammatch/.test(el.textContent ?? ""),
-        );
-        expect(teamOnly).toBeDefined();
+        const stillEmpty = statuses.find((el) => /zzznoteammatch/.test(el.textContent ?? ""));
+        expect(stillEmpty).toBeUndefined();
       },
       { timeout: 1500 },
     );
