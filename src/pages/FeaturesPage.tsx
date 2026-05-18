@@ -733,7 +733,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
 
   // Filtered tasks
   const filteredTasks = useMemo(() => {
-    const searchLower = search ? search.toLowerCase() : "";
+    const searchLower = debouncedSearch ? debouncedSearch.toLowerCase() : "";
     return tasks.filter((t) => {
       // Team filter — map assignee name → teamId in both local and TFS modes
       if (activeTeam !== "all") {
@@ -743,7 +743,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       if (searchLower && !t.title.toLowerCase().includes(searchLower)) return false;
       return true;
     });
-  }, [tasks, activeTeam, activePerson, search, teamIdByAssignee]);
+  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee]);
 
   // Stats for visuals
   const stateDistribution = useMemo(() => {
