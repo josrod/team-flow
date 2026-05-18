@@ -106,6 +106,20 @@ describe("Tasks page — empty state messaging in 'Tareas por persona'", () => {
     });
   });
 
+  it("clicking 'Limpiar filtros' also clears the search input value", async () => {
+    renderTasks("/tasks?q=zzznomatchzzz");
+
+    const searchInput = (await screen.findByPlaceholderText(/Buscar tarea/i)) as HTMLInputElement;
+    expect(searchInput.value).toBe("zzznomatchzzz");
+
+    const clearBtn = await screen.findByRole("button", { name: /limpiar filtros/i });
+    fireEvent.click(clearBtn);
+
+    await waitFor(() => {
+      expect(searchInput.value).toBe("");
+    });
+  });
+
   it("does NOT render the clear-filters button when no filter is active", async () => {
     // With no team/person/search active, the "Tareas por persona" view shows
     // grouped people, so the empty-state CTA must not appear.
