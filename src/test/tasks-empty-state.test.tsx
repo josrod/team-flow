@@ -70,25 +70,25 @@ describe("Tasks page — empty state messaging in 'Tareas por persona'", () => {
   it("shows a search-scoped message and a clear-filters button when search yields no matches", async () => {
     renderTasks("/tasks?q=zzznomatchzzz");
 
-    const message = await screen.findByText(/zzznomatchzzz/);
-    expect(message).toBeInTheDocument();
-
-    const status = message.closest('[role="status"]');
-    expect(status).not.toBeNull();
+    const statuses = await screen.findAllByRole("status");
+    const status = statuses.find((el) => el.textContent?.includes("zzznomatchzzz"));
+    expect(status).toBeDefined();
     expect(status).toHaveAttribute("aria-live", "polite");
+    expect(status!.textContent).toMatch(/zzznomatchzzz/);
 
-    expect(screen.getByRole("button", { name: /limpiar filtros/i })).toBeInTheDocument();
+    const clearButtons = screen.getAllByRole("button", { name: /limpiar filtros/i });
+    expect(clearButtons.length).toBeGreaterThan(0);
   });
 
   it("shows a team-scoped message when team has no matching tasks", async () => {
     renderTasks("/tasks?team=team-1&q=zzznomatchzzz");
 
-    // RODAT is team-1 in mock-data — message must mention it explicitly.
-    await waitFor(() => {
-      expect(screen.getByText(/RODAT/)).toBeInTheDocument();
-    });
-    expect(screen.getByText(/zzznomatchzzz/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /limpiar filtros/i })).toBeInTheDocument();
+    const statuses = await screen.findAllByRole("status");
+    const status = statuses.find(
+      (el) => el.textContent?.includes("RODAT") && el.textContent?.includes("zzznomatchzzz"),
+    );
+    expect(status).toBeDefined();
+    expect(screen.getAllByRole("button", { name: /limpiar filtros/i }).length).toBeGreaterThan(0);
   });
 
   it("clicking 'Limpiar filtros' resets the URL search params", async () => {
