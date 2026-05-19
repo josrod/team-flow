@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Download, Upload, Settings, LogOut, Layers, ListChecks, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Download, Upload, Settings, LogOut, Layers, ListChecks, Activity, type LucideIcon } from "lucide-react";
 import cuswLogo from "@/assets/cusw-logo.png";
 import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
@@ -75,6 +75,7 @@ export function AppSidebar() {
     { title: t.features, url: "/features", icon: Layers },
     { title: t.tasks, url: "/tasks", icon: ListChecks },
     { title: t.workload, url: "/workload", icon: CalendarDays },
+    { title: t.pulse, url: "/pulse", icon: Activity },
     { title: "Azure DevOps", url: "/settings/azure-devops", icon: Settings },
   ];
 

@@ -18,6 +18,7 @@ export const translations = {
     features: "Features",
     tasks: "Tareas",
     workload: "Carga & Capacidad",
+    pulse: "Pulse",
     featuresAndTasks: "Features & Tareas",
     team: "Equipo",
     // Team page
@@ -385,6 +386,7 @@ export const translations = {
     features: "Features",
     tasks: "Tasks",
     workload: "Workload & Capacity",
+    pulse: "Pulse",
     featuresAndTasks: "Features & Tasks",
     team: "Team",
     // Team page
