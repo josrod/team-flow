@@ -9,6 +9,7 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
+import { TeamPulseDashboard } from "@/components/TeamPulseDashboard";
 import Index from "./pages/Index";
 import TeamPage from "./pages/TeamPage";
 import AbsencesPage from "./pages/AbsencesPage";
