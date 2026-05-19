@@ -9,6 +9,7 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
+import { TeamPulseDashboard } from "@/components/TeamPulseDashboard";
 import Index from "./pages/Index";
 import TeamPage from "./pages/TeamPage";
 import AbsencesPage from "./pages/AbsencesPage";
@@ -42,6 +43,7 @@ const App = () => (
                   <Route path="/features" element={<ProtectedRoute><AppLayout><FeaturesPage view="features" /></AppLayout></ProtectedRoute>} />
                   <Route path="/tasks" element={<ProtectedRoute><AppLayout><TasksPage /></AppLayout></ProtectedRoute>} />
                   <Route path="/workload" element={<ProtectedRoute><AppLayout><FeaturesPage view="workload" /></AppLayout></ProtectedRoute>} />
+                  <Route path="/pulse" element={<ProtectedRoute><AppLayout><TeamPulseDashboard /></AppLayout></ProtectedRoute>} />
                   <Route path="/settings/azure-devops" element={<ProtectedRoute><AppLayout><AzureDevOpsSettingsPage /></AppLayout></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
