@@ -322,6 +322,28 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
                 {mode === "invent" ? t.importInventFormats : t.importFormats}
               </p>
             </div>
+
+            {validationErrors.length > 0 && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 space-y-2">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-destructive">
+                      {t.importValidationFailed}
+                      {fileName ? ` · ${fileName}` : ""}
+                    </p>
+                    <ul className="text-xs text-destructive/90 mt-1 space-y-0.5 list-disc list-inside">
+                      {validationErrors.map((err, i) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                    </ul>
+                    <p className="text-[11px] text-muted-foreground mt-2">
+                      {t.importValidationHint}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
