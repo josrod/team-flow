@@ -15,7 +15,7 @@ import { parse as parseCsv } from "papaparse";
 import { read as readXlsx, utils as xlsxUtils } from "xlsx";
 import { parseISO, isValid, format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { parseInventAbsentFile, type ParseResult } from "@/services/inventAbsentParser";
+import { parseInventAbsentFile, validateInventAbsentFile, type ParseResult } from "@/services/inventAbsentParser";
 import type { AbsenceType } from "@/types";
 
 type Step = "upload" | "mapping" | "preview";
