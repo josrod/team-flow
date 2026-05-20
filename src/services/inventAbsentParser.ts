@@ -36,6 +36,7 @@ const ACTIVITY_TO_TYPE: Record<string, AbsenceType> = {
   "sick leave": "sick-leave",
   absent: "sick-leave",
   "business trip": "work-travel",
+  "business trip (short)": "work-travel",
 };
 
 function mapActivityKind(kind: string): AbsenceType | null {
@@ -109,14 +110,14 @@ export async function parseInventAbsentFile(
 
   for (const r of rows) {
     if (!Array.isArray(r) || r.length === 0) continue;
-    const workDate = parseCellDate(r[0]);
-    const userLoginName = String(r[1] ?? "").trim();
-    const durationRaw = r[2];
+    const workDate = parseCellDate(r[1]);
+    const userLoginName = String(r[2] ?? "").trim();
+    const durationRaw = r[3];
     const duration =
       typeof durationRaw === "number"
         ? durationRaw
         : Number(String(durationRaw ?? "").replace(",", "."));
-    const activityKind = String(r[3] ?? "").trim();
+    const activityKind = String(r[4] ?? "").trim();
 
     if (!workDate || !userLoginName || Number.isNaN(duration)) {
       skipped++;
