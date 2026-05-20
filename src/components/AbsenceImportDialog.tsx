@@ -88,6 +88,7 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
   const [fileName, setFileName] = useState("");
   const [inventResult, setInventResult] = useState<ParseResult | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [loginAssignments, setLoginAssignments] = useState<Record<string, string>>({});
 
   const reset = useCallback(() => {
     setStep("upload");
@@ -97,6 +98,7 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
     setFileName("");
     setInventResult(null);
     setValidationErrors([]);
+    setLoginAssignments({});
   }, []);
 
   const handleClose = useCallback((val: boolean) => {
