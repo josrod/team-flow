@@ -300,6 +300,8 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
         imported++;
       }
     }
+    // Persist login → member mappings used in this import for future reuse
+    rememberLoginMappings(loginAssignments);
     toast.success(`📥 ${imported} ${t.importSuccess}`);
     onImported?.({
       imported,
