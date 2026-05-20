@@ -519,7 +519,11 @@ export default function AbsencesPage() {
           </motion.div>
         </TabsContent>
       </Tabs>
-      <AbsenceImportDialog open={importOpen} onOpenChange={setImportOpen} />
+      <AbsenceImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={setLastImport}
+      />
       <AbsenceHandoverSummaryDialog
         open={!!summaryAbsence}
         onOpenChange={(o) => !o && setSummaryAbsence(null)}
