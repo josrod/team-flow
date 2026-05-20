@@ -18,9 +18,16 @@ export interface ParsedAbsence {
   endDate: string;
 }
 
+export interface AbsenceRange {
+  type: AbsenceType;
+  startDate: string;
+  endDate: string;
+}
+
 export interface UnmatchedRow {
   loginName: string;
   reason: string;
+  ranges: AbsenceRange[];
 }
 
 export interface ParseResult {
