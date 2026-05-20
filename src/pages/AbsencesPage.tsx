@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Download, Upload, Palmtree, Pencil, Stethoscope, Trash2, Plane, FolderKanban, Baby, FileText } from "lucide-react";
-import { AbsenceImportDialog } from "@/components/AbsenceImportDialog";
+import { AbsenceImportDialog, type ImportResultSummary } from "@/components/AbsenceImportDialog";
 import { AbsenceHandoverSummaryDialog } from "@/components/AbsenceHandoverSummaryDialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format, differenceInDays, eachDayOfInterval, startOfMonth, endOfMonth, parseISO, addMonths, subMonths } from "date-fns";
