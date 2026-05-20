@@ -35,6 +35,7 @@ export default function AbsencesPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [lastImport, setLastImport] = useState<ImportResultSummary | null>(null);
   const [selectedAbsenceType, setSelectedAbsenceType] = useState("all");
   const [summaryAbsence, setSummaryAbsence] = useState<Absence | null>(null);
 
