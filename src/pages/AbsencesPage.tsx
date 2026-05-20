@@ -252,6 +252,53 @@ export default function AbsencesPage() {
         </div>
       </div>
 
+      {lastImport && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="rounded-lg bg-primary/15 p-2">
+              <FileText className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm">
+                {t.importResultTitle}
+                {lastImport.fileName ? ` · ${lastImport.fileName}` : ""}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                  {lastImport.imported}
+                </span>{" "}
+                {t.importResultCreated}
+                {" · "}
+                <span className="font-semibold">{lastImport.skipped}</span>{" "}
+                {t.importResultSkipped}
+                {lastImport.unmatched.length > 0 && (
+                  <>
+                    {" · "}
+                    <span className="text-destructive font-semibold">
+                      {lastImport.unmatched.length}
+                    </span>{" "}
+                    {t.importResultUnmatched}
+                  </>
+                )}
+              </p>
+              {lastImport.unmatched.length > 0 && (
+                <p className="text-[11px] text-muted-foreground/80 mt-1 font-mono truncate">
+                  {lastImport.unmatched.map((u) => u.loginName).join(", ")}
+                </p>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLastImport(null)}
+              aria-label={t.importResultDismiss}
+            >
+              {t.importResultDismiss}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="flex flex-wrap gap-3 max-w-[100vw]">
         <Card className="min-w-0 flex-1 basis-[calc(50%-6px)] sm:basis-0">
           <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
