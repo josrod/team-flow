@@ -560,6 +560,8 @@ export const translations = {
     importResultSkipped: "rows skipped",
     importResultUnmatched: "unmatched logins",
     importResultDismiss: "Dismiss summary",
+    importValidationFailed: "The file does not match the expected format",
+    importValidationHint: "Expected headers: A=Work date, C=Person, D=Duration, E=Activity kind. Dates as YYYY-MM-DD, DD/MM/YYYY or Excel date cell.",
     loginName: "Login name",
     loginNamePlaceholder: "e.g. jsmith",
     // Azure DevOps / TFS
