@@ -264,21 +264,6 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
     handleClose(false);
   };
 
-  const handleInventImport = () => {
-    if (!inventResult) return;
-    let imported = 0;
-    for (const a of inventResult.absences) {
-      addAbsence({
-        memberId: a.memberId,
-        type: a.type,
-        startDate: a.startDate,
-        endDate: a.endDate,
-      });
-      imported++;
-    }
-    toast.success(`📥 ${imported} ${t.importSuccess}`);
-    handleClose(false);
-  };
 
   const openFilePicker = () => {
     const input = document.createElement("input");
