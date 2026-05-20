@@ -16,6 +16,7 @@ import { read as readXlsx, utils as xlsxUtils } from "xlsx";
 import { parseISO, isValid, format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { parseInventAbsentFile, validateInventAbsentFile, type ParseResult } from "@/services/inventAbsentParser";
+import { loadLoginMappings, rememberLoginMappings } from "@/services/loginMappingStore";
 import type { AbsenceType } from "@/types";
 
 type Step = "upload" | "mapping" | "preview";
@@ -148,6 +149,15 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
       try {
         const result = await parseInventAbsentFile(file, members);
         setInventResult(result);
+        // Pre-fill assignments from previously saved login → member mappings
+        const saved = loadLoginMappings();
+        const memberIds = new Set(members.map((m) => m.id));
+        const prefilled: Record<string, string> = {};
+        for (const u of result.unmatched) {
+          const mapped = saved[u.loginName.toLowerCase()];
+          if (mapped && memberIds.has(mapped)) prefilled[u.loginName] = mapped;
+        }
+        setLoginAssignments(prefilled);
         setStep("preview");
       } catch {
         setValidationErrors([t.importParseError]);
@@ -290,6 +300,8 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
         imported++;
       }
     }
+    // Persist login → member mappings used in this import for future reuse
+    rememberLoginMappings(loginAssignments);
     toast.success(`📥 ${imported} ${t.importSuccess}`);
     onImported?.({
       imported,
