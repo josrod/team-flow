@@ -238,6 +238,29 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
       imported++;
     }
     toast.success(`📥 ${imported} ${t.importSuccess}`);
+    onImported?.({ imported, skipped: mappedData.length - imported, unmatched: [], fileName });
+    handleClose(false);
+  };
+
+  const handleInventImport = () => {
+    if (!inventResult) return;
+    let imported = 0;
+    for (const a of inventResult.absences) {
+      addAbsence({
+        memberId: a.memberId,
+        type: a.type,
+        startDate: a.startDate,
+        endDate: a.endDate,
+      });
+      imported++;
+    }
+    toast.success(`📥 ${imported} ${t.importSuccess}`);
+    onImported?.({
+      imported,
+      skipped: inventResult.skipped,
+      unmatched: inventResult.unmatched,
+      fileName,
+    });
     handleClose(false);
   };
 
