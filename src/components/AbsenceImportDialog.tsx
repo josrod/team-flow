@@ -130,11 +130,17 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
 
   const handleFile = useCallback(async (file: File) => {
     setFileName(file.name);
+    setValidationErrors([]);
     const ext = file.name.split(".").pop()?.toLowerCase();
 
     if (mode === "invent") {
       if (ext !== "xlsx") {
-        toast.error(t.importUnsupportedFormat);
+        setValidationErrors([t.importUnsupportedFormat]);
+        return;
+      }
+      const validation = await validateInventAbsentFile(file);
+      if (!validation.ok) {
+        setValidationErrors(validation.errors);
         return;
       }
       try {
@@ -142,7 +148,7 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
         setInventResult(result);
         setStep("preview");
       } catch {
-        toast.error(t.importParseError);
+        setValidationErrors([t.importParseError]);
       }
       return;
     }
