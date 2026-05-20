@@ -90,6 +90,90 @@ function findMember(
   return members.find((m) => m.name.toLowerCase() === lower);
 }
 
+export interface InventValidationResult {
+  ok: boolean;
+  errors: string[];
+}
+
+const EXPECTED_HEADERS: { col: number; name: string }[] = [
+  { col: 0, name: "Work date" },
+  { col: 2, name: "Person" },
+  { col: 3, name: "Duration" },
+  { col: 4, name: "Activity kind" },
+];
+
+export async function validateInventAbsentFile(file: File): Promise<InventValidationResult> {
+  const errors: string[] = [];
+
+  if (!file.name.toLowerCase().endsWith(".xlsx")) {
+    errors.push(`Extensión no soportada: se esperaba .xlsx (recibido "${file.name}")`);
+    return { ok: false, errors };
+  }
+
+  let wb;
+  try {
+    const buffer = await file.arrayBuffer();
+    wb = readXlsx(new Uint8Array(buffer), { type: "array", cellDates: false });
+  } catch {
+    return { ok: false, errors: ["No se pudo leer el archivo XLSX (posiblemente corrupto)."] };
+  }
+
+  if (!wb.SheetNames.length) {
+    return { ok: false, errors: ["El archivo no contiene ninguna hoja."] };
+  }
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+
+  const headerRow = xlsxUtils.sheet_to_json<unknown[]>(sheet, {
+    header: 1,
+    range: 0,
+    defval: "",
+    blankrows: false,
+  })[0];
+
+  if (!Array.isArray(headerRow) || headerRow.length === 0) {
+    return { ok: false, errors: ["La primera fila (encabezados) está vacía."] };
+  }
+
+  for (const { col, name } of EXPECTED_HEADERS) {
+    const cell = String(headerRow[col] ?? "").trim().toLowerCase();
+    if (cell !== name.toLowerCase()) {
+      const colLetter = String.fromCharCode(65 + col);
+      errors.push(
+        `Encabezado de columna ${colLetter} debe ser "${name}" (encontrado: "${headerRow[col] ?? ""}")`
+      );
+    }
+  }
+
+  // Sample first 20 data rows to confirm there's at least one parseable date
+  const dataRows = xlsxUtils.sheet_to_json<unknown[]>(sheet, {
+    header: 1,
+    range: 1,
+    defval: "",
+    blankrows: false,
+  });
+
+  const sample = dataRows.slice(0, 50);
+  const hasAnyDate = sample.some((r) => Array.isArray(r) && parseCellDate(r[1]) !== null);
+  const hasAnyPerson = sample.some(
+    (r) => Array.isArray(r) && String(r[2] ?? "").trim().length > 0
+  );
+
+  if (sample.length === 0) {
+    errors.push("El archivo no contiene filas de datos después de los encabezados.");
+  } else {
+    if (!hasAnyDate) {
+      errors.push(
+        'Ninguna celda de la columna B (Work date) tiene un formato de fecha válido (esperado fecha Excel o YYYY-MM-DD / DD/MM/YYYY).'
+      );
+    }
+    if (!hasAnyPerson) {
+      errors.push("Ninguna celda de la columna C (Person) contiene un login.");
+    }
+  }
+
+  return { ok: errors.length === 0, errors };
+}
+
 export async function parseInventAbsentFile(
   file: File,
   members: TeamMember[]
