@@ -15,7 +15,7 @@ import { parse as parseCsv } from "papaparse";
 import { read as readXlsx, utils as xlsxUtils } from "xlsx";
 import { parseISO, isValid, format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { parseInventAbsentFile, type ParseResult } from "@/services/inventAbsentParser";
+import { parseInventAbsentFile, validateInventAbsentFile, type ParseResult } from "@/services/inventAbsentParser";
 import type { AbsenceType } from "@/types";
 
 type Step = "upload" | "mapping" | "preview";
@@ -87,6 +87,7 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
   });
   const [fileName, setFileName] = useState("");
   const [inventResult, setInventResult] = useState<ParseResult | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const reset = useCallback(() => {
     setStep("upload");
@@ -95,6 +96,7 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
     setMapping({ memberName: "", type: "", startDate: "", endDate: "" });
     setFileName("");
     setInventResult(null);
+    setValidationErrors([]);
   }, []);
 
   const handleClose = useCallback((val: boolean) => {
@@ -128,11 +130,17 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
 
   const handleFile = useCallback(async (file: File) => {
     setFileName(file.name);
+    setValidationErrors([]);
     const ext = file.name.split(".").pop()?.toLowerCase();
 
     if (mode === "invent") {
       if (ext !== "xlsx") {
-        toast.error(t.importUnsupportedFormat);
+        setValidationErrors([t.importUnsupportedFormat]);
+        return;
+      }
+      const validation = await validateInventAbsentFile(file);
+      if (!validation.ok) {
+        setValidationErrors(validation.errors);
         return;
       }
       try {
@@ -140,7 +148,7 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
         setInventResult(result);
         setStep("preview");
       } catch {
-        toast.error(t.importParseError);
+        setValidationErrors([t.importParseError]);
       }
       return;
     }
@@ -314,6 +322,28 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
                 {mode === "invent" ? t.importInventFormats : t.importFormats}
               </p>
             </div>
+
+            {validationErrors.length > 0 && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 space-y-2">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-destructive">
+                      {t.importValidationFailed}
+                      {fileName ? ` · ${fileName}` : ""}
+                    </p>
+                    <ul className="text-xs text-destructive/90 mt-1 space-y-0.5 list-disc list-inside">
+                      {validationErrors.map((err, i) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                    </ul>
+                    <p className="text-[11px] text-muted-foreground mt-2">
+                      {t.importValidationHint}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
