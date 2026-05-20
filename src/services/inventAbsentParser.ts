@@ -249,42 +249,16 @@ export async function parseInventAbsentFile(
 
   const absences: ParsedAbsence[] = [];
   const unmatched: UnmatchedRow[] = [];
-  const unmatchedSeen = new Set<string>();
 
-  for (const [loginLower, items] of perUser) {
-    items.sort((a, b) => a.workDate.localeCompare(b.workDate));
-
-    // Find the original-casing login from the first occurrence
-    const originalLogin =
-      parsed.find((p) => p.userLoginName.toLowerCase() === loginLower)
-        ?.userLoginName ?? loginLower;
-
-    const member = findMember(originalLogin, members);
-    if (!member) {
-      if (!unmatchedSeen.has(loginLower)) {
-        unmatchedSeen.add(loginLower);
-        unmatched.push({
-          loginName: originalLogin,
-          reason: "Member not found by loginName or name",
-        });
-      }
-      continue;
-    }
-
+  function computeRanges(items: ReducedRow[]): AbsenceRange[] {
+    const ranges: AbsenceRange[] = [];
     let groupStart = items[0];
     let groupEnd = items[0];
     let groupType = mapActivityKind(items[0].activityKind);
 
-    const flushGroup = (start: ReducedRow, end: ReducedRow, type: AbsenceType | null) => {
+    const flush = (start: ReducedRow, end: ReducedRow, type: AbsenceType | null) => {
       if (!type) return;
-      absences.push({
-        memberId: member.id,
-        memberName: member.name,
-        loginName: originalLogin,
-        type,
-        startDate: start.workDate,
-        endDate: end.workDate,
-      });
+      ranges.push({ type, startDate: start.workDate, endDate: end.workDate });
     };
 
     for (let i = 1; i < items.length; i++) {
@@ -296,13 +270,45 @@ export async function parseInventAbsentFile(
       if (isConsecutive && currentType === groupType) {
         groupEnd = current;
       } else {
-        flushGroup(groupStart, groupEnd, groupType);
+        flush(groupStart, groupEnd, groupType);
         groupStart = current;
         groupEnd = current;
         groupType = currentType;
       }
     }
-    flushGroup(groupStart, groupEnd, groupType);
+    flush(groupStart, groupEnd, groupType);
+    return ranges;
+  }
+
+  for (const [loginLower, items] of perUser) {
+    items.sort((a, b) => a.workDate.localeCompare(b.workDate));
+
+    const originalLogin =
+      parsed.find((p) => p.userLoginName.toLowerCase() === loginLower)
+        ?.userLoginName ?? loginLower;
+
+    const ranges = computeRanges(items);
+    const member = findMember(originalLogin, members);
+
+    if (!member) {
+      unmatched.push({
+        loginName: originalLogin,
+        reason: "Member not found by loginName or name",
+        ranges,
+      });
+      continue;
+    }
+
+    for (const r of ranges) {
+      absences.push({
+        memberId: member.id,
+        memberName: member.name,
+        loginName: originalLogin,
+        type: r.type,
+        startDate: r.startDate,
+        endDate: r.endDate,
+      });
+    }
   }
 
   return { absences, unmatched, skipped };
