@@ -187,6 +187,8 @@ export const translations = {
     importResultDismiss: "Ocultar resumen",
     importValidationFailed: "El archivo no coincide con el formato esperado",
     importValidationHint: "Encabezados esperados: A=Work date, C=Person, D=Duration, E=Activity kind. Fechas como YYYY-MM-DD, DD/MM/YYYY o celda de fecha de Excel.",
+    importUnmatchedRangesLabel: "rangos pendientes",
+    importAssignToMember: "Asignar a miembro…",
     loginName: "Login de usuario",
     loginNamePlaceholder: "ej. jsmith",
     // Azure DevOps / TFS
@@ -562,6 +564,8 @@ export const translations = {
     importResultDismiss: "Dismiss summary",
     importValidationFailed: "The file does not match the expected format",
     importValidationHint: "Expected headers: A=Work date, C=Person, D=Duration, E=Activity kind. Dates as YYYY-MM-DD, DD/MM/YYYY or Excel date cell.",
+    importUnmatchedRangesLabel: "pending ranges",
+    importAssignToMember: "Assign to member…",
     loginName: "Login name",
     loginNamePlaceholder: "e.g. jsmith",
     // Azure DevOps / TFS

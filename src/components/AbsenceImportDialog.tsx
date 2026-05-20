@@ -88,6 +88,7 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
   const [fileName, setFileName] = useState("");
   const [inventResult, setInventResult] = useState<ParseResult | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [loginAssignments, setLoginAssignments] = useState<Record<string, string>>({});
 
   const reset = useCallback(() => {
     setStep("upload");
@@ -97,6 +98,7 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
     setFileName("");
     setInventResult(null);
     setValidationErrors([]);
+    setLoginAssignments({});
   }, []);
 
   const handleClose = useCallback((val: boolean) => {
@@ -250,6 +252,14 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
     handleClose(false);
   };
 
+  const assignedExtraCount = useMemo(() => {
+    if (!inventResult) return 0;
+    return inventResult.unmatched.reduce(
+      (acc, u) => acc + (loginAssignments[u.loginName] ? u.ranges.length : 0),
+      0
+    );
+  }, [inventResult, loginAssignments]);
+
   const handleInventImport = () => {
     if (!inventResult) return;
     let imported = 0;
@@ -262,11 +272,29 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
       });
       imported++;
     }
+    // Apply manual login → member assignments
+    const stillUnmatched: typeof inventResult.unmatched = [];
+    for (const u of inventResult.unmatched) {
+      const memberId = loginAssignments[u.loginName];
+      if (!memberId) {
+        stillUnmatched.push(u);
+        continue;
+      }
+      for (const r of u.ranges) {
+        addAbsence({
+          memberId,
+          type: r.type,
+          startDate: r.startDate,
+          endDate: r.endDate,
+        });
+        imported++;
+      }
+    }
     toast.success(`📥 ${imported} ${t.importSuccess}`);
     onImported?.({
       imported,
       skipped: inventResult.skipped,
-      unmatched: inventResult.unmatched,
+      unmatched: stillUnmatched,
       fileName,
     });
     handleClose(false);
@@ -505,24 +533,54 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
                       <TableCell className="text-xs py-1 px-2">{a.endDate}</TableCell>
                     </TableRow>
                   ))}
-                  {inventResult.unmatched.map((u, i) => (
-                    <TableRow key={`ko-${i}`} className="bg-destructive/5">
-                      <TableCell className="text-xs py-1 px-2 font-mono">{u.loginName}</TableCell>
-                      <TableCell colSpan={4} className="text-xs py-1 px-2 text-destructive">
-                        {t.importInventNoLogin}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {inventResult.unmatched.map((u, i) => {
+                    const assigned = loginAssignments[u.loginName];
+                    return (
+                      <TableRow key={`ko-${i}`} className={cn(!assigned && "bg-destructive/5")}>
+                        <TableCell className="text-xs py-1 px-2 font-mono align-top">
+                          {u.loginName}
+                          <div className="text-[10px] text-muted-foreground font-sans">
+                            {u.ranges.length} {t.importUnmatchedRangesLabel}
+                          </div>
+                        </TableCell>
+                        <TableCell colSpan={4} className="text-xs py-1 px-2">
+                          <Select
+                            value={assigned ?? ""}
+                            onValueChange={(v) =>
+                              setLoginAssignments((prev) => {
+                                const next = { ...prev };
+                                if (v) next[u.loginName] = v;
+                                else delete next[u.loginName];
+                                return next;
+                              })
+                            }
+                          >
+                            <SelectTrigger className="h-7 text-xs">
+                              <SelectValue placeholder={t.importAssignToMember} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {members.map((m) => (
+                                <SelectItem key={m.id} value={m.id} className="text-xs">
+                                  {m.name}
+                                  {m.loginName ? ` (${m.loginName})` : ""}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </ScrollArea>
 
             <Button
               onClick={handleInventImport}
-              disabled={inventResult.absences.length === 0}
+              disabled={inventResult.absences.length === 0 && assignedExtraCount === 0}
               className="w-full"
             >
-              {t.importConfirm} ({inventResult.absences.length})
+              {t.importConfirm} ({inventResult.absences.length + assignedExtraCount})
             </Button>
           </div>
         )}
