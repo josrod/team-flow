@@ -252,6 +252,14 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
     handleClose(false);
   };
 
+  const assignedExtraCount = useMemo(() => {
+    if (!inventResult) return 0;
+    return inventResult.unmatched.reduce(
+      (acc, u) => acc + (loginAssignments[u.loginName] ? u.ranges.length : 0),
+      0
+    );
+  }, [inventResult, loginAssignments]);
+
   const handleInventImport = () => {
     if (!inventResult) return;
     let imported = 0;
@@ -264,11 +272,29 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
       });
       imported++;
     }
+    // Apply manual login → member assignments
+    const stillUnmatched: typeof inventResult.unmatched = [];
+    for (const u of inventResult.unmatched) {
+      const memberId = loginAssignments[u.loginName];
+      if (!memberId) {
+        stillUnmatched.push(u);
+        continue;
+      }
+      for (const r of u.ranges) {
+        addAbsence({
+          memberId,
+          type: r.type,
+          startDate: r.startDate,
+          endDate: r.endDate,
+        });
+        imported++;
+      }
+    }
     toast.success(`📥 ${imported} ${t.importSuccess}`);
     onImported?.({
       imported,
       skipped: inventResult.skipped,
-      unmatched: inventResult.unmatched,
+      unmatched: stillUnmatched,
       fileName,
     });
     handleClose(false);
