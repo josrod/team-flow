@@ -36,6 +36,7 @@ const ACTIVITY_TO_TYPE: Record<string, AbsenceType> = {
   "sick leave": "sick-leave",
   absent: "sick-leave",
   "business trip": "work-travel",
+  "business trip (short)": "work-travel",
 };
 
 function mapActivityKind(kind: string): AbsenceType | null {
