@@ -533,24 +533,54 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
                       <TableCell className="text-xs py-1 px-2">{a.endDate}</TableCell>
                     </TableRow>
                   ))}
-                  {inventResult.unmatched.map((u, i) => (
-                    <TableRow key={`ko-${i}`} className="bg-destructive/5">
-                      <TableCell className="text-xs py-1 px-2 font-mono">{u.loginName}</TableCell>
-                      <TableCell colSpan={4} className="text-xs py-1 px-2 text-destructive">
-                        {t.importInventNoLogin}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {inventResult.unmatched.map((u, i) => {
+                    const assigned = loginAssignments[u.loginName];
+                    return (
+                      <TableRow key={`ko-${i}`} className={cn(!assigned && "bg-destructive/5")}>
+                        <TableCell className="text-xs py-1 px-2 font-mono align-top">
+                          {u.loginName}
+                          <div className="text-[10px] text-muted-foreground font-sans">
+                            {u.ranges.length} {t.importUnmatchedRangesLabel}
+                          </div>
+                        </TableCell>
+                        <TableCell colSpan={4} className="text-xs py-1 px-2">
+                          <Select
+                            value={assigned ?? ""}
+                            onValueChange={(v) =>
+                              setLoginAssignments((prev) => {
+                                const next = { ...prev };
+                                if (v) next[u.loginName] = v;
+                                else delete next[u.loginName];
+                                return next;
+                              })
+                            }
+                          >
+                            <SelectTrigger className="h-7 text-xs">
+                              <SelectValue placeholder={t.importAssignToMember} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {members.map((m) => (
+                                <SelectItem key={m.id} value={m.id} className="text-xs">
+                                  {m.name}
+                                  {m.loginName ? ` (${m.loginName})` : ""}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </ScrollArea>
 
             <Button
               onClick={handleInventImport}
-              disabled={inventResult.absences.length === 0}
+              disabled={inventResult.absences.length === 0 && assignedExtraCount === 0}
               className="w-full"
             >
-              {t.importConfirm} ({inventResult.absences.length})
+              {t.importConfirm} ({inventResult.absences.length + assignedExtraCount})
             </Button>
           </div>
         )}
