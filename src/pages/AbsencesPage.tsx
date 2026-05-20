@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Download, Upload, Palmtree, Pencil, Stethoscope, Trash2, Plane, FolderKanban, Baby, FileText } from "lucide-react";
-import { AbsenceImportDialog } from "@/components/AbsenceImportDialog";
+import { AbsenceImportDialog, type ImportResultSummary } from "@/components/AbsenceImportDialog";
 import { AbsenceHandoverSummaryDialog } from "@/components/AbsenceHandoverSummaryDialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format, differenceInDays, eachDayOfInterval, startOfMonth, endOfMonth, parseISO, addMonths, subMonths } from "date-fns";
@@ -35,6 +35,7 @@ export default function AbsencesPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [lastImport, setLastImport] = useState<ImportResultSummary | null>(null);
   const [selectedAbsenceType, setSelectedAbsenceType] = useState("all");
   const [summaryAbsence, setSummaryAbsence] = useState<Absence | null>(null);
 
@@ -250,6 +251,53 @@ export default function AbsencesPage() {
           </Dialog>
         </div>
       </div>
+
+      {lastImport && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="rounded-lg bg-primary/15 p-2">
+              <FileText className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm">
+                {t.importResultTitle}
+                {lastImport.fileName ? ` · ${lastImport.fileName}` : ""}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                  {lastImport.imported}
+                </span>{" "}
+                {t.importResultCreated}
+                {" · "}
+                <span className="font-semibold">{lastImport.skipped}</span>{" "}
+                {t.importResultSkipped}
+                {lastImport.unmatched.length > 0 && (
+                  <>
+                    {" · "}
+                    <span className="text-destructive font-semibold">
+                      {lastImport.unmatched.length}
+                    </span>{" "}
+                    {t.importResultUnmatched}
+                  </>
+                )}
+              </p>
+              {lastImport.unmatched.length > 0 && (
+                <p className="text-[11px] text-muted-foreground/80 mt-1 font-mono truncate">
+                  {lastImport.unmatched.map((u) => u.loginName).join(", ")}
+                </p>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLastImport(null)}
+              aria-label={t.importResultDismiss}
+            >
+              {t.importResultDismiss}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex flex-wrap gap-3 max-w-[100vw]">
         <Card className="min-w-0 flex-1 basis-[calc(50%-6px)] sm:basis-0">
@@ -518,7 +566,11 @@ export default function AbsencesPage() {
           </motion.div>
         </TabsContent>
       </Tabs>
-      <AbsenceImportDialog open={importOpen} onOpenChange={setImportOpen} />
+      <AbsenceImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={setLastImport}
+      />
       <AbsenceHandoverSummaryDialog
         open={!!summaryAbsence}
         onOpenChange={(o) => !o && setSummaryAbsence(null)}

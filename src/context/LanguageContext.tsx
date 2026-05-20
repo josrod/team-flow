@@ -180,6 +180,11 @@ export const translations = {
     importInventNoLogin: "Login no encontrado",
     importInventLoginCol: "Login",
     importInventMemberCol: "Miembro",
+    importResultTitle: "Última importación",
+    importResultCreated: "ausencias creadas",
+    importResultSkipped: "filas ignoradas",
+    importResultUnmatched: "logins sin coincidencia",
+    importResultDismiss: "Ocultar resumen",
     loginName: "Login de usuario",
     loginNamePlaceholder: "ej. jsmith",
     // Azure DevOps / TFS
@@ -548,6 +553,11 @@ export const translations = {
     importInventNoLogin: "Login not found",
     importInventLoginCol: "Login",
     importInventMemberCol: "Member",
+    importResultTitle: "Last import",
+    importResultCreated: "absences created",
+    importResultSkipped: "rows skipped",
+    importResultUnmatched: "unmatched logins",
+    importResultDismiss: "Dismiss summary",
     loginName: "Login name",
     loginNamePlaceholder: "e.g. jsmith",
     // Azure DevOps / TFS

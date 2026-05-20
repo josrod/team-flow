@@ -64,7 +64,14 @@ function normalizeType(raw: string): AbsenceType | null {
   return null;
 }
 
-export function AbsenceImportDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export interface ImportResultSummary {
+  imported: number;
+  skipped: number;
+  unmatched: { loginName: string; reason: string }[];
+  fileName: string;
+}
+
+export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: boolean; onOpenChange: (open: boolean) => void; onImported?: (result: ImportResultSummary) => void }) {
   const { members, addAbsence } = useApp();
   const { t } = useLang();
 
@@ -231,6 +238,7 @@ export function AbsenceImportDialog({ open, onOpenChange }: { open: boolean; onO
       imported++;
     }
     toast.success(`📥 ${imported} ${t.importSuccess}`);
+    onImported?.({ imported, skipped: mappedData.length - imported, unmatched: [], fileName });
     handleClose(false);
   };
 
@@ -247,8 +255,15 @@ export function AbsenceImportDialog({ open, onOpenChange }: { open: boolean; onO
       imported++;
     }
     toast.success(`📥 ${imported} ${t.importSuccess}`);
+    onImported?.({
+      imported,
+      skipped: inventResult.skipped,
+      unmatched: inventResult.unmatched,
+      fileName,
+    });
     handleClose(false);
   };
+
 
   const openFilePicker = () => {
     const input = document.createElement("input");
