@@ -16,6 +16,7 @@ import { read as readXlsx, utils as xlsxUtils } from "xlsx";
 import { parseISO, isValid, format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { parseInventAbsentFile, validateInventAbsentFile, type ParseResult } from "@/services/inventAbsentParser";
+import { loadLoginMappings, rememberLoginMappings } from "@/services/loginMappingStore";
 import type { AbsenceType } from "@/types";
 
 type Step = "upload" | "mapping" | "preview";
