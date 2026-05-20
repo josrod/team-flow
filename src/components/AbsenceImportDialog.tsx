@@ -149,6 +149,15 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
       try {
         const result = await parseInventAbsentFile(file, members);
         setInventResult(result);
+        // Pre-fill assignments from previously saved login → member mappings
+        const saved = loadLoginMappings();
+        const memberIds = new Set(members.map((m) => m.id));
+        const prefilled: Record<string, string> = {};
+        for (const u of result.unmatched) {
+          const mapped = saved[u.loginName.toLowerCase()];
+          if (mapped && memberIds.has(mapped)) prefilled[u.loginName] = mapped;
+        }
+        setLoginAssignments(prefilled);
         setStep("preview");
       } catch {
         setValidationErrors([t.importParseError]);
