@@ -553,6 +553,11 @@ export const translations = {
     importInventNoLogin: "Login not found",
     importInventLoginCol: "Login",
     importInventMemberCol: "Member",
+    importResultTitle: "Last import",
+    importResultCreated: "absences created",
+    importResultSkipped: "rows skipped",
+    importResultUnmatched: "unmatched logins",
+    importResultDismiss: "Dismiss summary",
     loginName: "Login name",
     loginNamePlaceholder: "e.g. jsmith",
     // Azure DevOps / TFS
