@@ -182,6 +182,30 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
       };
       reader.readAsText(file);
     } else if (ext === "xlsx" || ext === "xls") {
+      // Auto-detect ROSEN/Invent layout before falling back to generic mapping
+      if (ext === "xlsx") {
+        const inventValidation = await validateInventAbsentFile(file);
+        if (inventValidation.ok) {
+          setMode("invent");
+          toast.success(t.importAutoDetectedInvent);
+          try {
+            const result = await parseInventAbsentFile(file, members);
+            setInventResult(result);
+            const saved = loadLoginMappings();
+            const memberIds = new Set(members.map((m) => m.id));
+            const prefilled: Record<string, string> = {};
+            for (const u of result.unmatched) {
+              const mapped = saved[u.loginName.toLowerCase()];
+              if (mapped && memberIds.has(mapped)) prefilled[u.loginName] = mapped;
+            }
+            setLoginAssignments(prefilled);
+            setStep("preview");
+          } catch {
+            setValidationErrors([t.importParseError]);
+          }
+          return;
+        }
+      }
       const reader = new FileReader();
       reader.onload = (e) => {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
