@@ -1,51 +1,35 @@
-## Diagnóstico
+## Problema
 
-El fichero `Absent_test.xlsx` (hoja "Sheet", 2.939 filas, 12 columnas) tiene esta estructura:
+Al subir `Absent_test.xlsx` (formato ROSEN/Invent) con la pestaña **Genérica** activa, el auto-map elige columnas incorrectas (`Default company code name` → Person, sin columna start/end) y `normalizeType` no reconoce `Working hours`. Resultado: 1050 filas con errores "Member not found / Invalid type / Invalid start / Invalid end".
 
-| Col | A | B | C | D | E | F–L |
-|---|---|---|---|---|---|---|
-| Cabecera | Work date | *(vacío)* | Person | Duration | Activity kind | Default organization, Delivery no, Delivery position, Default plant, Default company code, Default company code name, Support |
-| Fila de grupo | `ABlinov ` | — | — | — | — | — |
-| Fila de datos | — | 03/04/2026 | ABlinov | 7,6 | Public Holiday | … |
+El fichero ya tiene un parser dedicado (`parseInventAbsentFile`) en la pestaña Invent. La solución elegida es detectar el formato y cambiar de modo automáticamente.
 
-Tipos de actividad presentes: `Public Holiday` (1.391), `Absent` (1.439), `Business Trip` (22), `Business Trip (short)` (16). No aparecen `Vacation`, `Sick Leave`, `Training`, `Working Hours`.
+## Cambios
 
-### Qué falla en `src/services/inventAbsentParser.ts` hoy
+**Archivo único:** `src/components/AbsenceImportDialog.tsx`
 
-1. **Índices de columna incorrectos.** El parser lee `r[0]=date, r[1]=login, r[2]=duration, r[3]=kind`. En este fichero los datos están en `r[1]=date, r[2]=login, r[3]=duration, r[4]=kind`. Resultado: ninguna fila se importa (todas serían `skipped` porque `r[0]` está vacío en filas de datos).
-2. **`Business Trip (short)` no está mapeado** → se descartaría silenciosamente. Debe tratarse como `work-travel`.
-3. El campo "Person" llega con espacios al final en las cabeceras de grupo (`"ABlinov "`); en las filas de datos viene limpio, pero conviene mantener el `.trim()` actual.
+1. **Helper de detección** (nuevo, en el mismo archivo):
+   - `detectInventLayout(file: File): Promise<boolean>` — reutiliza `validateInventAbsentFile` (ya valida las 4 cabeceras: A=Work date, C=Person, D=Duration, E=Activity kind). Devuelve `true` cuando `validation.ok === true`.
 
-### Qué sobra (y se puede ignorar sin cambios)
+2. **`handleFile` en modo `generic`** (rama `xlsx`/`xls`):
+   - Antes de hacer `sheet_to_json` genérico, llamar a `detectInventLayout(file)`.
+   - Si es ROSEN:
+     - `setMode("invent")`
+     - Mostrar toast informativo: `t.importAutoDetectedInvent` ("Formato ROSEN detectado — usando el parser Invent")
+     - Ejecutar el mismo flujo que el modo Invent: `parseInventAbsentFile`, pre-fill `loginAssignments` desde `loadLoginMappings`, `setStep("preview")`.
+   - Si no, continuar con el flujo genérico actual.
 
-- Columnas F–L (`Default organization`, `Delivery no/position`, `Default plant`, `Default company code`, `Default company code name`, `Support`) no aportan al modelo de ausencias.
-- Las filas de grupo (solo nombre en col A) ya se descartan automáticamente porque no parsean fecha.
-- `Public Holiday` sigue excluido (correcto).
-- Mapeo de `Absent → sick-leave` se mantiene (confirmado por el usuario).
-
-## Cambios a implementar
-
-**Archivo único:** `src/services/inventAbsentParser.ts`
-
-1. **Reasignar índices de columna** en el bucle de parseo:
-   - `workDate = parseCellDate(r[1])`
-   - `userLoginName = String(r[2] ?? "").trim()`
-   - `duration = Number(r[3])` (mismo manejo de coma decimal)
-   - `activityKind = String(r[4] ?? "").trim()`
-2. **Añadir mapeos** a `ACTIVITY_TO_TYPE`:
-   - `"business trip (short)": "work-travel"`
-   - Mantener `"vacation"`, `"sick leave"`, `"absent"`, `"business trip"` por compatibilidad con el formato anterior (Invent).
-3. **Mantener** `EXCLUDED_KINDS` (`public holiday`, `training`, `working hours`) y el filtro `duration === 0`.
-4. **Mantener** `range: 1` (salta cabecera) y agrupación por persona/día/tipo consecutivo.
+3. **Nuevas claves de traducción** en `src/context/LanguageContext.tsx`:
+   - `importAutoDetectedInvent` (EN: "ROSEN format detected — switched to Invent parser", ES: "Formato ROSEN detectado — cambiado al parser Invent").
 
 ## Verificación
 
-- Añadir test unitario en `src/test/` que cargue un buffer mínimo replicando el layout de 12 columnas (cabecera + 1 fila de grupo + 3 filas de datos: una `Public Holiday` excluida, dos `Absent` consecutivas que deben colapsar en un solo rango `sick-leave`, una `Business Trip (short)` como `work-travel`) y aserte el resultado de `parseInventAbsentFile`.
-- Ejecutar `bunx vitest run` para confirmar que pasa.
-- Confirmar visualmente en `/absences` con el fichero real desde el diálogo de importación.
+- Añadir test en `src/test/invent-absent-parser.test.ts` (o nuevo `import-autodetect.test.ts`): validar que `validateInventAbsentFile` devuelve `ok: true` para un buffer con las 4 cabeceras correctas y `ok: false` para uno genérico (e.g. columnas `Name, Type, Start, End`).
+- Manual en `/absences`: subir `Absent_test.xlsx` con pestaña Genérica activa → debe saltar toast, cambiar a Invent y mostrar el preview con ausencias parseadas + unmatched (en lugar de "1050 with errors").
+- Subir un CSV/XLSX genérico legítimo → debe seguir yendo al paso `mapping` sin cambiar de pestaña.
 
 ## Fuera de alcance
 
-- No se toca `AbsenceImportDialog.tsx` (la UI no cambia).
-- No se modifica el modelo de datos ni el esquema de validación.
-- No se rellenan `loginName` de los miembros automáticamente: si hay logins del fichero sin miembro asociado, seguirán apareciendo en el listado de `unmatched` del diálogo, como ahora.
+- No se toca `inventAbsentParser.ts` ni el store de mapeos.
+- No se cambian las reglas de `normalizeType` del modo genérico.
+- No se elimina la pestaña Genérica: sigue disponible para CSVs/Excels con otros layouts.
