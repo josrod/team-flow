@@ -1264,3 +1264,82 @@ export const clearTfsPeopleCache = (conn?: TfsConnection): void => {
     if (key.startsWith(prefix)) peopleByAreaCache.delete(key);
   }
 };
+
+// ---------------------------------------------------------------------------
+// Team members discovery
+// ---------------------------------------------------------------------------
+
+export interface TfsTeamMemberIdentity {
+  displayName: string;
+  uniqueName: string;
+  id: string;
+}
+
+export interface RawTeamMemberResponse {
+  value?: {
+    identity: TfsTeamMemberIdentity;
+  }[];
+}
+
+/**
+ * List members of a specific team in a project.
+ * Endpoint: GET {server}/{collection}/_apis/projects/{project}/teams/{team}/members?api-version=5.0
+ */
+export const listTfsTeamMembers = async (
+  conn: TfsConnection,
+): Promise<TfsDiscoveryResult<TfsTeamMemberIdentity>> => {
+  const { serverUrl, collection, project, team, pat } = conn;
+  
+  if (!serverUrl.trim() || !collection.trim() || !project.trim() || !team?.trim() || !pat.trim()) {
+    return { items: [] };
+  }
+
+  const base = buildCollectionUrl(serverUrl, collection);
+  const url = `${base}/_apis/projects/${encodeURIComponent(project.trim())}/teams/${encodeURIComponent(
+    team.trim(),
+  )}/members?api-version=${API_VERSION}`;
+
+  if (isMixedContent(url)) {
+    return { items: [], error: { kind: "mixed_content", url, message: "Mixed content (HTTPS → HTTP)." } };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { Authorization: buildAuthHeader(pat), Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      return {
+        items: [],
+        error: {
+          kind: res.status === 401 ? "unauthorized" : res.status === 403 ? "forbidden" : res.status === 404 ? "not_found" : "http",
+          status: res.status,
+          url,
+          message: `HTTP ${res.status} al listar miembros del equipo.`,
+          detail: body.slice(0, 300),
+        },
+      };
+    }
+    const data = (await res.json()) as RawTeamMemberResponse;
+    const items = (data.value ?? []).map((m) => m.identity).filter(Boolean);
+    return { items };
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return { items: [], error: { kind: "timeout", url, message: "Tiempo de espera agotado." } };
+    }
+    if (isNetworkLevelError(err)) {
+      return { items: [], error: { kind: "cors", url, message: "Sin respuesta (CORS, VPN o firewall)." } };
+    }
+    return {
+      items: [],
+      error: { kind: "unknown", url, message: err instanceof Error ? err.message : "Error desconocido." },
+    };
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+};
