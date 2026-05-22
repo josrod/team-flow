@@ -29,6 +29,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
+import { TfsImportDialog } from "@/components/TfsImportDialog";
+import { CloudDownload } from "lucide-react";
 
 const container = {
   hidden: { opacity: 0 },
@@ -51,6 +53,7 @@ export default function TeamPage() {
   const [filter, setFilter] = useState<"all" | MemberStatus>("all");
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
   const [newLoginName, setNewLoginName] = useState("");
@@ -208,6 +211,9 @@ export default function TeamPage() {
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="rounded-xl shadow-sm" onClick={() => setBulkEditOpen(true)}>
             <Settings2 className="h-4 w-4 mr-1" /> Edición en Bloque
+          </Button>
+          <Button variant="outline" size="sm" className="rounded-xl shadow-sm" onClick={() => setImportOpen(true)}>
+            <CloudDownload className="h-4 w-4 mr-1" /> {t.importTfsTeamMembers}
           </Button>
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger asChild>
@@ -714,6 +720,8 @@ export default function TeamPage() {
           )}
         </SheetContent>
       </Sheet>
+
+      <TfsImportDialog open={importOpen} onOpenChange={setImportOpen} teamId={teamId} />
     </div>
   );
 }
