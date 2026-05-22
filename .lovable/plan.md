@@ -1,35 +1,27 @@
-## Problema
+# Plan: Importación Masiva de Miembros desde Azure DevOps (Modal)
 
-Al subir `Absent_test.xlsx` (formato ROSEN/Invent) con la pestaña **Genérica** activa, el auto-map elige columnas incorrectas (`Default company code name` → Person, sin columna start/end) y `normalizeType` no reconoce `Working hours`. Resultado: 1050 filas con errores "Member not found / Invalid type / Invalid start / Invalid end".
+## Objetivo
+Implementar un nuevo modal en la página de **Teams** que permita consultar la lista completa de miembros del equipo en Azure DevOps (TFS) y añadir múltiples personas de una sola vez a la aplicación con su nombre de usuario correcto, evitando duplicados.
 
-El fichero ya tiene un parser dedicado (`parseInventAbsentFile`) en la pestaña Invent. La solución elegida es detectar el formato y cambiar de modo automáticamente.
+## Pasos
 
-## Cambios
+### 1. Añadir endpoint de miembros al cliente TFS
+En `src/services/tfs.ts`, añadiremos una nueva función `listTfsTeamMembers` que consuma la API REST de Azure DevOps para listar los miembros de un equipo:
+- **Endpoint**: `GET {colección}/_apis/projects/{proyecto}/teams/{equipo}/members?api-version=5.0`
+- **Mapeo**: Extraeremos el `displayName` (Nombre) y `uniqueName` (Login/Email) del objeto `identity` que devuelve TFS.
 
-**Archivo único:** `src/components/AbsenceImportDialog.tsx`
+### 2. Crear Componente `TfsImportDialog`
+Crearemos un nuevo componente en `src/components/TfsImportDialog.tsx` que maneje la lógica de importación:
+- Consultará la configuración de conexión (`azure_devops_settings`) desde Supabase.
+- Si no hay conexión o no se ha seleccionado un equipo en los ajustes de Azure DevOps, mostrará una alerta indicando que es necesario configurarlo.
+- Si hay conexión, usará `listTfsTeamMembers` para cargar la lista de personas.
+- Mostrará una lista con checkboxes para seleccionar qué personas añadir.
+- **Filtro de duplicados**: Detectará qué personas ya existen en el equipo actual de Lovable (comparando el login o nombre) para desactivar el checkbox y no importarlos dos veces.
+- Al confirmar, iterará sobre los seleccionados llamando a `addMember({ name, loginName, teamId, role: 'Team Member' })`.
 
-1. **Helper de detección** (nuevo, en el mismo archivo):
-   - `detectInventLayout(file: File): Promise<boolean>` — reutiliza `validateInventAbsentFile` (ya valida las 4 cabeceras: A=Work date, C=Person, D=Duration, E=Activity kind). Devuelve `true` cuando `validation.ok === true`.
+### 3. Integrarlo en `TeamPage.tsx`
+- En la página del equipo (`src/pages/TeamPage.tsx`), añadiremos el nuevo botón **"Importar de ADO"** con un icono (ej. `CloudDownload` o `Users`) justo al lado del botón actual de **"Nuevo Miembro"**.
+- Conectaremos este botón para que abra el modal `TfsImportDialog`.
 
-2. **`handleFile` en modo `generic`** (rama `xlsx`/`xls`):
-   - Antes de hacer `sheet_to_json` genérico, llamar a `detectInventLayout(file)`.
-   - Si es ROSEN:
-     - `setMode("invent")`
-     - Mostrar toast informativo: `t.importAutoDetectedInvent` ("Formato ROSEN detectado — usando el parser Invent")
-     - Ejecutar el mismo flujo que el modo Invent: `parseInventAbsentFile`, pre-fill `loginAssignments` desde `loadLoginMappings`, `setStep("preview")`.
-   - Si no, continuar con el flujo genérico actual.
-
-3. **Nuevas claves de traducción** en `src/context/LanguageContext.tsx`:
-   - `importAutoDetectedInvent` (EN: "ROSEN format detected — switched to Invent parser", ES: "Formato ROSEN detectado — cambiado al parser Invent").
-
-## Verificación
-
-- Añadir test en `src/test/invent-absent-parser.test.ts` (o nuevo `import-autodetect.test.ts`): validar que `validateInventAbsentFile` devuelve `ok: true` para un buffer con las 4 cabeceras correctas y `ok: false` para uno genérico (e.g. columnas `Name, Type, Start, End`).
-- Manual en `/absences`: subir `Absent_test.xlsx` con pestaña Genérica activa → debe saltar toast, cambiar a Invent y mostrar el preview con ausencias parseadas + unmatched (en lugar de "1050 with errors").
-- Subir un CSV/XLSX genérico legítimo → debe seguir yendo al paso `mapping` sin cambiar de pestaña.
-
-## Fuera de alcance
-
-- No se toca `inventAbsentParser.ts` ni el store de mapeos.
-- No se cambian las reglas de `normalizeType` del modo genérico.
-- No se elimina la pestaña Genérica: sigue disponible para CSVs/Excels con otros layouts.
+### 4. Textos y Traducciones
+- Actualizaremos `src/context/LanguageContext.tsx` para incluir los nuevos textos necesarios (título del modal, botón de importar, avisos de configuración ausente) tanto en español como en inglés.
