@@ -59,6 +59,8 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [reviewEntry, setReviewEntry] = useState<HistoryEntry | null>(null);
+  const [rolePreset, setRolePreset] = useState<string>("Team Member");
+  const [customRole, setCustomRole] = useState<string>("");
 
   const buildError = (e: TfsError): { title: string; message: string; hints: string[]; detail?: string } => {
     const hintsByKind: Record<string, { title: string; hints: string[] }> = {
