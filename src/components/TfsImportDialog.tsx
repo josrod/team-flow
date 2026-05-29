@@ -494,13 +494,45 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
           )}
         </div>
 
+        <div className="border-t pt-3 space-y-2">
+          <Label className="text-xs text-muted-foreground">{t.importTfsRoleLabel}</Label>
+          <div className="flex items-center gap-2">
+            <Select value={rolePreset} onValueChange={setRolePreset}>
+              <SelectTrigger className="h-9 w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Team Member">Team Member</SelectItem>
+                <SelectItem value="Lead">Lead</SelectItem>
+                <SelectItem value="Viewer">Viewer</SelectItem>
+                <SelectItem value="__custom__">{t.importTfsRoleCustom}</SelectItem>
+              </SelectContent>
+            </Select>
+            {rolePreset === "__custom__" && (
+              <Input
+                value={customRole}
+                onChange={(e) => setCustomRole(e.target.value)}
+                placeholder={t.importTfsRolePlaceholder}
+                className="h-9 flex-1"
+                maxLength={50}
+              />
+            )}
+          </div>
+        </div>
+
         <DialogFooter className="mt-auto pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t.cancel}
           </Button>
           <Button
             onClick={handleImport}
-            disabled={loading || !!error || tfsMembers.length === 0 || selectedIds.size === 0}
+            disabled={
+              loading ||
+              !!error ||
+              tfsMembers.length === 0 ||
+              selectedIds.size === 0 ||
+              !effectiveRole
+            }
           >
             <Users className="h-4 w-4 mr-2" />
             {t.importTfsImportCount.replace("{count}", String(selectedIds.size))}
