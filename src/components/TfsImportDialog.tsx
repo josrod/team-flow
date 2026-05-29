@@ -91,20 +91,54 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
     };
   }, [open, user, t.importTfsConfigureAlert]);
 
+  // Normalize for robust duplicate detection (case, whitespace, accents, domain variants).
+  const normalizeName = (s: string | null | undefined): string => {
+    if (!s) return "";
+    return s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // strip diacritics
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
+  const normalizeLogin = (s: string | null | undefined): string => {
+    if (!s) return "";
+    let v = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    // Strip Windows-style domain prefix (DOMAIN\user)
+    const slash = v.lastIndexOf("\\");
+    if (slash >= 0) v = v.slice(slash + 1);
+    // For emails, compare local-part too so "user@a.com" == "user@b.com" variants don't slip through
+    return v;
+  };
+
+  const loginLocalPart = (s: string): string => {
+    const at = s.indexOf("@");
+    return at >= 0 ? s.slice(0, at) : s;
+  };
+
   // Derive existing logins / names in the current Lovable team to disable duplicates
   const currentTeamMembers = members.filter((m) => m.teamId === teamId);
-  const existingLogins = new Set(
-    currentTeamMembers.map((m) => m.loginName?.toLowerCase()).filter(Boolean)
-  );
-  const existingNames = new Set(
-    currentTeamMembers.map((m) => m.name.toLowerCase())
-  );
+  const existingLogins = new Set<string>();
+  const existingLoginLocals = new Set<string>();
+  const existingNames = new Set<string>();
+  for (const m of currentTeamMembers) {
+    const login = normalizeLogin(m.loginName);
+    if (login) {
+      existingLogins.add(login);
+      existingLoginLocals.add(loginLocalPart(login));
+    }
+    const name = normalizeName(m.name);
+    if (name) existingNames.add(name);
+  }
 
   const isDuplicate = (m: TfsTeamMemberIdentity) => {
-    return (
-      existingLogins.has(m.uniqueName.toLowerCase()) ||
-      existingNames.has(m.displayName.toLowerCase())
-    );
+    const login = normalizeLogin(m.uniqueName);
+    const name = normalizeName(m.displayName);
+    if (login && existingLogins.has(login)) return true;
+    if (login && existingLoginLocals.has(loginLocalPart(login))) return true;
+    if (name && existingNames.has(name)) return true;
+    return false;
   };
 
   const handleToggle = (id: string, duplicate: boolean) => {
