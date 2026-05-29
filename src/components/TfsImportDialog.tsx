@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Users, CloudDownload, AlertCircle, Info, Search } from "lucide-react";
+import { Loader2, Users, CloudDownload, AlertCircle, Info, Search, History, ChevronDown, ChevronRight, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { listTfsTeamMembers, TfsTeamMemberIdentity, TfsConnection, TfsError } from "@/services/tfs";
 import { toast } from "sonner";
@@ -28,6 +28,24 @@ interface TfsImportDialogProps {
   teamId: string;
 }
 
+interface HistoryMember {
+  displayName: string;
+  uniqueName: string;
+}
+
+interface HistoryEntry {
+  id: string;
+  created_at: string;
+  imported_count: number;
+  imported_members: HistoryMember[];
+}
+
+const formatHistoryDate = (iso: string): string => {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogProps) {
   const { t } = useLang();
   const { user } = useAuth();
@@ -38,6 +56,9 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<{ title: string; message: string; hints: string[]; detail?: string } | null>(null);
   const [query, setQuery] = useState("");
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [reviewEntry, setReviewEntry] = useState<HistoryEntry | null>(null);
 
   const buildError = (e: TfsError): { title: string; message: string; hints: string[]; detail?: string } => {
     const hintsByKind: Record<string, { title: string; hints: string[] }> = {
@@ -140,6 +161,7 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
     };
 
     loadData();
+    loadHistory();
 
     return () => {
       isMounted = false;
@@ -226,11 +248,35 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
     setSelectedIds(next);
   };
 
-  const handleImport = () => {
+  const loadHistory = async () => {
+    if (!user) return;
+    const { data, error: histErr } = await supabase
+      .from("tfs_import_history")
+      .select("id, created_at, imported_count, imported_members")
+      .eq("user_id", user.id)
+      .eq("team_id", teamId)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (!histErr && data) {
+      setHistory(
+        data.map((row) => ({
+          id: row.id,
+          created_at: row.created_at,
+          imported_count: row.imported_count,
+          imported_members: Array.isArray(row.imported_members)
+            ? (row.imported_members as unknown as HistoryMember[])
+            : [],
+        })),
+      );
+    }
+  };
+
+  const handleImport = async () => {
     if (selectedIds.size === 0) return;
-    
-    let addedCount = 0;
+
     const toAdd = tfsMembers.filter((m) => selectedIds.has(m.id) && !isDuplicate(m));
+    let addedCount = 0;
+    const importedMembers: HistoryMember[] = [];
 
     for (const m of toAdd) {
       addMember({
@@ -239,7 +285,20 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
         role: "Team Member",
         teamId,
       });
+      importedMembers.push({ displayName: m.displayName, uniqueName: m.uniqueName });
       addedCount++;
+    }
+
+    if (addedCount > 0 && user) {
+      await supabase.from("tfs_import_history").insert([
+        {
+          user_id: user.id,
+          team_id: teamId,
+          imported_count: addedCount,
+          imported_members: JSON.parse(JSON.stringify(importedMembers)),
+          source: "azure_devops",
+        },
+      ]);
     }
 
     toast.success(t.importTfsSuccess.replace("{count}", String(addedCount)));
@@ -261,6 +320,55 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
           </DialogTitle>
           <DialogDescription>{t.importTfsTeamMembersDesc}</DialogDescription>
         </DialogHeader>
+
+        {history.length > 0 && (
+          <div className="border rounded-md">
+            <button
+              type="button"
+              onClick={() => setHistoryOpen((v) => !v)}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
+            >
+              {historyOpen ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              )}
+              <History className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">{t.importTfsHistoryTitle}</span>
+              <span className="text-xs text-muted-foreground ml-auto">
+                {t.importTfsHistoryCount.replace("{count}", String(history.length))}
+              </span>
+            </button>
+            {historyOpen && (
+              <ScrollArea className="max-h-40 border-t">
+                <ul className="divide-y">
+                  {history.map((h) => (
+                    <li
+                      key={h.id}
+                      className="flex items-center gap-3 px-3 py-2 text-sm"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{formatHistoryDate(h.created_at)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t.importTfsHistoryAdded.replace("{count}", String(h.imported_count))}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7"
+                        onClick={() => setReviewEntry(h)}
+                      >
+                        <Eye className="h-3.5 w-3.5 mr-1" />
+                        {t.importTfsHistoryReview}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
+            )}
+          </div>
+        )}
 
         <div className="flex-1 overflow-hidden flex flex-col min-h-[300px] my-2">
           {loading ? (
@@ -383,6 +491,50 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <Dialog open={!!reviewEntry} onOpenChange={(o) => !o && setReviewEntry(null)}>
+        <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              {t.importTfsHistoryReviewTitle}
+            </DialogTitle>
+            {reviewEntry && (
+              <DialogDescription>
+                {formatHistoryDate(reviewEntry.created_at)} ·{" "}
+                {t.importTfsHistoryAdded.replace("{count}", String(reviewEntry.imported_count))}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          <ScrollArea className="flex-1 border rounded-md max-h-[50vh]">
+            <ul className="divide-y">
+              {reviewEntry?.imported_members.map((m, i) => (
+                <li key={i} className="flex items-center gap-3 p-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="text-xs">
+                      {m.displayName.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{m.displayName}</p>
+                    <p className="text-xs text-muted-foreground truncate">{m.uniqueName}</p>
+                  </div>
+                </li>
+              ))}
+              {reviewEntry && reviewEntry.imported_members.length === 0 && (
+                <li className="text-sm text-muted-foreground text-center py-4">
+                  {t.importTfsHistoryEmpty}
+                </li>
+              )}
+            </ul>
+          </ScrollArea>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReviewEntry(null)}>
+              {t.cancel}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

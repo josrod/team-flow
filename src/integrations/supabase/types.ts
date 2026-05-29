@@ -113,6 +113,36 @@ export type Database = {
         }
         Relationships: []
       }
+      tfs_import_history: {
+        Row: {
+          created_at: string
+          id: string
+          imported_count: number
+          imported_members: Json
+          source: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          imported_count?: number
+          imported_members?: Json
+          source?: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          imported_count?: number
+          imported_members?: Json
+          source?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
