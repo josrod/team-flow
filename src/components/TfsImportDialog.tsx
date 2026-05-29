@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Users, CloudDownload, AlertCircle, Info, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { listTfsTeamMembers, TfsTeamMemberIdentity, TfsConnection } from "@/services/tfs";
+import { listTfsTeamMembers, TfsTeamMemberIdentity, TfsConnection, TfsError } from "@/services/tfs";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
