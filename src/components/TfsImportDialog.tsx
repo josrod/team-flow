@@ -39,6 +39,45 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
   const [error, setError] = useState<{ title: string; message: string; hints: string[]; detail?: string } | null>(null);
   const [query, setQuery] = useState("");
 
+  const buildError = (e: TfsError): { title: string; message: string; hints: string[]; detail?: string } => {
+    const hintsByKind: Record<string, { title: string; hints: string[] }> = {
+      cors: {
+        title: t.importTfsErrCorsTitle,
+        hints: [t.importTfsErrCorsHint1, t.importTfsErrCorsHint2],
+      },
+      mixed_content: {
+        title: t.importTfsErrMixedTitle,
+        hints: [t.importTfsErrMixedHint1],
+      },
+      timeout: {
+        title: t.importTfsErrTimeoutTitle,
+        hints: [t.importTfsErrTimeoutHint1, t.importTfsErrTimeoutHint2],
+      },
+      unauthorized: {
+        title: t.importTfsErrUnauthorizedTitle,
+        hints: [t.importTfsErrUnauthorizedHint1, t.importTfsErrUnauthorizedHint2],
+      },
+      forbidden: {
+        title: t.importTfsErrForbiddenTitle,
+        hints: [t.importTfsErrForbiddenHint1, t.importTfsErrForbiddenHint2],
+      },
+      not_found: {
+        title: t.importTfsErrNotFoundTitle,
+        hints: [t.importTfsErrNotFoundHint1, t.importTfsErrNotFoundHint2],
+      },
+      http: {
+        title: t.importTfsErrHttpTitle.replace("{status}", String(e.status ?? "?")),
+        hints: [t.importTfsErrHttpHint1],
+      },
+      unknown: {
+        title: t.importTfsErrUnknownTitle,
+        hints: [t.importTfsErrUnknownHint1],
+      },
+    };
+    const info = hintsByKind[e.kind] ?? hintsByKind.unknown;
+    return { title: info.title, message: e.message, hints: info.hints, detail: e.detail };
+  };
+
   // We only load when the dialog opens
   useEffect(() => {
     if (!open || !user) return;
@@ -60,7 +99,13 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
           .maybeSingle();
 
         if (!config?.server_url || !config?.collection || !config?.project || !config?.pat_encrypted || !config?.team) {
-          if (isMounted) setError(t.importTfsConfigureAlert);
+          if (isMounted) {
+            setError({
+              title: t.importTfsConfigureTitle,
+              message: t.importTfsConfigureAlert,
+              hints: [t.importTfsConfigureHint1],
+            });
+          }
           return;
         }
 
@@ -75,13 +120,20 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
         const result = await listTfsTeamMembers(conn);
         if (isMounted) {
           if (result.error) {
-            setError(result.error.message);
+            setError(buildError(result.error));
           } else {
             setTfsMembers(result.items);
           }
         }
-      } catch (err: any) {
-        if (isMounted) setError(err.message || "Unknown error");
+      } catch (err: unknown) {
+        if (isMounted) {
+          const msg = err instanceof Error ? err.message : "Unknown error";
+          setError({
+            title: t.importTfsErrUnknownTitle,
+            message: msg,
+            hints: [t.importTfsErrUnknownHint1],
+          });
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -92,7 +144,7 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
     return () => {
       isMounted = false;
     };
-  }, [open, user, t.importTfsConfigureAlert]);
+  }, [open, user, t]);
 
   // Normalize for robust duplicate detection (case, whitespace, accents, domain variants).
   const normalizeName = (s: string | null | undefined): string => {
