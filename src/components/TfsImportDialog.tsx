@@ -229,6 +229,15 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
             </div>
           ) : (
             <>
+              <div className="relative mb-2">
+                <Search className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t.searchMember}
+                  className="pl-8 h-9"
+                />
+              </div>
               <div className="flex items-center gap-2 px-1 mb-2">
                 <Checkbox
                   checked={allSelected}
@@ -243,7 +252,11 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
               <ScrollArea className="flex-1 border rounded-md p-1">
                 <TooltipProvider>
                   <div className="flex flex-col gap-1">
-                    {tfsMembers.map((m) => {
+                    {filteredMembers.length === 0 ? (
+                      <div className="text-sm text-muted-foreground text-center py-6">
+                        {t.noResults}
+                      </div>
+                    ) : filteredMembers.map((m) => {
                       const dup = isDuplicate(m);
                       const isChecked = selectedIds.has(m.id);
                       return (
