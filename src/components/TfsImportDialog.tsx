@@ -36,7 +36,7 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
   const [loading, setLoading] = useState(false);
   const [tfsMembers, setTfsMembers] = useState<TfsTeamMemberIdentity[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ title: string; message: string; hints: string[]; detail?: string } | null>(null);
   const [query, setQuery] = useState("");
 
   // We only load when the dialog opens
