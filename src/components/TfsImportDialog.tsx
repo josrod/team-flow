@@ -50,6 +50,7 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
       setError(null);
       setTfsMembers([]);
       setSelectedIds(new Set());
+      setQuery("");
 
       try {
         const { data: config } = await supabase
