@@ -315,6 +315,55 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
           <DialogDescription>{t.importTfsTeamMembersDesc}</DialogDescription>
         </DialogHeader>
 
+        {history.length > 0 && (
+          <div className="border rounded-md">
+            <button
+              type="button"
+              onClick={() => setHistoryOpen((v) => !v)}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
+            >
+              {historyOpen ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              )}
+              <History className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">{t.importTfsHistoryTitle}</span>
+              <span className="text-xs text-muted-foreground ml-auto">
+                {t.importTfsHistoryCount.replace("{count}", String(history.length))}
+              </span>
+            </button>
+            {historyOpen && (
+              <ScrollArea className="max-h-40 border-t">
+                <ul className="divide-y">
+                  {history.map((h) => (
+                    <li
+                      key={h.id}
+                      className="flex items-center gap-3 px-3 py-2 text-sm"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{formatHistoryDate(h.created_at)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t.importTfsHistoryAdded.replace("{count}", String(h.imported_count))}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7"
+                        onClick={() => setReviewEntry(h)}
+                      >
+                        <Eye className="h-3.5 w-3.5 mr-1" />
+                        {t.importTfsHistoryReview}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
+            )}
+          </div>
+        )}
+
         <div className="flex-1 overflow-hidden flex flex-col min-h-[300px] my-2">
           {loading ? (
             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-3">
