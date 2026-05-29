@@ -269,10 +269,29 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
               <p>Consultando Azure DevOps...</p>
             </div>
           ) : error ? (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="text-left">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription className="text-sm">{error}</AlertDescription>
+              <AlertTitle>{error.title}</AlertTitle>
+              <AlertDescription className="text-sm space-y-2">
+                <p>{error.message}</p>
+                {error.hints.length > 0 && (
+                  <ul className="list-disc pl-5 space-y-0.5">
+                    {error.hints.map((h, i) => (
+                      <li key={i}>{h}</li>
+                    ))}
+                  </ul>
+                )}
+                {error.detail && (
+                  <details className="mt-1">
+                    <summary className="cursor-pointer text-xs opacity-80">
+                      {t.importTfsErrShowDetail}
+                    </summary>
+                    <pre className="mt-1 text-xs whitespace-pre-wrap break-all opacity-80">
+                      {error.detail}
+                    </pre>
+                  </details>
+                )}
+              </AlertDescription>
             </Alert>
           ) : tfsMembers.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground text-sm text-center">
