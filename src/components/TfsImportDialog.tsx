@@ -152,13 +152,26 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
     setSelectedIds(next);
   };
 
+  const normalizedQuery = normalizeName(query);
+  const filteredMembers = normalizedQuery
+    ? tfsMembers.filter(
+        (m) =>
+          normalizeName(m.displayName).includes(normalizedQuery) ||
+          normalizeName(m.uniqueName).includes(normalizedQuery),
+      )
+    : tfsMembers;
+
   const handleToggleAll = () => {
-    const availableIds = tfsMembers.filter((m) => !isDuplicate(m)).map((m) => m.id);
-    if (selectedIds.size === availableIds.length && availableIds.length > 0) {
-      setSelectedIds(new Set());
+    const availableIds = filteredMembers.filter((m) => !isDuplicate(m)).map((m) => m.id);
+    const allInViewSelected =
+      availableIds.length > 0 && availableIds.every((id) => selectedIds.has(id));
+    const next = new Set(selectedIds);
+    if (allInViewSelected) {
+      for (const id of availableIds) next.delete(id);
     } else {
-      setSelectedIds(new Set(availableIds));
+      for (const id of availableIds) next.add(id);
     }
+    setSelectedIds(next);
   };
 
   const handleImport = () => {
