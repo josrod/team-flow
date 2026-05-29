@@ -281,8 +281,14 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
     }
   };
 
+  const effectiveRole = (rolePreset === "__custom__" ? customRole : rolePreset).trim();
+
   const handleImport = async () => {
     if (selectedIds.size === 0) return;
+    if (!effectiveRole) {
+      toast.error(t.importTfsRoleRequired);
+      return;
+    }
 
     const toAdd = tfsMembers.filter((m) => selectedIds.has(m.id) && !isDuplicate(m));
     let addedCount = 0;
@@ -292,7 +298,7 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
       addMember({
         name: m.displayName,
         loginName: m.uniqueName,
-        role: "Team Member",
+        role: effectiveRole,
         teamId,
       });
       importedMembers.push({ displayName: m.displayName, uniqueName: m.uniqueName });
