@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Users, CloudDownload, AlertCircle, Info, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { listTfsTeamMembers, TfsTeamMemberIdentity, TfsConnection } from "@/services/tfs";
+import { listTfsTeamMembers, TfsTeamMemberIdentity, TfsConnection, TfsError } from "@/services/tfs";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -36,8 +36,47 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
   const [loading, setLoading] = useState(false);
   const [tfsMembers, setTfsMembers] = useState<TfsTeamMemberIdentity[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ title: string; message: string; hints: string[]; detail?: string } | null>(null);
   const [query, setQuery] = useState("");
+
+  const buildError = (e: TfsError): { title: string; message: string; hints: string[]; detail?: string } => {
+    const hintsByKind: Record<string, { title: string; hints: string[] }> = {
+      cors: {
+        title: t.importTfsErrCorsTitle,
+        hints: [t.importTfsErrCorsHint1, t.importTfsErrCorsHint2],
+      },
+      mixed_content: {
+        title: t.importTfsErrMixedTitle,
+        hints: [t.importTfsErrMixedHint1],
+      },
+      timeout: {
+        title: t.importTfsErrTimeoutTitle,
+        hints: [t.importTfsErrTimeoutHint1, t.importTfsErrTimeoutHint2],
+      },
+      unauthorized: {
+        title: t.importTfsErrUnauthorizedTitle,
+        hints: [t.importTfsErrUnauthorizedHint1, t.importTfsErrUnauthorizedHint2],
+      },
+      forbidden: {
+        title: t.importTfsErrForbiddenTitle,
+        hints: [t.importTfsErrForbiddenHint1, t.importTfsErrForbiddenHint2],
+      },
+      not_found: {
+        title: t.importTfsErrNotFoundTitle,
+        hints: [t.importTfsErrNotFoundHint1, t.importTfsErrNotFoundHint2],
+      },
+      http: {
+        title: t.importTfsErrHttpTitle.replace("{status}", String(e.status ?? "?")),
+        hints: [t.importTfsErrHttpHint1],
+      },
+      unknown: {
+        title: t.importTfsErrUnknownTitle,
+        hints: [t.importTfsErrUnknownHint1],
+      },
+    };
+    const info = hintsByKind[e.kind] ?? hintsByKind.unknown;
+    return { title: info.title, message: e.message, hints: info.hints, detail: e.detail };
+  };
 
   // We only load when the dialog opens
   useEffect(() => {
@@ -60,7 +99,13 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
           .maybeSingle();
 
         if (!config?.server_url || !config?.collection || !config?.project || !config?.pat_encrypted || !config?.team) {
-          if (isMounted) setError(t.importTfsConfigureAlert);
+          if (isMounted) {
+            setError({
+              title: t.importTfsConfigureTitle,
+              message: t.importTfsConfigureAlert,
+              hints: [t.importTfsConfigureHint1],
+            });
+          }
           return;
         }
 
@@ -75,13 +120,20 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
         const result = await listTfsTeamMembers(conn);
         if (isMounted) {
           if (result.error) {
-            setError(result.error.message);
+            setError(buildError(result.error));
           } else {
             setTfsMembers(result.items);
           }
         }
-      } catch (err: any) {
-        if (isMounted) setError(err.message || "Unknown error");
+      } catch (err: unknown) {
+        if (isMounted) {
+          const msg = err instanceof Error ? err.message : "Unknown error";
+          setError({
+            title: t.importTfsErrUnknownTitle,
+            message: msg,
+            hints: [t.importTfsErrUnknownHint1],
+          });
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -92,7 +144,7 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
     return () => {
       isMounted = false;
     };
-  }, [open, user, t.importTfsConfigureAlert]);
+  }, [open, user, t]);
 
   // Normalize for robust duplicate detection (case, whitespace, accents, domain variants).
   const normalizeName = (s: string | null | undefined): string => {
@@ -217,10 +269,29 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
               <p>Consultando Azure DevOps...</p>
             </div>
           ) : error ? (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="text-left">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription className="text-sm">{error}</AlertDescription>
+              <AlertTitle>{error.title}</AlertTitle>
+              <AlertDescription className="text-sm space-y-2">
+                <p>{error.message}</p>
+                {error.hints.length > 0 && (
+                  <ul className="list-disc pl-5 space-y-0.5">
+                    {error.hints.map((h, i) => (
+                      <li key={i}>{h}</li>
+                    ))}
+                  </ul>
+                )}
+                {error.detail && (
+                  <details className="mt-1">
+                    <summary className="cursor-pointer text-xs opacity-80">
+                      {t.importTfsErrShowDetail}
+                    </summary>
+                    <pre className="mt-1 text-xs whitespace-pre-wrap break-all opacity-80">
+                      {error.detail}
+                    </pre>
+                  </details>
+                )}
+              </AlertDescription>
             </Alert>
           ) : tfsMembers.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground text-sm text-center">
