@@ -242,11 +242,35 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
     setSelectedIds(next);
   };
 
-  const handleImport = () => {
+  const loadHistory = async () => {
+    if (!user) return;
+    const { data, error: histErr } = await supabase
+      .from("tfs_import_history")
+      .select("id, created_at, imported_count, imported_members")
+      .eq("user_id", user.id)
+      .eq("team_id", teamId)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (!histErr && data) {
+      setHistory(
+        data.map((row) => ({
+          id: row.id,
+          created_at: row.created_at,
+          imported_count: row.imported_count,
+          imported_members: Array.isArray(row.imported_members)
+            ? (row.imported_members as unknown as HistoryMember[])
+            : [],
+        })),
+      );
+    }
+  };
+
+  const handleImport = async () => {
     if (selectedIds.size === 0) return;
-    
-    let addedCount = 0;
+
     const toAdd = tfsMembers.filter((m) => selectedIds.has(m.id) && !isDuplicate(m));
+    let addedCount = 0;
+    const importedMembers: HistoryMember[] = [];
 
     for (const m of toAdd) {
       addMember({
@@ -255,7 +279,18 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
         role: "Team Member",
         teamId,
       });
+      importedMembers.push({ displayName: m.displayName, uniqueName: m.uniqueName });
       addedCount++;
+    }
+
+    if (addedCount > 0 && user) {
+      await supabase.from("tfs_import_history").insert({
+        user_id: user.id,
+        team_id: teamId,
+        imported_count: addedCount,
+        imported_members: importedMembers as unknown as object,
+        source: "azure_devops",
+      });
     }
 
     toast.success(t.importTfsSuccess.replace("{count}", String(addedCount)));
