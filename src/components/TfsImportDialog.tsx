@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Users, CloudDownload, AlertCircle, Info, Search } from "lucide-react";
+import { Loader2, Users, CloudDownload, AlertCircle, Info, Search, History, ChevronDown, ChevronRight, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { listTfsTeamMembers, TfsTeamMemberIdentity, TfsConnection, TfsError } from "@/services/tfs";
 import { toast } from "sonner";
