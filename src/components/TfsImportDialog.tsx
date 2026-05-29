@@ -289,7 +289,7 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
           user_id: user.id,
           team_id: teamId,
           imported_count: addedCount,
-          imported_members: importedMembers as unknown as object,
+          imported_members: JSON.parse(JSON.stringify(importedMembers)),
           source: "azure_devops",
         },
       ]);
