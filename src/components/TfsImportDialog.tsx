@@ -284,13 +284,15 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
     }
 
     if (addedCount > 0 && user) {
-      await supabase.from("tfs_import_history").insert({
-        user_id: user.id,
-        team_id: teamId,
-        imported_count: addedCount,
-        imported_members: importedMembers as unknown as object,
-        source: "azure_devops",
-      });
+      await supabase.from("tfs_import_history").insert([
+        {
+          user_id: user.id,
+          team_id: teamId,
+          imported_count: addedCount,
+          imported_members: importedMembers as unknown as object,
+          source: "azure_devops",
+        },
+      ]);
     }
 
     toast.success(t.importTfsSuccess.replace("{count}", String(addedCount)));
