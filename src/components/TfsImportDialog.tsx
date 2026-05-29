@@ -155,6 +155,7 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
     };
 
     loadData();
+    loadHistory();
 
     return () => {
       isMounted = false;
