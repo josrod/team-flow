@@ -491,6 +491,50 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <Dialog open={!!reviewEntry} onOpenChange={(o) => !o && setReviewEntry(null)}>
+        <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              {t.importTfsHistoryReviewTitle}
+            </DialogTitle>
+            {reviewEntry && (
+              <DialogDescription>
+                {formatHistoryDate(reviewEntry.created_at)} ·{" "}
+                {t.importTfsHistoryAdded.replace("{count}", String(reviewEntry.imported_count))}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          <ScrollArea className="flex-1 border rounded-md max-h-[50vh]">
+            <ul className="divide-y">
+              {reviewEntry?.imported_members.map((m, i) => (
+                <li key={i} className="flex items-center gap-3 p-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="text-xs">
+                      {m.displayName.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{m.displayName}</p>
+                    <p className="text-xs text-muted-foreground truncate">{m.uniqueName}</p>
+                  </div>
+                </li>
+              ))}
+              {reviewEntry && reviewEntry.imported_members.length === 0 && (
+                <li className="text-sm text-muted-foreground text-center py-4">
+                  {t.importTfsHistoryEmpty}
+                </li>
+              )}
+            </ul>
+          </ScrollArea>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReviewEntry(null)}>
+              {t.cancel}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
