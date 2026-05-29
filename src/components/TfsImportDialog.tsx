@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Users, CloudDownload, AlertCircle, Info } from "lucide-react";
+import { Loader2, Users, CloudDownload, AlertCircle, Info, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { listTfsTeamMembers, TfsTeamMemberIdentity, TfsConnection } from "@/services/tfs";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -36,6 +37,7 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
   const [tfsMembers, setTfsMembers] = useState<TfsTeamMemberIdentity[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   // We only load when the dialog opens
   useEffect(() => {
@@ -48,6 +50,7 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
       setError(null);
       setTfsMembers([]);
       setSelectedIds(new Set());
+      setQuery("");
 
       try {
         const { data: config } = await supabase
@@ -149,13 +152,26 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
     setSelectedIds(next);
   };
 
+  const normalizedQuery = normalizeName(query);
+  const filteredMembers = normalizedQuery
+    ? tfsMembers.filter(
+        (m) =>
+          normalizeName(m.displayName).includes(normalizedQuery) ||
+          normalizeName(m.uniqueName).includes(normalizedQuery),
+      )
+    : tfsMembers;
+
   const handleToggleAll = () => {
-    const availableIds = tfsMembers.filter((m) => !isDuplicate(m)).map((m) => m.id);
-    if (selectedIds.size === availableIds.length && availableIds.length > 0) {
-      setSelectedIds(new Set());
+    const availableIds = filteredMembers.filter((m) => !isDuplicate(m)).map((m) => m.id);
+    const allInViewSelected =
+      availableIds.length > 0 && availableIds.every((id) => selectedIds.has(id));
+    const next = new Set(selectedIds);
+    if (allInViewSelected) {
+      for (const id of availableIds) next.delete(id);
     } else {
-      setSelectedIds(new Set(availableIds));
+      for (const id of availableIds) next.add(id);
     }
+    setSelectedIds(next);
   };
 
   const handleImport = () => {
@@ -178,8 +194,10 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
     onOpenChange(false);
   };
 
-  const availableCount = tfsMembers.filter((m) => !isDuplicate(m)).length;
-  const allSelected = availableCount > 0 && selectedIds.size === availableCount;
+  const availableInView = filteredMembers.filter((m) => !isDuplicate(m));
+  const availableCount = availableInView.length;
+  const allSelected =
+    availableCount > 0 && availableInView.every((m) => selectedIds.has(m.id));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -211,6 +229,15 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
             </div>
           ) : (
             <>
+              <div className="relative mb-2">
+                <Search className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t.searchMember}
+                  className="pl-8 h-9"
+                />
+              </div>
               <div className="flex items-center gap-2 px-1 mb-2">
                 <Checkbox
                   checked={allSelected}
@@ -225,7 +252,11 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
               <ScrollArea className="flex-1 border rounded-md p-1">
                 <TooltipProvider>
                   <div className="flex flex-col gap-1">
-                    {tfsMembers.map((m) => {
+                    {filteredMembers.length === 0 ? (
+                      <div className="text-sm text-muted-foreground text-center py-6">
+                        {t.noResults}
+                      </div>
+                    ) : filteredMembers.map((m) => {
                       const dup = isDuplicate(m);
                       const isChecked = selectedIds.has(m.id);
                       return (
