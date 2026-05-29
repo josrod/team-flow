@@ -38,6 +38,9 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<{ title: string; message: string; hints: string[]; detail?: string } | null>(null);
   const [query, setQuery] = useState("");
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [reviewEntry, setReviewEntry] = useState<HistoryEntry | null>(null);
 
   const buildError = (e: TfsError): { title: string; message: string; hints: string[]; detail?: string } => {
     const hintsByKind: Record<string, { title: string; hints: string[] }> = {
