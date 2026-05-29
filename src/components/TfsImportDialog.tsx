@@ -194,8 +194,10 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
     onOpenChange(false);
   };
 
-  const availableCount = tfsMembers.filter((m) => !isDuplicate(m)).length;
-  const allSelected = availableCount > 0 && selectedIds.size === availableCount;
+  const availableInView = filteredMembers.filter((m) => !isDuplicate(m));
+  const availableCount = availableInView.length;
+  const allSelected =
+    availableCount > 0 && availableInView.every((m) => selectedIds.has(m.id));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
