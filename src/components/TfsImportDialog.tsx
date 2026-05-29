@@ -28,6 +28,18 @@ interface TfsImportDialogProps {
   teamId: string;
 }
 
+interface HistoryMember {
+  displayName: string;
+  uniqueName: string;
+}
+
+interface HistoryEntry {
+  id: string;
+  created_at: string;
+  imported_count: number;
+  imported_members: HistoryMember[];
+}
+
 export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogProps) {
   const { t } = useLang();
   const { user } = useAuth();
