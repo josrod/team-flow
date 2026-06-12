@@ -1,0 +1,1 @@
+ALTER TABLE public.azure_devops_settings DROP COLUMN IF EXISTS bugs_query_id;
