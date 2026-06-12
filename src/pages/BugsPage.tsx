@@ -45,6 +45,8 @@ export const BugsPage = () => {
   const [iteration, setIteration] = useState<string>(ALL);
   const [selectedBug, setSelectedBug] = useState<TfsBug | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(0);
 
   useEffect(() => {
     const loadSettings = async () => {
