@@ -16,7 +16,7 @@ import { useLang } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { BugDetailDialog } from "@/components/BugDetailDialog";
-import { fetchTfsQueryResults, type TfsBug, type TfsError } from "@/services/tfs";
+import { fetchTfsBugsByIterations, type TfsBug, type TfsError } from "@/services/tfs";
 
 interface AdoSettings {
   serverUrl: string;
@@ -24,7 +24,7 @@ interface AdoSettings {
   project: string;
   team?: string;
   pat: string;
-  bugsQueryId?: string;
+  iterationPaths: string[];
 }
 
 const ALL = "__all__";
