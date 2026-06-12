@@ -94,8 +94,18 @@ export const BugsPage = () => {
     loadSettings();
   }, []);
 
+  const loadBugsControllerRef = useRef<AbortController | null>(null);
+  const loadBugsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const LOAD_BUGS_TIMEOUT_MS = 20000;
+
   const loadBugs = useCallback(async () => {
     if (!settings || settings.iterationPaths.length === 0) return;
+    // Cancel any in-flight request before starting a new one.
+    loadBugsControllerRef.current?.abort();
+    if (loadBugsTimeoutRef.current) clearTimeout(loadBugsTimeoutRef.current);
+    const controller = new AbortController();
+    loadBugsControllerRef.current = controller;
+    loadBugsTimeoutRef.current = setTimeout(() => controller.abort(), LOAD_BUGS_TIMEOUT_MS);
     setLoading(true);
     setError(null);
     const result = await fetchTfsBugsByIterations(
@@ -107,7 +117,15 @@ export const BugsPage = () => {
         pat: settings.pat,
       },
       settings.iterationPaths,
+      controller.signal,
     );
+    if (loadBugsTimeoutRef.current) {
+      clearTimeout(loadBugsTimeoutRef.current);
+      loadBugsTimeoutRef.current = null;
+    }
+    // If a newer call superseded us, drop the stale result.
+    if (loadBugsControllerRef.current !== controller) return;
+    loadBugsControllerRef.current = null;
     if (result.error) setError(result.error);
     setBugs(result.items);
     setLoading(false);
@@ -115,7 +133,16 @@ export const BugsPage = () => {
 
   useEffect(() => {
     if (settings && settings.iterationPaths.length > 0) loadBugs();
+    return () => {
+      loadBugsControllerRef.current?.abort();
+      loadBugsControllerRef.current = null;
+      if (loadBugsTimeoutRef.current) {
+        clearTimeout(loadBugsTimeoutRef.current);
+        loadBugsTimeoutRef.current = null;
+      }
+    };
   }, [settings, loadBugs]);
+
 
   const assignees = useMemo(() => {
     const set = new Set<string>();
