@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 import { useLang } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -163,14 +164,25 @@ export const BugsPage = () => {
           {settings && settings.iterationPaths.length > 0 && (
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <span className="text-xs text-muted-foreground">{t.bugsIterationPathsLabel}:</span>
-              {settings.iterationPaths.map((path) => (
-                <span
-                  key={path}
-                  className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
-                >
-                  {path}
-                </span>
-              ))}
+              {settings.iterationPaths.map((path) => {
+                const isActive = iteration === path;
+                return (
+                  <button
+                    key={path}
+                    type="button"
+                    onClick={() => setIteration(isActive ? ALL : path)}
+                    className={cn(
+                      "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium transition-colors cursor-pointer",
+                      isActive
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
+                    )}
+                    title={isActive ? "Quitar filtro" : "Filtrar por esta iteración"}
+                  >
+                    {path}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
