@@ -52,6 +52,11 @@
     --status-work-travel: 210 70% 50%;
     --status-other-project: 270 60% 55%;
     --status-parental-leave: 330 65% 55%;
+
+    --severity-critical: 0 72% 51%;
+    --severity-high: 25 95% 53%;
+    --severity-medium: 45 93% 47%;
+    --severity-low: 152 60% 42%;
   }
 
   .dark {
@@ -95,6 +100,11 @@
     --status-work-travel: 210 70% 55%;
     --status-other-project: 270 60% 60%;
     --status-parental-leave: 330 65% 60%;
+
+    --severity-critical: 0 65% 45%;
+    --severity-high: 25 90% 48%;
+    --severity-medium: 45 88% 42%;
+    --severity-low: 152 55% 38%;
   }
 }
 
