@@ -709,11 +709,7 @@ export const BugsPage = () => {
                               <Badge variant="outline">{b.state}</Badge>
                             </TableCell>
                             <TableCell>
-                              {b.severity ? (
-                                <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-400">{b.severity}</Badge>
-                              ) : (
-                                <span className="text-muted-foreground text-xs">—</span>
-                              )}
+                              <SeverityBadge severity={b.severity} />
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground font-mono">
                               {b.iterationPath ?? "—"}
