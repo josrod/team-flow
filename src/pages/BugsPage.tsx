@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
+import { BugDetailDialog } from "@/components/BugDetailDialog";
 import { fetchTfsQueryResults, type TfsBug, type TfsError } from "@/services/tfs";
 
 interface AdoSettings {
@@ -41,6 +42,8 @@ export const BugsPage = () => {
   const [assignee, setAssignee] = useState<string>(ALL);
   const [state, setState] = useState<string>(ALL);
   const [iteration, setIteration] = useState<string>(ALL);
+  const [selectedBug, setSelectedBug] = useState<TfsBug | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -254,12 +257,20 @@ export const BugsPage = () => {
                     </TableHeader>
                     <TableBody>
                       {filtered.map((b) => (
-                        <TableRow key={b.id}>
+                        <TableRow
+                          key={b.id}
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setSelectedBug(b);
+                            setDetailOpen(true);
+                          }}
+                        >
                           <TableCell className="font-mono text-xs">
                             <a
                               href={b.htmlUrl}
                               target="_blank"
                               rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
                               className="inline-flex items-center gap-1 text-primary hover:underline"
                             >
                               {b.id}
@@ -267,15 +278,7 @@ export const BugsPage = () => {
                             </a>
                           </TableCell>
                           <TableCell className="max-w-md">
-                            <a
-                              href={b.htmlUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="hover:underline"
-                              title={b.title}
-                            >
-                              {b.title}
-                            </a>
+                            <span title={b.title}>{b.title}</span>
                           </TableCell>
                           <TableCell className="text-sm">
                             {b.assignedTo ?? (
@@ -301,6 +304,13 @@ export const BugsPage = () => {
           </Card>
         </motion.div>
       )}
+
+      <BugDetailDialog
+        bug={selectedBug}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        connection={settings}
+      />
     </div>
   );
 };

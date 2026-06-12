@@ -1358,8 +1358,27 @@ export interface TfsBug {
   assignedToEmail?: string;
   iterationPath?: string;
   areaPath?: string;
+  priority?: number;
+  severity?: string;
+  tags?: string[];
   /** Browser URL to open the work item in Azure DevOps. */
   htmlUrl: string;
+}
+
+export interface TfsBugLink {
+  rel: string;
+  url: string;
+  name?: string;
+  comment?: string;
+}
+
+export interface TfsBugDetail extends TfsBug {
+  description?: string;
+  reproSteps?: string;
+  createdBy?: string;
+  createdDate?: string;
+  changedDate?: string;
+  links: TfsBugLink[];
 }
 
 const GUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -1485,6 +1504,9 @@ export const fetchTfsQueryResults = async (
       "System.AssignedTo",
       "System.IterationPath",
       "System.AreaPath",
+      "System.Tags",
+      "Microsoft.VSTS.Common.Priority",
+      "Microsoft.VSTS.Common.Severity",
     ];
 
     const batches: number[][] = [];
@@ -1504,6 +1526,15 @@ export const fetchTfsQueryResults = async (
       for (const raw of data.value ?? []) {
         const f = raw.fields ?? {};
         const assigned = parseAssignedTo(f["System.AssignedTo"]);
+        const tagsRaw = f["System.Tags"];
+        const tags =
+          typeof tagsRaw === "string" && tagsRaw.trim()
+            ? tagsRaw
+                .split(";")
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : undefined;
+        const priorityRaw = f["Microsoft.VSTS.Common.Priority"];
         all.push({
           id: raw.id,
           title: String(f["System.Title"] ?? ""),
@@ -1513,6 +1544,9 @@ export const fetchTfsQueryResults = async (
           assignedToEmail: assigned.email,
           iterationPath: f["System.IterationPath"] as string | undefined,
           areaPath: f["System.AreaPath"] as string | undefined,
+          tags,
+          priority: typeof priorityRaw === "number" ? priorityRaw : undefined,
+          severity: f["Microsoft.VSTS.Common.Severity"] as string | undefined,
           htmlUrl: buildWorkItemHtmlUrl(conn, raw.id),
         });
       }
@@ -1530,6 +1564,104 @@ export const fetchTfsQueryResults = async (
       items: [],
       error: { kind: "unknown", url: wiqlUrl, message: err instanceof Error ? err.message : "Error desconocido." },
     };
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Bug detail — fetch a single work item with description, tags, priority and
+// expanded relations (hyperlinks, related work items, attachments).
+// ---------------------------------------------------------------------------
+
+interface RawWorkItemRelation {
+  rel: string;
+  url: string;
+  attributes?: { name?: string; comment?: string };
+}
+
+interface RawWorkItemDetail extends RawWorkItem {
+  relations?: RawWorkItemRelation[];
+}
+
+export const fetchTfsBugDetail = async (
+  conn: TfsConnection,
+  id: number,
+): Promise<{ item?: TfsBugDetail; error?: TfsError }> => {
+  const base = buildCollectionUrl(conn.serverUrl, conn.collection);
+  const url = `${base}/_apis/wit/workitems/${id}?$expand=relations&api-version=${API_VERSION}`;
+
+  if (isMixedContent(url)) {
+    return { error: { kind: "mixed_content", url, message: "Mixed content (HTTPS → HTTP)." } };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      return {
+        error: {
+          kind:
+            res.status === 401 ? "unauthorized" : res.status === 403 ? "forbidden" : res.status === 404 ? "not_found" : "http",
+          status: res.status,
+          url,
+          message: `No se pudo cargar el work item (HTTP ${res.status}).`,
+          detail: body.slice(0, 300),
+        },
+      };
+    }
+    const raw = (await res.json()) as RawWorkItemDetail;
+    const f = raw.fields ?? {};
+    const assigned = parseAssignedTo(f["System.AssignedTo"]);
+    const tagsRaw = f["System.Tags"];
+    const tags =
+      typeof tagsRaw === "string" && tagsRaw.trim()
+        ? tagsRaw.split(";").map((s) => s.trim()).filter(Boolean)
+        : undefined;
+    const priorityRaw = f["Microsoft.VSTS.Common.Priority"];
+    const createdByRaw = parseAssignedTo(f["System.CreatedBy"]);
+    const links: TfsBugLink[] = (raw.relations ?? []).map((r) => ({
+      rel: r.rel,
+      url: r.url,
+      name: r.attributes?.name,
+      comment: r.attributes?.comment,
+    }));
+    return {
+      item: {
+        id: raw.id,
+        title: String(f["System.Title"] ?? ""),
+        state: String(f["System.State"] ?? ""),
+        workItemType: String(f["System.WorkItemType"] ?? ""),
+        assignedTo: assigned.name,
+        assignedToEmail: assigned.email,
+        iterationPath: f["System.IterationPath"] as string | undefined,
+        areaPath: f["System.AreaPath"] as string | undefined,
+        tags,
+        priority: typeof priorityRaw === "number" ? priorityRaw : undefined,
+        severity: f["Microsoft.VSTS.Common.Severity"] as string | undefined,
+        description: f["System.Description"] as string | undefined,
+        reproSteps: f["Microsoft.VSTS.TCM.ReproSteps"] as string | undefined,
+        createdBy: createdByRaw.name,
+        createdDate: f["System.CreatedDate"] as string | undefined,
+        changedDate: f["System.ChangedDate"] as string | undefined,
+        htmlUrl: buildWorkItemHtmlUrl(conn, raw.id),
+        links,
+      },
+    };
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return { error: { kind: "timeout", url, message: "Tiempo de espera agotado." } };
+    }
+    if (isNetworkLevelError(err)) {
+      return { error: { kind: "cors", url, message: "Sin respuesta (CORS, VPN o firewall)." } };
+    }
+    return { error: { kind: "unknown", url, message: err instanceof Error ? err.message : "Error desconocido." } };
   } finally {
     window.clearTimeout(timeoutId);
   }
