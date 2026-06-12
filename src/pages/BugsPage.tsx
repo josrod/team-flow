@@ -53,8 +53,9 @@ export const BugsPage = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const loadMoreWorkRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadMoreControllerRef = useRef<AbortController | null>(null);
   const loadMoreTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 
 
   useEffect(() => {
