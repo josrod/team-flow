@@ -1343,3 +1343,194 @@ export const listTfsTeamMembers = async (
     window.clearTimeout(timeoutId);
   }
 };
+
+// ---------------------------------------------------------------------------
+// Bugs — execute a stored Azure DevOps query (by ID or path) and return the
+// resulting work items as a flat list.
+// ---------------------------------------------------------------------------
+
+export interface TfsBug {
+  id: number;
+  title: string;
+  state: string;
+  workItemType: string;
+  assignedTo?: string;
+  assignedToEmail?: string;
+  iterationPath?: string;
+  areaPath?: string;
+  /** Browser URL to open the work item in Azure DevOps. */
+  htmlUrl: string;
+}
+
+const GUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const buildWorkItemHtmlUrl = (conn: TfsConnection, id: number): string => {
+  const base = buildCollectionUrl(conn.serverUrl, conn.collection);
+  return `${base}/${encodeURIComponent(conn.project.trim())}/_workitems/edit/${id}`;
+};
+
+const resolveQueryId = async (
+  conn: TfsConnection,
+  queryIdOrPath: string,
+): Promise<{ id?: string; error?: TfsError }> => {
+  const trimmed = queryIdOrPath.trim();
+  if (GUID_REGEX.test(trimmed)) return { id: trimmed };
+
+  const base = buildCollectionUrl(conn.serverUrl, conn.collection);
+  const projectSeg = encodeURIComponent(conn.project.trim());
+  // Encode each segment of the path individually so "Shared Queries/Bugs" works.
+  const pathSeg = trimmed
+    .split("/")
+    .filter(Boolean)
+    .map((s) => encodeURIComponent(s))
+    .join("/");
+  const url = `${base}/${projectSeg}/_apis/wit/queries/${pathSeg}?api-version=${API_VERSION}`;
+
+  if (isMixedContent(url)) {
+    return { error: { kind: "mixed_content", url, message: "Mixed content (HTTPS → HTTP)." } };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      return {
+        error: {
+          kind: res.status === 401 ? "unauthorized" : res.status === 403 ? "forbidden" : res.status === 404 ? "not_found" : "http",
+          status: res.status,
+          url,
+          message: `No se pudo resolver la query (HTTP ${res.status}).`,
+          detail: body.slice(0, 300),
+        },
+      };
+    }
+    const data = (await res.json()) as { id?: string };
+    if (!data.id) {
+      return { error: { kind: "unknown", url, message: "La query no devolvió un ID válido." } };
+    }
+    return { id: data.id };
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return { error: { kind: "timeout", url, message: "Tiempo de espera agotado." } };
+    }
+    if (isNetworkLevelError(err)) {
+      return { error: { kind: "cors", url, message: "Sin respuesta (CORS, VPN o firewall)." } };
+    }
+    return { error: { kind: "unknown", url, message: err instanceof Error ? err.message : "Error desconocido." } };
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+};
+
+/**
+ * Execute a stored Azure DevOps query (accepts a GUID or a path like
+ * "Shared Queries/Bugs/My bugs") and return the resulting work items.
+ */
+export const fetchTfsQueryResults = async (
+  conn: TfsConnection,
+  queryIdOrPath: string,
+): Promise<TfsDiscoveryResult<TfsBug>> => {
+  const resolved = await resolveQueryId(conn, queryIdOrPath);
+  if (resolved.error || !resolved.id) {
+    return { items: [], error: resolved.error };
+  }
+
+  const base = buildCollectionUrl(conn.serverUrl, conn.collection);
+  const projectSeg = encodeURIComponent(conn.project.trim());
+  const wiqlUrl = `${base}/${projectSeg}/_apis/wit/wiql/${resolved.id}?api-version=${API_VERSION}`;
+
+  if (isMixedContent(wiqlUrl)) {
+    return { items: [], error: { kind: "mixed_content", url: wiqlUrl, message: "Mixed content (HTTPS → HTTP)." } };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const wiqlRes = await fetch(wiqlUrl, {
+      method: "GET",
+      headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
+      signal: controller.signal,
+    });
+
+    if (!wiqlRes.ok) {
+      const body = await wiqlRes.text().catch(() => "");
+      return {
+        items: [],
+        error: {
+          kind: wiqlRes.status === 401 ? "unauthorized" : wiqlRes.status === 403 ? "forbidden" : wiqlRes.status === 404 ? "not_found" : "http",
+          status: wiqlRes.status,
+          url: wiqlUrl,
+          message: `La query falló con HTTP ${wiqlRes.status}.`,
+          detail: body.slice(0, 300),
+        },
+      };
+    }
+
+    const wiqlData = (await wiqlRes.json()) as WiqlResponse;
+    const ids = (wiqlData.workItems ?? []).map((w) => w.id);
+    if (ids.length === 0) return { items: [] };
+
+    const fields = [
+      "System.Id",
+      "System.Title",
+      "System.State",
+      "System.WorkItemType",
+      "System.AssignedTo",
+      "System.IterationPath",
+      "System.AreaPath",
+    ];
+
+    const batches: number[][] = [];
+    for (let i = 0; i < ids.length; i += 200) batches.push(ids.slice(i, i + 200));
+
+    const all: TfsBug[] = [];
+    for (const batch of batches) {
+      const fieldsParam = encodeURIComponent(fields.join(","));
+      const detailsUrl = `${base}/_apis/wit/workitems?ids=${batch.join(",")}&fields=${fieldsParam}&api-version=${API_VERSION}`;
+      const detailsRes = await fetch(detailsUrl, {
+        method: "GET",
+        headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
+        signal: controller.signal,
+      });
+      if (!detailsRes.ok) continue;
+      const data = (await detailsRes.json()) as RawWorkItemsResponse;
+      for (const raw of data.value ?? []) {
+        const f = raw.fields ?? {};
+        const assigned = parseAssignedTo(f["System.AssignedTo"]);
+        all.push({
+          id: raw.id,
+          title: String(f["System.Title"] ?? ""),
+          state: String(f["System.State"] ?? ""),
+          workItemType: String(f["System.WorkItemType"] ?? ""),
+          assignedTo: assigned.name,
+          assignedToEmail: assigned.email,
+          iterationPath: f["System.IterationPath"] as string | undefined,
+          areaPath: f["System.AreaPath"] as string | undefined,
+          htmlUrl: buildWorkItemHtmlUrl(conn, raw.id),
+        });
+      }
+    }
+
+    return { items: all };
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return { items: [], error: { kind: "timeout", url: wiqlUrl, message: "Tiempo de espera agotado." } };
+    }
+    if (isNetworkLevelError(err)) {
+      return { items: [], error: { kind: "cors", url: wiqlUrl, message: "Sin respuesta (CORS, VPN o firewall)." } };
+    }
+    return {
+      items: [],
+      error: { kind: "unknown", url: wiqlUrl, message: err instanceof Error ? err.message : "Error desconocido." },
+    };
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+};
