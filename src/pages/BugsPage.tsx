@@ -47,6 +47,8 @@ export const BugsPage = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   useEffect(() => {
     const loadSettings = async () => {
