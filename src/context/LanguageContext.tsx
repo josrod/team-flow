@@ -462,6 +462,7 @@ export const translations = {
     bugsPaginationPage: "Página {page} de {total}",
     bugsPaginationShowing: "Mostrando {from}–{to} de {total}",
     bugsPerPage: "Por página",
+    bugsLoadingMore: "Cargando más bugs...",
   },
   en: {
     dashboard: "Dashboard",
@@ -922,6 +923,7 @@ export const translations = {
     bugsPaginationPage: "Page {page} of {total}",
     bugsPaginationShowing: "Showing {from}–{to} of {total}",
     bugsPerPage: "Per page",
+    bugsLoadingMore: "Loading more bugs...",
   },
 } as const;
 

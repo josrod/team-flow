@@ -49,6 +49,7 @@ export const BugsPage = () => {
   const [highlightIndex, setHighlightIndex] = useState(0);
   const PAGE_SIZE = 30;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [loadingMore, setLoadingMore] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -209,6 +210,7 @@ export const BugsPage = () => {
     const io = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) {
+          setLoadingMore(true);
           setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
         }
       },
@@ -217,6 +219,12 @@ export const BugsPage = () => {
     io.observe(el);
     return () => io.disconnect();
   }, [hasMore, filtered.length]);
+
+  useEffect(() => {
+    if (!loadingMore) return;
+    const timer = setTimeout(() => setLoadingMore(false), 400);
+    return () => clearTimeout(timer);
+  }, [visibleCount, loadingMore]);
 
   const openBug = (b: TfsBug) => {
     setSelectedBug(b);
@@ -474,12 +482,28 @@ export const BugsPage = () => {
                             </TableCell>
                           </TableRow>
                         ))}
+                        {loadingMore &&
+                          Array.from({ length: 3 }).map((_, i) => (
+                            <TableRow key={`skel-${i}`}>
+                              <TableCell><Skeleton className="h-4 w-14" /></TableCell>
+                              <TableCell><Skeleton className="h-4 w-full max-w-xs" /></TableCell>
+                              <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                              <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                              <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                              <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                            </TableRow>
+                          ))}
                       </TableBody>
                     </Table>
                   </div>
 
                   <div ref={sentinelRef} className="flex items-center justify-center py-3 text-xs text-muted-foreground">
-                    {hasMore ? (
+                    {loadingMore ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        {t.bugsLoadingMore}
+                      </span>
+                    ) : hasMore ? (
                       <span className="inline-flex items-center gap-2">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         {t.bugsPaginationShowing
