@@ -186,6 +186,7 @@ export const AzureDevOpsSettingsPage = () => {
           sync_interval_minutes: Number(syncInterval),
           area_paths: areaPaths,
           iteration_paths: iterationPaths,
+          bugs_query_id: bugsQueryId.trim() || null,
         })
         .eq("user_id", user.id);
 
@@ -197,7 +198,7 @@ export const AzureDevOpsSettingsPage = () => {
         window.clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, hasExisting]);
+  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, hasExisting]);
 
   const resetStatus = () => {
     setConnectionStatus("idle");
