@@ -293,8 +293,8 @@ export const BugsPage = () => {
                           idx === highlightIndex ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
                         )}
                       >
-                        <span className="font-mono text-xs text-muted-foreground shrink-0 mt-0.5">#{b.id}</span>
-                        <span className="truncate">{b.title}</span>
+                        <span className="font-mono text-xs text-muted-foreground shrink-0 mt-0.5">{highlightMatch(String(b.id), search)}</span>
+                        <span className="truncate">{highlightMatch(b.title, search)}</span>
                       </button>
                     </li>
                   ))}
