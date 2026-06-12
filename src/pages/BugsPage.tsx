@@ -48,10 +48,14 @@ export const BugsPage = () => {
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
   const PAGE_SIZE = 30;
+  const LOAD_MORE_TIMEOUT_MS = 5000;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const loadMoreWorkRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadMoreTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 
   useEffect(() => {
     const loadSettings = async () => {
