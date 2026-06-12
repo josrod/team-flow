@@ -179,13 +179,15 @@ export const BugsPage = () => {
   const severityWeight = (s?: string | null) => {
     const level = normalizeSeverity(s);
     switch (level) {
-      case "critical": return 4;
-      case "high": return 3;
-      case "medium": return 2;
-      case "low": return 1;
+      case "critical": return 5;
+      case "high": return 4;
+      case "medium": return 3;
+      case "low": return 2;
+      case "trivial": return 1;
       default: return 0;
     }
   };
+
 
   const handleSort = (column: "id" | "title" | "assignedTo" | "state" | "severity" | "iterationPath") => {
     if (sortColumn === column) {
