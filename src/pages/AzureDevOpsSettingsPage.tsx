@@ -101,6 +101,8 @@ export const AzureDevOpsSettingsPage = () => {
         const rawIters = (data as { iteration_paths?: string[] | null }).iteration_paths;
         if (Array.isArray(rawAreas)) setAreaPaths(rawAreas);
         if (Array.isArray(rawIters)) setIterationPaths(rawIters);
+        const rawBugsQuery = (data as { bugs_query_id?: string | null }).bugs_query_id;
+        if (rawBugsQuery) setBugsQueryId(rawBugsQuery);
         setLastSynced(data.last_synced_at);
         setHasExisting(true);
         setConnectionStatus("success");
