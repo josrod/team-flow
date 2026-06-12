@@ -25,7 +25,7 @@ export const severityConfig: Record<SeverityLevel, { label: string; className: s
   },
 };
 
-function normalizeSeverity(raw?: string | null): SeverityLevel {
+export function normalizeSeverity(raw?: string | null): SeverityLevel {
   if (!raw) return "unknown";
   const lower = raw.toLowerCase().trim();
   if (lower.includes("critical") || lower === "1" || lower === "1 - critical") return "critical";
