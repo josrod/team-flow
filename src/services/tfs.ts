@@ -1504,6 +1504,9 @@ export const fetchTfsQueryResults = async (
       "System.AssignedTo",
       "System.IterationPath",
       "System.AreaPath",
+      "System.Tags",
+      "Microsoft.VSTS.Common.Priority",
+      "Microsoft.VSTS.Common.Severity",
     ];
 
     const batches: number[][] = [];
