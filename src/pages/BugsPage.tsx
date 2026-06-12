@@ -478,62 +478,26 @@ export const BugsPage = () => {
                     </Table>
                   </div>
 
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">
+                  <div ref={sentinelRef} className="flex items-center justify-center py-3 text-xs text-muted-foreground">
+                    {hasMore ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         {t.bugsPaginationShowing
-                          .replace("{from}", String((page - 1) * pageSize + 1))
-                          .replace("{to}", String(Math.min(page * pageSize, filtered.length)))
+                          .replace("{from}", "1")
+                          .replace("{to}", String(visibleBugs.length))
                           .replace("{total}", String(filtered.length))}
                       </span>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPage((p) => Math.max(1, p - 1))}
-                          disabled={page <= 1}
-                        >
-                          <ChevronLeft className="h-4 w-4 mr-1" />
-                          {t.bugsPaginationPrev}
-                        </Button>
-                        <span className="text-xs text-muted-foreground min-w-[6rem] text-center">
-                          {t.bugsPaginationPage
-                            .replace("{page}", String(page))
-                            .replace("{total}", String(totalPages))}
+                    ) : (
+                      filtered.length > PAGE_SIZE && (
+                        <span>
+                          {t.bugsPaginationShowing
+                            .replace("{from}", "1")
+                            .replace("{to}", String(filtered.length))
+                            .replace("{total}", String(filtered.length))}
                         </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                          disabled={page >= totalPages}
-                        >
-                          {t.bugsPaginationNext}
-                          <ChevronRight className="h-4 w-4 ml-1" />
-                        </Button>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-muted-foreground">{t.bugsPerPage}</span>
-                        <Select
-                          value={String(pageSize)}
-                          onValueChange={(v) => {
-                            setPageSize(Number(v));
-                            setPage(1);
-                          }}
-                        >
-                          <SelectTrigger className="h-8 w-20 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {[10, 25, 50, 100].map((s) => (
-                              <SelectItem key={s} value={String(s)}>
-                                {s}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  )}
+                      )
+                    )}
+                  </div>
                 </div>
               )}
             </CardContent>
