@@ -66,7 +66,7 @@ export const BugsPage = () => {
           project: string;
           team: string | null;
           pat_encrypted: string;
-          bugs_query_id?: string | null;
+          iteration_paths?: string[] | null;
         };
         setSettings({
           serverUrl: raw.server_url ?? "",
@@ -74,7 +74,7 @@ export const BugsPage = () => {
           project: raw.project,
           team: raw.team ?? undefined,
           pat: raw.pat_encrypted,
-          bugsQueryId: raw.bugs_query_id ?? undefined,
+          iterationPaths: Array.isArray(raw.iteration_paths) ? raw.iteration_paths : [],
         });
       }
       setSettingsLoading(false);
@@ -83,10 +83,10 @@ export const BugsPage = () => {
   }, []);
 
   const loadBugs = useCallback(async () => {
-    if (!settings || !settings.bugsQueryId?.trim()) return;
+    if (!settings || settings.iterationPaths.length === 0) return;
     setLoading(true);
     setError(null);
-    const result = await fetchTfsQueryResults(
+    const result = await fetchTfsBugsByIterations(
       {
         serverUrl: settings.serverUrl,
         collection: settings.collection,
@@ -94,7 +94,7 @@ export const BugsPage = () => {
         team: settings.team,
         pat: settings.pat,
       },
-      settings.bugsQueryId,
+      settings.iterationPaths,
     );
     if (result.error) setError(result.error);
     setBugs(result.items);
@@ -102,7 +102,7 @@ export const BugsPage = () => {
   }, [settings]);
 
   useEffect(() => {
-    if (settings?.bugsQueryId?.trim()) loadBugs();
+    if (settings && settings.iterationPaths.length > 0) loadBugs();
   }, [settings, loadBugs]);
 
   const assignees = useMemo(() => {
