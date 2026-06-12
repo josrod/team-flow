@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Bug, ChevronLeft, ChevronRight, ExternalLink, Loader2, RefreshCw, Search, Settings } from "lucide-react";
+import { Bug, ExternalLink, Loader2, RefreshCw, Search, Settings } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -47,8 +47,9 @@ export const BugsPage = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const PAGE_SIZE = 30;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -142,11 +143,8 @@ export const BugsPage = () => {
     });
   }, [bugs, search, assignee, state, iteration, t.bugsUnassigned]);
 
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(filtered.length / pageSize)), [filtered.length, pageSize]);
-  const paginatedBugs = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filtered.slice(start, start + pageSize);
-  }, [filtered, page, pageSize]);
+  const visibleBugs = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const hasMore = visibleCount < filtered.length;
 
   const suggestions = useMemo(() => {
     const raw = search.trim();
@@ -201,8 +199,24 @@ export const BugsPage = () => {
   }, [search, iteration]);
 
   useEffect(() => {
-    setPage(1);
-  }, [search, assignee, state, iteration]);
+    setVisibleCount(PAGE_SIZE);
+  }, [search, assignee, state, iteration, bugs]);
+
+  useEffect(() => {
+    if (!hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, filtered.length]);
 
   const openBug = (b: TfsBug) => {
     setSelectedBug(b);
@@ -420,7 +434,7 @@ export const BugsPage = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {paginatedBugs.map((b) => (
+                        {visibleBugs.map((b) => (
                           <TableRow
                             key={b.id}
                             className="cursor-pointer"
@@ -464,62 +478,26 @@ export const BugsPage = () => {
                     </Table>
                   </div>
 
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">
+                  <div ref={sentinelRef} className="flex items-center justify-center py-3 text-xs text-muted-foreground">
+                    {hasMore ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         {t.bugsPaginationShowing
-                          .replace("{from}", String((page - 1) * pageSize + 1))
-                          .replace("{to}", String(Math.min(page * pageSize, filtered.length)))
+                          .replace("{from}", "1")
+                          .replace("{to}", String(visibleBugs.length))
                           .replace("{total}", String(filtered.length))}
                       </span>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPage((p) => Math.max(1, p - 1))}
-                          disabled={page <= 1}
-                        >
-                          <ChevronLeft className="h-4 w-4 mr-1" />
-                          {t.bugsPaginationPrev}
-                        </Button>
-                        <span className="text-xs text-muted-foreground min-w-[6rem] text-center">
-                          {t.bugsPaginationPage
-                            .replace("{page}", String(page))
-                            .replace("{total}", String(totalPages))}
+                    ) : (
+                      filtered.length > PAGE_SIZE && (
+                        <span>
+                          {t.bugsPaginationShowing
+                            .replace("{from}", "1")
+                            .replace("{to}", String(filtered.length))
+                            .replace("{total}", String(filtered.length))}
                         </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                          disabled={page >= totalPages}
-                        >
-                          {t.bugsPaginationNext}
-                          <ChevronRight className="h-4 w-4 ml-1" />
-                        </Button>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-muted-foreground">{t.bugsPerPage}</span>
-                        <Select
-                          value={String(pageSize)}
-                          onValueChange={(v) => {
-                            setPageSize(Number(v));
-                            setPage(1);
-                          }}
-                        >
-                          <SelectTrigger className="h-8 w-20 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {[10, 25, 50, 100].map((s) => (
-                              <SelectItem key={s} value={String(s)}>
-                                {s}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  )}
+                      )
+                    )}
+                  </div>
                 </div>
               )}
             </CardContent>
