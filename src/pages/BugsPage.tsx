@@ -140,6 +140,28 @@ export const BugsPage = () => {
     });
   }, [bugs, search, assignee, state, iteration, t.bugsUnassigned]);
 
+  const suggestions = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return [];
+    return bugs
+      .filter((b) => {
+        if (iteration !== ALL && (b.iterationPath ?? "") !== iteration) return false;
+        const haystack = `${b.id} ${b.title}`.toLowerCase();
+        return haystack.includes(q);
+      })
+      .slice(0, 8);
+  }, [bugs, search, iteration]);
+
+  useEffect(() => {
+    setHighlightIndex(0);
+  }, [search, iteration]);
+
+  const openBug = (b: TfsBug) => {
+    setSelectedBug(b);
+    setDetailOpen(true);
+    setSuggestionsOpen(false);
+  };
+
   const renderEmptyState = (message: string) => (
     <Card>
       <CardContent className="py-10 text-center space-y-4">
