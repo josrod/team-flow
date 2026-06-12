@@ -143,11 +143,8 @@ export const BugsPage = () => {
     });
   }, [bugs, search, assignee, state, iteration, t.bugsUnassigned]);
 
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(filtered.length / pageSize)), [filtered.length, pageSize]);
-  const paginatedBugs = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filtered.slice(start, start + pageSize);
-  }, [filtered, page, pageSize]);
+  const visibleBugs = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const hasMore = visibleCount < filtered.length;
 
   const suggestions = useMemo(() => {
     const raw = search.trim();
