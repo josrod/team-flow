@@ -187,20 +187,6 @@ export const BugsPage = () => {
     }
   };
 
-  const [sortColumn, setSortColumn] = useState<"id" | "title" | "assignedTo" | "state" | "severity" | "iterationPath" | "areaPath">("severity");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-
-  const severityWeight = (s?: string | null) => {
-    const level = normalizeSeverity(s);
-    switch (level) {
-      case "critical": return 4;
-      case "high": return 3;
-      case "medium": return 2;
-      case "low": return 1;
-      default: return 0;
-    }
-  };
-
   const handleSort = (column: "id" | "title" | "assignedTo" | "state" | "severity" | "iterationPath" | "areaPath") => {
     if (sortColumn === column) {
       setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
