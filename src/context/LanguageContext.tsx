@@ -462,6 +462,7 @@ export const translations = {
     bugsPaginationPage: "Página {page} de {total}",
     bugsPaginationShowing: "Mostrando {from}–{to} de {total}",
     bugsPerPage: "Por página",
+    bugsLoadingMore: "Cargando más bugs...",
   },
   en: {
     dashboard: "Dashboard",
