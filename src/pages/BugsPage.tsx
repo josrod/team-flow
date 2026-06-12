@@ -187,6 +187,38 @@ export const BugsPage = () => {
     }
   };
 
+  const [sortColumn, setSortColumn] = useState<"id" | "title" | "assignedTo" | "state" | "severity" | "iterationPath" | "areaPath">("severity");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  const severityWeight = (s?: string | null) => {
+    const level = normalizeSeverity(s);
+    switch (level) {
+      case "critical": return 4;
+      case "high": return 3;
+      case "medium": return 2;
+      case "low": return 1;
+      default: return 0;
+    }
+  };
+
+  const handleSort = (column: "id" | "title" | "assignedTo" | "state" | "severity" | "iterationPath" | "areaPath") => {
+    if (sortColumn === column) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(column);
+      setSortDirection("desc");
+    }
+  };
+
+  const SortIcon = ({ column }: { column: typeof sortColumn }) => {
+    if (sortColumn !== column) return <ArrowUpDown className="ml-1 h-3 w-3 text-muted-foreground opacity-50" />;
+    return sortDirection === "asc" ? (
+      <ArrowUp className="ml-1 h-3 w-3 text-primary" />
+    ) : (
+      <ArrowDown className="ml-1 h-3 w-3 text-primary" />
+    );
+  };
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return bugs.filter((b) => {
