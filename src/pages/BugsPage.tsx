@@ -353,13 +353,13 @@ export const BugsPage = () => {
           loadMoreTimeoutRef.current = null;
         }
         if (loadMoreControllerRef.current === controller) loadMoreControllerRef.current = null;
-        setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+        setVisibleCount((c) => Math.min(c + PAGE_SIZE, sorted.length));
       } catch {
         // Aborted — state is handled by the watchdog or cancelLoadMore.
       }
     };
     void run();
-  }, [cancelLoadMore, filtered.length]);
+  }, [cancelLoadMore, sorted.length]);
 
 
   useEffect(() => {
@@ -480,7 +480,7 @@ export const BugsPage = () => {
               className="text-xs text-muted-foreground whitespace-nowrap cursor-pointer hover:text-primary transition-colors"
               title="Limpiar filtros"
             >
-              {filtered.length} / {bugs.length}
+              {sorted.length} / {bugs.length}
             </button>
           )}
           <div className="relative">
@@ -561,7 +561,7 @@ export const BugsPage = () => {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg font-display">
-                {filtered.length} / {bugs.length} {t.bugsCount}
+                {sorted.length} / {bugs.length} {t.bugsCount}
               </CardTitle>
               <CardDescription>{settings.project}</CardDescription>
             </CardHeader>
@@ -722,7 +722,7 @@ export const BugsPage = () => {
                   <Skeleton className="h-10 w-full" />
                   <p className="text-xs text-muted-foreground text-center">{t.bugsLoading}</p>
                 </div>
-              ) : filtered.length === 0 ? (
+              ) : sorted.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">{t.bugsEmpty}</p>
               ) : (
                 <div className="space-y-3">
@@ -838,15 +838,15 @@ export const BugsPage = () => {
                         {t.bugsPaginationShowing
                           .replace("{from}", "1")
                           .replace("{to}", String(visibleBugs.length))
-                          .replace("{total}", String(filtered.length))}
+                          .replace("{total}", String(sorted.length))}
                       </span>
                     ) : (
-                      filtered.length > PAGE_SIZE && (
+                      sorted.length > PAGE_SIZE && (
                         <span className="text-muted-foreground">
                           {t.bugsPaginationShowing
                             .replace("{from}", "1")
-                            .replace("{to}", String(filtered.length))
-                            .replace("{total}", String(filtered.length))}
+                            .replace("{to}", String(sorted.length))
+                            .replace("{total}", String(sorted.length))}
                         </span>
                       )
                     )}
