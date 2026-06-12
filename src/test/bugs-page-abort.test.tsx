@@ -73,12 +73,11 @@ const makeBug = (id: number): TfsBug => ({
   id,
   title: `Stale bug ${id}`,
   state: "Active",
+  workItemType: "Bug",
   assignedTo: "Someone",
   iterationPath: "MyProject\\Sprint 1",
   areaPath: "MyProject",
   htmlUrl: `https://tfs.example.com/bug/${id}`,
-  createdDate: "2026-01-01",
-  changedDate: "2026-01-02",
 });
 
 describe("BugsPage — AbortController cleanup", () => {
