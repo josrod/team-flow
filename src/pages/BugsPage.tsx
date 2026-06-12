@@ -199,8 +199,24 @@ export const BugsPage = () => {
   }, [search, iteration]);
 
   useEffect(() => {
-    setPage(1);
-  }, [search, assignee, state, iteration]);
+    setVisibleCount(PAGE_SIZE);
+  }, [search, assignee, state, iteration, bugs]);
+
+  useEffect(() => {
+    if (!hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, filtered.length]);
 
   const openBug = (b: TfsBug) => {
     setSelectedBug(b);
