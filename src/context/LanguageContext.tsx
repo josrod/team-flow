@@ -923,6 +923,7 @@ export const translations = {
     bugsPaginationPage: "Page {page} of {total}",
     bugsPaginationShowing: "Showing {from}–{to} of {total}",
     bugsPerPage: "Per page",
+    bugsLoadingMore: "Loading more bugs...",
   },
 } as const;
 
