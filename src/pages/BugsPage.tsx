@@ -219,16 +219,7 @@ export const BugsPage = () => {
               <CardDescription>{settings.project}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-4">
-                <div className="md:col-span-2">
-                  <Label className="text-xs text-muted-foreground">{t.bugsFilterSearch}</Label>
-                  <Input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder={t.bugsFilterSearch}
-                    className="mt-1"
-                  />
-                </div>
+              <div className="grid gap-3 md:grid-cols-3">
                 <div>
                   <Label className="text-xs text-muted-foreground">{t.bugsFilterAssignee}</Label>
                   <Select value={assignee} onValueChange={setAssignee}>
@@ -253,7 +244,7 @@ export const BugsPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="md:col-span-4">
+                <div>
                   <Label className="text-xs text-muted-foreground">{t.bugsFilterIteration}</Label>
                   <Select value={iteration} onValueChange={setIteration}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
