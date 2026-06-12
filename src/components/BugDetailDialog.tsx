@@ -99,7 +99,7 @@ export const BugDetailDialog = ({ bug, open, onOpenChange, connection }: BugDeta
                     {t.bugDetailPriority}: {current.priority}
                   </Badge>
                 )}
-                {current.severity && <Badge variant="outline">{current.severity}</Badge>}
+                {current.severity && <SeverityBadge severity={current.severity} />}
               </DialogDescription>
             </div>
           </div>
