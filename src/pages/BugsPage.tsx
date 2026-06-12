@@ -141,16 +141,52 @@ export const BugsPage = () => {
   }, [bugs, search, assignee, state, iteration, t.bugsUnassigned]);
 
   const suggestions = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return [];
-    return bugs
+    const raw = search.trim();
+    if (!raw) return [];
+    const words = raw.toLowerCase().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return [];
+
+    const scored = bugs
       .filter((b) => {
         if (iteration !== ALL && (b.iterationPath ?? "") !== iteration) return false;
         const haystack = `${b.id} ${b.title}`.toLowerCase();
-        return haystack.includes(q);
+        return words.every((w) => haystack.includes(w));
       })
-      .slice(0, 8);
+      .map((b) => {
+        const haystack = `${b.id} ${b.title}`.toLowerCase();
+        const fullQuery = raw.toLowerCase();
+        let score = 0;
+        if (haystack === fullQuery) score += 100;
+        if (`${b.id}`.toLowerCase() === fullQuery) score += 90;
+        if (b.title.toLowerCase() === fullQuery) score += 80;
+        if (haystack.startsWith(fullQuery)) score += 50;
+        if (`${b.id}`.toLowerCase().startsWith(fullQuery)) score += 40;
+        if (b.title.toLowerCase().startsWith(fullQuery)) score += 30;
+        words.forEach((w) => {
+          if (`${b.id}`.toLowerCase().includes(w)) score += 5;
+          if (b.title.toLowerCase().includes(w)) score += 3;
+        });
+        return { bug: b, score };
+      });
+
+    scored.sort((a, b) => b.score - a.score || a.bug.title.localeCompare(b.bug.title));
+    return scored.slice(0, 8).map((s) => s.bug);
   }, [bugs, search, iteration]);
+
+  const highlightMatch = (text: string, query: string) => {
+    if (!query.trim()) return text;
+    const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return text;
+    const pattern = new RegExp(`(${words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "gi");
+    const parts = text.split(pattern);
+    return parts.map((part, i) =>
+      words.some((w) => part.toLowerCase() === w) ? (
+        <mark key={i} className="bg-primary/20 text-primary font-semibold rounded-sm px-0.5">{part}</mark>
+      ) : (
+        <span key={i}>{part}</span>
+      )
+    );
+  };
 
   useEffect(() => {
     setHighlightIndex(0);
