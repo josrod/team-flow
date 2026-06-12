@@ -817,6 +817,33 @@ export const AzureDevOpsSettingsPage = () => {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.08 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-display flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5" />
+              {t.bugsQuerySettingLabel}
+            </CardTitle>
+            <CardDescription>{t.bugsQuerySettingHint}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Label htmlFor="ado-bugs-query">{t.bugsQuerySettingLabel}</Label>
+            <Input
+              id="ado-bugs-query"
+              value={bugsQueryId}
+              onChange={(e) => setBugsQueryId(e.target.value)}
+              placeholder={t.bugsQuerySettingPlaceholder}
+              className="mt-1 font-mono text-xs"
+            />
+          </CardContent>
+        </Card>
+      </motion.div>
+
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
         <Card>
