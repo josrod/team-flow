@@ -210,15 +210,29 @@ export const BugsPage = () => {
     if (!el) return;
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          setLoadingMore(true);
-          setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+        try {
+          if (entries.some((e) => e.isIntersecting)) {
+            setLoadMoreError(false);
+            setLoadingMore(true);
+            setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+          }
+        } catch {
+          setLoadingMore(false);
+          setLoadMoreError(true);
         }
       },
       { rootMargin: "200px" }
     );
     io.observe(el);
     return () => io.disconnect();
+  }, [hasMore, filtered.length]);
+
+  const retryLoadMore = useCallback(() => {
+    setLoadMoreError(false);
+    if (hasMore) {
+      setLoadingMore(true);
+      setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+    }
   }, [hasMore, filtered.length]);
 
   useEffect(() => {
