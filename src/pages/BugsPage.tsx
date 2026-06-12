@@ -131,7 +131,7 @@ export const BugsPage = () => {
       if (state !== ALL && b.state !== state) return false;
       if (iteration !== ALL && (b.iterationPath ?? "") !== iteration) return false;
       if (q) {
-        const haystack = `${b.id} ${b.title} ${b.assignedTo ?? ""}`.toLowerCase();
+        const haystack = `${b.id} ${b.title}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
