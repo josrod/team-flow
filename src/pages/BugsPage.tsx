@@ -16,7 +16,7 @@ import { useLang } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { BugDetailDialog } from "@/components/BugDetailDialog";
-import { fetchTfsQueryResults, type TfsBug, type TfsError } from "@/services/tfs";
+import { fetchTfsBugsByIterations, type TfsBug, type TfsError } from "@/services/tfs";
 
 interface AdoSettings {
   serverUrl: string;
@@ -24,7 +24,7 @@ interface AdoSettings {
   project: string;
   team?: string;
   pat: string;
-  bugsQueryId?: string;
+  iterationPaths: string[];
 }
 
 const ALL = "__all__";
@@ -66,7 +66,7 @@ export const BugsPage = () => {
           project: string;
           team: string | null;
           pat_encrypted: string;
-          bugs_query_id?: string | null;
+          iteration_paths?: string[] | null;
         };
         setSettings({
           serverUrl: raw.server_url ?? "",
@@ -74,7 +74,7 @@ export const BugsPage = () => {
           project: raw.project,
           team: raw.team ?? undefined,
           pat: raw.pat_encrypted,
-          bugsQueryId: raw.bugs_query_id ?? undefined,
+          iterationPaths: Array.isArray(raw.iteration_paths) ? raw.iteration_paths : [],
         });
       }
       setSettingsLoading(false);
@@ -83,10 +83,10 @@ export const BugsPage = () => {
   }, []);
 
   const loadBugs = useCallback(async () => {
-    if (!settings || !settings.bugsQueryId?.trim()) return;
+    if (!settings || settings.iterationPaths.length === 0) return;
     setLoading(true);
     setError(null);
-    const result = await fetchTfsQueryResults(
+    const result = await fetchTfsBugsByIterations(
       {
         serverUrl: settings.serverUrl,
         collection: settings.collection,
@@ -94,7 +94,7 @@ export const BugsPage = () => {
         team: settings.team,
         pat: settings.pat,
       },
-      settings.bugsQueryId,
+      settings.iterationPaths,
     );
     if (result.error) setError(result.error);
     setBugs(result.items);
@@ -102,7 +102,7 @@ export const BugsPage = () => {
   }, [settings]);
 
   useEffect(() => {
-    if (settings?.bugsQueryId?.trim()) loadBugs();
+    if (settings && settings.iterationPaths.length > 0) loadBugs();
   }, [settings, loadBugs]);
 
   const assignees = useMemo(() => {
@@ -161,7 +161,7 @@ export const BugsPage = () => {
           </h1>
           <p className="text-muted-foreground mt-1">{t.bugsPageDescription}</p>
         </div>
-        <Button onClick={loadBugs} disabled={loading || !settings?.bugsQueryId} variant="outline">
+        <Button onClick={loadBugs} disabled={loading || !settings || settings.iterationPaths.length === 0} variant="outline">
           {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
           {t.bugsRefresh}
         </Button>
@@ -171,8 +171,8 @@ export const BugsPage = () => {
         <Skeleton className="h-32 w-full" />
       ) : !settings ? (
         renderEmptyState(t.bugsNoConnection)
-      ) : !settings.bugsQueryId?.trim() ? (
-        renderEmptyState(t.bugsNoQueryConfigured)
+      ) : settings.iterationPaths.length === 0 ? (
+        renderEmptyState(t.bugsNoIterationConfigured)
       ) : (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
           <Card>
