@@ -1526,8 +1526,10 @@ export const fetchTfsBugsByIterations = async (
     };
   } finally {
     window.clearTimeout(timeoutId);
+    if (externalSignal) externalSignal.removeEventListener("abort", onExternalAbort);
   }
 };
+
 
 // ---------------------------------------------------------------------------
 // Bug detail — fetch a single work item with description, tags, priority and
