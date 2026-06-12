@@ -507,15 +507,63 @@ export const BugsPage = () => {
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">{t.bugsFilterState}</Label>
-                  <Select value={state} onValueChange={setState}>
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL}>{t.bugsFilterAll}</SelectItem>
-                      {states.map((s) => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between mt-1 font-normal">
+                        <span className="truncate">
+                          {state.length === 0
+                            ? t.bugsFilterAll
+                            : `${state.length} seleccionado${state.length === 1 ? "" : "s"}`}
+                        </span>
+                        <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                      <div className="max-h-72 overflow-auto py-1">
+                        {states.map((s) => {
+                          const selected = state.includes(s);
+                          return (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() =>
+                                setState(selected ? state.filter((x) => x !== s) : [...state, s])
+                              }
+                              className={cn(
+                                "flex w-full items-center gap-2 px-3 py-1.5 text-sm text-left hover:bg-accent",
+                                selected && "bg-accent/50",
+                              )}
+                            >
+                              <Check
+                                className={cn(
+                                  "h-3.5 w-3.5 shrink-0",
+                                  selected ? "opacity-100" : "opacity-0",
+                                )}
+                              />
+                              <span>{s}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  {state.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {state.map((s) => (
+                        <Badge key={s} variant="secondary" className="gap-1 text-[11px]">
+                          {s}
+                          <button
+                            type="button"
+                            onClick={() => setState(state.filter((x) => x !== s))}
+                            className="ml-0.5 hover:text-destructive"
+                            aria-label={`Quitar ${s}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">{t.bugsFilterIteration}</Label>
