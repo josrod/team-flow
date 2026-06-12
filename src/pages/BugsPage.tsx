@@ -160,6 +160,19 @@ export const BugsPage = () => {
             {t.bugsPageTitle}
           </h1>
           <p className="text-muted-foreground mt-1">{t.bugsPageDescription}</p>
+          {settings && settings.iterationPaths.length > 0 && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">{t.bugsIterationPathsLabel}:</span>
+              {settings.iterationPaths.map((path) => (
+                <span
+                  key={path}
+                  className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+                >
+                  {path}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         <Button onClick={loadBugs} disabled={loading || !settings || settings.iterationPaths.length === 0} variant="outline">
           {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
