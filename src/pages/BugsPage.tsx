@@ -730,13 +730,27 @@ export const BugsPage = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="w-20">{t.bugsColumnId}</TableHead>
-                          <TableHead>{t.bugsColumnTitle}</TableHead>
-                          <TableHead>{t.bugsColumnAssignee}</TableHead>
-                          <TableHead>{t.bugsColumnState}</TableHead>
-                          <TableHead>{t.bugsColumnSeverity}</TableHead>
-                          <TableHead>{t.bugsColumnIteration}</TableHead>
-                          <TableHead>{t.bugsColumnArea}</TableHead>
+                          <TableHead className="w-20 cursor-pointer select-none" onClick={() => handleSort("id")}>
+                            <span className="inline-flex items-center">{t.bugsColumnId}<SortIcon column="id" /></span>
+                          </TableHead>
+                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("title")}>
+                            <span className="inline-flex items-center">{t.bugsColumnTitle}<SortIcon column="title" /></span>
+                          </TableHead>
+                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("assignedTo")}>
+                            <span className="inline-flex items-center">{t.bugsColumnAssignee}<SortIcon column="assignedTo" /></span>
+                          </TableHead>
+                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("state")}>
+                            <span className="inline-flex items-center">{t.bugsColumnState}<SortIcon column="state" /></span>
+                          </TableHead>
+                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("severity")}>
+                            <span className="inline-flex items-center">{t.bugsColumnSeverity}<SortIcon column="severity" /></span>
+                          </TableHead>
+                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("iterationPath")}>
+                            <span className="inline-flex items-center">{t.bugsColumnIteration}<SortIcon column="iterationPath" /></span>
+                          </TableHead>
+                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("areaPath")}>
+                            <span className="inline-flex items-center">{t.bugsColumnArea}<SortIcon column="areaPath" /></span>
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
