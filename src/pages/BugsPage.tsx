@@ -44,6 +44,7 @@ export const BugsPage = () => {
   const [search, setSearch] = useState("");
   const [assignee, setAssignee] = useState<string>(ALL);
   const [state, setState] = useState<string[]>([]);
+  const [severity, setSeverity] = useState<string[]>([]);
   const [iteration, setIteration] = useState<string>(ALL);
   const [selectedBug, setSelectedBug] = useState<TfsBug | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -159,6 +160,12 @@ export const BugsPage = () => {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [bugs]);
 
+  const severities = useMemo(() => {
+    const set = new Set<string>();
+    bugs.forEach((b) => b.severity && set.add(b.severity));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [bugs]);
+
   const iterations = useMemo(() => {
     const set = new Set<string>();
     bugs.forEach((b) => b.iterationPath && set.add(b.iterationPath));
@@ -170,6 +177,7 @@ export const BugsPage = () => {
     return bugs.filter((b) => {
       if (assignee !== ALL && (b.assignedTo ?? t.bugsUnassigned) !== assignee) return false;
       if (state.length > 0 && !state.includes(b.state)) return false;
+      if (severity.length > 0 && (!b.severity || !severity.includes(b.severity))) return false;
       if (iteration !== ALL && (b.iterationPath ?? "") !== iteration) return false;
       if (q) {
         const haystack = `${b.id} ${b.title}`.toLowerCase();
@@ -177,7 +185,7 @@ export const BugsPage = () => {
       }
       return true;
     });
-  }, [bugs, search, assignee, state, iteration, t.bugsUnassigned]);
+  }, [bugs, search, assignee, state, severity, iteration, t.bugsUnassigned]);
 
   const visibleBugs = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
   const hasMore = visibleCount < filtered.length;
@@ -395,13 +403,14 @@ export const BugsPage = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {(search.trim() || iteration !== ALL || state.length > 0) && bugs.length > 0 && (
+          {(search.trim() || iteration !== ALL || state.length > 0 || severity.length > 0) && bugs.length > 0 && (
             <button
               type="button"
               onClick={() => {
                 setSearch("");
                 setIteration(ALL);
                 setState([]);
+                setSeverity([]);
               }}
               className="text-xs text-muted-foreground whitespace-nowrap cursor-pointer hover:text-primary transition-colors"
               title="Limpiar filtros"
