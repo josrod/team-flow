@@ -457,6 +457,11 @@ export const translations = {
     allPersons: "Todas las personas",
     allPersonsCount: "Todas las personas ({count})",
     searchPerson: "Buscar persona...",
+    bugsPaginationPrev: "Anterior",
+    bugsPaginationNext: "Siguiente",
+    bugsPaginationPage: "Página {page} de {total}",
+    bugsPaginationShowing: "Mostrando {from}–{to} de {total}",
+    bugsPerPage: "Por página",
   },
   en: {
     dashboard: "Dashboard",
@@ -912,6 +917,11 @@ export const translations = {
     allPersons: "All persons",
     allPersonsCount: "All persons ({count})",
     searchPerson: "Search person...",
+    bugsPaginationPrev: "Previous",
+    bugsPaginationNext: "Next",
+    bugsPaginationPage: "Page {page} of {total}",
+    bugsPaginationShowing: "Showing {from}–{to} of {total}",
+    bugsPerPage: "Per page",
   },
 } as const;
 
