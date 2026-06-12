@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useLang } from "@/context/LanguageContext";
+import { SeverityBadge } from "@/components/SeverityBadge";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { fetchTfsBugDetail, type TfsBug, type TfsBugDetail, type TfsError } from "@/services/tfs";
 
@@ -99,7 +100,7 @@ export const BugDetailDialog = ({ bug, open, onOpenChange, connection }: BugDeta
                     {t.bugDetailPriority}: {current.priority}
                   </Badge>
                 )}
-                {current.severity && <Badge variant="outline">{current.severity}</Badge>}
+                {current.severity && <SeverityBadge severity={current.severity} />}
               </DialogDescription>
             </div>
           </div>
