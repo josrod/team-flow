@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Bug, ExternalLink, Loader2, RefreshCw, Settings } from "lucide-react";
+import { Bug, ExternalLink, Loader2, RefreshCw, Search, Settings } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
