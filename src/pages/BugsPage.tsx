@@ -210,6 +210,7 @@ export const BugsPage = () => {
     const io = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) {
+          setLoadingMore(true);
           setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
         }
       },
@@ -218,6 +219,12 @@ export const BugsPage = () => {
     io.observe(el);
     return () => io.disconnect();
   }, [hasMore, filtered.length]);
+
+  useEffect(() => {
+    if (!loadingMore) return;
+    const timer = setTimeout(() => setLoadingMore(false), 400);
+    return () => clearTimeout(timer);
+  }, [visibleCount, loadingMore]);
 
   const openBug = (b: TfsBug) => {
     setSelectedBug(b);
