@@ -304,6 +304,13 @@ export const BugsPage = () => {
           </Card>
         </motion.div>
       )}
+
+      <BugDetailDialog
+        bug={selectedBug}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        connection={settings}
+      />
     </div>
   );
 };
