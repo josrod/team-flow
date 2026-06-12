@@ -194,6 +194,10 @@ export const BugsPage = () => {
     setHighlightIndex(0);
   }, [search, iteration]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [search, assignee, state, iteration]);
+
   const openBug = (b: TfsBug) => {
     setSelectedBug(b);
     setDetailOpen(true);
