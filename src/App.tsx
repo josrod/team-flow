@@ -17,6 +17,7 @@ import HandoversPage from "./pages/HandoversPage";
 import FeaturesPage from "./pages/FeaturesPage";
 import TasksPage from "./pages/TasksPage";
 import AzureDevOpsSettingsPage from "./pages/AzureDevOpsSettingsPage";
+import { BugsPage } from "./pages/BugsPage";
 import AuthPage from "./pages/AuthPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import NotFound from "./pages/NotFound";
