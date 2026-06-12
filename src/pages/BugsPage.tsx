@@ -247,6 +247,11 @@ export const BugsPage = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
+          {(search.trim() || iteration !== ALL) && bugs.length > 0 && (
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {filtered.length} / {bugs.length}
+            </span>
+          )}
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
             <Input
