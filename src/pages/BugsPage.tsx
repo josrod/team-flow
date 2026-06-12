@@ -233,9 +233,9 @@ export const BugsPage = () => {
   }, [search, iteration]);
 
   const cancelLoadMore = useCallback(() => {
-    if (loadMoreWorkRef.current) {
-      clearTimeout(loadMoreWorkRef.current);
-      loadMoreWorkRef.current = null;
+    if (loadMoreControllerRef.current) {
+      loadMoreControllerRef.current.abort();
+      loadMoreControllerRef.current = null;
     }
     if (loadMoreTimeoutRef.current) {
       clearTimeout(loadMoreTimeoutRef.current);
@@ -247,26 +247,45 @@ export const BugsPage = () => {
     cancelLoadMore();
     setLoadMoreError(false);
     setLoadingMore(true);
-    // Watchdog: if the load does not complete in time, cancel and surface an error.
+    const controller = new AbortController();
+    loadMoreControllerRef.current = controller;
+    // Watchdog: if the load does not complete in time, abort the controller
+    // (cancelling any in-flight work that subscribes to the signal).
     loadMoreTimeoutRef.current = setTimeout(() => {
-      if (loadMoreWorkRef.current) {
-        clearTimeout(loadMoreWorkRef.current);
-        loadMoreWorkRef.current = null;
-      }
       loadMoreTimeoutRef.current = null;
+      controller.abort();
+      if (loadMoreControllerRef.current === controller) loadMoreControllerRef.current = null;
       setLoadingMore(false);
       setLoadMoreError(true);
     }, LOAD_MORE_TIMEOUT_MS);
-    // Simulated async work so the watchdog can race against it.
-    loadMoreWorkRef.current = setTimeout(() => {
-      loadMoreWorkRef.current = null;
-      if (loadMoreTimeoutRef.current) {
-        clearTimeout(loadMoreTimeoutRef.current);
-        loadMoreTimeoutRef.current = null;
+    // Async work that respects the abort signal — bail out cleanly on cancel.
+    const run = async () => {
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const t = setTimeout(resolve, 400);
+          controller.signal.addEventListener(
+            "abort",
+            () => {
+              clearTimeout(t);
+              reject(new DOMException("Aborted", "AbortError"));
+            },
+            { once: true },
+          );
+        });
+        if (controller.signal.aborted) return;
+        if (loadMoreTimeoutRef.current) {
+          clearTimeout(loadMoreTimeoutRef.current);
+          loadMoreTimeoutRef.current = null;
+        }
+        if (loadMoreControllerRef.current === controller) loadMoreControllerRef.current = null;
+        setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+      } catch {
+        // Aborted — state is handled by the watchdog or cancelLoadMore.
       }
-      setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
-    }, 400);
+    };
+    void run();
   }, [cancelLoadMore, filtered.length]);
+
 
   useEffect(() => {
     cancelLoadMore();
