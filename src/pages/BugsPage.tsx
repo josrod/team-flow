@@ -43,7 +43,7 @@ export const BugsPage = () => {
 
   const [search, setSearch] = useState("");
   const [assignee, setAssignee] = useState<string>(ALL);
-  const [state, setState] = useState<string>(ALL);
+  const [state, setState] = useState<string[]>([]);
   const [iteration, setIteration] = useState<string>(ALL);
   const [selectedBug, setSelectedBug] = useState<TfsBug | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -169,7 +169,7 @@ export const BugsPage = () => {
     const q = search.trim().toLowerCase();
     return bugs.filter((b) => {
       if (assignee !== ALL && (b.assignedTo ?? t.bugsUnassigned) !== assignee) return false;
-      if (state !== ALL && b.state !== state) return false;
+      if (state.length > 0 && !state.includes(b.state)) return false;
       if (iteration !== ALL && (b.iterationPath ?? "") !== iteration) return false;
       if (q) {
         const haystack = `${b.id} ${b.title}`.toLowerCase();
@@ -395,12 +395,13 @@ export const BugsPage = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {(search.trim() || iteration !== ALL) && bugs.length > 0 && (
+          {(search.trim() || iteration !== ALL || state.length > 0) && bugs.length > 0 && (
             <button
               type="button"
               onClick={() => {
                 setSearch("");
                 setIteration(ALL);
+                setState([]);
               }}
               className="text-xs text-muted-foreground whitespace-nowrap cursor-pointer hover:text-primary transition-colors"
               title="Limpiar filtros"
