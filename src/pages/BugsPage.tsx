@@ -173,7 +173,7 @@ export const BugsPage = () => {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [bugs]);
 
-  const [sortColumn, setSortColumn] = useState<"id" | "title" | "assignedTo" | "state" | "severity" | "iterationPath" | "areaPath">("severity");
+  const [sortColumn, setSortColumn] = useState<"id" | "title" | "assignedTo" | "state" | "severity" | "iterationPath">("severity");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const severityWeight = (s?: string | null) => {
@@ -187,7 +187,7 @@ export const BugsPage = () => {
     }
   };
 
-  const handleSort = (column: "id" | "title" | "assignedTo" | "state" | "severity" | "iterationPath" | "areaPath") => {
+  const handleSort = (column: "id" | "title" | "assignedTo" | "state" | "severity" | "iterationPath") => {
     if (sortColumn === column) {
       setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
     } else {
@@ -242,9 +242,6 @@ export const BugsPage = () => {
           break;
         case "iterationPath":
           cmp = (a.iterationPath ?? "").localeCompare(b.iterationPath ?? "");
-          break;
-        case "areaPath":
-          cmp = (a.areaPath ?? "").localeCompare(b.areaPath ?? "");
           break;
       }
       return sortDirection === "asc" ? cmp : -cmp;
@@ -748,9 +745,6 @@ export const BugsPage = () => {
                           <TableHead className="cursor-pointer select-none" onClick={() => handleSort("iterationPath")}>
                             <span className="inline-flex items-center">{t.bugsColumnIteration}<SortIcon column="iterationPath" /></span>
                           </TableHead>
-                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("areaPath")}>
-                            <span className="inline-flex items-center">{t.bugsColumnArea}<SortIcon column="areaPath" /></span>
-                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -792,9 +786,6 @@ export const BugsPage = () => {
                             <TableCell className="text-xs text-muted-foreground font-mono">
                               {b.iterationPath ?? "—"}
                             </TableCell>
-                            <TableCell className="text-xs text-muted-foreground font-mono">
-                              {b.areaPath ?? "—"}
-                            </TableCell>
                           </TableRow>
                         ))}
                         {loadingMore &&
@@ -805,7 +796,6 @@ export const BugsPage = () => {
                               <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                               <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                               <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                              <TableCell><Skeleton className="h-4 w-28" /></TableCell>
                               <TableCell><Skeleton className="h-4 w-28" /></TableCell>
                             </TableRow>
                           ))}
