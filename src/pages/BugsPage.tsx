@@ -434,7 +434,7 @@ export const BugsPage = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {paginatedBugs.map((b) => (
+                        {visibleBugs.map((b) => (
                           <TableRow
                             key={b.id}
                             className="cursor-pointer"
