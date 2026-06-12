@@ -48,10 +48,14 @@ export const BugsPage = () => {
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
   const PAGE_SIZE = 30;
+  const LOAD_MORE_TIMEOUT_MS = 5000;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const loadMoreWorkRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadMoreTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -200,9 +204,48 @@ export const BugsPage = () => {
     setHighlightIndex(0);
   }, [search, iteration]);
 
+  const cancelLoadMore = useCallback(() => {
+    if (loadMoreWorkRef.current) {
+      clearTimeout(loadMoreWorkRef.current);
+      loadMoreWorkRef.current = null;
+    }
+    if (loadMoreTimeoutRef.current) {
+      clearTimeout(loadMoreTimeoutRef.current);
+      loadMoreTimeoutRef.current = null;
+    }
+  }, []);
+
+  const startLoadMore = useCallback(() => {
+    cancelLoadMore();
+    setLoadMoreError(false);
+    setLoadingMore(true);
+    // Watchdog: if the load does not complete in time, cancel and surface an error.
+    loadMoreTimeoutRef.current = setTimeout(() => {
+      if (loadMoreWorkRef.current) {
+        clearTimeout(loadMoreWorkRef.current);
+        loadMoreWorkRef.current = null;
+      }
+      loadMoreTimeoutRef.current = null;
+      setLoadingMore(false);
+      setLoadMoreError(true);
+    }, LOAD_MORE_TIMEOUT_MS);
+    // Simulated async work so the watchdog can race against it.
+    loadMoreWorkRef.current = setTimeout(() => {
+      loadMoreWorkRef.current = null;
+      if (loadMoreTimeoutRef.current) {
+        clearTimeout(loadMoreTimeoutRef.current);
+        loadMoreTimeoutRef.current = null;
+      }
+      setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+    }, 400);
+  }, [cancelLoadMore, filtered.length]);
+
   useEffect(() => {
+    cancelLoadMore();
+    setLoadingMore(false);
+    setLoadMoreError(false);
     setVisibleCount(PAGE_SIZE);
-  }, [search, assignee, state, iteration, bugs]);
+  }, [search, assignee, state, iteration, bugs, cancelLoadMore]);
 
   useEffect(() => {
     if (!hasMore) return;
@@ -211,12 +254,11 @@ export const BugsPage = () => {
     const io = new IntersectionObserver(
       (entries) => {
         try {
-          if (entries.some((e) => e.isIntersecting)) {
-            setLoadMoreError(false);
-            setLoadingMore(true);
-            setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+          if (entries.some((e) => e.isIntersecting) && !loadingMore && !loadMoreError) {
+            startLoadMore();
           }
         } catch {
+          cancelLoadMore();
           setLoadingMore(false);
           setLoadMoreError(true);
         }
@@ -225,21 +267,19 @@ export const BugsPage = () => {
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [hasMore, filtered.length]);
+  }, [hasMore, loadingMore, loadMoreError, startLoadMore, cancelLoadMore]);
 
   const retryLoadMore = useCallback(() => {
     setLoadMoreError(false);
-    if (hasMore) {
-      setLoadingMore(true);
-      setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
-    }
-  }, [hasMore, filtered.length]);
+    if (hasMore) startLoadMore();
+  }, [hasMore, startLoadMore]);
 
   useEffect(() => {
-    if (!loadingMore) return;
-    const timer = setTimeout(() => setLoadingMore(false), 400);
-    return () => clearTimeout(timer);
-  }, [visibleCount, loadingMore]);
+    setLoadingMore(false);
+  }, [visibleCount]);
+
+  useEffect(() => () => cancelLoadMore(), [cancelLoadMore]);
+
 
   const openBug = (b: TfsBug) => {
     setSelectedBug(b);
