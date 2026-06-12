@@ -463,6 +463,8 @@ export const translations = {
     bugsPaginationShowing: "Mostrando {from}–{to} de {total}",
     bugsPerPage: "Por página",
     bugsLoadingMore: "Cargando más bugs...",
+    bugsLoadMoreError: "No se pudieron cargar más bugs.",
+    bugsLoadMoreRetry: "Reintentar",
   },
   en: {
     dashboard: "Dashboard",
@@ -924,6 +926,8 @@ export const translations = {
     bugsPaginationShowing: "Showing {from}–{to} of {total}",
     bugsPerPage: "Per page",
     bugsLoadingMore: "Loading more bugs...",
+    bugsLoadMoreError: "Could not load more bugs.",
+    bugsLoadMoreRetry: "Retry",
   },
 } as const;
 
