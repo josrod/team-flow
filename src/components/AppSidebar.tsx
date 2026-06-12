@@ -76,6 +76,7 @@ export function AppSidebar() {
     { title: t.tasks, url: "/tasks", icon: ListChecks },
     { title: t.workload, url: "/workload", icon: CalendarDays },
     { title: t.pulse, url: "/pulse", icon: Activity },
+    { title: t.bugs, url: "/bugs", icon: Bug },
     { title: "Azure DevOps", url: "/settings/azure-devops", icon: Settings },
   ];
 
