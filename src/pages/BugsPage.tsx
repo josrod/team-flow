@@ -44,6 +44,7 @@ export const BugsPage = () => {
   const [search, setSearch] = useState("");
   const [assignee, setAssignee] = useState<string>(ALL);
   const [state, setState] = useState<string[]>([]);
+  const [severity, setSeverity] = useState<string[]>([]);
   const [iteration, setIteration] = useState<string>(ALL);
   const [selectedBug, setSelectedBug] = useState<TfsBug | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -159,6 +160,12 @@ export const BugsPage = () => {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [bugs]);
 
+  const severities = useMemo(() => {
+    const set = new Set<string>();
+    bugs.forEach((b) => b.severity && set.add(b.severity));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [bugs]);
+
   const iterations = useMemo(() => {
     const set = new Set<string>();
     bugs.forEach((b) => b.iterationPath && set.add(b.iterationPath));
@@ -170,6 +177,7 @@ export const BugsPage = () => {
     return bugs.filter((b) => {
       if (assignee !== ALL && (b.assignedTo ?? t.bugsUnassigned) !== assignee) return false;
       if (state.length > 0 && !state.includes(b.state)) return false;
+      if (severity.length > 0 && (!b.severity || !severity.includes(b.severity))) return false;
       if (iteration !== ALL && (b.iterationPath ?? "") !== iteration) return false;
       if (q) {
         const haystack = `${b.id} ${b.title}`.toLowerCase();
@@ -177,7 +185,7 @@ export const BugsPage = () => {
       }
       return true;
     });
-  }, [bugs, search, assignee, state, iteration, t.bugsUnassigned]);
+  }, [bugs, search, assignee, state, severity, iteration, t.bugsUnassigned]);
 
   const visibleBugs = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
   const hasMore = visibleCount < filtered.length;
@@ -304,7 +312,7 @@ export const BugsPage = () => {
     setLoadingMore(false);
     setLoadMoreError(false);
     setVisibleCount(PAGE_SIZE);
-  }, [search, assignee, state, iteration, bugs, cancelLoadMore]);
+  }, [search, assignee, state, severity, iteration, bugs, cancelLoadMore]);
 
   useEffect(() => {
     if (!hasMore) return;
@@ -395,13 +403,14 @@ export const BugsPage = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {(search.trim() || iteration !== ALL || state.length > 0) && bugs.length > 0 && (
+          {(search.trim() || iteration !== ALL || state.length > 0 || severity.length > 0) && bugs.length > 0 && (
             <button
               type="button"
               onClick={() => {
                 setSearch("");
                 setIteration(ALL);
                 setState([]);
+                setSeverity([]);
               }}
               className="text-xs text-muted-foreground whitespace-nowrap cursor-pointer hover:text-primary transition-colors"
               title="Limpiar filtros"
@@ -492,7 +501,7 @@ export const BugsPage = () => {
               <CardDescription>{settings.project}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-3">
+              <div className="grid gap-3 md:grid-cols-4">
                 <div>
                   <Label className="text-xs text-muted-foreground">{t.bugsFilterAssignee}</Label>
                   <Select value={assignee} onValueChange={setAssignee}>
@@ -566,6 +575,66 @@ export const BugsPage = () => {
                   )}
                 </div>
                 <div>
+                  <Label className="text-xs text-muted-foreground">{t.bugsFilterSeverity}</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between mt-1 font-normal">
+                        <span className="truncate">
+                          {severity.length === 0
+                            ? t.bugsFilterAll
+                            : `${severity.length} seleccionado${severity.length === 1 ? "" : "s"}`}
+                        </span>
+                        <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                      <div className="max-h-72 overflow-auto py-1">
+                        {severities.map((s) => {
+                          const selected = severity.includes(s);
+                          return (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() =>
+                                setSeverity(selected ? severity.filter((x) => x !== s) : [...severity, s])
+                              }
+                              className={cn(
+                                "flex w-full items-center gap-2 px-3 py-1.5 text-sm text-left hover:bg-accent",
+                                selected && "bg-accent/50",
+                              )}
+                            >
+                              <Check
+                                className={cn(
+                                  "h-3.5 w-3.5 shrink-0",
+                                  selected ? "opacity-100" : "opacity-0",
+                                )}
+                              />
+                              <span>{s}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  {severity.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {severity.map((s) => (
+                        <Badge key={s} variant="secondary" className="gap-1 text-[11px]">
+                          {s}
+                          <button
+                            type="button"
+                            onClick={() => setSeverity(severity.filter((x) => x !== s))}
+                            className="ml-0.5 hover:text-destructive"
+                            aria-label={`Quitar ${s}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div>
                   <Label className="text-xs text-muted-foreground">{t.bugsFilterIteration}</Label>
                   <Select value={iteration} onValueChange={setIteration}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
@@ -600,6 +669,7 @@ export const BugsPage = () => {
                           <TableHead>{t.bugsColumnTitle}</TableHead>
                           <TableHead>{t.bugsColumnAssignee}</TableHead>
                           <TableHead>{t.bugsColumnState}</TableHead>
+                          <TableHead>{t.bugsColumnSeverity}</TableHead>
                           <TableHead>{t.bugsColumnIteration}</TableHead>
                           <TableHead>{t.bugsColumnArea}</TableHead>
                         </TableRow>
@@ -637,6 +707,13 @@ export const BugsPage = () => {
                             <TableCell>
                               <Badge variant="outline">{b.state}</Badge>
                             </TableCell>
+                            <TableCell>
+                              {b.severity ? (
+                                <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-400">{b.severity}</Badge>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">—</span>
+                              )}
+                            </TableCell>
                             <TableCell className="text-xs text-muted-foreground font-mono">
                               {b.iterationPath ?? "—"}
                             </TableCell>
@@ -651,6 +728,7 @@ export const BugsPage = () => {
                               <TableCell><Skeleton className="h-4 w-14" /></TableCell>
                               <TableCell><Skeleton className="h-4 w-full max-w-xs" /></TableCell>
                               <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                              <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                               <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                               <TableCell><Skeleton className="h-4 w-28" /></TableCell>
                               <TableCell><Skeleton className="h-4 w-28" /></TableCell>
