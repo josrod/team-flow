@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Bug, ExternalLink, Loader2, RefreshCw, Settings } from "lucide-react";
+import { Bug, ExternalLink, Loader2, RefreshCw, Search, Settings } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -131,7 +131,7 @@ export const BugsPage = () => {
       if (state !== ALL && b.state !== state) return false;
       if (iteration !== ALL && (b.iterationPath ?? "") !== iteration) return false;
       if (q) {
-        const haystack = `${b.id} ${b.title} ${b.assignedTo ?? ""}`.toLowerCase();
+        const haystack = `${b.id} ${b.title}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
@@ -155,7 +155,7 @@ export const BugsPage = () => {
   return (
     <div className="space-y-6 w-full max-w-6xl">
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
+        <div className="flex-1 min-w-0">
           <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight flex items-center gap-2">
             <Bug className="h-7 w-7" />
             {t.bugsPageTitle}
@@ -186,10 +186,21 @@ export const BugsPage = () => {
             </div>
           )}
         </div>
-        <Button onClick={loadBugs} disabled={loading || !settings || settings.iterationPaths.length === 0} variant="outline">
-          {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-          {t.bugsRefresh}
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por título o ID..."
+              className="pl-9 w-64"
+            />
+          </div>
+          <Button onClick={loadBugs} disabled={loading || !settings || settings.iterationPaths.length === 0} variant="outline">
+            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            {t.bugsRefresh}
+          </Button>
+        </div>
       </div>
 
       {settingsLoading ? (
@@ -208,16 +219,7 @@ export const BugsPage = () => {
               <CardDescription>{settings.project}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-4">
-                <div className="md:col-span-2">
-                  <Label className="text-xs text-muted-foreground">{t.bugsFilterSearch}</Label>
-                  <Input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder={t.bugsFilterSearch}
-                    className="mt-1"
-                  />
-                </div>
+              <div className="grid gap-3 md:grid-cols-3">
                 <div>
                   <Label className="text-xs text-muted-foreground">{t.bugsFilterAssignee}</Label>
                   <Select value={assignee} onValueChange={setAssignee}>
@@ -242,7 +244,7 @@ export const BugsPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="md:col-span-4">
+                <div>
                   <Label className="text-xs text-muted-foreground">{t.bugsFilterIteration}</Label>
                   <Select value={iteration} onValueChange={setIteration}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
