@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           area_paths: string[]
           auto_sync_enabled: boolean
+          bugs_query_id: string | null
           collection: string | null
           created_at: string
           id: string
@@ -37,6 +38,7 @@ export type Database = {
         Insert: {
           area_paths?: string[]
           auto_sync_enabled?: boolean
+          bugs_query_id?: string | null
           collection?: string | null
           created_at?: string
           id?: string
@@ -56,6 +58,7 @@ export type Database = {
         Update: {
           area_paths?: string[]
           auto_sync_enabled?: boolean
+          bugs_query_id?: string | null
           collection?: string | null
           created_at?: string
           id?: string

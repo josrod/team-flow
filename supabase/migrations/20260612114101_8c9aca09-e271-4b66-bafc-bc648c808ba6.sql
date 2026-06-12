@@ -1,0 +1,1 @@
+ALTER TABLE public.azure_devops_settings ADD COLUMN IF NOT EXISTS bugs_query_id text;
