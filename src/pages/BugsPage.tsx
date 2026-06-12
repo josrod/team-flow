@@ -498,7 +498,12 @@ export const BugsPage = () => {
                   </div>
 
                   <div ref={sentinelRef} className="flex items-center justify-center py-3 text-xs text-muted-foreground">
-                    {hasMore ? (
+                    {loadingMore ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        {t.bugsLoadingMore}
+                      </span>
+                    ) : hasMore ? (
                       <span className="inline-flex items-center gap-2">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         {t.bugsPaginationShowing
