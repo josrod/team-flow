@@ -406,61 +406,120 @@ export const BugsPage = () => {
               ) : filtered.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">{t.bugsEmpty}</p>
               ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-20">{t.bugsColumnId}</TableHead>
-                        <TableHead>{t.bugsColumnTitle}</TableHead>
-                        <TableHead>{t.bugsColumnAssignee}</TableHead>
-                        <TableHead>{t.bugsColumnState}</TableHead>
-                        <TableHead>{t.bugsColumnIteration}</TableHead>
-                        <TableHead>{t.bugsColumnArea}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filtered.map((b) => (
-                        <TableRow
-                          key={b.id}
-                          className="cursor-pointer"
-                          onClick={() => {
-                            setSelectedBug(b);
-                            setDetailOpen(true);
+                <div className="space-y-3">
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-20">{t.bugsColumnId}</TableHead>
+                          <TableHead>{t.bugsColumnTitle}</TableHead>
+                          <TableHead>{t.bugsColumnAssignee}</TableHead>
+                          <TableHead>{t.bugsColumnState}</TableHead>
+                          <TableHead>{t.bugsColumnIteration}</TableHead>
+                          <TableHead>{t.bugsColumnArea}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedBugs.map((b) => (
+                          <TableRow
+                            key={b.id}
+                            className="cursor-pointer"
+                            onClick={() => {
+                              setSelectedBug(b);
+                              setDetailOpen(true);
+                            }}
+                          >
+                            <TableCell className="font-mono text-xs">
+                              <a
+                                href={b.htmlUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex items-center gap-1 text-primary hover:underline"
+                              >
+                                {b.id}
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            </TableCell>
+                            <TableCell className="max-w-md">
+                              <span title={b.title}>{b.title}</span>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {b.assignedTo ?? (
+                                <span className="text-muted-foreground italic">{t.bugsUnassigned}</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{b.state}</Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground font-mono">
+                              {b.iterationPath ?? "—"}
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground font-mono">
+                              {b.areaPath ?? "—"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">
+                        {t.bugsPaginationShowing
+                          .replace("{from}", String((page - 1) * pageSize + 1))
+                          .replace("{to}", String(Math.min(page * pageSize, filtered.length)))
+                          .replace("{total}", String(filtered.length))}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPage((p) => Math.max(1, p - 1))}
+                          disabled={page <= 1}
+                        >
+                          <ChevronLeft className="h-4 w-4 mr-1" />
+                          {t.bugsPaginationPrev}
+                        </Button>
+                        <span className="text-xs text-muted-foreground min-w-[6rem] text-center">
+                          {t.bugsPaginationPage
+                            .replace("{page}", String(page))
+                            .replace("{total}", String(totalPages))}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                          disabled={page >= totalPages}
+                        >
+                          {t.bugsPaginationNext}
+                          <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-muted-foreground">{t.bugsPerPage}</span>
+                        <Select
+                          value={String(pageSize)}
+                          onValueChange={(v) => {
+                            setPageSize(Number(v));
+                            setPage(1);
                           }}
                         >
-                          <TableCell className="font-mono text-xs">
-                            <a
-                              href={b.htmlUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1 text-primary hover:underline"
-                            >
-                              {b.id}
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          </TableCell>
-                          <TableCell className="max-w-md">
-                            <span title={b.title}>{b.title}</span>
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {b.assignedTo ?? (
-                              <span className="text-muted-foreground italic">{t.bugsUnassigned}</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{b.state}</Badge>
-                          </TableCell>
-                          <TableCell className="text-xs text-muted-foreground font-mono">
-                            {b.iterationPath ?? "—"}
-                          </TableCell>
-                          <TableCell className="text-xs text-muted-foreground font-mono">
-                            {b.areaPath ?? "—"}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                          <SelectTrigger className="h-8 w-20 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[10, 25, 50, 100].map((s) => (
+                              <SelectItem key={s} value={String(s)}>
+                                {s}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
