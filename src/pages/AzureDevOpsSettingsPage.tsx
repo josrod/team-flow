@@ -414,6 +414,7 @@ export const AzureDevOpsSettingsPage = () => {
     setSyncInterval("30");
     setAreaPaths([]);
     setIterationPaths([]);
+    setBugsQueryId("");
     setConnectionStatus("idle");
     setTfsProject(null);
     setTfsError(null);
