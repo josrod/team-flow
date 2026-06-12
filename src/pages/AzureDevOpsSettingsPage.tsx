@@ -55,7 +55,7 @@ export const AzureDevOpsSettingsPage = () => {
   const [syncInterval, setSyncInterval] = useState("30");
   const [areaPaths, setAreaPaths] = useState<string[]>([]);
   const [iterationPaths, setIterationPaths] = useState<string[]>([]);
-  const [bugsQueryId, setBugsQueryId] = useState("");
+  
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<"idle" | "success" | "error">("idle");
@@ -101,8 +101,6 @@ export const AzureDevOpsSettingsPage = () => {
         const rawIters = (data as { iteration_paths?: string[] | null }).iteration_paths;
         if (Array.isArray(rawAreas)) setAreaPaths(rawAreas);
         if (Array.isArray(rawIters)) setIterationPaths(rawIters);
-        const rawBugsQuery = (data as { bugs_query_id?: string | null }).bugs_query_id;
-        if (rawBugsQuery) setBugsQueryId(rawBugsQuery);
         setLastSynced(data.last_synced_at);
         setHasExisting(true);
         setConnectionStatus("success");
@@ -186,7 +184,6 @@ export const AzureDevOpsSettingsPage = () => {
           sync_interval_minutes: Number(syncInterval),
           area_paths: areaPaths,
           iteration_paths: iterationPaths,
-          bugs_query_id: bugsQueryId.trim() || null,
         })
         .eq("user_id", user.id);
 
@@ -198,7 +195,7 @@ export const AzureDevOpsSettingsPage = () => {
         window.clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, hasExisting]);
+  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, hasExisting]);
 
   const resetStatus = () => {
     setConnectionStatus("idle");
@@ -350,7 +347,7 @@ export const AzureDevOpsSettingsPage = () => {
         sync_interval_minutes: Number(syncInterval),
         area_paths: areaPaths,
         iteration_paths: iterationPaths,
-        bugs_query_id: bugsQueryId.trim() || null,
+        
       };
 
       if (hasExisting) {
@@ -814,31 +811,6 @@ export const AzureDevOpsSettingsPage = () => {
         </Card>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.08 }}
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-display flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5" />
-              {t.bugsQuerySettingLabel}
-            </CardTitle>
-            <CardDescription>{t.bugsQuerySettingHint}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Label htmlFor="ado-bugs-query">{t.bugsQuerySettingLabel}</Label>
-            <Input
-              id="ado-bugs-query"
-              value={bugsQueryId}
-              onChange={(e) => setBugsQueryId(e.target.value)}
-              placeholder={t.bugsQuerySettingPlaceholder}
-              className="mt-1 font-mono text-xs"
-            />
-          </CardContent>
-        </Card>
-      </motion.div>
 
 
       <motion.div
