@@ -288,6 +288,16 @@ export const BugsPage = () => {
 
 
   useEffect(() => {
+    const hadInFlightLoadBugs = loadBugsControllerRef.current !== null;
+    if (hadInFlightLoadBugs) {
+      loadBugsControllerRef.current?.abort();
+      loadBugsControllerRef.current = null;
+    }
+    if (loadBugsTimeoutRef.current) {
+      clearTimeout(loadBugsTimeoutRef.current);
+      loadBugsTimeoutRef.current = null;
+    }
+    if (hadInFlightLoadBugs) setLoading(false);
     cancelLoadMore();
     setLoadingMore(false);
     setLoadMoreError(false);
