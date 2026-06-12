@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Bug, ExternalLink, Loader2, RefreshCw, Search, Settings } from "lucide-react";
+import { AlertCircle, Bug, ExternalLink, Loader2, RefreshCw, Search, Settings } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -50,6 +50,7 @@ export const BugsPage = () => {
   const PAGE_SIZE = 30;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -209,15 +210,29 @@ export const BugsPage = () => {
     if (!el) return;
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          setLoadingMore(true);
-          setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+        try {
+          if (entries.some((e) => e.isIntersecting)) {
+            setLoadMoreError(false);
+            setLoadingMore(true);
+            setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+          }
+        } catch {
+          setLoadingMore(false);
+          setLoadMoreError(true);
         }
       },
       { rootMargin: "200px" }
     );
     io.observe(el);
     return () => io.disconnect();
+  }, [hasMore, filtered.length]);
+
+  const retryLoadMore = useCallback(() => {
+    setLoadMoreError(false);
+    if (hasMore) {
+      setLoadingMore(true);
+      setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+    }
   }, [hasMore, filtered.length]);
 
   useEffect(() => {
@@ -497,14 +512,27 @@ export const BugsPage = () => {
                     </Table>
                   </div>
 
-                  <div ref={sentinelRef} className="flex items-center justify-center py-3 text-xs text-muted-foreground">
-                    {loadingMore ? (
-                      <span className="inline-flex items-center gap-2">
+                  <div ref={sentinelRef} className="flex items-center justify-center py-3 text-xs">
+                    {loadMoreError ? (
+                      <div className="inline-flex items-center gap-2 text-destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{t.bugsLoadMoreError}</span>
+                        <button
+                          type="button"
+                          onClick={retryLoadMore}
+                          className="ml-1 inline-flex items-center gap-1 underline hover:text-destructive/80 cursor-pointer"
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                          {t.bugsLoadMoreRetry}
+                        </button>
+                      </div>
+                    ) : loadingMore ? (
+                      <span className="inline-flex items-center gap-2 text-muted-foreground">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         {t.bugsLoadingMore}
                       </span>
                     ) : hasMore ? (
-                      <span className="inline-flex items-center gap-2">
+                      <span className="inline-flex items-center gap-2 text-muted-foreground">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         {t.bugsPaginationShowing
                           .replace("{from}", "1")
@@ -513,7 +541,7 @@ export const BugsPage = () => {
                       </span>
                     ) : (
                       filtered.length > PAGE_SIZE && (
-                        <span>
+                        <span className="text-muted-foreground">
                           {t.bugsPaginationShowing
                             .replace("{from}", "1")
                             .replace("{to}", String(filtered.length))
