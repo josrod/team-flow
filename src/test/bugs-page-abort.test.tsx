@@ -185,4 +185,40 @@ describe("BugsPage — AbortController cleanup", () => {
 
     expect(loadMoreController.signal.aborted).toBe(true);
   });
+
+  it("aborts the load-more request when the page unmounts during infinite scroll", async () => {
+    const { unmount } = renderPage();
+
+    await waitFor(() => expect(pendingCalls.length).toBe(1));
+
+    // Resolve with more than PAGE_SIZE (30) bugs so the sentinel renders and
+    // infinite-scroll loading is reachable.
+    const items = Array.from({ length: 45 }, (_, i) => makeBug(2000 + i));
+    await act(async () => {
+      pendingCalls[0].resolve({ items });
+      await Promise.resolve();
+    });
+
+    // Wait for the IntersectionObserver to be wired up to the sentinel.
+    await waitFor(() => expect(ioCallbacks.length).toBeGreaterThan(0));
+
+    const controllersBeforeLoadMore = createdControllers.length;
+
+    // Simulate the sentinel intersecting — this triggers startLoadMore which
+    // creates a fresh AbortController and a 400 ms work timer.
+    await act(async () => {
+      ioCallbacks[ioCallbacks.length - 1]([{ isIntersecting: true }]);
+      await Promise.resolve();
+    });
+
+    expect(createdControllers.length).toBeGreaterThan(controllersBeforeLoadMore);
+    const loadMoreController = createdControllers[createdControllers.length - 1];
+    expect(loadMoreController.signal.aborted).toBe(false);
+
+    // Unmount the page while the load-more work is still pending — the
+    // cleanup function must abort the load-more signal.
+    unmount();
+
+    expect(loadMoreController.signal.aborted).toBe(true);
+  });
 });
