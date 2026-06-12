@@ -257,12 +257,20 @@ export const BugsPage = () => {
                     </TableHeader>
                     <TableBody>
                       {filtered.map((b) => (
-                        <TableRow key={b.id}>
+                        <TableRow
+                          key={b.id}
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setSelectedBug(b);
+                            setDetailOpen(true);
+                          }}
+                        >
                           <TableCell className="font-mono text-xs">
                             <a
                               href={b.htmlUrl}
                               target="_blank"
                               rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
                               className="inline-flex items-center gap-1 text-primary hover:underline"
                             >
                               {b.id}
@@ -270,15 +278,7 @@ export const BugsPage = () => {
                             </a>
                           </TableCell>
                           <TableCell className="max-w-md">
-                            <a
-                              href={b.htmlUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="hover:underline"
-                              title={b.title}
-                            >
-                              {b.title}
-                            </a>
+                            <span title={b.title}>{b.title}</span>
                           </TableCell>
                           <TableCell className="text-sm">
                             {b.assignedTo ?? (
