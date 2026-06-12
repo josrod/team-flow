@@ -173,6 +173,20 @@ export const BugsPage = () => {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [bugs]);
 
+  const [sortColumn, setSortColumn] = useState<"id" | "title" | "assignedTo" | "state" | "severity" | "iterationPath" | "areaPath">("severity");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  const severityWeight = (s?: string | null) => {
+    const level = normalizeSeverity(s);
+    switch (level) {
+      case "critical": return 4;
+      case "high": return 3;
+      case "medium": return 2;
+      case "low": return 1;
+      default: return 0;
+    }
+  };
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return bugs.filter((b) => {
@@ -188,8 +202,40 @@ export const BugsPage = () => {
     });
   }, [bugs, search, assignee, state, severity, iteration, t.bugsUnassigned]);
 
-  const visibleBugs = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
-  const hasMore = visibleCount < filtered.length;
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      let cmp = 0;
+      switch (sortColumn) {
+        case "id":
+          cmp = a.id - b.id;
+          break;
+        case "title":
+          cmp = a.title.localeCompare(b.title);
+          break;
+        case "assignedTo":
+          cmp = (a.assignedTo ?? "").localeCompare(b.assignedTo ?? "");
+          break;
+        case "state":
+          cmp = a.state.localeCompare(b.state);
+          break;
+        case "severity":
+          cmp = severityWeight(a.severity) - severityWeight(b.severity);
+          break;
+        case "iterationPath":
+          cmp = (a.iterationPath ?? "").localeCompare(b.iterationPath ?? "");
+          break;
+        case "areaPath":
+          cmp = (a.areaPath ?? "").localeCompare(b.areaPath ?? "");
+          break;
+      }
+      return sortDirection === "asc" ? cmp : -cmp;
+    });
+    return arr;
+  }, [filtered, sortColumn, sortDirection]);
+
+  const visibleBugs = useMemo(() => sorted.slice(0, visibleCount), [sorted, visibleCount]);
+  const hasMore = visibleCount < sorted.length;
 
   const suggestions = useMemo(() => {
     const raw = search.trim();
