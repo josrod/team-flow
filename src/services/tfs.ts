@@ -1393,6 +1393,7 @@ const escapeWiqlString = (value: string): string => value.replace(/'/g, "''");
 export const fetchTfsBugsByIterations = async (
   conn: TfsConnection,
   iterationPaths: string[],
+  externalSignal?: AbortSignal,
 ): Promise<TfsDiscoveryResult<TfsBug>> => {
   const paths = iterationPaths.map((p) => p.trim()).filter(Boolean);
   if (paths.length === 0) {
@@ -1418,9 +1419,15 @@ export const fetchTfsBugsByIterations = async (
 
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const onExternalAbort = () => controller.abort();
+  if (externalSignal) {
+    if (externalSignal.aborted) controller.abort();
+    else externalSignal.addEventListener("abort", onExternalAbort, { once: true });
+  }
 
   try {
     const wiqlRes = await fetch(wiqlUrl, {
+
       method: "POST",
       headers: {
         Authorization: buildAuthHeader(conn.pat),
