@@ -47,8 +47,16 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 
-// IntersectionObserver is not present in jsdom — provide a no-op.
+// IntersectionObserver is not present in jsdom — capture the callback so
+// tests can trigger the sentinel intersection manually.
+type IoCallback = (entries: Array<{ isIntersecting: boolean }>) => void;
+const ioCallbacks: IoCallback[] = [];
 class MockIntersectionObserver {
+  callback: IoCallback;
+  constructor(cb: IoCallback) {
+    this.callback = cb;
+    ioCallbacks.push(cb);
+  }
   observe = vi.fn();
   unobserve = vi.fn();
   disconnect = vi.fn();
@@ -59,6 +67,18 @@ Object.defineProperty(window, "IntersectionObserver", {
   configurable: true,
   value: MockIntersectionObserver,
 });
+
+// Track every AbortController constructed during a test so we can identify
+// the one created by startLoadMore (always the most recent at that point).
+const createdControllers: AbortController[] = [];
+const NativeAbortController = globalThis.AbortController;
+class TrackedAbortController extends NativeAbortController {
+  constructor() {
+    super();
+    createdControllers.push(this);
+  }
+}
+globalThis.AbortController = TrackedAbortController as unknown as typeof AbortController;
 
 const renderPage = () =>
   render(
@@ -83,6 +103,8 @@ const makeBug = (id: number): TfsBug => ({
 describe("BugsPage — AbortController cleanup", () => {
   beforeEach(() => {
     pendingCalls.length = 0;
+    ioCallbacks.length = 0;
+    createdControllers.length = 0;
   });
 
   it("aborts the in-flight request when filters change and ignores the stale response", async () => {
@@ -92,8 +114,6 @@ describe("BugsPage — AbortController cleanup", () => {
     const firstCall = pendingCalls[0];
     expect(firstCall.signal?.aborted).toBe(false);
 
-    // Change the search filter — the filter-change effect must abort the
-    // in-flight loadBugs request.
     const searchInput = screen.getByPlaceholderText(/buscar por título/i);
     await act(async () => {
       fireEvent.change(searchInput, { target: { value: "anything" } });
@@ -101,8 +121,6 @@ describe("BugsPage — AbortController cleanup", () => {
 
     expect(firstCall.signal?.aborted).toBe(true);
 
-    // Resolve the now-stale request: the page must drop the result and
-    // never render bugs from it.
     await act(async () => {
       firstCall.resolve({ items: [makeBug(99999)] });
       await Promise.resolve();
@@ -123,10 +141,48 @@ describe("BugsPage — AbortController cleanup", () => {
 
     expect(call.signal?.aborted).toBe(true);
 
-    // Resolving after unmount must not throw or update any state.
     await act(async () => {
       call.resolve({ items: [makeBug(77777)] });
       await Promise.resolve();
     });
+  });
+
+  it("aborts the load-more request when filters change during infinite scroll", async () => {
+    renderPage();
+
+    await waitFor(() => expect(pendingCalls.length).toBe(1));
+
+    // Resolve with more than PAGE_SIZE (30) bugs so the sentinel renders and
+    // infinite-scroll loading is reachable.
+    const items = Array.from({ length: 45 }, (_, i) => makeBug(1000 + i));
+    await act(async () => {
+      pendingCalls[0].resolve({ items });
+      await Promise.resolve();
+    });
+
+    // Wait for the IntersectionObserver to be wired up to the sentinel.
+    await waitFor(() => expect(ioCallbacks.length).toBeGreaterThan(0));
+
+    const controllersBeforeLoadMore = createdControllers.length;
+
+    // Simulate the sentinel intersecting — this triggers startLoadMore which
+    // creates a fresh AbortController and a 400 ms work timer.
+    await act(async () => {
+      ioCallbacks[ioCallbacks.length - 1]([{ isIntersecting: true }]);
+      await Promise.resolve();
+    });
+
+    expect(createdControllers.length).toBeGreaterThan(controllersBeforeLoadMore);
+    const loadMoreController = createdControllers[createdControllers.length - 1];
+    expect(loadMoreController.signal.aborted).toBe(false);
+
+    // Change a filter while the load-more work is still pending — the
+    // filter-change effect must call cancelLoadMore() and abort the signal.
+    const searchInput = screen.getByPlaceholderText(/buscar por título/i);
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: "1000" } });
+    });
+
+    expect(loadMoreController.signal.aborted).toBe(true);
   });
 });
