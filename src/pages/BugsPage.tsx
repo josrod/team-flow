@@ -45,6 +45,8 @@ export const BugsPage = () => {
   const [iteration, setIteration] = useState<string>(ALL);
   const [selectedBug, setSelectedBug] = useState<TfsBug | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(0);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -138,6 +140,28 @@ export const BugsPage = () => {
     });
   }, [bugs, search, assignee, state, iteration, t.bugsUnassigned]);
 
+  const suggestions = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return [];
+    return bugs
+      .filter((b) => {
+        if (iteration !== ALL && (b.iterationPath ?? "") !== iteration) return false;
+        const haystack = `${b.id} ${b.title}`.toLowerCase();
+        return haystack.includes(q);
+      })
+      .slice(0, 8);
+  }, [bugs, search, iteration]);
+
+  useEffect(() => {
+    setHighlightIndex(0);
+  }, [search, iteration]);
+
+  const openBug = (b: TfsBug) => {
+    setSelectedBug(b);
+    setDetailOpen(true);
+    setSuggestionsOpen(false);
+  };
+
   const renderEmptyState = (message: string) => (
     <Card>
       <CardContent className="py-10 text-center space-y-4">
@@ -188,13 +212,64 @@ export const BugsPage = () => {
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
             <Input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setSuggestionsOpen(true);
+              }}
+              onFocus={() => setSuggestionsOpen(true)}
+              onBlur={() => window.setTimeout(() => setSuggestionsOpen(false), 150)}
+              onKeyDown={(e) => {
+                if (!suggestionsOpen || suggestions.length === 0) return;
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setHighlightIndex((i) => Math.min(i + 1, suggestions.length - 1));
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setHighlightIndex((i) => Math.max(i - 1, 0));
+                } else if (e.key === "Enter") {
+                  e.preventDefault();
+                  const pick = suggestions[highlightIndex];
+                  if (pick) openBug(pick);
+                } else if (e.key === "Escape") {
+                  setSuggestionsOpen(false);
+                }
+              }}
               placeholder="Buscar por título o ID..."
               className="pl-9 w-64"
             />
+            {suggestionsOpen && suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-md border bg-popover text-popover-foreground shadow-md overflow-hidden">
+                <ul className="max-h-72 overflow-auto py-1">
+                  {suggestions.map((b, idx) => (
+                    <li key={b.id}>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          openBug(b);
+                        }}
+                        onMouseEnter={() => setHighlightIndex(idx)}
+                        className={cn(
+                          "w-full text-left px-3 py-2 text-sm flex items-start gap-2 transition-colors",
+                          idx === highlightIndex ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
+                        )}
+                      >
+                        <span className="font-mono text-xs text-muted-foreground shrink-0 mt-0.5">#{b.id}</span>
+                        <span className="truncate">{b.title}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                {iteration !== ALL && (
+                  <div className="border-t px-3 py-1.5 text-[10px] text-muted-foreground font-mono truncate">
+                    {iteration}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <Button onClick={loadBugs} disabled={loading || !settings || settings.iterationPaths.length === 0} variant="outline">
             {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
