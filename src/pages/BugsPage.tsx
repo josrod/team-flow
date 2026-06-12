@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, Bug, Check, ChevronsUpDown, ExternalLink, Loader2, RefreshCw, Search, Settings, X } from "lucide-react";
+import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Bug, Check, ChevronsUpDown, ExternalLink, Loader2, RefreshCw, Search, Settings, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -19,7 +19,7 @@ import { useLang } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { BugDetailDialog } from "@/components/BugDetailDialog";
-import { SeverityBadge } from "@/components/SeverityBadge";
+import { SeverityBadge, normalizeSeverity } from "@/components/SeverityBadge";
 import { fetchTfsBugsByIterations, type TfsBug, type TfsError } from "@/services/tfs";
 
 interface AdoSettings {
@@ -173,6 +173,38 @@ export const BugsPage = () => {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [bugs]);
 
+  const [sortColumn, setSortColumn] = useState<"id" | "title" | "assignedTo" | "state" | "severity" | "iterationPath" | "areaPath">("severity");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  const severityWeight = (s?: string | null) => {
+    const level = normalizeSeverity(s);
+    switch (level) {
+      case "critical": return 4;
+      case "high": return 3;
+      case "medium": return 2;
+      case "low": return 1;
+      default: return 0;
+    }
+  };
+
+  const handleSort = (column: "id" | "title" | "assignedTo" | "state" | "severity" | "iterationPath" | "areaPath") => {
+    if (sortColumn === column) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(column);
+      setSortDirection("desc");
+    }
+  };
+
+  const SortIcon = ({ column }: { column: typeof sortColumn }) => {
+    if (sortColumn !== column) return <ArrowUpDown className="ml-1 h-3 w-3 text-muted-foreground opacity-50" />;
+    return sortDirection === "asc" ? (
+      <ArrowUp className="ml-1 h-3 w-3 text-primary" />
+    ) : (
+      <ArrowDown className="ml-1 h-3 w-3 text-primary" />
+    );
+  };
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return bugs.filter((b) => {
@@ -188,8 +220,40 @@ export const BugsPage = () => {
     });
   }, [bugs, search, assignee, state, severity, iteration, t.bugsUnassigned]);
 
-  const visibleBugs = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
-  const hasMore = visibleCount < filtered.length;
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      let cmp = 0;
+      switch (sortColumn) {
+        case "id":
+          cmp = a.id - b.id;
+          break;
+        case "title":
+          cmp = a.title.localeCompare(b.title);
+          break;
+        case "assignedTo":
+          cmp = (a.assignedTo ?? "").localeCompare(b.assignedTo ?? "");
+          break;
+        case "state":
+          cmp = a.state.localeCompare(b.state);
+          break;
+        case "severity":
+          cmp = severityWeight(a.severity) - severityWeight(b.severity);
+          break;
+        case "iterationPath":
+          cmp = (a.iterationPath ?? "").localeCompare(b.iterationPath ?? "");
+          break;
+        case "areaPath":
+          cmp = (a.areaPath ?? "").localeCompare(b.areaPath ?? "");
+          break;
+      }
+      return sortDirection === "asc" ? cmp : -cmp;
+    });
+    return arr;
+  }, [filtered, sortColumn, sortDirection]);
+
+  const visibleBugs = useMemo(() => sorted.slice(0, visibleCount), [sorted, visibleCount]);
+  const hasMore = visibleCount < sorted.length;
 
   const suggestions = useMemo(() => {
     const raw = search.trim();
@@ -289,13 +353,13 @@ export const BugsPage = () => {
           loadMoreTimeoutRef.current = null;
         }
         if (loadMoreControllerRef.current === controller) loadMoreControllerRef.current = null;
-        setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+        setVisibleCount((c) => Math.min(c + PAGE_SIZE, sorted.length));
       } catch {
         // Aborted — state is handled by the watchdog or cancelLoadMore.
       }
     };
     void run();
-  }, [cancelLoadMore, filtered.length]);
+  }, [cancelLoadMore, sorted.length]);
 
 
   useEffect(() => {
@@ -416,7 +480,7 @@ export const BugsPage = () => {
               className="text-xs text-muted-foreground whitespace-nowrap cursor-pointer hover:text-primary transition-colors"
               title="Limpiar filtros"
             >
-              {filtered.length} / {bugs.length}
+              {sorted.length} / {bugs.length}
             </button>
           )}
           <div className="relative">
@@ -497,7 +561,7 @@ export const BugsPage = () => {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg font-display">
-                {filtered.length} / {bugs.length} {t.bugsCount}
+                {sorted.length} / {bugs.length} {t.bugsCount}
               </CardTitle>
               <CardDescription>{settings.project}</CardDescription>
             </CardHeader>
@@ -658,7 +722,7 @@ export const BugsPage = () => {
                   <Skeleton className="h-10 w-full" />
                   <p className="text-xs text-muted-foreground text-center">{t.bugsLoading}</p>
                 </div>
-              ) : filtered.length === 0 ? (
+              ) : sorted.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">{t.bugsEmpty}</p>
               ) : (
                 <div className="space-y-3">
@@ -666,13 +730,27 @@ export const BugsPage = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="w-20">{t.bugsColumnId}</TableHead>
-                          <TableHead>{t.bugsColumnTitle}</TableHead>
-                          <TableHead>{t.bugsColumnAssignee}</TableHead>
-                          <TableHead>{t.bugsColumnState}</TableHead>
-                          <TableHead>{t.bugsColumnSeverity}</TableHead>
-                          <TableHead>{t.bugsColumnIteration}</TableHead>
-                          <TableHead>{t.bugsColumnArea}</TableHead>
+                          <TableHead className="w-20 cursor-pointer select-none" onClick={() => handleSort("id")}>
+                            <span className="inline-flex items-center">{t.bugsColumnId}<SortIcon column="id" /></span>
+                          </TableHead>
+                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("title")}>
+                            <span className="inline-flex items-center">{t.bugsColumnTitle}<SortIcon column="title" /></span>
+                          </TableHead>
+                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("assignedTo")}>
+                            <span className="inline-flex items-center">{t.bugsColumnAssignee}<SortIcon column="assignedTo" /></span>
+                          </TableHead>
+                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("state")}>
+                            <span className="inline-flex items-center">{t.bugsColumnState}<SortIcon column="state" /></span>
+                          </TableHead>
+                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("severity")}>
+                            <span className="inline-flex items-center">{t.bugsColumnSeverity}<SortIcon column="severity" /></span>
+                          </TableHead>
+                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("iterationPath")}>
+                            <span className="inline-flex items-center">{t.bugsColumnIteration}<SortIcon column="iterationPath" /></span>
+                          </TableHead>
+                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("areaPath")}>
+                            <span className="inline-flex items-center">{t.bugsColumnArea}<SortIcon column="areaPath" /></span>
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -760,15 +838,15 @@ export const BugsPage = () => {
                         {t.bugsPaginationShowing
                           .replace("{from}", "1")
                           .replace("{to}", String(visibleBugs.length))
-                          .replace("{total}", String(filtered.length))}
+                          .replace("{total}", String(sorted.length))}
                       </span>
                     ) : (
-                      filtered.length > PAGE_SIZE && (
+                      sorted.length > PAGE_SIZE && (
                         <span className="text-muted-foreground">
                           {t.bugsPaginationShowing
                             .replace("{from}", "1")
-                            .replace("{to}", String(filtered.length))
-                            .replace("{total}", String(filtered.length))}
+                            .replace("{to}", String(sorted.length))
+                            .replace("{total}", String(sorted.length))}
                         </span>
                       )
                     )}
