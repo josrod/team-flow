@@ -1526,6 +1526,15 @@ export const fetchTfsQueryResults = async (
       for (const raw of data.value ?? []) {
         const f = raw.fields ?? {};
         const assigned = parseAssignedTo(f["System.AssignedTo"]);
+        const tagsRaw = f["System.Tags"];
+        const tags =
+          typeof tagsRaw === "string" && tagsRaw.trim()
+            ? tagsRaw
+                .split(";")
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : undefined;
+        const priorityRaw = f["Microsoft.VSTS.Common.Priority"];
         all.push({
           id: raw.id,
           title: String(f["System.Title"] ?? ""),
@@ -1535,6 +1544,9 @@ export const fetchTfsQueryResults = async (
           assignedToEmail: assigned.email,
           iterationPath: f["System.IterationPath"] as string | undefined,
           areaPath: f["System.AreaPath"] as string | undefined,
+          tags,
+          priority: typeof priorityRaw === "number" ? priorityRaw : undefined,
+          severity: f["Microsoft.VSTS.Common.Severity"] as string | undefined,
           htmlUrl: buildWorkItemHtmlUrl(conn, raw.id),
         });
       }
