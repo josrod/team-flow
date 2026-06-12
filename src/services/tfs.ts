@@ -1345,8 +1345,7 @@ export const listTfsTeamMembers = async (
 };
 
 // ---------------------------------------------------------------------------
-// Bugs — execute a stored Azure DevOps query (by ID or path) and return the
-// resulting work items as a flat list.
+// Bugs — fetch work items of type "Bug" inside the configured iteration paths.
 // ---------------------------------------------------------------------------
 
 export interface TfsBug {
@@ -1381,88 +1380,37 @@ export interface TfsBugDetail extends TfsBug {
   links: TfsBugLink[];
 }
 
-const GUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 const buildWorkItemHtmlUrl = (conn: TfsConnection, id: number): string => {
   const base = buildCollectionUrl(conn.serverUrl, conn.collection);
   return `${base}/${encodeURIComponent(conn.project.trim())}/_workitems/edit/${id}`;
 };
 
-const resolveQueryId = async (
-  conn: TfsConnection,
-  queryIdOrPath: string,
-): Promise<{ id?: string; error?: TfsError }> => {
-  const trimmed = queryIdOrPath.trim();
-  if (GUID_REGEX.test(trimmed)) return { id: trimmed };
-
-  const base = buildCollectionUrl(conn.serverUrl, conn.collection);
-  const projectSeg = encodeURIComponent(conn.project.trim());
-  // Encode each segment of the path individually so "Shared Queries/Bugs" works.
-  const pathSeg = trimmed
-    .split("/")
-    .filter(Boolean)
-    .map((s) => encodeURIComponent(s))
-    .join("/");
-  const url = `${base}/${projectSeg}/_apis/wit/queries/${pathSeg}?api-version=${API_VERSION}`;
-
-  if (isMixedContent(url)) {
-    return { error: { kind: "mixed_content", url, message: "Mixed content (HTTPS → HTTP)." } };
-  }
-
-  const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  try {
-    const res = await fetch(url, {
-      method: "GET",
-      headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      return {
-        error: {
-          kind: res.status === 401 ? "unauthorized" : res.status === 403 ? "forbidden" : res.status === 404 ? "not_found" : "http",
-          status: res.status,
-          url,
-          message: `No se pudo resolver la query (HTTP ${res.status}).`,
-          detail: body.slice(0, 300),
-        },
-      };
-    }
-    const data = (await res.json()) as { id?: string };
-    if (!data.id) {
-      return { error: { kind: "unknown", url, message: "La query no devolvió un ID válido." } };
-    }
-    return { id: data.id };
-  } catch (err: unknown) {
-    if (err instanceof DOMException && err.name === "AbortError") {
-      return { error: { kind: "timeout", url, message: "Tiempo de espera agotado." } };
-    }
-    if (isNetworkLevelError(err)) {
-      return { error: { kind: "cors", url, message: "Sin respuesta (CORS, VPN o firewall)." } };
-    }
-    return { error: { kind: "unknown", url, message: err instanceof Error ? err.message : "Error desconocido." } };
-  } finally {
-    window.clearTimeout(timeoutId);
-  }
-};
+const escapeWiqlString = (value: string): string => value.replace(/'/g, "''");
 
 /**
- * Execute a stored Azure DevOps query (accepts a GUID or a path like
- * "Shared Queries/Bugs/My bugs") and return the resulting work items.
+ * Fetch all bugs whose iteration path is under any of the configured iteration paths.
  */
-export const fetchTfsQueryResults = async (
+export const fetchTfsBugsByIterations = async (
   conn: TfsConnection,
-  queryIdOrPath: string,
+  iterationPaths: string[],
 ): Promise<TfsDiscoveryResult<TfsBug>> => {
-  const resolved = await resolveQueryId(conn, queryIdOrPath);
-  if (resolved.error || !resolved.id) {
-    return { items: [], error: resolved.error };
+  const paths = iterationPaths.map((p) => p.trim()).filter(Boolean);
+  if (paths.length === 0) {
+    return { items: [] };
   }
+
+  const iterationClause = paths
+    .map((p) => `[System.IterationPath] UNDER '${escapeWiqlString(p)}'`)
+    .join(" OR ");
+
+  const wiql = `SELECT [System.Id] FROM WorkItems
+    WHERE [System.TeamProject] = @project
+      AND [System.WorkItemType] = 'Bug'
+      AND (${iterationClause})`;
 
   const base = buildCollectionUrl(conn.serverUrl, conn.collection);
   const projectSeg = encodeURIComponent(conn.project.trim());
-  const wiqlUrl = `${base}/${projectSeg}/_apis/wit/wiql/${resolved.id}?api-version=${API_VERSION}`;
+  const wiqlUrl = `${base}/${projectSeg}/_apis/wit/wiql?api-version=${API_VERSION}`;
 
   if (isMixedContent(wiqlUrl)) {
     return { items: [], error: { kind: "mixed_content", url: wiqlUrl, message: "Mixed content (HTTPS → HTTP)." } };
@@ -1473,8 +1421,13 @@ export const fetchTfsQueryResults = async (
 
   try {
     const wiqlRes = await fetch(wiqlUrl, {
-      method: "GET",
-      headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
+      method: "POST",
+      headers: {
+        Authorization: buildAuthHeader(conn.pat),
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query: wiql }),
       signal: controller.signal,
     });
 
@@ -1486,7 +1439,7 @@ export const fetchTfsQueryResults = async (
           kind: wiqlRes.status === 401 ? "unauthorized" : wiqlRes.status === 403 ? "forbidden" : wiqlRes.status === 404 ? "not_found" : "http",
           status: wiqlRes.status,
           url: wiqlUrl,
-          message: `La query falló con HTTP ${wiqlRes.status}.`,
+          message: `La consulta de bugs falló con HTTP ${wiqlRes.status}.`,
           detail: body.slice(0, 300),
         },
       };
