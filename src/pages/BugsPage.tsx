@@ -161,7 +161,7 @@ export const BugsPage = () => {
           </h1>
           <p className="text-muted-foreground mt-1">{t.bugsPageDescription}</p>
         </div>
-        <Button onClick={loadBugs} disabled={loading || !settings?.bugsQueryId} variant="outline">
+        <Button onClick={loadBugs} disabled={loading || !settings || settings.iterationPaths.length === 0} variant="outline">
           {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
           {t.bugsRefresh}
         </Button>
@@ -171,8 +171,8 @@ export const BugsPage = () => {
         <Skeleton className="h-32 w-full" />
       ) : !settings ? (
         renderEmptyState(t.bugsNoConnection)
-      ) : !settings.bugsQueryId?.trim() ? (
-        renderEmptyState(t.bugsNoQueryConfigured)
+      ) : settings.iterationPaths.length === 0 ? (
+        renderEmptyState(t.bugsNoIterationConfigured)
       ) : (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
           <Card>
