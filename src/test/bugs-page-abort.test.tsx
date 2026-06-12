@@ -47,8 +47,16 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 
-// IntersectionObserver is not present in jsdom — provide a no-op.
+// IntersectionObserver is not present in jsdom — capture the callback so
+// tests can trigger the sentinel intersection manually.
+type IoCallback = (entries: Array<{ isIntersecting: boolean }>) => void;
+const ioCallbacks: IoCallback[] = [];
 class MockIntersectionObserver {
+  callback: IoCallback;
+  constructor(cb: IoCallback) {
+    this.callback = cb;
+    ioCallbacks.push(cb);
+  }
   observe = vi.fn();
   unobserve = vi.fn();
   disconnect = vi.fn();
@@ -59,6 +67,18 @@ Object.defineProperty(window, "IntersectionObserver", {
   configurable: true,
   value: MockIntersectionObserver,
 });
+
+// Track every AbortController constructed during a test so we can identify
+// the one created by startLoadMore (always the most recent at that point).
+const createdControllers: AbortController[] = [];
+const NativeAbortController = globalThis.AbortController;
+class TrackedAbortController extends NativeAbortController {
+  constructor() {
+    super();
+    createdControllers.push(this);
+  }
+}
+globalThis.AbortController = TrackedAbortController as unknown as typeof AbortController;
 
 const renderPage = () =>
   render(
