@@ -1358,8 +1358,27 @@ export interface TfsBug {
   assignedToEmail?: string;
   iterationPath?: string;
   areaPath?: string;
+  priority?: number;
+  severity?: string;
+  tags?: string[];
   /** Browser URL to open the work item in Azure DevOps. */
   htmlUrl: string;
+}
+
+export interface TfsBugLink {
+  rel: string;
+  url: string;
+  name?: string;
+  comment?: string;
+}
+
+export interface TfsBugDetail extends TfsBug {
+  description?: string;
+  reproSteps?: string;
+  createdBy?: string;
+  createdDate?: string;
+  changedDate?: string;
+  links: TfsBugLink[];
 }
 
 const GUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
