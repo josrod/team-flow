@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Download, Upload, Settings, LogOut, Layers, ListChecks, Activity, Bug, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Download, Upload, Settings, LogOut, Layers, ListChecks, Bug, type LucideIcon } from "lucide-react";
 import cuswLogo from "@/assets/cusw-logo.png";
 import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
