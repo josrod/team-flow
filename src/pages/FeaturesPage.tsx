@@ -765,9 +765,9 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
     const set = new Set<string>();
     tasks.forEach((t) => { if (t.type) set.add(t.type); });
     const types = Array.from(set).sort((a, b) => a.localeCompare(b));
-    // In the Tasks view, exclude Product Backlog Item from the type chips.
+    // In the Tasks view, only show Task and Bug in the type filter chips.
     if (view === "tasks") {
-      return types.filter((type) => !/product backlog item/i.test(type));
+      return types.filter((type) => /^(Task|Bug)$/i.test(type));
     }
     return types;
   }, [tasks, view]);
