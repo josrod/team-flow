@@ -55,6 +55,7 @@ export const AzureDevOpsSettingsPage = () => {
   const [syncInterval, setSyncInterval] = useState("30");
   const [areaPaths, setAreaPaths] = useState<string[]>([]);
   const [iterationPaths, setIterationPaths] = useState<string[]>([]);
+  const [bugsQueryId, setBugsQueryId] = useState("");
   
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -101,6 +102,7 @@ export const AzureDevOpsSettingsPage = () => {
         const rawIters = (data as { iteration_paths?: string[] | null }).iteration_paths;
         if (Array.isArray(rawAreas)) setAreaPaths(rawAreas);
         if (Array.isArray(rawIters)) setIterationPaths(rawIters);
+        setBugsQueryId((data as { bugs_query_id?: string | null }).bugs_query_id ?? "");
         setLastSynced(data.last_synced_at);
         setHasExisting(true);
         setConnectionStatus("success");
@@ -184,6 +186,7 @@ export const AzureDevOpsSettingsPage = () => {
           sync_interval_minutes: Number(syncInterval),
           area_paths: areaPaths,
           iteration_paths: iterationPaths,
+          bugs_query_id: bugsQueryId.trim() || null,
         })
         .eq("user_id", user.id);
 
@@ -195,7 +198,7 @@ export const AzureDevOpsSettingsPage = () => {
         window.clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, hasExisting]);
+  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, hasExisting]);
 
   const resetStatus = () => {
     setConnectionStatus("idle");
@@ -347,7 +350,7 @@ export const AzureDevOpsSettingsPage = () => {
         sync_interval_minutes: Number(syncInterval),
         area_paths: areaPaths,
         iteration_paths: iterationPaths,
-        
+        bugs_query_id: bugsQueryId.trim() || null,
       };
 
       if (hasExisting) {
@@ -411,6 +414,8 @@ export const AzureDevOpsSettingsPage = () => {
     setSyncInterval("30");
     setAreaPaths([]);
     setIterationPaths([]);
+    setBugsQueryId("");
+    
     
     setConnectionStatus("idle");
     setTfsProject(null);
@@ -818,6 +823,22 @@ export const AzureDevOpsSettingsPage = () => {
                   ))}
                 </div>
               )}
+            </div>
+
+            <Separator />
+
+            <div>
+              <Label htmlFor="ado-bugs-query">Query de Bugs (ID o ruta)</Label>
+              <Input
+                id="ado-bugs-query"
+                placeholder="p. ej. 12345678-1234-1234-1234-123456789012 o Shared Queries/Equipo/Bugs"
+                value={bugsQueryId}
+                onChange={(e) => setBugsQueryId(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1.5">
+                ID (GUID) o ruta de una query existente en Azure DevOps que devuelve los bugs a mostrar en la página Bugs.
+              </p>
             </div>
           </CardContent>
         </Card>
