@@ -536,7 +536,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         featRes.items
           .filter((f) => effectiveAreas.some((p) => isUnderArea(f.areaPath, p)))
           .forEach((f) => f.assignedTo && peopleSet.add(f.assignedTo));
-        const people = Array.from(peopleSet).sort();
+        const people = Array.from(peopleSet).sort((a, b) => a.localeCompare(b));
         writeTfsPeopleCache(conn, effectiveAreas, people);
         setPeopleFallbackStale(false);
       }
@@ -638,7 +638,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       const set = new Set<string>();
       tasks.forEach((t) => t.assignee && set.add(t.assignee));
       features.forEach((f) => f.assignee && set.add(f.assignee));
-      if (set.size > 0) return Array.from(set).sort();
+      if (set.size > 0) return Array.from(set).sort((a, b) => a.localeCompare(b));
 
       // Empty live roster: try the cache if the last load failed.
       if (tfsConn && tfsLoadFailed) {
@@ -649,8 +649,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       }
       return [];
     }
-    if (activeTeam === "all") return members.map((m) => m.name);
-    return members.filter((m) => m.teamId === activeTeam).map((m) => m.name);
+    if (activeTeam === "all") return members.map((m) => m.name).sort((a, b) => a.localeCompare(b));
+    return members.filter((m) => m.teamId === activeTeam).map((m) => m.name).sort((a, b) => a.localeCompare(b));
   }, [source, tasks, features, activeTeam, members, tfsConn, tfsLoadFailed, lastAreaPaths]);
 
   // Flip the "stale" flag whenever the selector is actually being populated
