@@ -755,24 +755,18 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       if (activePerson !== "all" && t.assignee !== activePerson) return false;
       if (searchLower && !t.title.toLowerCase().includes(searchLower)) return false;
       if (typeFilter.size > 0 && !typeFilter.has(t.type)) return false;
-      // In the Tasks view, exclude Product Backlog Item types.
-      if (view === "tasks" && /product backlog item/i.test(t.type)) return false;
+      // View-aware exclusion (e.g. Product Backlog Item is hidden in Tasks).
+      if (isExcludedTaskType(t.type, view)) return false;
       return true;
     });
   }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee, typeFilter, view]);
 
   // Distinct task types present in the current dataset (pre type-filter), so
   // the chips remain visible even after the user narrows the selection.
-  const availableTypes = useMemo(() => {
-    const set = new Set<string>();
-    tasks.forEach((t) => { if (t.type) set.add(t.type); });
-    const types = Array.from(set).sort((a, b) => a.localeCompare(b));
-    // In the Tasks view, only show Task and Bug in the type filter chips.
-    if (view === "tasks") {
-      return types.filter((type) => /^(Task|Bug)$/i.test(type));
-    }
-    return types;
-  }, [tasks, view]);
+  const availableTypes = useMemo(
+    () => computeAvailableTaskTypes(tasks, view),
+    [tasks, view],
+  );
 
   // Task counts per type for the type-filter chips, applying all filters
   // except the type filter itself so the counts reflect the current scope.
@@ -780,7 +774,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
     const counts: Record<string, number> = {};
     const searchLower = debouncedSearch ? debouncedSearch.toLowerCase() : "";
     tasks.forEach((t) => {
-      if (view === "tasks" && /product backlog item/i.test(t.type)) return;
+      if (isExcludedTaskType(t.type, view)) return;
       if (activeTeam !== "all" && teamIdByAssignee.get(t.assignee) !== activeTeam) return;
       if (activePerson !== "all" && t.assignee !== activePerson) return;
       if (searchLower && !t.title.toLowerCase().includes(searchLower)) return;
