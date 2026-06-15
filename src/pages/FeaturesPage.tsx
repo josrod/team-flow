@@ -249,6 +249,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const [stateFilter, setStateFilter] = useState<Set<TaskStateKey>>(
     () => new Set<TaskStateKey>(["active", "pending"]),
   );
+  // Type filter: empty set means "show all types".
+  const [typeFilter, setTypeFilter] = useState<Set<string>>(() => new Set<string>());
   const [taskSort, setTaskSort] = useState<TaskSortKey>("total-desc");
   const toggleStateFilter = (key: TaskStateKey) => {
     setStateFilter((prev) => {
@@ -261,6 +263,15 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       return next;
     });
   };
+  const toggleTypeFilter = (key: string) => {
+    setTypeFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
 
   // Keep drafts in sync with applied values when manual-apply is off, so the
   // UI reflects changes driven from elsewhere (URL hydration, invalid-ID
@@ -741,9 +752,19 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       }
       if (activePerson !== "all" && t.assignee !== activePerson) return false;
       if (searchLower && !t.title.toLowerCase().includes(searchLower)) return false;
+      if (typeFilter.size > 0 && !typeFilter.has(t.type)) return false;
       return true;
     });
-  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee]);
+  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee, typeFilter]);
+
+  // Distinct task types present in the current dataset (pre type-filter), so
+  // the chips remain visible even after the user narrows the selection.
+  const availableTypes = useMemo(() => {
+    const set = new Set<string>();
+    tasks.forEach((t) => { if (t.type) set.add(t.type); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [tasks]);
+
 
   // Stats for visuals
   const stateDistribution = useMemo(() => {
@@ -1299,6 +1320,43 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   );
                 })}
               </div>
+              {availableTypes.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrar por tipo">
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">Tipo</span>
+                  {availableTypes.map((type) => {
+                    const active = typeFilter.has(type);
+                    const isBug = /bug/i.test(type);
+                    const color = isBug ? "hsl(var(--status-sick))" : "hsl(var(--status-info))";
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => toggleTypeFilter(type)}
+                        aria-pressed={active}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                          active
+                            ? "border-transparent text-foreground"
+                            : "border-border/60 text-muted-foreground hover:bg-muted/40",
+                        )}
+                        style={active ? { background: `${color}25`, color } : undefined}
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+                        {type}
+                      </button>
+                    );
+                  })}
+                  {typeFilter.size > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setTypeFilter(new Set())}
+                      className="text-[11px] text-muted-foreground underline-offset-2 hover:underline ml-1"
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <Label htmlFor="task-sort" className="text-[11px] uppercase tracking-wide text-muted-foreground">Ordenar</Label>
                 <select
