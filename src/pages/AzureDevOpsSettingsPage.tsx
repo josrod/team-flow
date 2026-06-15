@@ -824,6 +824,22 @@ export const AzureDevOpsSettingsPage = () => {
                 </div>
               )}
             </div>
+
+            <Separator />
+
+            <div>
+              <Label htmlFor="ado-bugs-query">Query de Bugs (ID o ruta)</Label>
+              <Input
+                id="ado-bugs-query"
+                placeholder="p. ej. 12345678-1234-1234-1234-123456789012 o Shared Queries/Equipo/Bugs"
+                value={bugsQueryId}
+                onChange={(e) => setBugsQueryId(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1.5">
+                ID (GUID) o ruta de una query existente en Azure DevOps que devuelve los bugs a mostrar en la página Bugs.
+              </p>
+            </div>
           </CardContent>
         </Card>
       </motion.div>
