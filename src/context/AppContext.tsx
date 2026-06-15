@@ -237,9 +237,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const data = result.data;
         if (data.teams) setTeams(data.teams as Team[]);
         if (data.members) setMembers(data.members as TeamMember[]);
+        const nextTopics = (data.workTopics as WorkTopic[] | undefined) ?? workTopics;
         if (data.workTopics) setWorkTopics(data.workTopics as WorkTopic[]);
         if (data.absences) setAbsences(data.absences as Absence[]);
-        if (data.handovers) setHandovers(data.handovers as Handover[]);
+        if (data.handovers) {
+          const validTopicIds = nextTopics.map((t) => t.id);
+          const incoming = data.handovers as Handover[];
+          const invalid = incoming.find(
+            (h) => !validateHandoverTopicIds(h.topicIds, validTopicIds).valid,
+          );
+          if (invalid) {
+            toast.error(
+              "Importación rechazada: hay handovers sin tema o con temas desconocidos.",
+            );
+            return;
+          }
+          setHandovers(incoming);
+        }
         toast.success("📥", { description: "Datos importados correctamente" });
       } catch {
         toast.error("Error al importar: archivo JSON inválido");
