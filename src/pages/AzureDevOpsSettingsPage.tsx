@@ -387,8 +387,13 @@ export const AzureDevOpsSettingsPage = () => {
 
       toast.success(`💾 ${t.adoSettingsSaved}`);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error saving";
-      toast.error(msg);
+      const mapped = mapBugsQueryIdError(err);
+      if (mapped) {
+        toast.error(mapped);
+      } else {
+        const msg = err instanceof Error ? err.message : "Error saving";
+        toast.error(msg);
+      }
     } finally {
       setSaving(false);
     }
