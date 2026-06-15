@@ -1320,6 +1320,43 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   );
                 })}
               </div>
+              {availableTypes.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrar por tipo">
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">Tipo</span>
+                  {availableTypes.map((type) => {
+                    const active = typeFilter.has(type);
+                    const isBug = /bug/i.test(type);
+                    const color = isBug ? "hsl(var(--status-sick))" : "hsl(var(--status-info))";
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => toggleTypeFilter(type)}
+                        aria-pressed={active}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                          active
+                            ? "border-transparent text-foreground"
+                            : "border-border/60 text-muted-foreground hover:bg-muted/40",
+                        )}
+                        style={active ? { background: `${color}25`, color } : undefined}
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+                        {type}
+                      </button>
+                    );
+                  })}
+                  {typeFilter.size > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setTypeFilter(new Set())}
+                      className="text-[11px] text-muted-foreground underline-offset-2 hover:underline ml-1"
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <Label htmlFor="task-sort" className="text-[11px] uppercase tracking-wide text-muted-foreground">Ordenar</Label>
                 <select
