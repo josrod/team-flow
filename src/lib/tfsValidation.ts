@@ -86,11 +86,51 @@ export const validateTeam = (raw: string): FieldValidation => {
   return validateWith(teamSchema, raw);
 };
 
+/** Azure DevOps query ID or path validation.
+ *  Accepts:
+ *   - Empty (optional field)
+ *   - GUID: 12345678-1234-1234-1234-123456789012
+ *   - Query path: Shared Queries/Equipo/Bugs
+ */
+const GUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const validateQueryId = (raw: string): FieldValidation => {
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) {
+    return { status: "valid" };
+  }
+
+  if (GUID_REGEX.test(trimmed)) {
+    return { status: "valid" };
+  }
+
+  // Path validation
+  if (trimmed.length > 256) {
+    return { status: "invalid", message: "La ruta no puede superar 256 caracteres." };
+  }
+  if (trimmed.startsWith("/") || trimmed.endsWith("/")) {
+    return { status: "invalid", message: "La ruta no puede empezar ni terminar con '/'." };
+  }
+  if (/\/\//.test(trimmed)) {
+    return { status: "invalid", message: "La ruta contiene segmentos vacíos (//)." };
+  }
+  if (RESERVED_PATH_CHARS.test(trimmed)) {
+    return { status: "invalid", message: "Contiene caracteres no permitidos (\\ / ? # % &)." };
+  }
+  if (!IDENTIFIER_REGEX.test(trimmed.replace(/\//g, ""))) {
+    return { status: "invalid", message: "Solo se permiten letras, números, espacios, '.', '_', '-' y '/'." };
+  }
+
+  return { status: "valid" };
+};
+
 export interface ConnectionValidation {
   serverUrl: FieldValidation;
   collection: FieldValidation;
   project: FieldValidation;
   team: FieldValidation;
+  bugsQueryId: FieldValidation;
   /** True only when every required field is valid and team is valid (or empty). */
   allRequiredValid: boolean;
 }
@@ -100,17 +140,20 @@ export const validateConnectionFields = (input: {
   collection: string;
   project: string;
   team: string;
+  bugsQueryId?: string;
 }): ConnectionValidation => {
   const serverUrl = validateServerUrl(input.serverUrl);
   const collection = validateCollection(input.collection);
   const project = validateProject(input.project);
   const team = validateTeam(input.team);
+  const bugsQueryId = validateQueryId(input.bugsQueryId ?? "");
 
   const allRequiredValid =
     serverUrl.status === "valid" &&
     collection.status === "valid" &&
     project.status === "valid" &&
-    team.status !== "invalid";
+    team.status !== "invalid" &&
+    bugsQueryId.status !== "invalid";
 
-  return { serverUrl, collection, project, team, allRequiredValid };
+  return { serverUrl, collection, project, team, bugsQueryId, allRequiredValid };
 };

@@ -210,8 +210,8 @@ export const AzureDevOpsSettingsPage = () => {
 
   // Real-time validation of connection fields. Recomputed on every keystroke.
   const fieldValidation = useMemo(
-    () => validateConnectionFields({ serverUrl, collection, project, team }),
-    [serverUrl, collection, project, team],
+    () => validateConnectionFields({ serverUrl, collection, project, team, bugsQueryId }),
+    [serverUrl, collection, project, team, bugsQueryId],
   );
 
   const inputStateClass = (status: "empty" | "valid" | "invalid") =>
@@ -325,6 +325,10 @@ export const AzureDevOpsSettingsPage = () => {
   const handleSave = async () => {
     if (connectionStatus !== "success") {
       toast.error(t.adoTestFirst);
+      return;
+    }
+    if (fieldValidation.bugsQueryId.status === "invalid") {
+      toast.error("Corrige el campo 'Query de Bugs' antes de guardar.");
       return;
     }
 
@@ -834,11 +838,14 @@ export const AzureDevOpsSettingsPage = () => {
                 placeholder="p. ej. 12345678-1234-1234-1234-123456789012 o Shared Queries/Equipo/Bugs"
                 value={bugsQueryId}
                 onChange={(e) => setBugsQueryId(e.target.value)}
-                className="mt-1"
+                aria-invalid={fieldValidation.bugsQueryId.status === "invalid"}
+                className={cn("mt-1", inputStateClass(fieldValidation.bugsQueryId.status))}
               />
-              <p className="text-xs text-muted-foreground mt-1.5">
-                ID (GUID) o ruta de una query existente en Azure DevOps que devuelve los bugs a mostrar en la página Bugs.
-              </p>
+              <TfsFieldHint
+                validation={fieldValidation.bugsQueryId}
+                defaultHint="ID (GUID) o ruta de una query existente en Azure DevOps que devuelve los bugs a mostrar en la página Bugs."
+                hideValid
+              />
             </div>
           </CardContent>
         </Card>
