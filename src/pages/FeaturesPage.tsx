@@ -34,6 +34,8 @@ import { toast } from "sonner";
 import { useSearchParams, Link } from "react-router-dom";
 import { Settings as SettingsIcon } from "lucide-react";
 import { WorkloadMatrix } from "@/components/WorkloadMatrix";
+import { TaskTypeFilter } from "@/components/TaskTypeFilter";
+import { computeAvailableTaskTypes, isExcludedTaskType } from "@/lib/taskTypeFilter";
 
 type DataSource = "tfs" | "local";
 
