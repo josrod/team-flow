@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { handoverNotesSchema } from "@/lib/validation";
+import { validateHandoverTopicIds } from "@/lib/handoverValidation";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Handover } from "@/types";
