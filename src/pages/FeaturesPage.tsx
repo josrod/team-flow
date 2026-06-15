@@ -34,6 +34,8 @@ import { toast } from "sonner";
 import { useSearchParams, Link } from "react-router-dom";
 import { Settings as SettingsIcon } from "lucide-react";
 import { WorkloadMatrix } from "@/components/WorkloadMatrix";
+import { TaskTypeFilter } from "@/components/TaskTypeFilter";
+import { computeAvailableTaskTypes, isExcludedTaskType } from "@/lib/taskTypeFilter";
 
 type DataSource = "tfs" | "local";
 
@@ -753,24 +755,18 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       if (activePerson !== "all" && t.assignee !== activePerson) return false;
       if (searchLower && !t.title.toLowerCase().includes(searchLower)) return false;
       if (typeFilter.size > 0 && !typeFilter.has(t.type)) return false;
-      // In the Tasks view, exclude Product Backlog Item types.
-      if (view === "tasks" && /product backlog item/i.test(t.type)) return false;
+      // View-aware exclusion (e.g. Product Backlog Item is hidden in Tasks).
+      if (isExcludedTaskType(t.type, view)) return false;
       return true;
     });
   }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee, typeFilter, view]);
 
   // Distinct task types present in the current dataset (pre type-filter), so
   // the chips remain visible even after the user narrows the selection.
-  const availableTypes = useMemo(() => {
-    const set = new Set<string>();
-    tasks.forEach((t) => { if (t.type) set.add(t.type); });
-    const types = Array.from(set).sort((a, b) => a.localeCompare(b));
-    // In the Tasks view, only show Task and Bug in the type filter chips.
-    if (view === "tasks") {
-      return types.filter((type) => /^(Task|Bug)$/i.test(type));
-    }
-    return types;
-  }, [tasks, view]);
+  const availableTypes = useMemo(
+    () => computeAvailableTaskTypes(tasks, view),
+    [tasks, view],
+  );
 
   // Task counts per type for the type-filter chips, applying all filters
   // except the type filter itself so the counts reflect the current scope.
@@ -778,7 +774,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
     const counts: Record<string, number> = {};
     const searchLower = debouncedSearch ? debouncedSearch.toLowerCase() : "";
     tasks.forEach((t) => {
-      if (view === "tasks" && /product backlog item/i.test(t.type)) return;
+      if (isExcludedTaskType(t.type, view)) return;
       if (activeTeam !== "all" && teamIdByAssignee.get(t.assignee) !== activeTeam) return;
       if (activePerson !== "all" && t.assignee !== activePerson) return;
       if (searchLower && !t.title.toLowerCase().includes(searchLower)) return;
@@ -1343,44 +1339,13 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   );
                 })}
               </div>
-              {availableTypes.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrar por tipo">
-                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">Tipo</span>
-                  {availableTypes.map((type) => {
-                    const active = typeFilter.has(type);
-                    const isBug = /bug/i.test(type);
-                    const color = isBug ? "hsl(var(--status-sick))" : "hsl(var(--status-info))";
-                    const count = typeCounts[type] ?? 0;
-                    return (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => toggleTypeFilter(type)}
-                        aria-pressed={active}
-                        className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
-                          active
-                            ? "border-transparent text-foreground"
-                            : "border-border/60 text-muted-foreground hover:bg-muted/40",
-                        )}
-                        style={active ? { background: `${color}25`, color } : undefined}
-                      >
-                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
-                        {type} ({count})
-                      </button>
-                    );
-                  })}
-                  {typeFilter.size > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setTypeFilter(new Set())}
-                      className="text-[11px] text-muted-foreground underline-offset-2 hover:underline ml-1"
-                    >
-                      Limpiar
-                    </button>
-                  )}
-                </div>
-              )}
+              <TaskTypeFilter
+                types={availableTypes}
+                selected={typeFilter}
+                counts={typeCounts}
+                onToggle={toggleTypeFilter}
+                onClear={() => setTypeFilter(new Set())}
+              />
               <div className="flex items-center gap-2">
                 <Label htmlFor="task-sort" className="text-[11px] uppercase tracking-wide text-muted-foreground">Ordenar</Label>
                 <select
