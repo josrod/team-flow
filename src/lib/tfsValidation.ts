@@ -107,20 +107,20 @@ export const validateQueryId = (raw: string): FieldValidation => {
 
   // Path validation
   if (trimmed.length > 256) {
-    return { status: "invalid", message: "La ruta no puede superar 256 caracteres." };
+    return { status: "invalid", message: BUGS_QUERY_MESSAGES.tooLong };
   }
   if (trimmed.startsWith("/") || trimmed.endsWith("/")) {
-    return { status: "invalid", message: "La ruta no puede empezar ni terminar con '/'." };
+    return { status: "invalid", message: BUGS_QUERY_MESSAGES.startOrEndSlash };
   }
   if (/\/\//.test(trimmed)) {
-    return { status: "invalid", message: "La ruta contiene segmentos vacíos (//)." };
+    return { status: "invalid", message: BUGS_QUERY_MESSAGES.emptySegments };
   }
   // Reserved characters check — exclude '/' here since paths use it as separator.
   if (/[\\?#%&]/.test(trimmed)) {
-    return { status: "invalid", message: "Contiene caracteres no permitidos (\\ ? # % &)." };
+    return { status: "invalid", message: BUGS_QUERY_MESSAGES.reservedChars };
   }
   if (!IDENTIFIER_REGEX.test(trimmed.replace(/\//g, ""))) {
-    return { status: "invalid", message: "Solo se permiten letras, números, espacios, '.', '_', '-' y '/'." };
+    return { status: "invalid", message: BUGS_QUERY_MESSAGES.invalidChars };
   }
 
   return { status: "valid" };
