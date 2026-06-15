@@ -323,12 +323,16 @@ export const AzureDevOpsSettingsPage = () => {
   };
 
   const handleSave = async () => {
-    if (connectionStatus !== "success") {
-      toast.error(t.adoTestFirst);
-      return;
-    }
-    if (fieldValidation.bugsQueryId.status === "invalid") {
-      toast.error("Corrige el campo 'Query de Bugs' antes de guardar.");
+    const guard = evaluateSaveGuard({
+      connectionStatus,
+      bugsQueryId: fieldValidation.bugsQueryId,
+    });
+    if (!guard.canSave) {
+      if (guard.reason === "not-tested") {
+        toast.error(t.adoTestFirst);
+      } else if (guard.reason === "invalid-bugs-query") {
+        toast.error("Corrige el campo 'Query de Bugs' antes de guardar.");
+      }
       return;
     }
 
