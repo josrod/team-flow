@@ -39,6 +39,7 @@ import { TfsFieldHint } from "@/components/TfsFieldHint";
 import { TfsAutocompleteInput } from "@/components/TfsAutocompleteInput";
 import { TfsMultiSelect } from "@/components/TfsMultiSelect";
 import { evaluateSaveGuard, validateConnectionFields, validateServerUrl } from "@/lib/tfsValidation";
+import { mapBugsQueryIdError } from "@/lib/supabaseErrorMapping";
 import { cn } from "@/lib/utils";
 
 export const AzureDevOpsSettingsPage = () => {
@@ -387,8 +388,13 @@ export const AzureDevOpsSettingsPage = () => {
 
       toast.success(`💾 ${t.adoSettingsSaved}`);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error saving";
-      toast.error(msg);
+      const mapped = mapBugsQueryIdError(err);
+      if (mapped) {
+        toast.error(mapped);
+      } else {
+        const msg = err instanceof Error ? err.message : "Error saving";
+        toast.error(msg);
+      }
     } finally {
       setSaving(false);
     }
