@@ -327,6 +327,10 @@ export const AzureDevOpsSettingsPage = () => {
       toast.error(t.adoTestFirst);
       return;
     }
+    if (fieldValidation.bugsQueryId.status === "invalid") {
+      toast.error("Corrige el campo 'Query de Bugs' antes de guardar.");
+      return;
+    }
 
     setSaving(true);
     try {
