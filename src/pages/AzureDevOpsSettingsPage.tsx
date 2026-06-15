@@ -838,11 +838,14 @@ export const AzureDevOpsSettingsPage = () => {
                 placeholder="p. ej. 12345678-1234-1234-1234-123456789012 o Shared Queries/Equipo/Bugs"
                 value={bugsQueryId}
                 onChange={(e) => setBugsQueryId(e.target.value)}
-                className="mt-1"
+                aria-invalid={fieldValidation.bugsQueryId.status === "invalid"}
+                className={cn("mt-1", inputStateClass(fieldValidation.bugsQueryId.status))}
               />
-              <p className="text-xs text-muted-foreground mt-1.5">
-                ID (GUID) o ruta de una query existente en Azure DevOps que devuelve los bugs a mostrar en la página Bugs.
-              </p>
+              <TfsFieldHint
+                validation={fieldValidation.bugsQueryId}
+                defaultHint="ID (GUID) o ruta de una query existente en Azure DevOps que devuelve los bugs a mostrar en la página Bugs."
+                hideValid
+              />
             </div>
           </CardContent>
         </Card>
