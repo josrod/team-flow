@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { handoverNotesSchema } from "@/lib/validation";
+import { validateHandoverTopicIds } from "@/lib/handoverValidation";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Handover } from "@/types";
@@ -82,19 +83,27 @@ export default function HandoversPage() {
     if (!fromMember) { toast.error(t.handoverSelectAbsent); return; }
     if (!toMember) { toast.error(t.handoverSelectCover); return; }
     if (!fromMemberAbsence) { toast.error(t.handoverSelectAbsent); return; }
-    // Topics are optional – allow blank handovers when the member has none
+    const topicCheck = validateHandoverTopicIds(
+      selectedTopics,
+      workTopics.map((tp) => tp.id),
+    );
+    if (!topicCheck.valid) {
+      toast.error(topicCheck.message ?? "Selecciona al menos un tema.");
+      return;
+    }
     const notesResult = handoverNotesSchema.safeParse(notes);
     if (!notesResult.success) {
       toast.error(notesResult.error.errors[0].message);
       return;
     }
-    addHandover({
+    const ok = addHandover({
       fromMemberId: fromMember,
       toMemberId: toMember,
       absenceId: fromMemberAbsence.id,
       topicIds: selectedTopics,
       notes: notesResult.data,
     });
+    if (!ok) return;
     setAddOpen(false);
     resetForm();
   };
@@ -111,18 +120,26 @@ export default function HandoversPage() {
   const handleEdit = () => {
     if (!editingHandover) return;
     if (!toMember) { toast.error(t.handoverSelectCover); return; }
-    // Topics are optional on edit too
+    const topicCheck = validateHandoverTopicIds(
+      selectedTopics,
+      workTopics.map((tp) => tp.id),
+    );
+    if (!topicCheck.valid) {
+      toast.error(topicCheck.message ?? "Selecciona al menos un tema.");
+      return;
+    }
     const notesResult = handoverNotesSchema.safeParse(notes);
     if (!notesResult.success) {
       toast.error(notesResult.error.errors[0].message);
       return;
     }
-    updateHandover({
+    const ok = updateHandover({
       ...editingHandover,
       toMemberId: toMember,
       topicIds: selectedTopics,
       notes: notesResult.data,
     });
+    if (!ok) return;
     setEditOpen(false);
     resetForm();
   };
