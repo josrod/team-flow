@@ -764,8 +764,13 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const availableTypes = useMemo(() => {
     const set = new Set<string>();
     tasks.forEach((t) => { if (t.type) set.add(t.type); });
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [tasks]);
+    const types = Array.from(set).sort((a, b) => a.localeCompare(b));
+    // In the Tasks view, only surface Task and Bug types.
+    if (view === "tasks") {
+      return types.filter((type) => /^(Task|Bug)$/i.test(type));
+    }
+    return types;
+  }, [tasks, view]);
 
 
   // Stats for visuals
