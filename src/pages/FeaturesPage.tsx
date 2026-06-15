@@ -753,17 +753,24 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       if (activePerson !== "all" && t.assignee !== activePerson) return false;
       if (searchLower && !t.title.toLowerCase().includes(searchLower)) return false;
       if (typeFilter.size > 0 && !typeFilter.has(t.type)) return false;
+      // In the Tasks view, exclude Product Backlog Item types.
+      if (view === "tasks" && /product backlog item/i.test(t.type)) return false;
       return true;
     });
-  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee, typeFilter]);
+  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee, typeFilter, view]);
 
   // Distinct task types present in the current dataset (pre type-filter), so
   // the chips remain visible even after the user narrows the selection.
   const availableTypes = useMemo(() => {
     const set = new Set<string>();
     tasks.forEach((t) => { if (t.type) set.add(t.type); });
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [tasks]);
+    const types = Array.from(set).sort((a, b) => a.localeCompare(b));
+    // In the Tasks view, exclude Product Backlog Item from the type chips.
+    if (view === "tasks") {
+      return types.filter((type) => !/product backlog item/i.test(type));
+    }
+    return types;
+  }, [tasks, view]);
 
 
   // Stats for visuals
