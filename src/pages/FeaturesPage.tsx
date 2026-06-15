@@ -1350,6 +1350,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                     const active = typeFilter.has(type);
                     const isBug = /bug/i.test(type);
                     const color = isBug ? "hsl(var(--status-sick))" : "hsl(var(--status-info))";
+                    const count = typeCounts[type] ?? 0;
                     return (
                       <button
                         key={type}
@@ -1365,7 +1366,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                         style={active ? { background: `${color}25`, color } : undefined}
                       >
                         <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
-                        {type}
+                        {type} ({count})
                       </button>
                     );
                   })}
