@@ -1,7 +1,8 @@
 /**
  * Maps backend (Postgres trigger / Supabase) errors related to the
- * `azure_devops_settings.bugs_query_id` validation into clear, user-facing
- * Spanish messages.
+ * `azure_devops_settings.bugs_query_id` validation into the same Spanish
+ * messages that the frontend `validateQueryId` returns, so the user sees
+ * a single, unified text per failure mode.
  *
  * The trigger `validate_bugs_query_id` raises exceptions with ERRCODE 22023
  * and English messages like:
@@ -13,6 +14,7 @@
  * Returns `null` when the error is unrelated, so callers can fall back to
  * their generic error handling.
  */
+import { BUGS_QUERY_MESSAGES } from "@/lib/bugsQueryMessages";
 
 export interface SupabaseLikeError {
   message?: string;
@@ -20,9 +22,6 @@ export interface SupabaseLikeError {
   details?: string | null;
   hint?: string | null;
 }
-
-const GENERIC_BUGS_QUERY_MESSAGE =
-  "El 'Query de Bugs' no es válido. Usa un GUID o una ruta de query correcta.";
 
 export const mapBugsQueryIdError = (
   error: unknown,
@@ -41,16 +40,16 @@ export const mapBugsQueryIdError = (
   if (!mentionsBugsQuery) return null;
 
   if (haystack.includes("exceeds 256") || haystack.includes("256 characters")) {
-    return "La ruta del 'Query de Bugs' no puede superar 256 caracteres.";
+    return BUGS_QUERY_MESSAGES.tooLong;
   }
   if (haystack.includes("reserved characters")) {
-    return "El 'Query de Bugs' contiene caracteres no permitidos (\\, ?, #, %, &).";
+    return BUGS_QUERY_MESSAGES.reservedChars;
   }
   if (haystack.includes("start or end with")) {
-    return "La ruta del 'Query de Bugs' no puede empezar ni terminar con '/'.";
+    return BUGS_QUERY_MESSAGES.startOrEndSlash;
   }
   if (haystack.includes("empty segments")) {
-    return "La ruta del 'Query de Bugs' contiene segmentos vacíos.";
+    return BUGS_QUERY_MESSAGES.emptySegments;
   }
-  return GENERIC_BUGS_QUERY_MESSAGE;
+  return BUGS_QUERY_MESSAGES.generic;
 };

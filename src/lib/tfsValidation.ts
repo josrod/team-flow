@@ -3,6 +3,7 @@
 // and reused from the settings page, edge functions or future wizards.
 
 import { z } from "zod";
+import { BUGS_QUERY_MESSAGES } from "@/lib/bugsQueryMessages";
 
 export type FieldStatus = "empty" | "valid" | "invalid";
 
