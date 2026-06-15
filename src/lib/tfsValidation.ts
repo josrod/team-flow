@@ -115,8 +115,9 @@ export const validateQueryId = (raw: string): FieldValidation => {
   if (/\/\//.test(trimmed)) {
     return { status: "invalid", message: "La ruta contiene segmentos vacíos (//)." };
   }
-  if (RESERVED_PATH_CHARS.test(trimmed)) {
-    return { status: "invalid", message: "Contiene caracteres no permitidos (\\ / ? # % &)." };
+  // Reserved characters check — exclude '/' here since paths use it as separator.
+  if (/[\\?#%&]/.test(trimmed)) {
+    return { status: "invalid", message: "Contiene caracteres no permitidos (\\ ? # % &)." };
   }
   if (!IDENTIFIER_REGEX.test(trimmed.replace(/\//g, ""))) {
     return { status: "invalid", message: "Solo se permiten letras, números, espacios, '.', '_', '-' y '/'." };
