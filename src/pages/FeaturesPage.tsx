@@ -772,6 +772,22 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
     return types;
   }, [tasks, view]);
 
+  // Task counts per type for the type-filter chips, applying all filters
+  // except the type filter itself so the counts reflect the current scope.
+  const typeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const searchLower = debouncedSearch ? debouncedSearch.toLowerCase() : "";
+    tasks.forEach((t) => {
+      if (view === "tasks" && /product backlog item/i.test(t.type)) return;
+      if (activeTeam !== "all" && teamIdByAssignee.get(t.assignee) !== activeTeam) return;
+      if (activePerson !== "all" && t.assignee !== activePerson) return;
+      if (searchLower && !t.title.toLowerCase().includes(searchLower)) return;
+      if (stateFilter.size > 0 && !stateFilter.has(normalizeState(t.state))) return;
+      counts[t.type] = (counts[t.type] || 0) + 1;
+    });
+    return counts;
+  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee, stateFilter, view]);
+
 
   // Stats for visuals
   const stateDistribution = useMemo(() => {
@@ -1334,6 +1350,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                     const active = typeFilter.has(type);
                     const isBug = /bug/i.test(type);
                     const color = isBug ? "hsl(var(--status-sick))" : "hsl(var(--status-info))";
+                    const count = typeCounts[type] ?? 0;
                     return (
                       <button
                         key={type}
@@ -1349,7 +1366,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                         style={active ? { background: `${color}25`, color } : undefined}
                       >
                         <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
-                        {type}
+                        {type} ({count})
                       </button>
                     );
                   })}
