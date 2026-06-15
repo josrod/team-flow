@@ -350,7 +350,7 @@ export const AzureDevOpsSettingsPage = () => {
         sync_interval_minutes: Number(syncInterval),
         area_paths: areaPaths,
         iteration_paths: iterationPaths,
-        
+        bugs_query_id: bugsQueryId.trim() || null,
       };
 
       if (hasExisting) {
