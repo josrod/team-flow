@@ -249,6 +249,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const [stateFilter, setStateFilter] = useState<Set<TaskStateKey>>(
     () => new Set<TaskStateKey>(["active", "pending"]),
   );
+  // Type filter: empty set means "show all types".
+  const [typeFilter, setTypeFilter] = useState<Set<string>>(() => new Set<string>());
   const [taskSort, setTaskSort] = useState<TaskSortKey>("total-desc");
   const toggleStateFilter = (key: TaskStateKey) => {
     setStateFilter((prev) => {
@@ -261,6 +263,15 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       return next;
     });
   };
+  const toggleTypeFilter = (key: string) => {
+    setTypeFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
 
   // Keep drafts in sync with applied values when manual-apply is off, so the
   // UI reflects changes driven from elsewhere (URL hydration, invalid-ID
