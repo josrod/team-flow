@@ -753,9 +753,11 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       if (activePerson !== "all" && t.assignee !== activePerson) return false;
       if (searchLower && !t.title.toLowerCase().includes(searchLower)) return false;
       if (typeFilter.size > 0 && !typeFilter.has(t.type)) return false;
+      // In the Tasks view, only show Task and Bug work items.
+      if (view === "tasks" && t.type && !/^(Task|Bug)$/i.test(t.type)) return false;
       return true;
     });
-  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee, typeFilter]);
+  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee, typeFilter, view]);
 
   // Distinct task types present in the current dataset (pre type-filter), so
   // the chips remain visible even after the user narrows the selection.
