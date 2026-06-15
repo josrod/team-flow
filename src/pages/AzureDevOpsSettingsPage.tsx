@@ -55,6 +55,7 @@ export const AzureDevOpsSettingsPage = () => {
   const [syncInterval, setSyncInterval] = useState("30");
   const [areaPaths, setAreaPaths] = useState<string[]>([]);
   const [iterationPaths, setIterationPaths] = useState<string[]>([]);
+  const [bugsQueryId, setBugsQueryId] = useState("");
   
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
