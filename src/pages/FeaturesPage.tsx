@@ -752,9 +752,19 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       }
       if (activePerson !== "all" && t.assignee !== activePerson) return false;
       if (searchLower && !t.title.toLowerCase().includes(searchLower)) return false;
+      if (typeFilter.size > 0 && !typeFilter.has(t.type)) return false;
       return true;
     });
-  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee]);
+  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee, typeFilter]);
+
+  // Distinct task types present in the current dataset (pre type-filter), so
+  // the chips remain visible even after the user narrows the selection.
+  const availableTypes = useMemo(() => {
+    const set = new Set<string>();
+    tasks.forEach((t) => { if (t.type) set.add(t.type); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [tasks]);
+
 
   // Stats for visuals
   const stateDistribution = useMemo(() => {
