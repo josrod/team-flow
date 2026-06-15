@@ -210,8 +210,8 @@ export const AzureDevOpsSettingsPage = () => {
 
   // Real-time validation of connection fields. Recomputed on every keystroke.
   const fieldValidation = useMemo(
-    () => validateConnectionFields({ serverUrl, collection, project, team }),
-    [serverUrl, collection, project, team],
+    () => validateConnectionFields({ serverUrl, collection, project, team, bugsQueryId }),
+    [serverUrl, collection, project, team, bugsQueryId],
   );
 
   const inputStateClass = (status: "empty" | "valid" | "invalid") =>
