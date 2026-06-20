@@ -74,9 +74,8 @@ export function AppSidebar() {
     { title: t.handovers, url: "/handovers", icon: ArrowRightLeft },
     { title: t.features, url: "/features", icon: Layers },
     { title: t.tasks, url: "/tasks", icon: ListChecks },
-    { title: t.workload, url: "/workload", icon: CalendarDays },
-    
     { title: t.bugs, url: "/bugs", icon: Bug },
+    { title: t.workload, url: "/workload", icon: CalendarDays },
     { title: "Azure DevOps", url: "/settings/azure-devops", icon: Settings },
   ];
 
