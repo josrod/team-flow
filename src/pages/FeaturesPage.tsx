@@ -1864,6 +1864,9 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink }: Tas
             {task.state}
           </span>
         </TableCell>
+        <TableCell className="max-w-[180px] truncate text-xs text-muted-foreground" title={task.iterationPath || undefined}>
+          {task.iterationPath || <span className="italic">—</span>}
+        </TableCell>
         <TableCell className="text-right">
           <Button
             size="sm"
