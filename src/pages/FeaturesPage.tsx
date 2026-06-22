@@ -1570,7 +1570,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       <TableCell>
                                         <PrioritySelect
                                           value={priorityLevelFor(task.id)}
-                                          onChange={(level) => taskPriorities.setLevel(task.id, level)}
+                                          onChange={(level) => taskPriorities.setLevel(flatBucketKey, task.id, level)}
                                         />
                                       </TableCell>
                                       <TableCell className="text-sm">
