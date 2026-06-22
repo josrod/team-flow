@@ -1240,7 +1240,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{taskStats.done}</p>
-                  <p className="text-xs text-muted-foreground">Completadas</p>
+                  <p className="text-xs text-muted-foreground">{t.completedTasks}</p>
                 </div>
               </div>
             </CardContent>
