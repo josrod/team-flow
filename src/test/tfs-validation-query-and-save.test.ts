@@ -37,7 +37,7 @@ describe("validateQueryId", () => {
   it("rejects paths starting or ending with '/'", () => {
     const start = validateQueryId("/Shared Queries/Bugs");
     expect(start.status).toBe("invalid");
-    expect(start.message).toMatch(/empezar ni terminar/i);
+    expect(start.message).toMatch(/cannot start or end with/i);
 
     const end = validateQueryId("Shared Queries/Bugs/");
     expect(end.status).toBe("invalid");
@@ -46,7 +46,7 @@ describe("validateQueryId", () => {
   it("rejects empty segments (consecutive slashes)", () => {
     const r = validateQueryId("Shared Queries//Bugs");
     expect(r.status).toBe("invalid");
-    expect(r.message).toMatch(/segmentos vacíos/i);
+    expect(r.message).toMatch(/empty segments/i);
   });
 
   it("rejects reserved characters in path segments", () => {
@@ -62,7 +62,7 @@ describe("validateQueryId", () => {
     const longSegment = "a".repeat(260);
     const r = validateQueryId(longSegment);
     expect(r.status).toBe("invalid");
-    expect(r.message).toMatch(/256 caracteres/);
+    expect(r.message).toMatch(/256 characters/);
   });
 
   it("integrates with validateConnectionFields", () => {

@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import { AppProvider } from "@/context/AppContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import { TeamPulseDashboard } from "@/components/TeamPulseDashboard";
 
 // Recharts uses ResponsiveContainer which needs ResizeObserver in jsdom
@@ -21,9 +22,11 @@ vi.mock("@/context/AuthContext", () => ({
 
 function renderDashboard() {
   return render(
-    <AppProvider>
-      <TeamPulseDashboard />
-    </AppProvider>
+    <LanguageProvider>
+      <AppProvider>
+        <TeamPulseDashboard />
+      </AppProvider>
+    </LanguageProvider>
   );
 }
 
