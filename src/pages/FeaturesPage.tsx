@@ -1201,7 +1201,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{taskStats.pending}</p>
-                  <p className="text-xs text-muted-foreground">Abiertas</p>
+                  <p className="text-xs text-muted-foreground">{t.openTasks}</p>
                 </div>
               </div>
             </CardContent>
