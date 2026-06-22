@@ -297,12 +297,13 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
     });
   };
 
-  // Personal priority (local-only, per browser). Used to rank tasks/bugs
-  // independently of TFS state and to allow drag & drop reordering inside the
-  // flat list view.
+  // Personal priority (local-only, per browser). Order is scoped per developer
+  // so each assignee has its own independent ranking and drag & drop order.
   const taskPriorities = useTaskPriorities();
+  const flatBucketKey = activePerson === "all" ? "__all__" : activePerson;
+  const flatPriorityMap = taskPriorities.mapFor(flatBucketKey);
   const priorityLevelFor = (id: string): PriorityLevel =>
-    taskPriorities.priorities[id]?.level ?? "medium";
+    flatPriorityMap[id]?.level ?? "medium";
 
 
 
@@ -1441,11 +1442,17 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   </>
                 )}
                 <PriorityMenu
-                  onExport={taskPriorities.exportJson}
-                  onImport={taskPriorities.importJson}
-                  onReset={taskPriorities.reset}
-                  count={Object.keys(taskPriorities.priorities).length}
+                  onExport={() => taskPriorities.exportJson(flatBucketKey)}
+                  onImport={(file) => taskPriorities.importJson(flatBucketKey, file)}
+                  onReset={() => taskPriorities.reset(flatBucketKey)}
+                  count={taskPriorities.countFor(flatBucketKey)}
+                  scopeLabel={
+                    activePerson === "all"
+                      ? t.priorityScopeAll
+                      : t.priorityScopeFor.replace("{name}", activePerson)
+                  }
                 />
+
                 <Button
                   size="sm"
                   variant="ghost"
@@ -1519,7 +1526,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                         <TableBody>
                           {(() => {
                             const visible = (taskSort === "priority"
-                              ? sortByPriority(filteredTasks, taskPriorities.priorities)
+                              ? sortByPriority(filteredTasks, flatPriorityMap)
                               : filteredTasks
                             ).slice(0, 100);
                             return (
@@ -1527,14 +1534,15 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                 items={visible}
                                 enabled={taskSort === "priority"}
                                 onReorder={(activeId, overId) => {
-                                  const overEntry = taskPriorities.priorities[overId];
+                                  const overEntry = flatPriorityMap[overId];
                                   const targetLevel: PriorityLevel = overEntry?.level ?? "medium";
                                   // Compute the over index inside the target level
                                   // among the currently visible items.
                                   const inLevel = visible.filter((it) => priorityLevelFor(it.id) === targetLevel);
                                   const overIndex = inLevel.findIndex((it) => it.id === overId);
-                                  taskPriorities.move(activeId, targetLevel, Math.max(0, overIndex));
+                                  taskPriorities.move(flatBucketKey, activeId, targetLevel, Math.max(0, overIndex));
                                 }}
+
                                 renderCells={(task, handle) => {
                                   const norm = normalizeState(task.state);
                                   return (
@@ -1562,7 +1570,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       <TableCell>
                                         <PrioritySelect
                                           value={priorityLevelFor(task.id)}
-                                          onChange={(level) => taskPriorities.setLevel(task.id, level)}
+                                          onChange={(level) => taskPriorities.setLevel(flatBucketKey, task.id, level)}
                                         />
                                       </TableCell>
                                       <TableCell className="text-sm">
@@ -1686,6 +1694,10 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                         .join("")
                         .toUpperCase() || "?";
                       const items = [...group.active, ...group.pending, ...group.blocked, ...group.done].slice(0, 100);
+                      const groupBucketKey = group.person;
+                      const groupMap = taskPriorities.mapFor(groupBucketKey);
+                      const groupPriorityLevel = (id: string): PriorityLevel =>
+                        groupMap[id]?.level ?? "medium";
                       return (
                         <AccordionItem key={group.person} value={group.person}>
                           <AccordionTrigger className="hover:no-underline">
@@ -1780,8 +1792,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       tfsBaseUrl={tfsBaseUrl}
                                       source={source}
                                       onCopyLink={copyWorkItemLink}
-                                      priority={priorityLevelFor(t.id)}
-                                      onPriorityChange={(level) => taskPriorities.setLevel(t.id, level)}
+                                      priority={groupPriorityLevel(t.id)}
+                                      onPriorityChange={(level) => taskPriorities.setLevel(groupBucketKey, t.id, level)}
                                     />
                                   ))}
                                 </TableBody>

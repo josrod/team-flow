@@ -15,7 +15,13 @@ export interface TaskPriorityEntry {
 
 export type TaskPriorityMap = Record<string, TaskPriorityEntry>;
 
+// Buckets keyed by developer (e.g. assignee name). A reserved key holds
+// priorities used when no developer filter is active.
+export type BucketedPriorityMap = Record<string, TaskPriorityMap>;
+
+export const ALL_BUCKET = "__all__";
 export const STORAGE_KEY = "rosen.taskPriorities.v1";
+export const STORAGE_KEY_V2 = "rosen.taskPriorities.v2";
 
 // Order from highest to lowest visual priority.
 export const PRIORITY_ORDER: Record<PriorityLevel, number> = {
@@ -31,6 +37,9 @@ const entrySchema = z.object({
   updatedAt: z.string().min(1),
 });
 
+const bucketSchema = z.record(z.string().min(1), entrySchema);
+const bucketedSchema = z.record(z.string().min(1), bucketSchema);
+
 const fileSchema = z.object({
   version: z.literal(1),
   exportedAt: z.string().min(1),
@@ -39,12 +48,17 @@ const fileSchema = z.object({
 
 export type PriorityFile = z.infer<typeof fileSchema>;
 
+export const normalizeBucketKey = (key: string | null | undefined): string => {
+  const trimmed = (key ?? "").trim();
+  return trimmed.length > 0 ? trimmed : ALL_BUCKET;
+};
+
 export const loadPriorities = (): TaskPriorityMap => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return {};
     const parsed: unknown = JSON.parse(raw);
-    const result = z.record(z.string(), entrySchema).safeParse(parsed);
+    const result = bucketSchema.safeParse(parsed);
     return result.success ? (result.data as TaskPriorityMap) : {};
   } catch {
     return {};
@@ -56,6 +70,35 @@ export const savePriorities = (map: TaskPriorityMap): void => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
   } catch {
     // Quota or private mode: silently ignore.
+  }
+};
+
+export const saveBuckets = (buckets: BucketedPriorityMap): void => {
+  try {
+    localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(buckets));
+  } catch {
+    // Quota or private mode: silently ignore.
+  }
+};
+
+export const loadBuckets = (): BucketedPriorityMap => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_V2);
+    if (raw) {
+      const parsed: unknown = JSON.parse(raw);
+      const result = bucketedSchema.safeParse(parsed);
+      if (result.success) return result.data as BucketedPriorityMap;
+    }
+    // One-time migration: lift any existing v1 flat map into the shared bucket.
+    const legacy = loadPriorities();
+    if (Object.keys(legacy).length > 0) {
+      const migrated: BucketedPriorityMap = { [ALL_BUCKET]: legacy };
+      saveBuckets(migrated);
+      return migrated;
+    }
+    return {};
+  } catch {
+    return {};
   }
 };
 

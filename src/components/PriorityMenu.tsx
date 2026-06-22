@@ -26,9 +26,10 @@ interface PriorityMenuProps {
   onImport: (file: File) => Promise<void>;
   onReset: () => void;
   count: number;
+  scopeLabel?: string;
 }
 
-export const PriorityMenu = ({ onExport, onImport, onReset, count }: PriorityMenuProps) => {
+export const PriorityMenu = ({ onExport, onImport, onReset, count, scopeLabel }: PriorityMenuProps) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const { t } = useLang();
@@ -60,7 +61,12 @@ export const PriorityMenu = ({ onExport, onImport, onReset, count }: PriorityMen
             )}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuContent align="end" className="w-64">
+          {scopeLabel && (
+            <div className="px-2 py-1.5 text-[11px] text-muted-foreground border-b mb-1">
+              {scopeLabel}
+            </div>
+          )}
           <DropdownMenuItem
             onClick={() => {
               onExport();
