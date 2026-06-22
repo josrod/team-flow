@@ -55,6 +55,7 @@ interface UnifiedTask {
   type: string;
   assignee?: string;
   featureId?: string;
+  iterationPath?: string;
 }
 
 // Map a TFS state to a normalized bucket for charts/visuals
