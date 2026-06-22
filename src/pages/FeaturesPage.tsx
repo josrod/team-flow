@@ -1694,6 +1694,10 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                         .join("")
                         .toUpperCase() || "?";
                       const items = [...group.active, ...group.pending, ...group.blocked, ...group.done].slice(0, 100);
+                      const groupBucketKey = group.person;
+                      const groupMap = taskPriorities.mapFor(groupBucketKey);
+                      const groupPriorityLevel = (id: string): PriorityLevel =>
+                        groupMap[id]?.level ?? "medium";
                       return (
                         <AccordionItem key={group.person} value={group.person}>
                           <AccordionTrigger className="hover:no-underline">
