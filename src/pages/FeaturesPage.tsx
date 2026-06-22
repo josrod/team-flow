@@ -1955,7 +1955,7 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, prior
             aria-label={open ? t.hideHandover : t.addHandover}
           >
             {open ? <ChevronUp className="h-3.5 w-3.5" /> : <MessageSquarePlus className="h-3.5 w-3.5" />}
-            {open ? "Cerrar" : "Handover"}
+            {open ? t.closeBtn : t.handoverColumn}
           </Button>
         </TableCell>
         {showActions && (
