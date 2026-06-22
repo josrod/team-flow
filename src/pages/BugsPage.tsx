@@ -21,6 +21,11 @@ import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { BugDetailDialog } from "@/components/BugDetailDialog";
 import { SeverityBadge, normalizeSeverity } from "@/components/SeverityBadge";
 import { fetchTfsBugsByIterations, type TfsBug, type TfsError } from "@/services/tfs";
+import { SortableRows } from "@/components/SortableRows";
+import { PrioritySelect } from "@/components/PrioritySelect";
+import { PriorityMenu } from "@/components/PriorityMenu";
+import { useTaskPriorities } from "@/hooks/use-task-priorities";
+import { sortByPriority, type PriorityLevel } from "@/lib/taskPriority";
 
 interface AdoSettings {
   serverUrl: string;
