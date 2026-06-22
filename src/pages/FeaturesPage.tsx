@@ -1792,8 +1792,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       tfsBaseUrl={tfsBaseUrl}
                                       source={source}
                                       onCopyLink={copyWorkItemLink}
-                                      priority={priorityLevelFor(t.id)}
-                                      onPriorityChange={(level) => taskPriorities.setLevel(t.id, level)}
+                                      priority={groupPriorityLevel(t.id)}
+                                      onPriorityChange={(level) => taskPriorities.setLevel(groupBucketKey, t.id, level)}
                                     />
                                   ))}
                                 </TableBody>
