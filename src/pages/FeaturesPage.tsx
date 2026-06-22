@@ -1380,7 +1380,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 onClear={() => setTypeFilter(new Set())}
               />
               <div className="flex items-center gap-2">
-                <Label htmlFor="task-sort" className="text-[11px] uppercase tracking-wide text-muted-foreground">Ordenar</Label>
+                <Label htmlFor="task-sort" className="text-[11px] uppercase tracking-wide text-muted-foreground">{t.sortBy}</Label>
                 <select
                   id="task-sort"
                   value={taskSort}
@@ -1388,10 +1388,10 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   className="h-8 rounded-md border border-border/60 bg-background px-2 text-xs"
                 >
                   <option value="total-desc">{t.moreTasks}</option>
-                  <option value="total-asc">Menos tareas</option>
-                  <option value="name-asc">Nombre A→Z</option>
-                  <option value="name-desc">Nombre Z→A</option>
-                  <option value="priority">Prioridad personal</option>
+                  <option value="total-asc">{t.fewerTasks}</option>
+                  <option value="name-asc">{t.nameAZ}</option>
+                  <option value="name-desc">{t.nameZA}</option>
+                  <option value="priority">{t.personalPriority}</option>
                 </select>
               </div>
             </div>
