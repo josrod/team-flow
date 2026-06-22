@@ -1707,7 +1707,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     style={{ background: `${stateColorVar.active}20`, color: stateColorVar.active }}
                                   >
                                     <PlayCircle className="h-3 w-3" />
-                                    {group.active.length} en progreso
+                                    {group.active.length} {t.inProgressPlural}
                                   </Badge>
                                 )}
                                 {group.pending.length > 0 && (
