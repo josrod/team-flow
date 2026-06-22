@@ -597,6 +597,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         state: t.state,
         type: t.workItemType,
         assignee: t.assignedTo,
+        iterationPath: t.iterationPath,
       }));
       return { features: feats, tasks: tks };
     }
