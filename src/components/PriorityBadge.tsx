@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { PriorityLevel } from "@/lib/taskPriority";
+import { useLang } from "@/context/LanguageContext";
 import { ArrowDown, ArrowUp, Equal, Minus } from "lucide-react";
 
 interface PriorityBadgeProps {
@@ -7,34 +8,37 @@ interface PriorityBadgeProps {
   className?: string;
 }
 
-const config: Record<
+const styles: Record<
   PriorityLevel,
-  { label: string; classes: string; Icon: typeof ArrowUp }
+  { classes: string; Icon: typeof ArrowUp }
 > = {
   high: {
-    label: "Alta",
     classes: "bg-destructive/15 text-destructive border-destructive/30",
     Icon: ArrowUp,
   },
   medium: {
-    label: "Media",
     classes: "bg-status-vacation/15 text-status-vacation border-status-vacation/30",
     Icon: Equal,
   },
   low: {
-    label: "Baja",
     classes: "bg-status-info/15 text-status-info border-status-info/30",
     Icon: ArrowDown,
   },
   none: {
-    label: "Sin prioridad",
     classes: "bg-muted text-muted-foreground border-border/60",
     Icon: Minus,
   },
 };
 
 export const PriorityBadge = ({ level, className }: PriorityBadgeProps) => {
-  const { label, classes, Icon } = config[level];
+  const { t } = useLang();
+  const { classes, Icon } = styles[level];
+  const labelMap: Record<PriorityLevel, string> = {
+    high: t.priorityHigh,
+    medium: t.priorityMedium,
+    low: t.priorityLow,
+    none: t.priorityNone,
+  };
   return (
     <span
       className={cn(
@@ -44,7 +48,7 @@ export const PriorityBadge = ({ level, className }: PriorityBadgeProps) => {
       )}
     >
       <Icon className="h-3 w-3" aria-hidden="true" />
-      {label}
+      {labelMap[level]}
     </span>
   );
 };
