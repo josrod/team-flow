@@ -10,14 +10,15 @@ interface SortableRowsProps<T extends { id: string }> {
   items: T[];
   enabled: boolean;
   onReorder: (activeId: string, overId: string) => void;
-  renderRow: (item: T, dragHandle: ReactNode) => ReactNode;
+  /** Renders the cells of the row. Receives the drag handle node (null when DnD is off). */
+  renderCells: (item: T, dragHandle: ReactNode) => ReactNode;
 }
 
 export const SortableRows = <T extends { id: string }>({
   items,
   enabled,
   onReorder,
-  renderRow,
+  renderCells,
 }: SortableRowsProps<T>) => {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
@@ -28,28 +29,32 @@ export const SortableRows = <T extends { id: string }>({
   };
 
   if (!enabled) {
-    return <>{items.map((item) => renderRow(item, null))}</>;
+    return (
+      <>
+        {items.map((item) => (
+          <TableRow key={item.id}>{renderCells(item, null)}</TableRow>
+        ))}
+      </>
+    );
   }
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleEnd}>
       <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
         {items.map((item) => (
-          <SortableRow key={item.id} id={item.id}>
-            {(handle) => renderRow(item, handle)}
-          </SortableRow>
+          <SortableRow key={item.id} id={item.id} renderCells={(handle) => renderCells(item, handle)} />
         ))}
       </SortableContext>
     </DndContext>
   );
 };
 
-interface SortableRowProps {
+interface SortableRowInnerProps {
   id: string;
-  children: (handle: ReactNode) => ReactNode;
+  renderCells: (handle: ReactNode) => ReactNode;
 }
 
-const SortableRow = ({ id, children }: SortableRowProps) => {
+const SortableRow = ({ id, renderCells }: SortableRowInnerProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -73,7 +78,7 @@ const SortableRow = ({ id, children }: SortableRowProps) => {
 
   return (
     <TableRow ref={setNodeRef} style={style}>
-      {children(handle)}
+      {renderCells(handle)}
     </TableRow>
   );
 };
