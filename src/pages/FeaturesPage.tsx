@@ -1201,7 +1201,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{taskStats.pending}</p>
-                  <p className="text-xs text-muted-foreground">Abiertas</p>
+                  <p className="text-xs text-muted-foreground">{t.openTasks}</p>
                 </div>
               </div>
             </CardContent>
@@ -1214,7 +1214,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{taskStats.active}</p>
-                  <p className="text-xs text-muted-foreground">En progreso</p>
+                  <p className="text-xs text-muted-foreground">{t.inProgress}</p>
                 </div>
               </div>
             </CardContent>
@@ -1227,7 +1227,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{taskStats.blocked}</p>
-                  <p className="text-xs text-muted-foreground">Bloqueadas</p>
+                  <p className="text-xs text-muted-foreground">{t.blockedTasks}</p>
                 </div>
               </div>
             </CardContent>
@@ -1240,7 +1240,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{taskStats.done}</p>
-                  <p className="text-xs text-muted-foreground">Completadas</p>
+                  <p className="text-xs text-muted-foreground">{t.completedTasks}</p>
                 </div>
               </div>
             </CardContent>
@@ -1294,10 +1294,10 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <Tooltip
                     contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
                   />
-                  <Bar dataKey="active" stackId="a" fill={stateColorVar.active} name="Activo" />
-                  <Bar dataKey="pending" stackId="a" fill={stateColorVar.pending} name="Pendiente" />
-                  <Bar dataKey="blocked" stackId="a" fill={stateColorVar.blocked} name="Bloqueado" />
-                  <Bar dataKey="done" stackId="a" fill={stateColorVar.done} name="Hecho" />
+                  <Bar dataKey="active" stackId="a" fill={stateColorVar.active} name={t.chartActive} />
+                  <Bar dataKey="pending" stackId="a" fill={stateColorVar.pending} name={t.chipPending} />
+                  <Bar dataKey="blocked" stackId="a" fill={stateColorVar.blocked} name={t.chipBlocked} />
+                  <Bar dataKey="done" stackId="a" fill={stateColorVar.done} name={t.chartDone} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -1322,7 +1322,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <Input
                     value={manualApply ? draftSearch : search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Buscar tarea..."
+                    placeholder={t.searchTaskPlaceholder}
                     className="pl-8 h-9 w-56"
                   />
                 </div>
@@ -1347,8 +1347,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
               </div>
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3">
-              <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrar por estado">
-                <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">Estado</span>
+              <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t.filterByStateAria}>
+                <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">{t.stateColumn}</span>
                 {(["active", "pending", "blocked", "done"] as const).map((key) => {
                   const active = stateFilter.has(key);
                   const color = stateColorVar[key];
@@ -1367,7 +1367,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                       style={active ? { background: `${color}25`, color } : undefined}
                     >
                       <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
-                      {key === "active" ? "En progreso" : key === "pending" ? "Pendiente" : key === "blocked" ? "Bloqueada" : "Completada"}
+                      {key === "active" ? t.chipInProgress : key === "pending" ? t.chipPending : key === "blocked" ? t.chipBlocked : t.chipCompleted}
                     </button>
                   );
                 })}
@@ -1380,7 +1380,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 onClear={() => setTypeFilter(new Set())}
               />
               <div className="flex items-center gap-2">
-                <Label htmlFor="task-sort" className="text-[11px] uppercase tracking-wide text-muted-foreground">Ordenar</Label>
+                <Label htmlFor="task-sort" className="text-[11px] uppercase tracking-wide text-muted-foreground">{t.sortBy}</Label>
                 <select
                   id="task-sort"
                   value={taskSort}
@@ -1388,10 +1388,10 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   className="h-8 rounded-md border border-border/60 bg-background px-2 text-xs"
                 >
                   <option value="total-desc">{t.moreTasks}</option>
-                  <option value="total-asc">Menos tareas</option>
-                  <option value="name-asc">Nombre A→Z</option>
-                  <option value="name-desc">Nombre Z→A</option>
-                  <option value="priority">Prioridad personal</option>
+                  <option value="total-asc">{t.fewerTasks}</option>
+                  <option value="name-asc">{t.nameAZ}</option>
+                  <option value="name-desc">{t.nameZA}</option>
+                  <option value="priority">{t.personalPriority}</option>
                 </select>
               </div>
             </div>
@@ -1461,7 +1461,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
             <Tabs value={manualApply ? draftTeam : activeTeam} onValueChange={setActiveTeam}>
               <div className="flex flex-wrap items-center gap-2">
                 <TabsList>
-                  <TabsTrigger value="all">Todos</TabsTrigger>
+                  <TabsTrigger value="all">{t.all}</TabsTrigger>
                   {teams.map((team) => (
                     <TabsTrigger key={team.id} value={team.id}>{team.name}</TabsTrigger>
                   ))}
@@ -1474,15 +1474,15 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                     <Badge
                       variant="secondary"
                       className="gap-1 pl-2 pr-1 py-1"
-                      aria-label={`Equipo activo: ${teamName}`}
+                      aria-label={t.activeTeamAria.replace("{team}", teamName)}
                     >
-                      <span className="text-xs font-medium">Equipo: {teamName}</span>
+                      <span className="text-xs font-medium">{t.teamLabel}: {teamName}</span>
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-4 w-4 hover:bg-transparent"
                         onClick={() => setActiveTeam("all")}
-                        aria-label={`Quitar filtro del equipo ${teamName}`}
+                        aria-label={t.removeTeamFilterAria.replace("{team}", teamName)}
                       >
                         <X className="h-3 w-3" />
                       </Button>
@@ -1496,23 +1496,23 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 {showFlatList ? (
                   filteredTasks.length === 0 ? (
                     <p className="text-sm text-muted-foreground py-8 text-center">
-                      No hay tareas que coincidan con los filtros.
+                      {t.noTasksMatchFilters}
                     </p>
                   ) : (
                     <div className="rounded-md border">
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            {taskSort === "priority" && <TableHead className="w-[36px]"><span className="sr-only">Reordenar</span></TableHead>}
+                            {taskSort === "priority" && <TableHead className="w-[36px]"><span className="sr-only">{t.reorderSrOnly}</span></TableHead>}
                             <TableHead className="w-[60px]">#</TableHead>
                             <TableHead>{t.title}</TableHead>
-                            <TableHead className="w-[100px]">Tipo</TableHead>
-                            <TableHead className="w-[120px]">Estado</TableHead>
-                            <TableHead className="w-[180px]">Iteración</TableHead>
-                            <TableHead className="w-[140px]">Prioridad</TableHead>
-                            <TableHead className="w-[180px]">Asignado a</TableHead>
+                            <TableHead className="w-[100px]">{t.typeColumn}</TableHead>
+                            <TableHead className="w-[120px]">{t.stateColumn}</TableHead>
+                            <TableHead className="w-[180px]">{t.iterationColumn}</TableHead>
+                            <TableHead className="w-[140px]">{t.priorityColumn}</TableHead>
+                            <TableHead className="w-[180px]">{t.assignedToColumn}</TableHead>
                             {source === "tfs" && tfsBaseUrl && (
-                              <TableHead className="w-[90px] text-right">Acciones</TableHead>
+                              <TableHead className="w-[90px] text-right">{t.actionsColumn}</TableHead>
                             )}
                           </TableRow>
                         </TableHeader>
@@ -1571,12 +1571,12 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       {source === "tfs" && tfsBaseUrl && (
                                         <TableCell className="text-right">
                                           <div className="flex items-center justify-end gap-0.5">
-                                            <Button asChild size="icon" variant="ghost" className="h-7 w-7" title="Abrir en Azure DevOps">
+                                            <Button asChild size="icon" variant="ghost" className="h-7 w-7" title={t.openInAdo}>
                                               <a
                                                 href={`${tfsBaseUrl}/_workitems/edit/${task.id}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                aria-label={`Abrir tarea ${task.id} en Azure DevOps`}
+                                                aria-label={t.openTaskInAdoAria.replace("{id}", task.id)}
                                               >
                                                 <ExternalLink className="h-3.5 w-3.5" />
                                               </a>
@@ -1585,7 +1585,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                               size="icon"
                                               variant="ghost"
                                               className="h-7 w-7"
-                                              title="Copiar enlace"
+                                              title={t.copyLink}
                                               aria-label={t.copyLinkTask.replace("{id}", task.id)}
                                               onClick={() => copyWorkItemLink(task.id, "tarea")}
                                             >
@@ -1696,7 +1696,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                               <div className="min-w-0 flex-1 text-left">
                                 <p className="text-sm font-medium truncate">{group.person}</p>
                                 <p className="text-[11px] text-muted-foreground">
-                                  {group.total} {group.total === 1 ? "tarea" : "tareas"}
+                                  {group.total} {group.total === 1 ? t.taskWord : t.tasksWord}
                                 </p>
                               </div>
                               <div className="flex items-center gap-1.5 shrink-0">
@@ -1707,7 +1707,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     style={{ background: `${stateColorVar.active}20`, color: stateColorVar.active }}
                                   >
                                     <PlayCircle className="h-3 w-3" />
-                                    {group.active.length} en progreso
+                                    {group.active.length} {t.inProgressPlural}
                                   </Badge>
                                 )}
                                 {group.pending.length > 0 && (
@@ -1717,7 +1717,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     style={{ background: `${stateColorVar.pending}20`, color: stateColorVar.pending }}
                                   >
                                     <CircleDashed className="h-3 w-3" />
-                                    {group.pending.length} pendientes
+                                    {group.pending.length} {t.pendingPlural}
                                   </Badge>
                                 )}
                                 {group.blocked.length > 0 && (
@@ -1727,7 +1727,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     style={{ background: `${stateColorVar.blocked}20`, color: stateColorVar.blocked }}
                                   >
                                     <AlertOctagon className="h-3 w-3" />
-                                    {group.blocked.length} bloqueadas
+                                    {group.blocked.length} {t.blockedPlural}
                                   </Badge>
                                 )}
                                 {group.done.length > 0 && (
@@ -1737,7 +1737,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     style={{ background: `${stateColorVar.done}20`, color: stateColorVar.done }}
                                   >
                                     <CheckCircle2 className="h-3 w-3" />
-                                    {group.done.length} hechas
+                                    {group.done.length} {t.completedPlural}
                                   </Badge>
                                 )}
                               </div>
@@ -1752,7 +1752,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                 onClick={() => setHandoverPerson(group.person)}
                               >
                                 <FileText className="h-3.5 w-3.5" />
-                                Generar resumen de handover
+                                {t.generateHandoverSummaryBtn}
                               </Button>
                             </div>
                             <div className="rounded-md border">
@@ -1761,13 +1761,13 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                   <TableRow>
                                     <TableHead className="w-[60px]">#</TableHead>
                                     <TableHead>{t.title}</TableHead>
-                                    <TableHead className="w-[100px]">Tipo</TableHead>
-                                    <TableHead className="w-[140px]">Estado</TableHead>
-                                    <TableHead className="w-[180px]">Iteración</TableHead>
-                                    <TableHead className="w-[140px]">Prioridad</TableHead>
-                                    <TableHead className="w-[120px] text-right">Handover</TableHead>
+                                    <TableHead className="w-[100px]">{t.typeColumn}</TableHead>
+                                    <TableHead className="w-[140px]">{t.stateColumn}</TableHead>
+                                    <TableHead className="w-[180px]">{t.iterationColumn}</TableHead>
+                                    <TableHead className="w-[140px]">{t.priorityColumn}</TableHead>
+                                    <TableHead className="w-[120px] text-right">{t.handoverColumn}</TableHead>
                                     {source === "tfs" && tfsBaseUrl && (
-                                      <TableHead className="w-[90px] text-right">Acciones</TableHead>
+                                      <TableHead className="w-[90px] text-right">{t.actionsColumn}</TableHead>
                                     )}
                                   </TableRow>
                                 </TableHeader>
@@ -1874,7 +1874,7 @@ function PersonCombobox({ value, onChange, people }: PersonComboboxProps) {
         <Command>
           <CommandInput placeholder={t.searchPerson} />
           <CommandList>
-            <CommandEmpty>Sin coincidencias.</CommandEmpty>
+            <CommandEmpty>{t.noMatchesShort}</CommandEmpty>
             <CommandGroup>
               <CommandItem
                 value="__all__"
@@ -1955,18 +1955,18 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, prior
             aria-label={open ? t.hideHandover : t.addHandover}
           >
             {open ? <ChevronUp className="h-3.5 w-3.5" /> : <MessageSquarePlus className="h-3.5 w-3.5" />}
-            {open ? "Cerrar" : "Handover"}
+            {open ? t.closeBtn : t.handoverColumn}
           </Button>
         </TableCell>
         {showActions && (
           <TableCell className="text-right">
             <div className="flex items-center justify-end gap-0.5">
-              <Button asChild size="icon" variant="ghost" className="h-7 w-7" title="Abrir en Azure DevOps">
+              <Button asChild size="icon" variant="ghost" className="h-7 w-7" title={t.openInAdo}>
                 <a
                   href={`${tfsBaseUrl}/_workitems/edit/${task.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`Abrir tarea ${task.id} en Azure DevOps`}
+                  aria-label={t.openTaskInAdoAria.replace("{id}", task.id)}
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
                 </a>
@@ -1975,7 +1975,7 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, prior
                 size="icon"
                 variant="ghost"
                 className="h-7 w-7"
-                title="Copiar enlace"
+                title={t.copyLink}
                 aria-label={t.copyLinkTask.replace("{id}", task.id)}
                 onClick={() => onCopyLink(task.id, "tarea")}
               >

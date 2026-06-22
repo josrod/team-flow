@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Download, Upload, Flag, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useLang } from "@/context/LanguageContext";
 
 interface PriorityMenuProps {
   onExport: () => void;
@@ -30,6 +31,7 @@ interface PriorityMenuProps {
 export const PriorityMenu = ({ onExport, onImport, onReset, count }: PriorityMenuProps) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const { t } = useLang();
 
   const handleFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -37,9 +39,9 @@ export const PriorityMenu = ({ onExport, onImport, onReset, count }: PriorityMen
     if (!file) return;
     try {
       await onImport(file);
-      toast.success("Prioridades importadas");
+      toast.success(t.prioritiesImported);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Error al importar el fichero";
+      const message = err instanceof Error ? err.message : t.importFileError;
       toast.error(message);
     }
   };
@@ -50,7 +52,7 @@ export const PriorityMenu = ({ onExport, onImport, onReset, count }: PriorityMen
         <DropdownMenuTrigger asChild>
           <Button size="sm" variant="outline" className="h-8 gap-1.5">
             <Flag className="h-3.5 w-3.5" />
-            Prioridades
+            {t.prioritiesBtn}
             {count > 0 && (
               <span className="ml-1 rounded-full bg-muted px-1.5 text-[10px] text-muted-foreground">
                 {count}
@@ -62,15 +64,15 @@ export const PriorityMenu = ({ onExport, onImport, onReset, count }: PriorityMen
           <DropdownMenuItem
             onClick={() => {
               onExport();
-              toast.success("Fichero descargado");
+              toast.success(t.fileDownloaded);
             }}
           >
             <Download className="mr-2 h-4 w-4" />
-            Exportar a JSON
+            {t.exportToJson}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => fileRef.current?.click()}>
             <Upload className="mr-2 h-4 w-4" />
-            Importar desde JSON
+            {t.importFromJson}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -78,7 +80,7 @@ export const PriorityMenu = ({ onExport, onImport, onReset, count }: PriorityMen
             className="text-destructive focus:text-destructive"
           >
             <Trash2 className="mr-2 h-4 w-4" />
-            Limpiar prioridades
+            {t.clearPriorities}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -94,21 +96,20 @@ export const PriorityMenu = ({ onExport, onImport, onReset, count }: PriorityMen
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Limpiar prioridades?</AlertDialogTitle>
+            <AlertDialogTitle>{t.clearPrioritiesTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              Se eliminarán todas las prioridades personales guardadas en este navegador. La
-              acción no afecta a TFS.
+              {t.clearPrioritiesDesc}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t.cancelBtn}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 onReset();
-                toast.success("Prioridades eliminadas");
+                toast.success(t.prioritiesCleared);
               }}
             >
-              Limpiar
+              {t.clearBtn}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
