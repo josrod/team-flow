@@ -1737,7 +1737,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     style={{ background: `${stateColorVar.done}20`, color: stateColorVar.done }}
                                   >
                                     <CheckCircle2 className="h-3 w-3" />
-                                    {group.done.length} hechas
+                                    {group.done.length} {t.completedPlural}
                                   </Badge>
                                 )}
                               </div>
