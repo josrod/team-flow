@@ -1,20 +1,20 @@
 /**
- * Mensajes unificados para la validación de `bugs_query_id` (frontend y
- * backend). Tanto `validateQueryId` (cliente, en `src/lib/tfsValidation.ts`)
- * como `mapBugsQueryIdError` (mapeo de errores del trigger Postgres en
- * `src/lib/supabaseErrorMapping.ts`) devuelven exactamente estos textos
- * para cada caso, de forma que el usuario vea el mismo mensaje sin
- * importar dónde falle la validación.
+ * Unified messages for validating `bugs_query_id` (frontend and backend).
+ * Both `validateQueryId` (client, in `src/lib/tfsValidation.ts`) and
+ * `mapBugsQueryIdError` (Postgres trigger error mapping in
+ * `src/lib/supabaseErrorMapping.ts`) return these exact strings for each
+ * case so the user sees the same message regardless of where validation
+ * fails.
  */
 export const BUGS_QUERY_MESSAGES = {
-  tooLong: "La ruta no puede superar 256 caracteres.",
-  startOrEndSlash: "La ruta no puede empezar ni terminar con '/'.",
-  emptySegments: "La ruta contiene segmentos vacíos (//).",
-  reservedChars: "Contiene caracteres no permitidos (\\ ? # % &).",
+  tooLong: "The path cannot exceed 256 characters.",
+  startOrEndSlash: "The path cannot start or end with '/'.",
+  emptySegments: "The path contains empty segments (//).",
+  reservedChars: "Contains disallowed characters (\\ ? # % &).",
   invalidChars:
-    "Solo se permiten letras, números, espacios, '.', '_', '-' y '/'.",
+    "Only letters, numbers, spaces, '.', '_', '-' and '/' are allowed.",
   generic:
-    "El 'Query de Bugs' no es válido. Usa un GUID o una ruta de query correcta.",
+    "The 'Bugs query' is not valid. Use a GUID or a correct query path.",
 } as const;
 
 export type BugsQueryMessageKey = keyof typeof BUGS_QUERY_MESSAGES;
