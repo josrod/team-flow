@@ -259,7 +259,24 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   );
   // Type filter: empty set means "show all types".
   const [typeFilter, setTypeFilter] = useState<Set<string>>(() => new Set<string>());
-  const [taskSort, setTaskSort] = useState<TaskSortKey>("total-desc");
+  const TASK_SORT_STORAGE_KEY = "rosen.taskSort.v1";
+  const isTaskSortKey = (v: unknown): v is TaskSortKey =>
+    v === "total-desc" || v === "total-asc" || v === "name-asc" || v === "name-desc" || v === "priority";
+  const [taskSort, setTaskSort] = useState<TaskSortKey>(() => {
+    try {
+      const stored = typeof window !== "undefined" ? window.localStorage.getItem(TASK_SORT_STORAGE_KEY) : null;
+      return isTaskSortKey(stored) ? stored : "total-desc";
+    } catch {
+      return "total-desc";
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(TASK_SORT_STORAGE_KEY, taskSort);
+    } catch {
+      // Ignore storage errors (private mode, quota, etc.).
+    }
+  }, [taskSort]);
   const toggleStateFilter = (key: TaskStateKey) => {
     setStateFilter((prev) => {
       const next = new Set(prev);
