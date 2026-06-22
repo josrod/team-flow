@@ -1375,6 +1375,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <option value="total-asc">Menos tareas</option>
                   <option value="name-asc">Nombre A→Z</option>
                   <option value="name-desc">Nombre Z→A</option>
+                  <option value="priority">Prioridad personal</option>
                 </select>
               </div>
             </div>
@@ -1423,6 +1424,12 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                     </Button>
                   </>
                 )}
+                <PriorityMenu
+                  onExport={taskPriorities.exportJson}
+                  onImport={taskPriorities.importJson}
+                  onReset={taskPriorities.reset}
+                  count={Object.keys(taskPriorities.priorities).length}
+                />
                 <Button
                   size="sm"
                   variant="ghost"
