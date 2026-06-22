@@ -1461,7 +1461,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
             <Tabs value={manualApply ? draftTeam : activeTeam} onValueChange={setActiveTeam}>
               <div className="flex flex-wrap items-center gap-2">
                 <TabsList>
-                  <TabsTrigger value="all">Todos</TabsTrigger>
+                  <TabsTrigger value="all">{t.all}</TabsTrigger>
                   {teams.map((team) => (
                     <TabsTrigger key={team.id} value={team.id}>{team.name}</TabsTrigger>
                   ))}
