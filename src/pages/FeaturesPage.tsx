@@ -1897,13 +1897,15 @@ interface TaskRowWithHandoverProps {
   tfsBaseUrl: string | null;
   source: DataSource;
   onCopyLink: (id: string, type: "feature" | "tarea") => void;
+  priority: PriorityLevel;
+  onPriorityChange: (level: PriorityLevel) => void;
 }
 
-function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink }: TaskRowWithHandoverProps) {
+function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, priority, onPriorityChange }: TaskRowWithHandoverProps) {
   const [open, setOpen] = useState(false);
   const { t } = useLang();
   const showActions = source === "tfs" && !!tfsBaseUrl;
-  const colSpan = 6 + (showActions ? 1 : 0);
+  const colSpan = 7 + (showActions ? 1 : 0);
   return (
     <>
       <TableRow>
@@ -1923,6 +1925,9 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink }: Tas
         </TableCell>
         <TableCell className="max-w-[180px] truncate text-xs text-muted-foreground" title={task.iterationPath || undefined}>
           {task.iterationPath || <span className="italic">—</span>}
+        </TableCell>
+        <TableCell>
+          <PrioritySelect value={priority} onChange={onPriorityChange} />
         </TableCell>
         <TableCell className="text-right">
           <Button
