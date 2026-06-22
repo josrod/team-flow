@@ -1526,7 +1526,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                         <TableBody>
                           {(() => {
                             const visible = (taskSort === "priority"
-                              ? sortByPriority(filteredTasks, taskPriorities.priorities)
+                              ? sortByPriority(filteredTasks, flatPriorityMap)
                               : filteredTasks
                             ).slice(0, 100);
                             return (
@@ -1534,14 +1534,15 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                 items={visible}
                                 enabled={taskSort === "priority"}
                                 onReorder={(activeId, overId) => {
-                                  const overEntry = taskPriorities.priorities[overId];
+                                  const overEntry = flatPriorityMap[overId];
                                   const targetLevel: PriorityLevel = overEntry?.level ?? "medium";
                                   // Compute the over index inside the target level
                                   // among the currently visible items.
                                   const inLevel = visible.filter((it) => priorityLevelFor(it.id) === targetLevel);
                                   const overIndex = inLevel.findIndex((it) => it.id === overId);
-                                  taskPriorities.move(activeId, targetLevel, Math.max(0, overIndex));
+                                  taskPriorities.move(flatBucketKey, activeId, targetLevel, Math.max(0, overIndex));
                                 }}
+
                                 renderCells={(task, handle) => {
                                   const norm = normalizeState(task.state);
                                   return (
