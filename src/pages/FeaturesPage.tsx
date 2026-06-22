@@ -1846,7 +1846,7 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink }: Tas
   const [open, setOpen] = useState(false);
   const { t } = useLang();
   const showActions = source === "tfs" && !!tfsBaseUrl;
-  const colSpan = 5 + (showActions ? 1 : 0);
+  const colSpan = 6 + (showActions ? 1 : 0);
   return (
     <>
       <TableRow>
