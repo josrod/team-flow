@@ -747,10 +747,32 @@ export const BugsPage = () => {
                 <p className="text-sm text-muted-foreground text-center py-8">{t.bugsEmpty}</p>
               ) : (
                 <div className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant={manualOrder ? "default" : "outline"}
+                      className="h-8 gap-1.5"
+                      onClick={() => setManualOrder((v) => !v)}
+                    >
+                      {t.manualOrderToggle}
+                    </Button>
+                    <PriorityMenu
+                      onExport={() => bugPriorities.exportJson(bugBucketKey)}
+                      onImport={(file) => bugPriorities.importJson(bugBucketKey, file)}
+                      onReset={() => bugPriorities.reset(bugBucketKey)}
+                      count={bugPriorities.countFor(bugBucketKey)}
+                      scopeLabel={
+                        assignee === ALL
+                          ? t.priorityScopeAll
+                          : t.priorityScopeFor.replace("{name}", assignee)
+                      }
+                    />
+                  </div>
                   <div className="rounded-md border">
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          {manualOrder && <TableHead className="w-[36px]" />}
                           <TableHead className="w-20 cursor-pointer select-none" onClick={() => handleSort("id")}>
                             <span className="inline-flex items-center">{t.bugsColumnId}<SortIcon column="id" /></span>
                           </TableHead>
@@ -769,55 +791,87 @@ export const BugsPage = () => {
                           <TableHead className="cursor-pointer select-none" onClick={() => handleSort("iterationPath")}>
                             <span className="inline-flex items-center">{t.bugsColumnIteration}<SortIcon column="iterationPath" /></span>
                           </TableHead>
+                          <TableHead className="w-[140px]">{t.priorityColumn}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {visibleBugs.map((b) => (
-                          <TableRow
-                            key={b.id}
-                            className="cursor-pointer"
-                            onClick={() => {
-                              setSelectedBug(b);
-                              setDetailOpen(true);
-                            }}
-                          >
-                            <TableCell className="font-mono text-xs">
-                              <a
-                                href={b.htmlUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="inline-flex items-center gap-1 text-primary hover:underline"
-                              >
-                                {b.id}
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            </TableCell>
-                            <TableCell className="max-w-md">
-                              <span title={b.title}>{b.title}</span>
-                            </TableCell>
-                            <TableCell className="text-sm">
-                              {b.assignedTo ?? (
-                                <span className="text-muted-foreground italic">{t.bugsUnassigned}</span>
+                        <SortableRows
+                          items={visibleBugs.map((b) => ({ ...b, id: String(b.id) }))}
+                          enabled={manualOrder}
+                          onReorder={(activeId, overId) => {
+                            const overEntry = bugPriorityMap[overId];
+                            const targetLevel: PriorityLevel = overEntry?.level ?? "medium";
+                            const inLevel = visibleBugs
+                              .map((b) => String(b.id))
+                              .filter((id) => bugPriorityLevel(id) === targetLevel);
+                            const overIndex = inLevel.findIndex((id) => id === overId);
+                            bugPriorities.move(bugBucketKey, activeId, targetLevel, Math.max(0, overIndex));
+                          }}
+                          renderCells={(b, handle) => (
+                            <>
+                              {manualOrder && (
+                                <TableCell className="py-1 align-middle" onClick={(e) => e.stopPropagation()}>
+                                  {handle}
+                                </TableCell>
                               )}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{b.state}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              <SeverityBadge severity={b.severity} />
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground font-mono">
-                              {b.iterationPath ?? "—"}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                              <TableCell
+                                className="font-mono text-xs cursor-pointer"
+                                onClick={() => {
+                                  setSelectedBug(b as unknown as TfsBug);
+                                  setDetailOpen(true);
+                                }}
+                              >
+                                <a
+                                  href={b.htmlUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1 text-primary hover:underline"
+                                >
+                                  {b.id}
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              </TableCell>
+                              <TableCell
+                                className="max-w-md cursor-pointer"
+                                onClick={() => {
+                                  setSelectedBug(b as unknown as TfsBug);
+                                  setDetailOpen(true);
+                                }}
+                              >
+                                <span title={b.title}>{b.title}</span>
+                              </TableCell>
+                              <TableCell className="text-sm">
+                                {b.assignedTo ?? (
+                                  <span className="text-muted-foreground italic">{t.bugsUnassigned}</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{b.state}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <SeverityBadge severity={b.severity} />
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground font-mono">
+                                {b.iterationPath ?? "—"}
+                              </TableCell>
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                <PrioritySelect
+                                  value={bugPriorityLevel(b.id)}
+                                  onChange={(level) => bugPriorities.setLevel(bugBucketKey, b.id, level)}
+                                />
+                              </TableCell>
+                            </>
+                          )}
+                        />
                         {loadingMore &&
                           Array.from({ length: 3 }).map((_, i) => (
                             <TableRow key={`skel-${i}`}>
+                              {manualOrder && <TableCell><Skeleton className="h-4 w-6" /></TableCell>}
                               <TableCell><Skeleton className="h-4 w-14" /></TableCell>
                               <TableCell><Skeleton className="h-4 w-full max-w-xs" /></TableCell>
                               <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+
                               <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                               <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                               <TableCell><Skeleton className="h-4 w-28" /></TableCell>
