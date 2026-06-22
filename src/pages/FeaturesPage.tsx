@@ -1874,7 +1874,7 @@ function PersonCombobox({ value, onChange, people }: PersonComboboxProps) {
         <Command>
           <CommandInput placeholder={t.searchPerson} />
           <CommandList>
-            <CommandEmpty>Sin coincidencias.</CommandEmpty>
+            <CommandEmpty>{t.noMatchesShort}</CommandEmpty>
             <CommandGroup>
               <CommandItem
                 value="__all__"
