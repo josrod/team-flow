@@ -36,6 +36,12 @@ import { Settings as SettingsIcon } from "lucide-react";
 import { WorkloadMatrix } from "@/components/WorkloadMatrix";
 import { TaskTypeFilter } from "@/components/TaskTypeFilter";
 import { computeAvailableTaskTypes, isExcludedTaskType } from "@/lib/taskTypeFilter";
+import { useTaskPriorities } from "@/hooks/use-task-priorities";
+import { PRIORITY_LEVELS, PriorityLevel, sortByPriority } from "@/lib/taskPriority";
+import { PrioritySelect } from "@/components/PrioritySelect";
+import { PriorityBadge } from "@/components/PriorityBadge";
+import { PriorityMenu } from "@/components/PriorityMenu";
+import { SortableRows } from "@/components/SortableRows";
 
 type DataSource = "tfs" | "local";
 
@@ -248,7 +254,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const [showFlatList, setShowFlatList] = useState(false);
   const [handoverPerson, setHandoverPerson] = useState<string | null>(null);
   type TaskStateKey = "active" | "pending" | "blocked" | "done";
-  type TaskSortKey = "total-desc" | "total-asc" | "name-asc" | "name-desc";
+  type TaskSortKey = "total-desc" | "total-asc" | "name-asc" | "name-desc" | "priority";
   const [stateFilter, setStateFilter] = useState<Set<TaskStateKey>>(
     () => new Set<TaskStateKey>(["active", "pending"]),
   );
