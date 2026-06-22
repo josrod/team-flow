@@ -45,7 +45,7 @@ export const loadPriorities = (): TaskPriorityMap => {
     if (!raw) return {};
     const parsed: unknown = JSON.parse(raw);
     const result = z.record(z.string(), entrySchema).safeParse(parsed);
-    return result.success ? result.data : {};
+    return result.success ? (result.data as TaskPriorityMap) : {};
   } catch {
     return {};
   }
@@ -148,7 +148,7 @@ export const parseImportPayload = (raw: string): TaskPriorityMap => {
   if (!result.success) {
     throw new Error("Formato de fichero de prioridades no válido");
   }
-  return result.data.priorities;
+  return result.data.priorities as TaskPriorityMap;
 };
 
 export const mergePriorities = (
