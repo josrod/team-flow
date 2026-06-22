@@ -1469,6 +1469,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                             <TableHead>{t.title}</TableHead>
                             <TableHead className="w-[100px]">Tipo</TableHead>
                             <TableHead className="w-[120px]">Estado</TableHead>
+                            <TableHead className="w-[180px]">Iteración</TableHead>
                             <TableHead className="w-[180px]">Asignado a</TableHead>
                             {source === "tfs" && tfsBaseUrl && (
                               <TableHead className="w-[90px] text-right">Acciones</TableHead>
