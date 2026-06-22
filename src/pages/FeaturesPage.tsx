@@ -1227,7 +1227,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{taskStats.blocked}</p>
-                  <p className="text-xs text-muted-foreground">Bloqueadas</p>
+                  <p className="text-xs text-muted-foreground">{t.blockedTasks}</p>
                 </div>
               </div>
             </CardContent>
