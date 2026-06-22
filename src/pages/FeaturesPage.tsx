@@ -281,6 +281,15 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
     });
   };
 
+  // Personal priority (local-only, per browser). Used to rank tasks/bugs
+  // independently of TFS state and to allow drag & drop reordering inside the
+  // flat list view.
+  const taskPriorities = useTaskPriorities();
+  const priorityLevelFor = (id: string): PriorityLevel =>
+    taskPriorities.priorities[id]?.level ?? "none";
+
+
+
 
   // Keep drafts in sync with applied values when manual-apply is off, so the
   // UI reflects changes driven from elsewhere (URL hydration, invalid-ID
