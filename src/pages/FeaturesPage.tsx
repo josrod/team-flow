@@ -297,12 +297,13 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
     });
   };
 
-  // Personal priority (local-only, per browser). Used to rank tasks/bugs
-  // independently of TFS state and to allow drag & drop reordering inside the
-  // flat list view.
+  // Personal priority (local-only, per browser). Order is scoped per developer
+  // so each assignee has its own independent ranking and drag & drop order.
   const taskPriorities = useTaskPriorities();
+  const flatBucketKey = activePerson === "all" ? "__all__" : activePerson;
+  const flatPriorityMap = taskPriorities.mapFor(flatBucketKey);
   const priorityLevelFor = (id: string): PriorityLevel =>
-    taskPriorities.priorities[id]?.level ?? "medium";
+    flatPriorityMap[id]?.level ?? "medium";
 
 
 
