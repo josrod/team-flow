@@ -1752,7 +1752,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                 onClick={() => setHandoverPerson(group.person)}
                               >
                                 <FileText className="h-3.5 w-3.5" />
-                                Generar resumen de handover
+                                {t.generateHandoverSummaryBtn}
                               </Button>
                             </div>
                             <div className="rounded-md border">
