@@ -519,6 +519,8 @@ export const translations = {
     cancelBtn: "Cancelar",
     clearBtn: "Limpiar",
     prioritiesCleared: "Prioridades eliminadas",
+    priorityScopeFor: "Orden guardado para {name}",
+    priorityScopeAll: "Orden guardado para todos",
     // Bulk edit
     bulkEditBtn: "Edición en Bloque",
     bulkMembersLabel: "Miembros ({count} seleccionados)",
