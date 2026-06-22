@@ -302,7 +302,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   // flat list view.
   const taskPriorities = useTaskPriorities();
   const priorityLevelFor = (id: string): PriorityLevel =>
-    taskPriorities.priorities[id]?.level ?? "none";
+    taskPriorities.priorities[id]?.level ?? "medium";
 
 
 
@@ -1528,7 +1528,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                 enabled={taskSort === "priority"}
                                 onReorder={(activeId, overId) => {
                                   const overEntry = taskPriorities.priorities[overId];
-                                  const targetLevel: PriorityLevel = overEntry?.level ?? "none";
+                                  const targetLevel: PriorityLevel = overEntry?.level ?? "medium";
                                   // Compute the over index inside the target level
                                   // among the currently visible items.
                                   const inLevel = visible.filter((it) => priorityLevelFor(it.id) === targetLevel);
