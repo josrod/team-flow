@@ -1474,15 +1474,15 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                     <Badge
                       variant="secondary"
                       className="gap-1 pl-2 pr-1 py-1"
-                      aria-label={`Equipo activo: ${teamName}`}
+                      aria-label={t.activeTeamAria.replace("{team}", teamName)}
                     >
-                      <span className="text-xs font-medium">Equipo: {teamName}</span>
+                      <span className="text-xs font-medium">{t.teamLabel}: {teamName}</span>
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-4 w-4 hover:bg-transparent"
                         onClick={() => setActiveTeam("all")}
-                        aria-label={`Quitar filtro del equipo ${teamName}`}
+                        aria-label={t.removeTeamFilterAria.replace("{team}", teamName)}
                       >
                         <X className="h-3 w-3" />
                       </Button>
