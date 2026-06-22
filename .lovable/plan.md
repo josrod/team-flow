@@ -1,70 +1,93 @@
-# Plan: Sección "Bugs" conectada a una query de Azure DevOps
+## Objetivo
 
-## 1. Configuración de la query (Ajustes Azure DevOps)
+Permitir a cada desarrollador marcar la prioridad personal de sus tasks/bugs en la vista de Tareas, combinando un **nivel** (Alta / Media / Baja / Sin prioridad) con un **orden manual** dentro de cada nivel (drag & drop). La prioridad es solo visual — no se escribe en TFS — y se guarda localmente con opción de exportar/importar un fichero JSON.
 
-- Añadir una columna `bugs_query_id text` a la tabla `azure_devops_settings` mediante migración.
-- En `src/pages/AzureDevOpsSettingsPage.tsx`, añadir un campo nuevo **"Query de Bugs (ID o ruta)"** debajo de los selectores de proyecto/equipo. El usuario pegará el GUID de la query (o ruta `Shared Queries/...`) tal y como aparece en la URL de Azure DevOps. Guardar/leer junto con el resto de ajustes.
-- Mostrar un texto de ayuda explicando cómo obtener el GUID desde la URL de la query en ADO.
+## Alcance funcional
 
-## 2. Servicio TFS: ejecutar la query
+1. **Nueva columna "Prioridad"** en la tabla de Tareas (`FeaturesPage.tsx`), tanto en vista plana como agrupada.
+   - Selector inline con 4 opciones: Alta (rojo), Media (ámbar), Baja (azul), Sin prioridad (gris).
+   - Badge con color e icono claro, coherente con `SeverityBadge`.
+2. **Reordenación drag & drop** de filas dentro del mismo nivel de prioridad. Al arrastrar entre niveles, cambia el nivel automáticamente.
+3. **Ordenación**: cuando el usuario activa "Ordenar por prioridad", las filas se agrupan por nivel (Alta → Baja → Sin prioridad) y, dentro de cada grupo, respetan el orden manual. Se mantiene el orden original como alternativa.
+4. **Filtro rápido** opcional por nivel de prioridad (chips encima de la tabla, reutilizando patrón de `TaskTypeFilter`).
+5. **Export / Import JSON** desde un menú "Prioridades" en la cabecera de Tareas:
+   - Exportar: descarga `prioridades-tareas-YYYY-MM-DD.json` con BOM UTF-8.
+   - Importar: valida estructura con Zod y fusiona con las prioridades existentes (estrategia: el fichero sobreescribe las claves que contenga).
+   - Botón "Limpiar prioridades" con confirmación.
 
-En `src/services/tfs.ts`, añadir `fetchTfsQueryResults(conn, queryId)`:
+## Modelo de datos (local)
 
-1. `POST {collection}/{project}/_apis/wit/wiql/{queryId}?api-version=5.0` para obtener la lista de IDs.
-   (Si el valor introducido es una ruta tipo `Shared Queries/...`, primero resolverla con `GET …/_apis/wit/queries/{path}?api-version=5.0` y usar el `id` devuelto.)
-2. Batch a `…/_apis/wit/workitems?ids=…&fields=System.Id,System.Title,System.AssignedTo,System.State,System.IterationPath,System.AreaPath` (lotes de 200, igual que `runWiqlAndFetch`).
-3. Devolver `TfsDiscoveryResult<TfsBug>` con un mapeo a la nueva interfaz `TfsBug { id, title, assignedTo, state, iterationPath, areaPath, url }`.
-4. Reutilizar el patrón existente de errores (`TfsError`, mixed-content, timeout, 401/403, CORS).
+Clave en `localStorage`: `rosen.taskPriorities.v1`.
 
-## 3. Página `/bugs`
-
-Crear `src/pages/BugsPage.tsx`:
-
-- Carga inicial: lee `azure_devops_settings` del usuario en Supabase (igual que hace `TfsImportDialog`). Si falta conexión o falta `bugs_query_id`, muestra una alerta con enlace a `/settings/azure-devops`.
-- Llama a `fetchTfsQueryResults` y guarda los bugs en estado local. Botón "Refrescar".
-- Tabla shadcn `Table` con columnas: **ID, Título (enlaza al work item en ADO en nueva pestaña), Asignado a, Estado, Iteration Path, Area Path**.
-- **Filtros locales** encima de la tabla:
-  - Input de búsqueda por texto (título / ID / asignado).
-  - `Select` por Asignado a (poblado a partir de los resultados).
-  - `Select` por Estado.
-  - `Select` por Iteration Path.
-- Contador "X bugs" + estado de carga (`Skeleton`) y manejo de errores reutilizando el componente existente `TfsErrorPanel`.
-
-Registrar la ruta en `src/App.tsx`:
-```tsx
-<Route path="/bugs" element={<ProtectedRoute><AppLayout><BugsPage /></AppLayout></ProtectedRoute>} />
-```
-
-## 4. Entrada en la barra lateral
-
-En `src/components/AppSidebar.tsx`, añadir al array `navItems` justo **antes de Azure DevOps**:
 ```ts
-{ title: t.bugs, url: "/bugs", icon: Bug }
+type PriorityLevel = "high" | "medium" | "low" | "none";
+
+interface TaskPriorityEntry {
+  level: PriorityLevel;
+  rank: number; // posición dentro del nivel, menor = más arriba
+  updatedAt: string; // ISO
+}
+
+// Mapa: clave = id estable de la task/bug (taskId de TFS)
+type TaskPriorityMap = Record<string, TaskPriorityEntry>;
 ```
-(icono `Bug` de `lucide-react`).
 
-## 5. Traducciones
+Fichero exportado:
+```json
+{
+  "version": 1,
+  "exportedAt": "2026-06-22T10:00:00.000Z",
+  "priorities": { "12345": { "level": "high", "rank": 0, "updatedAt": "..." } }
+}
+```
 
-En `src/context/LanguageContext.tsx` añadir claves ES/EN:
-- `bugs`, `bugsPageTitle`, `bugsPageDescription`
-- `bugsColumnId`, `bugsColumnTitle`, `bugsColumnAssignee`, `bugsColumnState`, `bugsColumnIteration`, `bugsColumnArea`
-- `bugsFilterSearch`, `bugsFilterAssignee`, `bugsFilterState`, `bugsFilterIteration`, `bugsFilterAll`
-- `bugsRefresh`, `bugsCount`, `bugsEmpty`, `bugsLoading`
-- `bugsQuerySettingLabel`, `bugsQuerySettingHint`, `bugsNoQueryConfigured`
+Las prioridades son **por navegador**, no por usuario autenticado (el usuario las puede mover entre dispositivos exportando el JSON). Se aplican a tasks y bugs por igual usando el `taskId` como clave, así sirven para ambos tipos sin duplicar lógica.
 
-## 6. Detalles técnicos
+## Cambios técnicos
 
-- Estricto TypeScript, named exports, sin `any`.
-- Usar `useQuery` (React Query) en `BugsPage` con `queryKey: ["tfs-bugs", queryId]` y `staleTime: 60_000`.
-- No tocar `src/integrations/supabase/client.ts` ni `types.ts` (se regeneran tras la migración).
-- Sin cambios en la lógica de import existente.
+- **`src/lib/taskPriority.ts`** (nuevo): tipos, constantes (`PRIORITY_ORDER`, etiquetas i18n), helpers `loadPriorities`, `savePriorities`, `setPriority`, `reorderWithinLevel`, `exportPriorities`, `importPriorities` (validación Zod), `sortByPriority`.
+- **`src/hooks/useTaskPriorities.ts`** (nuevo): hook con estado reactivo sobre `localStorage`, expone `priorities`, `setLevel(id, level)`, `move(id, targetLevel, targetIndex)`, `reset()`, `exportJson()`, `importJson(file)`.
+- **`src/components/PriorityBadge.tsx`** (nuevo): badge con color por nivel, usando tokens semánticos de `index.css` (sin colores hardcodeados).
+- **`src/components/PrioritySelect.tsx`** (nuevo): popover/select inline con los 4 niveles.
+- **`src/components/PriorityMenu.tsx`** (nuevo): dropdown en la cabecera con Exportar / Importar / Limpiar.
+- **`src/pages/FeaturesPage.tsx`** (editar):
+  - Añadir columna "Prioridad" (180px) justo después de "Iteración" en ambas tablas (plana y agrupada) y en `TaskRowWithHandover` (actualizar `colSpan`).
+  - Integrar drag & drop con `@dnd-kit/core` + `@dnd-kit/sortable` (ya estándar para shadcn). Solo activo cuando el orden actual es "Por prioridad".
+  - Añadir toggle "Ordenar por prioridad" junto a los filtros existentes.
+  - Añadir `<PriorityMenu />` en la barra superior de la página.
+- **i18n**: añadir claves en `LanguageContext` para "Prioridad", "Alta", "Media", "Baja", "Sin prioridad", "Ordenar por prioridad", "Exportar prioridades", "Importar prioridades", "Limpiar prioridades", mensajes de toast.
+- **Tests** (`src/test/task-priority.test.ts`):
+  - `setPriority` actualiza nivel y mantiene rank coherente.
+  - `move` reordena correctamente entre y dentro de niveles.
+  - `sortByPriority` respeta orden Alta → Media → Baja → Sin prioridad y rank interno.
+  - `importPriorities` rechaza JSON inválido con Zod.
 
-## Archivos a crear/modificar
+## UX y estilo
 
-- Migración SQL: añade `bugs_query_id` a `azure_devops_settings`.
-- `src/services/tfs.ts` — nueva función `fetchTfsQueryResults` + tipo `TfsBug`.
-- `src/pages/AzureDevOpsSettingsPage.tsx` — nuevo input para la query.
-- `src/pages/BugsPage.tsx` — nueva página.
-- `src/App.tsx` — nueva ruta.
-- `src/components/AppSidebar.tsx` — nueva entrada de menú.
-- `src/context/LanguageContext.tsx` — traducciones.
+- Colores de nivel mediante tokens existentes (`--destructive`, `--warning` si existe, `--primary`, `--muted-foreground`). Si falta `--warning`, se añade en `index.css` y `tailwind.config.ts`.
+- Drag handle discreto (icono `GripVertical`) en la fila, visible al hover.
+- Feedback con `toast` (Sonner) al exportar/importar/limpiar.
+- Accesible: el cambio de nivel también se puede hacer por teclado vía el `Select`.
+
+## Alternativas evaluadas (descartadas)
+
+- **Mapear a `Microsoft.VSTS.Common.Priority` de TFS**: existe en tasks y bugs (valores 1–4), pero es compartida por todo el equipo, no personal. Descartada por requisito de "por usuario".
+- **Tabla Lovable Cloud `user_task_priority`**: más robusta y multi-dispositivo, descartada por preferencia explícita del usuario por JSON manual.
+- **Solo etiqueta sin drag & drop**: más simple, descartada porque pediste "ambas".
+
+## Diagrama
+
+```text
+[Tareas page]
+  ├── Filtros (tipo, equipo) ── [Ordenar por prioridad ▢] ── [Prioridades ▼ (Export/Import/Clear)]
+  └── Tabla
+        Tarea │ Tipo │ Asignado │ Estado │ Iteración │ Prioridad │ ⋮
+                                                       ▲
+                                            Select + DnD handle
+```
+
+## Validación
+
+- `bunx vitest run` debe pasar (incluidos nuevos tests).
+- Verificar en Playwright: cambiar nivel, arrastrar fila, exportar JSON, recargar y reimportar.
+- Confirmar que el orden y prioridades sobreviven a un refresh del navegador.

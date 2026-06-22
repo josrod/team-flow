@@ -36,6 +36,11 @@ import { Settings as SettingsIcon } from "lucide-react";
 import { WorkloadMatrix } from "@/components/WorkloadMatrix";
 import { TaskTypeFilter } from "@/components/TaskTypeFilter";
 import { computeAvailableTaskTypes, isExcludedTaskType } from "@/lib/taskTypeFilter";
+import { useTaskPriorities } from "@/hooks/use-task-priorities";
+import { PriorityLevel, sortByPriority } from "@/lib/taskPriority";
+import { PrioritySelect } from "@/components/PrioritySelect";
+import { PriorityMenu } from "@/components/PriorityMenu";
+import { SortableRows } from "@/components/SortableRows";
 
 type DataSource = "tfs" | "local";
 
@@ -248,7 +253,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const [showFlatList, setShowFlatList] = useState(false);
   const [handoverPerson, setHandoverPerson] = useState<string | null>(null);
   type TaskStateKey = "active" | "pending" | "blocked" | "done";
-  type TaskSortKey = "total-desc" | "total-asc" | "name-asc" | "name-desc";
+  type TaskSortKey = "total-desc" | "total-asc" | "name-asc" | "name-desc" | "priority";
   const [stateFilter, setStateFilter] = useState<Set<TaskStateKey>>(
     () => new Set<TaskStateKey>(["active", "pending"]),
   );
@@ -274,6 +279,15 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       return next;
     });
   };
+
+  // Personal priority (local-only, per browser). Used to rank tasks/bugs
+  // independently of TFS state and to allow drag & drop reordering inside the
+  // flat list view.
+  const taskPriorities = useTaskPriorities();
+  const priorityLevelFor = (id: string): PriorityLevel =>
+    taskPriorities.priorities[id]?.level ?? "none";
+
+
 
 
   // Keep drafts in sync with applied values when manual-apply is off, so the
@@ -1360,6 +1374,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <option value="total-asc">Menos tareas</option>
                   <option value="name-asc">Nombre A→Z</option>
                   <option value="name-desc">Nombre Z→A</option>
+                  <option value="priority">Prioridad personal</option>
                 </select>
               </div>
             </div>
@@ -1408,6 +1423,12 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                     </Button>
                   </>
                 )}
+                <PriorityMenu
+                  onExport={taskPriorities.exportJson}
+                  onImport={taskPriorities.importJson}
+                  onReset={taskPriorities.reset}
+                  count={Object.keys(taskPriorities.priorities).length}
+                />
                 <Button
                   size="sm"
                   variant="ghost"
@@ -1465,11 +1486,13 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                       <Table>
                         <TableHeader>
                           <TableRow>
+                            {taskSort === "priority" && <TableHead className="w-[36px]"><span className="sr-only">Reordenar</span></TableHead>}
                             <TableHead className="w-[60px]">#</TableHead>
                             <TableHead>{t.title}</TableHead>
                             <TableHead className="w-[100px]">Tipo</TableHead>
                             <TableHead className="w-[120px]">Estado</TableHead>
                             <TableHead className="w-[180px]">Iteración</TableHead>
+                            <TableHead className="w-[140px]">Prioridad</TableHead>
                             <TableHead className="w-[180px]">Asignado a</TableHead>
                             {source === "tfs" && tfsBaseUrl && (
                               <TableHead className="w-[90px] text-right">Acciones</TableHead>
@@ -1477,59 +1500,89 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredTasks.slice(0, 100).map((task) => {
-                            const norm = normalizeState(task.state);
+                          {(() => {
+                            const visible = (taskSort === "priority"
+                              ? sortByPriority(filteredTasks, taskPriorities.priorities)
+                              : filteredTasks
+                            ).slice(0, 100);
                             return (
-                              <TableRow key={task.id}>
-                                <TableCell className="font-mono text-xs text-muted-foreground">{task.id}</TableCell>
-                                <TableCell className="font-medium text-sm">{task.title}</TableCell>
-                                <TableCell>
-                                  <Badge variant="outline" className="text-[10px]">{task.type}</Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <span
-                                    className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full"
-                                    style={{ background: `${stateColorVar[norm]}20`, color: stateColorVar[norm] }}
-                                  >
-                                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: stateColorVar[norm] }} />
-                                    {task.state}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="max-w-[180px] truncate text-xs text-muted-foreground" title={task.iterationPath || undefined}>
-                                  {task.iterationPath || <span className="italic">—</span>}
-                                </TableCell>
-                                <TableCell className="text-sm">
-                                  {task.assignee || <span className="text-muted-foreground italic">{t.unassigned}</span>}
-                                </TableCell>
-                                {source === "tfs" && tfsBaseUrl && (
-                                  <TableCell className="text-right">
-                                    <div className="flex items-center justify-end gap-0.5">
-                                      <Button asChild size="icon" variant="ghost" className="h-7 w-7" title="Abrir en Azure DevOps">
-                                        <a
-                                          href={`${tfsBaseUrl}/_workitems/edit/${task.id}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          aria-label={`Abrir tarea ${task.id} en Azure DevOps`}
+                              <SortableRows
+                                items={visible}
+                                enabled={taskSort === "priority"}
+                                onReorder={(activeId, overId) => {
+                                  const overEntry = taskPriorities.priorities[overId];
+                                  const targetLevel: PriorityLevel = overEntry?.level ?? "none";
+                                  // Compute the over index inside the target level
+                                  // among the currently visible items.
+                                  const inLevel = visible.filter((it) => priorityLevelFor(it.id) === targetLevel);
+                                  const overIndex = inLevel.findIndex((it) => it.id === overId);
+                                  taskPriorities.move(activeId, targetLevel, Math.max(0, overIndex));
+                                }}
+                                renderCells={(task, handle) => {
+                                  const norm = normalizeState(task.state);
+                                  return (
+                                    <>
+                                      {taskSort === "priority" && (
+                                        <TableCell className="py-1 align-middle">{handle}</TableCell>
+                                      )}
+                                      <TableCell className="font-mono text-xs text-muted-foreground">{task.id}</TableCell>
+                                      <TableCell className="font-medium text-sm">{task.title}</TableCell>
+                                      <TableCell>
+                                        <Badge variant="outline" className="text-[10px]">{task.type}</Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        <span
+                                          className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full"
+                                          style={{ background: `${stateColorVar[norm]}20`, color: stateColorVar[norm] }}
                                         >
-                                          <ExternalLink className="h-3.5 w-3.5" />
-                                        </a>
-                                      </Button>
-                                      <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        className="h-7 w-7"
-                                        title="Copiar enlace"
-                                        aria-label={t.copyLinkTask.replace("{id}", task.id)}
-                                        onClick={() => copyWorkItemLink(task.id, "tarea")}
-                                      >
-                                        <Copy className="h-3.5 w-3.5" />
-                                      </Button>
-                                    </div>
-                                  </TableCell>
-                                )}
-                              </TableRow>
+                                          <span className="h-1.5 w-1.5 rounded-full" style={{ background: stateColorVar[norm] }} />
+                                          {task.state}
+                                        </span>
+                                      </TableCell>
+                                      <TableCell className="max-w-[180px] truncate text-xs text-muted-foreground" title={task.iterationPath || undefined}>
+                                        {task.iterationPath || <span className="italic">—</span>}
+                                      </TableCell>
+                                      <TableCell>
+                                        <PrioritySelect
+                                          value={priorityLevelFor(task.id)}
+                                          onChange={(level) => taskPriorities.setLevel(task.id, level)}
+                                        />
+                                      </TableCell>
+                                      <TableCell className="text-sm">
+                                        {task.assignee || <span className="text-muted-foreground italic">{t.unassigned}</span>}
+                                      </TableCell>
+                                      {source === "tfs" && tfsBaseUrl && (
+                                        <TableCell className="text-right">
+                                          <div className="flex items-center justify-end gap-0.5">
+                                            <Button asChild size="icon" variant="ghost" className="h-7 w-7" title="Abrir en Azure DevOps">
+                                              <a
+                                                href={`${tfsBaseUrl}/_workitems/edit/${task.id}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                aria-label={`Abrir tarea ${task.id} en Azure DevOps`}
+                                              >
+                                                <ExternalLink className="h-3.5 w-3.5" />
+                                              </a>
+                                            </Button>
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="h-7 w-7"
+                                              title="Copiar enlace"
+                                              aria-label={t.copyLinkTask.replace("{id}", task.id)}
+                                              onClick={() => copyWorkItemLink(task.id, "tarea")}
+                                            >
+                                              <Copy className="h-3.5 w-3.5" />
+                                            </Button>
+                                          </div>
+                                        </TableCell>
+                                      )}
+                                    </>
+                                  );
+                                }}
+                              />
                             );
-                          })}
+                          })()}
                         </TableBody>
                       </Table>
                       {filteredTasks.length > 100 && (
@@ -1694,6 +1747,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     <TableHead className="w-[100px]">Tipo</TableHead>
                                     <TableHead className="w-[140px]">Estado</TableHead>
                                     <TableHead className="w-[180px]">Iteración</TableHead>
+                                    <TableHead className="w-[140px]">Prioridad</TableHead>
                                     <TableHead className="w-[120px] text-right">Handover</TableHead>
                                     {source === "tfs" && tfsBaseUrl && (
                                       <TableHead className="w-[90px] text-right">Acciones</TableHead>
@@ -1709,6 +1763,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       tfsBaseUrl={tfsBaseUrl}
                                       source={source}
                                       onCopyLink={copyWorkItemLink}
+                                      priority={priorityLevelFor(t.id)}
+                                      onPriorityChange={(level) => taskPriorities.setLevel(t.id, level)}
                                     />
                                   ))}
                                 </TableBody>
@@ -1840,13 +1896,15 @@ interface TaskRowWithHandoverProps {
   tfsBaseUrl: string | null;
   source: DataSource;
   onCopyLink: (id: string, type: "feature" | "tarea") => void;
+  priority: PriorityLevel;
+  onPriorityChange: (level: PriorityLevel) => void;
 }
 
-function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink }: TaskRowWithHandoverProps) {
+function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, priority, onPriorityChange }: TaskRowWithHandoverProps) {
   const [open, setOpen] = useState(false);
   const { t } = useLang();
   const showActions = source === "tfs" && !!tfsBaseUrl;
-  const colSpan = 6 + (showActions ? 1 : 0);
+  const colSpan = 7 + (showActions ? 1 : 0);
   return (
     <>
       <TableRow>
@@ -1866,6 +1924,9 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink }: Tas
         </TableCell>
         <TableCell className="max-w-[180px] truncate text-xs text-muted-foreground" title={task.iterationPath || undefined}>
           {task.iterationPath || <span className="italic">—</span>}
+        </TableCell>
+        <TableCell>
+          <PrioritySelect value={priority} onChange={onPriorityChange} />
         </TableCell>
         <TableCell className="text-right">
           <Button
