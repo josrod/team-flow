@@ -1717,7 +1717,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     style={{ background: `${stateColorVar.pending}20`, color: stateColorVar.pending }}
                                   >
                                     <CircleDashed className="h-3 w-3" />
-                                    {group.pending.length} pendientes
+                                    {group.pending.length} {t.pendingPlural}
                                   </Badge>
                                 )}
                                 {group.blocked.length > 0 && (
