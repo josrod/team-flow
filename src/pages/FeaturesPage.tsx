@@ -1496,23 +1496,23 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 {showFlatList ? (
                   filteredTasks.length === 0 ? (
                     <p className="text-sm text-muted-foreground py-8 text-center">
-                      No hay tareas que coincidan con los filtros.
+                      {t.noTasksMatchFilters}
                     </p>
                   ) : (
                     <div className="rounded-md border">
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            {taskSort === "priority" && <TableHead className="w-[36px]"><span className="sr-only">Reordenar</span></TableHead>}
+                            {taskSort === "priority" && <TableHead className="w-[36px]"><span className="sr-only">{t.reorderSrOnly}</span></TableHead>}
                             <TableHead className="w-[60px]">#</TableHead>
                             <TableHead>{t.title}</TableHead>
-                            <TableHead className="w-[100px]">Tipo</TableHead>
-                            <TableHead className="w-[120px]">Estado</TableHead>
-                            <TableHead className="w-[180px]">Iteración</TableHead>
-                            <TableHead className="w-[140px]">Prioridad</TableHead>
-                            <TableHead className="w-[180px]">Asignado a</TableHead>
+                            <TableHead className="w-[100px]">{t.typeColumn}</TableHead>
+                            <TableHead className="w-[120px]">{t.stateColumn}</TableHead>
+                            <TableHead className="w-[180px]">{t.iterationColumn}</TableHead>
+                            <TableHead className="w-[140px]">{t.priorityColumn}</TableHead>
+                            <TableHead className="w-[180px]">{t.assignedToColumn}</TableHead>
                             {source === "tfs" && tfsBaseUrl && (
-                              <TableHead className="w-[90px] text-right">Acciones</TableHead>
+                              <TableHead className="w-[90px] text-right">{t.actionsColumn}</TableHead>
                             )}
                           </TableRow>
                         </TableHeader>
