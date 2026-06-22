@@ -8,6 +8,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { useLang } from "@/context/LanguageContext";
 
 export interface TfsSuggestion {
   /** Stable id; falls back to the name when the API doesn't return one. */
@@ -58,6 +59,7 @@ export const TfsAutocompleteInput = ({
   disabledReason,
   ariaInvalid,
 }: TfsAutocompleteInputProps) => {
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<TfsAutocompleteState>({ status: "idle" });
   const lastLoadedKeyRef = useRef<string>("");
@@ -84,7 +86,7 @@ export const TfsAutocompleteInput = ({
     } catch (err: unknown) {
       setState({
         status: "error",
-        message: err instanceof Error ? err.message : "No se pudo cargar la lista.",
+        message: err instanceof Error ? err.message : t.tfsAutoLoadError,
       });
     }
   };
@@ -133,7 +135,7 @@ export const TfsAutocompleteInput = ({
             variant="ghost"
             size="icon"
             disabled={disabled}
-            aria-label="Mostrar sugerencias"
+            aria-label={t.tfsAutoShowSuggestions}
             className="absolute right-0 top-0 h-full w-9 text-muted-foreground hover:text-foreground"
           >
             {state.status === "loading" ? (
@@ -150,7 +152,7 @@ export const TfsAutocompleteInput = ({
         >
           <div className="flex items-center justify-between border-b px-3 py-2">
             <span className="text-xs font-medium text-muted-foreground">
-              Sugerencias
+              {t.tfsAutoSuggestions}
             </span>
             <Button
               type="button"
@@ -159,7 +161,7 @@ export const TfsAutocompleteInput = ({
               className="h-7 w-7"
               onClick={() => void fetchSuggestions(true)}
               disabled={!enabled || state.status === "loading"}
-              aria-label="Recargar sugerencias"
+              aria-label={t.tfsAutoReload}
             >
               <RefreshCw
                 className={cn(
@@ -172,14 +174,14 @@ export const TfsAutocompleteInput = ({
 
           {!enabled && (
             <p className="px-3 py-4 text-xs text-muted-foreground">
-              {disabledReason ?? "Completa los campos previos y el PAT para ver sugerencias."}
+              {disabledReason ?? t.tfsAutoFillPrereq}
             </p>
           )}
 
           {enabled && state.status === "loading" && (
             <p className="px-3 py-4 text-xs text-muted-foreground flex items-center gap-2">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Consultando al servidor TFS…
+              {t.tfsAutoQuerying}
             </p>
           )}
 
@@ -190,7 +192,7 @@ export const TfsAutocompleteInput = ({
                 <span>{state.message}</span>
               </p>
               <p className="text-xs text-muted-foreground">
-                Puedes seguir escribiendo el valor manualmente.
+                {t.tfsAutoCanType}
               </p>
             </div>
           )}
@@ -198,8 +200,8 @@ export const TfsAutocompleteInput = ({
           {enabled && state.status === "ready" && filtered.length === 0 && (
             <p className="px-3 py-4 text-xs text-muted-foreground">
               {state.items.length === 0
-                ? "Sin resultados desde el servidor."
-                : "Ningún elemento coincide con lo escrito."}
+                ? t.tfsAutoNoServerResults
+                : t.tfsAutoNoMatch}
             </p>
           )}
 

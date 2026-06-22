@@ -390,7 +390,7 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
           {loading ? (
             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-3">
               <Loader2 className="h-8 w-8 animate-spin" />
-              <p>Consultando Azure DevOps...</p>
+              <p>{t.tfsImportQuerying}</p>
             </div>
           ) : error ? (
             <Alert variant="destructive" className="text-left">
@@ -441,7 +441,7 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
                   id="select-all"
                 />
                 <label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
-                  Seleccionar todos los disponibles ({availableCount})
+                  {t.tfsImportSelectAllAvailable.replace("{count}", String(availableCount))}
                 </label>
               </div>
               <ScrollArea className="flex-1 border rounded-md p-1">

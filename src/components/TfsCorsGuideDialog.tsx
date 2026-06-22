@@ -19,12 +19,13 @@ interface TfsCorsGuideDialogProps {
 }
 
 const CodeBlock = ({ code }: { code: string }) => {
+  const { t } = useLang();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(code);
     setCopied(true);
-    toast.success("Copiado al portapapeles");
+    toast.success(t.copiedToClipboard);
     window.setTimeout(() => setCopied(false), 1500);
   };
 
@@ -39,7 +40,7 @@ const CodeBlock = ({ code }: { code: string }) => {
         variant="ghost"
         onClick={handleCopy}
         className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-        aria-label="Copiar"
+        aria-label={t.copyAria}
       >
         {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
       </Button>
@@ -49,7 +50,7 @@ const CodeBlock = ({ code }: { code: string }) => {
 
 export const TfsCorsGuideDialog = ({ origin }: TfsCorsGuideDialogProps) => {
   const { t } = useLang();
-  const iisWebConfig = `<!-- web.config en la raíz del sitio TFS -->
+  const iisWebConfig = `<!-- web.config at the root of the TFS site -->
 <configuration>
   <system.webServer>
     <httpProtocol>
@@ -100,19 +101,19 @@ location / {
       <DialogTrigger asChild>
         <Button variant="link" size="sm" className="h-auto p-0 text-xs">
           <BookOpen className="h-3.5 w-3.5 mr-1" />
-          Ver guía rápida de configuración
+          {t.corsViewGuide}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
-            Configurar CORS en el TFS
+            {t.corsDialogTitle}
           </DialogTitle>
           <DialogDescription>
-            El TFS debe responder con cabeceras CORS que permitan el origen{" "}
-            <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{origin}</code>. Pide a tu
-            equipo de IT que aplique uno de estos snippets en el reverse proxy o IIS que sirve el TFS.
+            {t.corsDialogDesc.split("<ORIGIN>")[0]}
+            <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{origin}</code>
+            {t.corsDialogDesc.split("<ORIGIN>")[1]}
           </DialogDescription>
         </DialogHeader>
 
@@ -125,33 +126,18 @@ location / {
 
           <ScrollArea className="max-h-[55vh] mt-3">
             <TabsContent value="iis" className="space-y-3 mt-0">
-              <p className="text-sm text-muted-foreground">
-                TFS suele desplegarse sobre IIS. Edita el <code className="text-xs">web.config</code>{" "}
-                del sitio (típicamente en <code className="text-xs">C:\inetpub\wwwroot\tfs\</code>) y
-                añade el bloque siguiente. Reinicia el sitio en IIS Manager tras guardar.
-              </p>
+              <p className="text-sm text-muted-foreground">{t.corsIisExplain}</p>
               <CodeBlock code={iisWebConfig} />
-              <p className="text-xs text-muted-foreground">
-                ⚠️ Si IIS también responde a las peticiones OPTIONS (preflight), asegúrate de que el
-                handler <code>OPTIONSVerbHandler</code> esté habilitado y devuelva 200/204.
-              </p>
+              <p className="text-xs text-muted-foreground">{t.corsIisWarn}</p>
             </TabsContent>
 
             <TabsContent value="nginx" className="space-y-3 mt-0">
-              <p className="text-sm text-muted-foreground">
-                Si delante del TFS hay un nginx (como reverse proxy), añade este bloque en el{" "}
-                <code className="text-xs">server</code> que sirve el host del TFS y recarga con{" "}
-                <code className="text-xs">nginx -s reload</code>.
-              </p>
+              <p className="text-sm text-muted-foreground">{t.corsNginxExplain}</p>
               <CodeBlock code={nginxConf} />
             </TabsContent>
 
             <TabsContent value="apache" className="space-y-3 mt-0">
-              <p className="text-sm text-muted-foreground">
-                Para Apache httpd como reverse proxy, asegúrate de tener{" "}
-                <code className="text-xs">mod_headers</code> y <code className="text-xs">mod_rewrite</code>{" "}
-                habilitados, y reinicia el servicio tras guardar.
-              </p>
+              <p className="text-sm text-muted-foreground">{t.corsApacheExplain}</p>
               <CodeBlock code={apacheConf} />
             </TabsContent>
           </ScrollArea>
@@ -159,14 +145,13 @@ location / {
 
         <div className="border-t pt-3 mt-2 space-y-1.5 text-xs text-muted-foreground">
           <p>
-            <strong className="text-foreground">{t.checkHowTo}</strong> abre DevTools → Network,
+            <strong className="text-foreground">{t.checkHowTo}</strong> {t.corsCheckIntro}
             {t.checkCorsDetails}{" "}
-            <code className="bg-muted px-1 rounded">204</code> con la cabecera{" "}
+            <code className="bg-muted px-1 rounded">204</code> {t.corsCheckTail}{" "}
             <code className="bg-muted px-1 rounded">Access-Control-Allow-Origin</code>.
           </p>
           <p>
-            <strong className="text-foreground">Seguridad:</strong> usa siempre un origen específico
-            (no <code className="bg-muted px-1 rounded">*</code>) cuando envíes credenciales.
+            <strong className="text-foreground">{t.corsSecurityLabel}</strong> {t.corsSecurityBody}
           </p>
         </div>
       </DialogContent>

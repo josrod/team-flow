@@ -224,7 +224,7 @@ const Index = () => {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                        onClick={(e) => { e.stopPropagation(); if (window.confirm(`¿Eliminar equipo "${team.name}" y todos sus miembros?`)) deleteTeam(team.id); }}
+                        onClick={(e) => { e.stopPropagation(); if (window.confirm(t.confirmDeleteTeam.replace("{name}", team.name))) deleteTeam(team.id); }}
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -283,7 +283,7 @@ const Index = () => {
                     )}
                   </div>
                   <Input
-                    placeholder="Nombre del equipo"
+                    placeholder={t.newTeamPlaceholder}
                     value={newTeamName}
                     onChange={(e) => setNewTeamName(e.target.value)}
                     className="h-10 text-lg font-display font-semibold"
@@ -302,7 +302,7 @@ const Index = () => {
                 </div>
                 <div className="flex gap-2 justify-end">
                   <Button variant="ghost" size="sm" onClick={() => { setShowNewTeam(false); setNewTeamName(""); }}>
-                    <X className="h-4 w-4 mr-1" /> Cancelar
+                    <X className="h-4 w-4 mr-1" /> {t.cancel}
                   </Button>
                   <Button size="sm" onClick={() => {
                     const result = teamNameSchema.safeParse(newTeamName);
@@ -310,7 +310,7 @@ const Index = () => {
                     addTeam(result.data, newTeamIcon);
                     setNewTeamName(""); setNewTeamIcon("users"); setShowNewTeam(false);
                   }}>
-                    <Check className="h-4 w-4 mr-1" /> Crear
+                    <Check className="h-4 w-4 mr-1" /> {t.create}
                   </Button>
                 </div>
               </CardContent>
@@ -336,7 +336,7 @@ const Index = () => {
             <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center">
               <ArrowRightLeft className="h-4 w-4 text-accent-foreground" />
             </div>
-            Reassigned Tasks
+            {t.reassignedTasksTitle}
             <span className="ml-1 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-accent text-accent-foreground text-[10px] font-bold">
               {reassignedTopics.length}
             </span>

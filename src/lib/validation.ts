@@ -67,7 +67,7 @@ export const importDataSchema = z.object({
   handovers: z.array(handoverSchema).optional(),
 }).refine(
   (d) => d.teams || d.members || d.workTopics || d.absences || d.handovers,
-  { message: "El archivo no contiene datos válidos" }
+  { message: "The file does not contain valid data" }
 );
 
 export function sanitizeText(input: string): string {

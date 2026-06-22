@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { useLang } from "@/context/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,11 +31,9 @@ interface TaskHandoverNotesProps {
   taskId: string | number;
 }
 
-const contentSchema = z.string().trim().min(1, "Escribe algo").max(2000, "Máximo 2000 caracteres");
-const urlSchema = z.string().trim().url("URL inválida").max(500, "URL demasiado larga");
-
 export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
   const { user } = useAuth();
+  const { t } = useLang();
   const taskIdStr = String(taskId);
   const [notes, setNotes] = useState<HandoverNote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +44,9 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState("");
   const [editingUrl, setEditingUrl] = useState("");
+
+  const contentSchema = z.string().trim().min(1, t.writeSomething).max(2000, t.max2000Chars);
+  const urlSchema = z.string().trim().url(t.invalidUrl).max(500, t.urlTooLong);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,7 +59,7 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
       .then(({ data, error }) => {
         if (cancelled) return;
         if (error) {
-          toast.error("No se pudieron cargar las anotaciones");
+          toast.error(t.couldNotLoadNotes);
         } else {
           setNotes((data ?? []) as HandoverNote[]);
         }
@@ -66,7 +68,7 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
     return () => {
       cancelled = true;
     };
-  }, [taskIdStr]);
+  }, [taskIdStr, t]);
 
   const resetDraft = () => {
     setDraftContent("");
@@ -75,7 +77,7 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
 
   const handleAdd = async () => {
     if (!user) {
-      toast.error("Debes iniciar sesión");
+      toast.error(t.mustBeLoggedIn);
       return;
     }
     const contentResult = contentSchema.safeParse(draftContent);
@@ -94,7 +96,7 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
     }
     setSubmitting(true);
     const authorName =
-      (user.user_metadata?.display_name as string | undefined) ?? user.email ?? "Anónimo";
+      (user.user_metadata?.display_name as string | undefined) ?? user.email ?? t.anonymous;
     const { data, error } = await supabase
       .from("task_handover_notes")
       .insert({
@@ -109,18 +111,18 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
       .single();
     setSubmitting(false);
     if (error) {
-      toast.error("No se pudo guardar");
+      toast.error(t.couldNotSave);
       return;
     }
     setNotes((prev) => [...prev, data as HandoverNote]);
     resetDraft();
-    toast.success("Anotación añadida");
+    toast.success(t.noteAdded);
   };
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("task_handover_notes").delete().eq("id", id);
     if (error) {
-      toast.error("No se pudo borrar");
+      toast.error(t.couldNotDelete);
       return;
     }
     setNotes((prev) => prev.filter((n) => n.id !== id));
@@ -133,7 +135,7 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
       .update({ done: next })
       .eq("id", note.id);
     if (error) {
-      toast.error("No se pudo actualizar");
+      toast.error(t.couldNotUpdate);
       return;
     }
     setNotes((prev) => prev.map((n) => (n.id === note.id ? { ...n, done: next } : n)));
@@ -171,7 +173,7 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
       .update({ content: contentResult.data, url: urlValue })
       .eq("id", note.id);
     if (error) {
-      toast.error("No se pudo guardar");
+      toast.error(t.couldNotSave);
       return;
     }
     setNotes((prev) =>
@@ -189,6 +191,12 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
   const formatDate = (iso: string) => {
     const d = new Date(iso);
     return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  };
+
+  const emptyLabel: Record<NoteKind, string> = {
+    note: t.noNotesYet,
+    link: t.noLinksYet,
+    step: t.noStepsYet,
   };
 
   const renderItem = (note: HandoverNote) => {
@@ -229,10 +237,10 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
               )}
               <div className="flex gap-1.5">
                 <Button size="sm" className="h-7" onClick={() => saveEdit(note)}>
-                  <Check className="h-3 w-3" /> Guardar
+                  <Check className="h-3 w-3" /> {t.saveAction}
                 </Button>
                 <Button size="sm" variant="ghost" className="h-7" onClick={cancelEdit}>
-                  <X className="h-3 w-3" /> Cancelar
+                  <X className="h-3 w-3" /> {t.cancelAction}
                 </Button>
               </div>
             </div>
@@ -259,7 +267,7 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
                 </a>
               )}
               <p className="mt-1 text-[10px] text-muted-foreground">
-                {note.author_name ?? "Anónimo"} · {formatDate(note.created_at)}
+                {note.author_name ?? t.anonymous} · {formatDate(note.created_at)}
               </p>
             </>
           )}
@@ -271,7 +279,7 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
               variant="ghost"
               className="h-7 w-7"
               onClick={() => startEdit(note)}
-              aria-label="Editar"
+              aria-label={t.editAria}
             >
               <Pencil className="h-3.5 w-3.5" />
             </Button>
@@ -280,7 +288,7 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
               variant="ghost"
               className="h-7 w-7 text-destructive hover:text-destructive"
               onClick={() => handleDelete(note.id)}
-              aria-label="Borrar"
+              aria-label={t.deleteAria}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
@@ -294,7 +302,7 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
     <div className="mt-3 rounded-md border border-dashed border-border/60 bg-muted/20 p-3">
       <div className="mb-2 flex items-center justify-between">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Handover · notas, enlaces y próximos pasos
+          {t.handoverNotesHeader}
         </h4>
         <Badge variant="secondary" className="text-[10px]">
           {notes.length}
@@ -304,13 +312,13 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as NoteKind)}>
         <TabsList className="h-8">
           <TabsTrigger value="note" className="h-7 text-xs gap-1.5">
-            <StickyNote className="h-3 w-3" /> Notas ({groups.note.length})
+            <StickyNote className="h-3 w-3" /> {t.tabNotes} ({groups.note.length})
           </TabsTrigger>
           <TabsTrigger value="link" className="h-7 text-xs gap-1.5">
-            <Link2 className="h-3 w-3" /> Enlaces ({groups.link.length})
+            <Link2 className="h-3 w-3" /> {t.tabLinks} ({groups.link.length})
           </TabsTrigger>
           <TabsTrigger value="step" className="h-7 text-xs gap-1.5">
-            <ListChecks className="h-3 w-3" /> Pasos ({groups.step.length})
+            <ListChecks className="h-3 w-3" /> {t.tabSteps} ({groups.step.length})
           </TabsTrigger>
         </TabsList>
 
@@ -318,11 +326,11 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
           <TabsContent key={kind} value={kind} className="mt-3 space-y-3">
             {loading ? (
               <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" /> Cargando…
+                <Loader2 className="h-3 w-3 animate-spin" /> {t.loadingShort}
               </p>
             ) : groups[kind].length === 0 ? (
               <p className="text-xs text-muted-foreground italic">
-                Sin {kind === "note" ? "notas" : kind === "link" ? "enlaces" : "pasos"} todavía.
+                {emptyLabel[kind]}
               </p>
             ) : (
               <ul className="space-y-1.5">{groups[kind].map(renderItem)}</ul>
@@ -334,7 +342,7 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
                   <Textarea
                     value={draftContent}
                     onChange={(e) => setDraftContent(e.target.value)}
-                    placeholder={kind === "note" ? "Contexto, decisiones, dudas…" : "Próximo paso accionable…"}
+                    placeholder={kind === "note" ? t.notePlaceholder : t.stepPlaceholder}
                     rows={2}
                     maxLength={2000}
                     className="text-sm"
@@ -344,7 +352,7 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
                     <Input
                       value={draftContent}
                       onChange={(e) => setDraftContent(e.target.value)}
-                      placeholder="Título del enlace"
+                      placeholder={t.linkTitlePlaceholder}
                       maxLength={2000}
                       className="h-8 text-sm"
                     />
@@ -365,7 +373,7 @@ export function TaskHandoverNotes({ taskId }: TaskHandoverNotesProps) {
                     disabled={submitting || activeTab !== kind}
                     onMouseEnter={() => setActiveTab(kind)}
                   >
-                    {submitting ? <Loader2 className="h-3 w-3 animate-spin" /> : "Añadir"}
+                    {submitting ? <Loader2 className="h-3 w-3 animate-spin" /> : t.addNoteBtn}
                   </Button>
                 </div>
               </div>
