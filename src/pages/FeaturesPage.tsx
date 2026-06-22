@@ -1498,6 +1498,9 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                 <TableCell className="text-sm">
                                   {task.assignee || <span className="text-muted-foreground italic">{t.unassigned}</span>}
                                 </TableCell>
+                                <TableCell className="max-w-[180px] truncate text-xs text-muted-foreground" title={task.iterationPath || undefined}>
+                                  {task.iterationPath || <span className="italic">—</span>}
+                                </TableCell>
                                 {source === "tfs" && tfsBaseUrl && (
                                   <TableCell className="text-right">
                                     <div className="flex items-center justify-end gap-0.5">
