@@ -1322,7 +1322,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <Input
                     value={manualApply ? draftSearch : search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Buscar tarea..."
+                    placeholder={t.searchTaskPlaceholder}
                     className="pl-8 h-9 w-56"
                   />
                 </div>
