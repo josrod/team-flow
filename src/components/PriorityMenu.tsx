@@ -26,9 +26,10 @@ interface PriorityMenuProps {
   onImport: (file: File) => Promise<void>;
   onReset: () => void;
   count: number;
+  scopeLabel?: string;
 }
 
-export const PriorityMenu = ({ onExport, onImport, onReset, count }: PriorityMenuProps) => {
+export const PriorityMenu = ({ onExport, onImport, onReset, count, scopeLabel }: PriorityMenuProps) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const { t } = useLang();
