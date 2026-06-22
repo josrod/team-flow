@@ -1442,11 +1442,17 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   </>
                 )}
                 <PriorityMenu
-                  onExport={taskPriorities.exportJson}
-                  onImport={taskPriorities.importJson}
-                  onReset={taskPriorities.reset}
-                  count={Object.keys(taskPriorities.priorities).length}
+                  onExport={() => taskPriorities.exportJson(flatBucketKey)}
+                  onImport={(file) => taskPriorities.importJson(flatBucketKey, file)}
+                  onReset={() => taskPriorities.reset(flatBucketKey)}
+                  count={taskPriorities.countFor(flatBucketKey)}
+                  scopeLabel={
+                    activePerson === "all"
+                      ? t.priorityScopeAll
+                      : t.priorityScopeFor.replace("{name}", activePerson)
+                  }
                 />
+
                 <Button
                   size="sm"
                   variant="ghost"
