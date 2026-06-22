@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { PriorityBadge } from "@/components/PriorityBadge";
 import { PRIORITY_LEVELS, PriorityLevel } from "@/lib/taskPriority";
+import { useLang } from "@/context/LanguageContext";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -12,19 +13,27 @@ interface PrioritySelectProps {
 
 export const PrioritySelect = ({ value, onChange }: PrioritySelectProps) => {
   const [open, setOpen] = useState(false);
+  const { t } = useLang();
+  const labelMap: Record<PriorityLevel, string> = {
+    high: t.priorityHigh,
+    medium: t.priorityMedium,
+    low: t.priorityLow,
+    none: t.priorityNone,
+  };
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={`Cambiar prioridad personal (actual: ${value})`}
+          aria-label={t.changePriorityAria.replace("{level}", labelMap[value])}
           className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
         >
           <PriorityBadge level={value} />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-44 p-1" align="start">
-        <div className="flex flex-col gap-0.5" role="listbox" aria-label="Prioridad personal">
+        <div className="flex flex-col gap-0.5" role="listbox" aria-label={t.personalPriority}>
+
           {PRIORITY_LEVELS.map((level) => (
             <button
               key={level}
