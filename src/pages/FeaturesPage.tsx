@@ -1214,7 +1214,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{taskStats.active}</p>
-                  <p className="text-xs text-muted-foreground">En progreso</p>
+                  <p className="text-xs text-muted-foreground">{t.inProgress}</p>
                 </div>
               </div>
             </CardContent>
