@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  ALL_BUCKET,
+  BucketedPriorityMap,
   buildExportPayload,
-  clearPriorities,
-  loadPriorities,
-  mergePriorities,
+  loadBuckets,
   moveTo,
+  normalizeBucketKey,
   parseImportPayload,
   PriorityLevel,
-  savePriorities,
+  saveBuckets,
   setPriorityLevel,
-  STORAGE_KEY,
+  STORAGE_KEY_V2,
   TaskPriorityMap,
 } from "@/lib/taskPriority";
 
@@ -26,54 +27,92 @@ const downloadJson = (filename: string, payload: unknown): void => {
   URL.revokeObjectURL(url);
 };
 
+const slugify = (value: string): string =>
+  value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "todos";
+
 export const useTaskPriorities = () => {
-  const [priorities, setPriorities] = useState<TaskPriorityMap>(() => loadPriorities());
+  const [buckets, setBuckets] = useState<BucketedPriorityMap>(() => loadBuckets());
 
   // Listen for cross-tab updates so two open tabs stay in sync.
   useEffect(() => {
     const handler = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEY) setPriorities(loadPriorities());
+      if (event.key === STORAGE_KEY_V2) setBuckets(loadBuckets());
     };
     window.addEventListener("storage", handler);
     return () => window.removeEventListener("storage", handler);
   }, []);
 
-  const commit = useCallback((next: TaskPriorityMap) => {
-    setPriorities(next);
-    savePriorities(next);
+  const commit = useCallback((next: BucketedPriorityMap) => {
+    setBuckets(next);
+    saveBuckets(next);
   }, []);
 
+  const mapFor = useCallback(
+    (key: string): TaskPriorityMap => buckets[normalizeBucketKey(key)] ?? {},
+    [buckets],
+  );
+
   const setLevel = useCallback(
-    (id: string, level: PriorityLevel) => {
-      commit(setPriorityLevel(priorities, id, level));
+    (key: string, id: string, level: PriorityLevel) => {
+      const bk = normalizeBucketKey(key);
+      const nextBucket = setPriorityLevel(buckets[bk] ?? {}, id, level);
+      commit({ ...buckets, [bk]: nextBucket });
     },
-    [priorities, commit],
+    [buckets, commit],
   );
 
   const move = useCallback(
-    (id: string, targetLevel: PriorityLevel, targetIndex: number) => {
-      commit(moveTo(priorities, id, targetLevel, targetIndex));
+    (key: string, id: string, targetLevel: PriorityLevel, targetIndex: number) => {
+      const bk = normalizeBucketKey(key);
+      const nextBucket = moveTo(buckets[bk] ?? {}, id, targetLevel, targetIndex);
+      commit({ ...buckets, [bk]: nextBucket });
     },
-    [priorities, commit],
+    [buckets, commit],
   );
 
-  const reset = useCallback(() => {
-    commit(clearPriorities());
-  }, [commit]);
+  const reset = useCallback(
+    (key: string) => {
+      const bk = normalizeBucketKey(key);
+      const next = { ...buckets };
+      delete next[bk];
+      commit(next);
+    },
+    [buckets, commit],
+  );
 
-  const exportJson = useCallback(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    downloadJson(`prioridades-tareas-${today}.json`, buildExportPayload(priorities));
-  }, [priorities]);
+  const exportJson = useCallback(
+    (key: string) => {
+      const bk = normalizeBucketKey(key);
+      const today = new Date().toISOString().slice(0, 10);
+      const label = bk === ALL_BUCKET ? "todos" : slugify(bk);
+      downloadJson(
+        `prioridades-tareas-${label}-${today}.json`,
+        buildExportPayload(buckets[bk] ?? {}),
+      );
+    },
+    [buckets],
+  );
 
   const importJson = useCallback(
-    async (file: File) => {
+    async (key: string, file: File) => {
+      const bk = normalizeBucketKey(key);
       const raw = await file.text();
       const incoming = parseImportPayload(raw);
-      commit(mergePriorities(priorities, incoming));
+      const merged: TaskPriorityMap = { ...(buckets[bk] ?? {}), ...incoming };
+      commit({ ...buckets, [bk]: merged });
     },
-    [priorities, commit],
+    [buckets, commit],
   );
 
-  return { priorities, setLevel, move, reset, exportJson, importJson };
+  const countFor = useCallback(
+    (key: string): number => Object.keys(buckets[normalizeBucketKey(key)] ?? {}).length,
+    [buckets],
+  );
+
+  return { buckets, mapFor, setLevel, move, reset, exportJson, importJson, countFor };
 };
