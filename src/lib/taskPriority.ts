@@ -127,8 +127,8 @@ export const sortByPriority = <T extends SortableItem>(
   return [...items].sort((a, b) => {
     const aEntry = map[a.id];
     const bEntry = map[b.id];
-    const aLevel = aEntry?.level ?? "none";
-    const bLevel = bEntry?.level ?? "none";
+    const aLevel = aEntry?.level ?? "medium";
+    const bLevel = bEntry?.level ?? "medium";
     if (aLevel !== bLevel) return PRIORITY_ORDER[aLevel] - PRIORITY_ORDER[bLevel];
     const aRank = aEntry?.rank ?? Number.MAX_SAFE_INTEGER;
     const bRank = bEntry?.rank ?? Number.MAX_SAFE_INTEGER;

@@ -33,14 +33,15 @@ describe("taskPriority", () => {
     expect(map["3"].rank).toBe(1);
   });
 
-  it("sortByPriority orders by level then rank, unprioritised last", () => {
+  it("sortByPriority orders by level then rank, unprioritised default to medium", () => {
     let map: TaskPriorityMap = {};
     map = setPriorityLevel(map, "a", "low");
     map = setPriorityLevel(map, "b", "high");
     map = setPriorityLevel(map, "c", "medium");
     const items = [{ id: "x" }, { id: "a" }, { id: "b" }, { id: "c" }];
     const sorted = sortByPriority(items, map).map((i) => i.id);
-    expect(sorted).toEqual(["b", "c", "a", "x"]);
+    // x defaults to medium (same as c) but with no rank -> pushed to end of medium
+    expect(sorted).toEqual(["b", "c", "x", "a"]);
   });
 
   it("parseImportPayload rejects invalid JSON", () => {
