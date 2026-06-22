@@ -1294,10 +1294,10 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <Tooltip
                     contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
                   />
-                  <Bar dataKey="active" stackId="a" fill={stateColorVar.active} name="Activo" />
-                  <Bar dataKey="pending" stackId="a" fill={stateColorVar.pending} name="Pendiente" />
-                  <Bar dataKey="blocked" stackId="a" fill={stateColorVar.blocked} name="Bloqueado" />
-                  <Bar dataKey="done" stackId="a" fill={stateColorVar.done} name="Hecho" />
+                  <Bar dataKey="active" stackId="a" fill={stateColorVar.active} name={t.chartActive} />
+                  <Bar dataKey="pending" stackId="a" fill={stateColorVar.pending} name={t.chipPending} />
+                  <Bar dataKey="blocked" stackId="a" fill={stateColorVar.blocked} name={t.chipBlocked} />
+                  <Bar dataKey="done" stackId="a" fill={stateColorVar.done} name={t.chartDone} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
