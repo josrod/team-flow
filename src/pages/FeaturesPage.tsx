@@ -55,6 +55,7 @@ interface UnifiedTask {
   type: string;
   assignee?: string;
   featureId?: string;
+  iterationPath?: string;
 }
 
 // Map a TFS state to a normalized bucket for charts/visuals
@@ -596,6 +597,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         state: t.state,
         type: t.workItemType,
         assignee: t.assignedTo,
+        iterationPath: t.iterationPath,
       }));
       return { features: feats, tasks: tks };
     }
@@ -1467,6 +1469,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                             <TableHead>{t.title}</TableHead>
                             <TableHead className="w-[100px]">Tipo</TableHead>
                             <TableHead className="w-[120px]">Estado</TableHead>
+                            <TableHead className="w-[180px]">Iteración</TableHead>
                             <TableHead className="w-[180px]">Asignado a</TableHead>
                             {source === "tfs" && tfsBaseUrl && (
                               <TableHead className="w-[90px] text-right">Acciones</TableHead>
@@ -1491,6 +1494,9 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     <span className="h-1.5 w-1.5 rounded-full" style={{ background: stateColorVar[norm] }} />
                                     {task.state}
                                   </span>
+                                </TableCell>
+                                <TableCell className="max-w-[180px] truncate text-xs text-muted-foreground" title={task.iterationPath || undefined}>
+                                  {task.iterationPath || <span className="italic">—</span>}
                                 </TableCell>
                                 <TableCell className="text-sm">
                                   {task.assignee || <span className="text-muted-foreground italic">{t.unassigned}</span>}
@@ -1687,6 +1693,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     <TableHead>{t.title}</TableHead>
                                     <TableHead className="w-[100px]">Tipo</TableHead>
                                     <TableHead className="w-[140px]">Estado</TableHead>
+                                    <TableHead className="w-[180px]">Iteración</TableHead>
                                     <TableHead className="w-[120px] text-right">Handover</TableHead>
                                     {source === "tfs" && tfsBaseUrl && (
                                       <TableHead className="w-[90px] text-right">Acciones</TableHead>
@@ -1839,7 +1846,7 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink }: Tas
   const [open, setOpen] = useState(false);
   const { t } = useLang();
   const showActions = source === "tfs" && !!tfsBaseUrl;
-  const colSpan = 5 + (showActions ? 1 : 0);
+  const colSpan = 6 + (showActions ? 1 : 0);
   return (
     <>
       <TableRow>
@@ -1856,6 +1863,9 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink }: Tas
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: stateColorVar[norm] }} />
             {task.state}
           </span>
+        </TableCell>
+        <TableCell className="max-w-[180px] truncate text-xs text-muted-foreground" title={task.iterationPath || undefined}>
+          {task.iterationPath || <span className="italic">—</span>}
         </TableCell>
         <TableCell className="text-right">
           <Button
