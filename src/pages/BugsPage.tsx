@@ -180,6 +180,15 @@ export const BugsPage = () => {
 
   const [sortColumn, setSortColumn] = useState<"id" | "title" | "assignedTo" | "state" | "severity" | "iterationPath">("severity");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [manualOrder, setManualOrder] = useState(false);
+
+  // Per-developer drag & drop priority. Bucket key follows the active assignee
+  // filter so each developer keeps their own ranking.
+  const bugPriorities = useTaskPriorities();
+  const bugBucketKey = assignee === ALL ? "__all__" : assignee;
+  const bugPriorityMap = bugPriorities.mapFor(bugBucketKey);
+  const bugPriorityLevel = (id: string): PriorityLevel =>
+    bugPriorityMap[id]?.level ?? "medium";
 
   const severityWeight = (s?: string | null) => {
     const level = normalizeSeverity(s);
