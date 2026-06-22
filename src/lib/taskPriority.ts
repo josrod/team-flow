@@ -146,7 +146,7 @@ export const parseImportPayload = (raw: string): TaskPriorityMap => {
   const parsed: unknown = JSON.parse(raw);
   const result = fileSchema.safeParse(parsed);
   if (!result.success) {
-    throw new Error("Formato de fichero de prioridades no válido");
+    throw new Error("Invalid priority file format");
   }
   return result.data.priorities as TaskPriorityMap;
 };

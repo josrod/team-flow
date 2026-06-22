@@ -5,6 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { TableRow } from "@/components/ui/table";
 import { GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLang } from "@/context/LanguageContext";
 
 interface SortableRowsProps<T extends { id: string }> {
   items: T[];
@@ -55,6 +56,7 @@ interface SortableRowInnerProps {
 }
 
 const SortableRow = ({ id, renderCells }: SortableRowInnerProps) => {
+  const { t } = useLang();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -65,7 +67,7 @@ const SortableRow = ({ id, renderCells }: SortableRowInnerProps) => {
   const handle = (
     <button
       type="button"
-      aria-label="Arrastrar para reordenar"
+      aria-label={t.dragToReorder}
       className={cn(
         "inline-flex h-6 w-6 cursor-grab items-center justify-center rounded text-muted-foreground hover:bg-muted active:cursor-grabbing",
       )}

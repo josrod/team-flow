@@ -1,5 +1,6 @@
 import { XCircle, ShieldAlert, KeyRound, Search, Clock, Lock, AlertCircle } from "lucide-react";
 import type { TfsError } from "@/services/tfs";
+import { useLang } from "@/context/LanguageContext";
 import { TfsCorsGuideDialog } from "./TfsCorsGuideDialog";
 
 interface TfsErrorPanelProps {
@@ -25,27 +26,6 @@ const iconForKind = (kind: TfsError["kind"]) => {
   }
 };
 
-const titleForKind = (kind: TfsError["kind"]): string => {
-  switch (kind) {
-    case "cors":
-      return "Bloqueado por CORS o red";
-    case "mixed_content":
-      return "Bloqueado por contenido mixto (HTTP en página HTTPS)";
-    case "unauthorized":
-      return "Autenticación rechazada";
-    case "forbidden":
-      return "Permisos insuficientes";
-    case "not_found":
-      return "Recurso no encontrado";
-    case "timeout":
-      return "Tiempo de espera agotado";
-    case "http":
-      return "Error HTTP del servidor";
-    default:
-      return "Error de conexión";
-  }
-};
-
 const HintList = ({ items }: { items: string[] }) => (
   <ul className="list-disc list-inside space-y-1 text-xs text-muted-foreground mt-2">
     {items.map((item) => (
@@ -54,85 +34,55 @@ const HintList = ({ items }: { items: string[] }) => (
   </ul>
 );
 
-const Hints = ({ kind }: { kind: TfsError["kind"] }) => {
-  switch (kind) {
-    case "cors":
-      return (
-        <HintList
-          items={[
-            "Confirma que estás en la red corporativa o VPN: abre la URL del TFS en otra pestaña; si carga, la red es accesible.",
-            "Abre DevTools → pestaña Network → busca la petición fallida y mira la consola por el mensaje exacto (CORS, ERR_CONNECTION_REFUSED, ERR_CERT_…).",
-            "Si dice 'CORS': hay que añadir las cabeceras Access-Control-Allow-Origin en el IIS o reverse proxy del TFS.",
-            "Si dice 'CERT': el certificado del TFS no es de confianza para tu navegador.",
-          ]}
-        />
-      );
-    case "mixed_content":
-      return (
-        <HintList
-          items={[
-            "La app se sirve por HTTPS, pero la URL del TFS empieza por HTTP. Los navegadores bloquean siempre esta combinación.",
-            "Solución: pon el TFS detrás de HTTPS (recomendado) o accede a la app por HTTP (no aplicable en producción).",
-          ]}
-        />
-      );
-    case "unauthorized":
-      return (
-        <HintList
-          items={[
-            "Genera un nuevo PAT en TFS → Perfil → Personal Access Tokens.",
-            "Comprueba que no esté caducado y que pertenece al mismo dominio que el TFS.",
-            "Algunas instalaciones antiguas de TFS no aceptan PAT y requieren credenciales NTLM.",
-          ]}
-        />
-      );
-    case "forbidden":
-      return (
-        <HintList
-          items={[
-            "El PAT necesita los scopes: Work Items (Read), Project & Team (Read), Work (Read).",
-            "Confirma que tu usuario tiene acceso al proyecto desde la web del TFS.",
-          ]}
-        />
-      );
-    case "not_found":
-      return (
-        <HintList
-          items={[
-            "Verifica que la URL del servidor incluye /tfs si tu instalación lo usa (ej. https://tfs.empresa.net/tfs).",
-            "Comprueba el nombre exacto de la colección y el proyecto (sensible a mayúsculas).",
-            "Abre la URL completa en el navegador para descartar typos.",
-          ]}
-        />
-      );
-    case "timeout":
-      return (
-        <HintList
-          items={[
-            "¿Estás conectado a la VPN? Si no, no puedes alcanzar el TFS interno.",
-            "Un firewall corporativo puede estar bloqueando peticiones desde el navegador.",
-            "Comprueba que el servidor TFS está operativo abriendo la URL directamente.",
-          ]}
-        />
-      );
-    case "http":
-      return (
-        <HintList
-          items={[
-            "El servidor respondió con un código inesperado. Revisa los logs del TFS.",
-            "Verifica que la versión de API (5.0) es compatible con tu instalación de TFS.",
-          ]}
-        />
-      );
-    default:
-      return null;
-  }
-};
-
 export const TfsErrorPanel = ({ error }: TfsErrorPanelProps) => {
+  const { t } = useLang();
   const Icon = iconForKind(error.kind);
   const showCorsGuide = error.kind === "cors" || error.kind === "mixed_content";
   const origin = window.location.origin;
+
+  const titleForKind = (kind: TfsError["kind"]): string => {
+    switch (kind) {
+      case "cors":
+        return t.tfsErrCors;
+      case "mixed_content":
+        return t.tfsErrMixed;
+      case "unauthorized":
+        return t.tfsErrUnauthorized;
+      case "forbidden":
+        return t.tfsErrForbidden;
+      case "not_found":
+        return t.tfsErrNotFound;
+      case "timeout":
+        return t.tfsErrTimeout;
+      case "http":
+        return t.tfsErrHttp;
+      default:
+        return t.tfsErrUnknown;
+    }
+  };
+
+  const hintsForKind = (kind: TfsError["kind"]): string[] => {
+    switch (kind) {
+      case "cors":
+        return [t.tfsHintCors1, t.tfsHintCors2, t.tfsHintCors3, t.tfsHintCors4];
+      case "mixed_content":
+        return [t.tfsHintMixed1, t.tfsHintMixed2];
+      case "unauthorized":
+        return [t.tfsHintUnauth1, t.tfsHintUnauth2, t.tfsHintUnauth3];
+      case "forbidden":
+        return [t.tfsHintForb1, t.tfsHintForb2];
+      case "not_found":
+        return [t.tfsHintNotFound1, t.tfsHintNotFound2, t.tfsHintNotFound3];
+      case "timeout":
+        return [t.tfsHintTimeout1, t.tfsHintTimeout2, t.tfsHintTimeout3];
+      case "http":
+        return [t.tfsHintHttp1, t.tfsHintHttp2];
+      default:
+        return [];
+    }
+  };
+
+  const hints = hintsForKind(error.kind);
 
   return (
     <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 space-y-3">
@@ -152,7 +102,7 @@ export const TfsErrorPanel = ({ error }: TfsErrorPanelProps) => {
       <div className="space-y-1 text-xs">
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <Lock className="h-3 w-3" />
-          <span className="font-medium">URL probada:</span>
+          <span className="font-medium">{t.tfsErrUrlTested}</span>
         </div>
         <code className="block bg-muted/60 border rounded px-2 py-1 text-[11px] font-mono break-all">
           {error.url}
@@ -162,7 +112,7 @@ export const TfsErrorPanel = ({ error }: TfsErrorPanelProps) => {
       {error.detail && (
         <details className="text-xs">
           <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-            Detalles técnicos
+            {t.tfsErrTechDetails}
           </summary>
           <pre className="mt-2 bg-muted/60 border rounded px-2 py-1.5 text-[11px] font-mono whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
             {error.detail}
@@ -170,7 +120,7 @@ export const TfsErrorPanel = ({ error }: TfsErrorPanelProps) => {
         </details>
       )}
 
-      <Hints kind={error.kind} />
+      {hints.length > 0 && <HintList items={hints} />}
 
       {showCorsGuide && (
         <div className="pt-2 border-t border-destructive/20">

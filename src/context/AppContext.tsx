@@ -10,6 +10,10 @@ import {
   handovers as seedHandovers,
 } from "@/data/mock-data";
 import { toast } from "sonner";
+import { translations } from "@/context/LanguageContext";
+
+const lang = (): "es" | "en" => (localStorage.getItem("teamflow-lang") === "en" ? "en" : "es");
+const tr = () => translations[lang()];
 
 const STORAGE_KEY = "teamflow-data";
 const todayIso = new Date().toISOString().split("T")[0];
@@ -123,7 +127,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addTeam: (name, icon?) => {
       const id = genId("team");
       setTeams((prev) => [...prev, { id, name, icon: icon || "users" }]);
-      toast.success("🏢", { description: `Equipo "${name}" creado` });
+      toast.success("🏢", { description: tr().teamCreatedToast.replace("{name}", name) });
     },
     deleteTeam: (id) => {
       const team = teams.find((x) => x.id === id);
@@ -132,7 +136,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setMembers((prev) => prev.filter((x) => x.teamId !== id));
       setWorkTopics((prev) => prev.filter((x) => !teamMemberIds.includes(x.memberId)));
       setAbsences((prev) => prev.filter((x) => !teamMemberIds.includes(x.memberId)));
-      toast.success("🗑️", { description: `Equipo "${team?.name}" eliminado` });
+      toast.success("🗑️", { description: tr().teamDeletedToast.replace("{name}", team?.name ?? "") });
     },
     addMember: (m) => {
       setMembers((prev) => [...prev, { ...m, id: genId("member") }]);
@@ -169,7 +173,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         workTopics.map((t) => t.id),
       );
       if (!validation.valid) {
-        toast.error(validation.message ?? "Handover inválido");
+        toast.error(validation.message ?? tr().invalidHandover);
         return false;
       }
       setHandovers((prev) => [
@@ -187,7 +191,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         workTopics.map((t) => t.id),
       );
       if (!validation.valid) {
-        toast.error(validation.message ?? "Handover inválido");
+        toast.error(validation.message ?? tr().invalidHandover);
         return false;
       }
       setHandovers((prev) => prev.map((x) => (x.id === h.id ? h : x)));
@@ -231,7 +235,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const result = importDataSchema.safeParse(raw);
         if (!result.success) {
           const msg = result.error.errors.map((e) => e.message).join(", ");
-          toast.error(`Esquema inválido: ${msg}`);
+          toast.error(tr().invalidSchema.replace("{msg}", msg));
           return;
         }
         const data = result.data;
@@ -247,16 +251,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             (h) => !validateHandoverTopicIds(h.topicIds, validTopicIds).valid,
           );
           if (invalid) {
-            toast.error(
-              "Importación rechazada: hay handovers sin tema o con temas desconocidos.",
-            );
+            toast.error(tr().importRejectedHandovers);
             return;
           }
           setHandovers(incoming);
         }
-        toast.success("📥", { description: "Datos importados correctamente" });
+        toast.success("📥", { description: tr().dataImportedOk });
       } catch {
-        toast.error("Error al importar: archivo JSON inválido");
+        toast.error(tr().errImportInvalidJson);
       }
     },
   };

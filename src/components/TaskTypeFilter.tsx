@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { getTaskTypeColor } from "@/lib/taskTypeFilter";
+import { useLang } from "@/context/LanguageContext";
 
 interface TaskTypeFilterProps {
   /** Types available in the current dataset (already view-filtered). */
@@ -27,12 +28,13 @@ export const TaskTypeFilter = ({
   counts,
   onToggle,
   onClear,
-  label = "Filtrar por tipo",
+  label,
 }: TaskTypeFilterProps) => {
+  const { t } = useLang();
   if (types.length === 0) return null;
   return (
-    <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={label}>
-      <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">Tipo</span>
+    <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={label ?? t.filterByType}>
+      <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">{t.typeShort}</span>
       {types.map((type) => {
         const active = selected.has(type);
         const color = getTaskTypeColor(type);
@@ -62,7 +64,7 @@ export const TaskTypeFilter = ({
           onClick={onClear}
           className="text-[11px] text-muted-foreground underline-offset-2 hover:underline ml-1"
         >
-          Limpiar
+          {t.clearShort}
         </button>
       )}
     </div>

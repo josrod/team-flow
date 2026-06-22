@@ -210,7 +210,7 @@ export default function TeamPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="rounded-xl shadow-sm" onClick={() => setBulkEditOpen(true)}>
-            <Settings2 className="h-4 w-4 mr-1" /> Edición en Bloque
+            <Settings2 className="h-4 w-4 mr-1" /> {t.bulkEditBtn}
           </Button>
           <Button variant="outline" size="sm" className="rounded-xl shadow-sm" onClick={() => setImportOpen(true)}>
             <CloudDownload className="h-4 w-4 mr-1" /> {t.importTfsTeamMembers}
@@ -245,7 +245,7 @@ export default function TeamPage() {
           <DialogHeader><DialogTitle>{t.bulkCapacityEditTitle}</DialogTitle></DialogHeader>
           <div className="space-y-6 mt-2">
             <div>
-              <Label className="mb-2 block">Miembros ({bulkSelectedMembers.length} seleccionados)</Label>
+              <Label className="mb-2 block">{t.bulkMembersLabel.replace("{count}", String(bulkSelectedMembers.length))}</Label>
               <div className="max-h-[200px] overflow-y-auto p-2 border rounded-md grid grid-cols-2 gap-2">
                 {teamMembers.map(m => (
                   <div key={m.id} className="flex items-center space-x-2">
@@ -264,31 +264,31 @@ export default function TeamPage() {
                 ))}
               </div>
               <div className="mt-2 flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setBulkSelectedMembers(teamMembers.map(m => m.id))}>Seleccionar Todos</Button>
-                <Button variant="outline" size="sm" onClick={() => setBulkSelectedMembers([])}>Deseleccionar Todos</Button>
+                <Button variant="outline" size="sm" onClick={() => setBulkSelectedMembers(teamMembers.map(m => m.id))}>{t.bulkSelectAll}</Button>
+                <Button variant="outline" size="sm" onClick={() => setBulkSelectedMembers([])}>{t.bulkDeselectAll}</Button>
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Capacidad Máxima (h/sem)</Label>
+                <Label>{t.bulkMaxCapacityLabel}</Label>
                 <Input 
                   type="number" 
                   min={0}
                   max={168}
-                  placeholder="Ej. 40"
+                  placeholder={t.bulkExample40}
                   value={bulkMaxCapacity}
                   onChange={(e) => setBulkMaxCapacity(e.target.value)}
                   className="mt-1"
                 />
               </div>
               <div>
-                <Label>Capacidad Base (h/sem)</Label>
+                <Label>{t.bulkBaseCapacityLabel}</Label>
                 <Input 
                   type="number" 
                   min={0}
                   max={168}
-                  placeholder="Ej. 32"
+                  placeholder={t.bulkExample32}
                   value={bulkBaseCapacity}
                   onChange={(e) => setBulkBaseCapacity(e.target.value)}
                   className="mt-1"
@@ -297,10 +297,10 @@ export default function TeamPage() {
             </div>
             
             <p className="text-xs text-muted-foreground">
-              Nota: Los campos vacíos no modificarán el valor actual del miembro.
+              {t.bulkEmptyNote}
             </p>
 
-            <Button onClick={handleBulkEdit} className="w-full">Aplicar Cambios</Button>
+            <Button onClick={handleBulkEdit} className="w-full">{t.bulkApplyChanges}</Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -13,6 +13,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import { useLang } from "@/context/LanguageContext";
 import { useApp } from "@/context/AppContext";
 import {
   Sheet,
@@ -399,6 +400,7 @@ function Avatar({
 // Main component
 // ----------------------------------------------------------------------------
 export function TeamPulseDashboard() {
+  const { t } = useLang();
   const { teams, members, workTopics, absences, handovers } = useApp();
   const [tab, setTab] = useState<"pulse" | "flow" | "handovers">("pulse");
   const [selectedHandoverId, setSelectedHandoverId] = useState<string | null>(null);
@@ -636,10 +638,10 @@ export function TeamPulseDashboard() {
           topicNames,
           topicLabel:
             topicNames.length === 0
-              ? h.notes || "Sin tareas asociadas"
+              ? h.notes || t.noAssociatedTasks
               : topicNames.length === 1
               ? topicNames[0]
-              : `${topicNames[0]} +${topicNames.length - 1} más`,
+              : `${topicNames[0]} ${t.plusMoreSuffix.replace("{count}", String(topicNames.length - 1))}`,
         };
       });
   }, [handovers, membersById, absencesById, workTopics, activeTypes, scopedMemberIds]);

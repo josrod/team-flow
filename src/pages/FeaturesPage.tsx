@@ -80,10 +80,10 @@ const stateColorVar: Record<string, string> = {
 };
 
 const stateLabel: Record<string, string> = {
-  active: "Activo",
-  pending: "Pendiente",
-  done: "Completado",
-  blocked: "Bloqueado",
+  active: "Active",
+  pending: "Pending",
+  done: "Done",
+  blocked: "Blocked",
 };
 
 interface FeaturesPageProps {
@@ -519,7 +519,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         const areaRes = await listTfsTeamAreaPaths(conn, { force: options.forceAreaRefresh });
         if (areaRes.error) {
           // Non-fatal: warn but keep going without area filtering.
-          toast.warning(`No se pudieron leer las áreas del equipo: ${areaRes.error.message}`);
+          toast.warning(t.couldNotReadTeamAreas.replace("{error}", areaRes.error.message));
         }
         teamAreaPaths = areaRes.items;
       }
@@ -1163,14 +1163,14 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       )}
 
       {/* ============================================================ */}
-      {/* SECTION 2 — Tareas                                            */}
+      {/* SECTION 2 — Tasks                                            */}
       {/* ============================================================ */}
       {showTasks && (
       <section className="space-y-4">
         <div className="flex items-end justify-between gap-3 border-b border-border/60 pb-2">
           <div>
             <h2 className="text-xl font-display font-semibold tracking-tight flex items-center gap-2">
-              <ListChecks className="h-5 w-5 text-muted-foreground" /> Tareas
+              <ListChecks className="h-5 w-5 text-muted-foreground" /> {t.tasksSectionHeading}
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
               {t.workDistribution}

@@ -47,7 +47,7 @@ export function AppSidebar() {
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
-      if (!window.confirm("¿Estás seguro? Esto sobrescribirá todos los datos actuales con los del archivo seleccionado.")) return;
+      if (!window.confirm(t.confirmImportOverwrite)) return;
       const reader = new FileReader();
       reader.onload = (ev) => {
         try {
@@ -123,31 +123,31 @@ export function AppSidebar() {
           variant="ghost"
           size="sm"
           onClick={handleExport}
-          title="Exportar JSON"
+          title={t.exportJsonBtn}
           className={cn("w-full gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs", isCollapsed ? "justify-center px-0" : "justify-start")}
         >
           <Download className="h-3.5 w-3.5 shrink-0" />
-          {!isCollapsed && <span>Exportar JSON</span>}
+          {!isCollapsed && <span>{t.exportJsonBtn}</span>}
         </Button>
         <Button
           variant="ghost"
           size="sm"
           onClick={handleImport}
-          title="Importar JSON"
+          title={t.importJsonBtn}
           className={cn("w-full gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs", isCollapsed ? "justify-center px-0" : "justify-start")}
         >
           <Upload className="h-3.5 w-3.5 shrink-0" />
-          {!isCollapsed && <span>Importar JSON</span>}
+          {!isCollapsed && <span>{t.importJsonBtn}</span>}
         </Button>
         <Button
           variant="ghost"
           size="sm"
           onClick={resetData}
-          title="Reset data"
+          title={t.resetDataBtn}
           className={cn("w-full gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs", isCollapsed ? "justify-center px-0" : "justify-start")}
         >
           <RotateCcw className="h-3.5 w-3.5 shrink-0" />
-          {!isCollapsed && <span>Reset data</span>}
+          {!isCollapsed && <span>{t.resetDataBtn}</span>}
         </Button>
         {user && (
           <div className="pt-2 border-t border-sidebar-border mt-2">
