@@ -238,6 +238,14 @@ export const BugsPage = () => {
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
+    if (manualOrder) {
+      const idMap = new Map(arr.map((b) => [String(b.id), b]));
+      const ordered = sortByPriority(
+        arr.map((b) => ({ id: String(b.id) })),
+        bugPriorityMap,
+      );
+      return ordered.map((o) => idMap.get(o.id)!).filter(Boolean);
+    }
     arr.sort((a, b) => {
       let cmp = 0;
       switch (sortColumn) {
@@ -263,7 +271,7 @@ export const BugsPage = () => {
       return sortDirection === "asc" ? cmp : -cmp;
     });
     return arr;
-  }, [filtered, sortColumn, sortDirection]);
+  }, [filtered, sortColumn, sortDirection, manualOrder, bugPriorityMap]);
 
   const visibleBugs = useMemo(() => sorted.slice(0, visibleCount), [sorted, visibleCount]);
   const hasMore = visibleCount < sorted.length;
