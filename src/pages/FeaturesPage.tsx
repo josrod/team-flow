@@ -1961,12 +1961,12 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, prior
         {showActions && (
           <TableCell className="text-right">
             <div className="flex items-center justify-end gap-0.5">
-              <Button asChild size="icon" variant="ghost" className="h-7 w-7" title="Abrir en Azure DevOps">
+              <Button asChild size="icon" variant="ghost" className="h-7 w-7" title={t.openInAdo}>
                 <a
                   href={`${tfsBaseUrl}/_workitems/edit/${task.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`Abrir tarea ${task.id} en Azure DevOps`}
+                  aria-label={t.openTaskInAdoAria.replace("{id}", task.id)}
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
                 </a>
@@ -1975,7 +1975,7 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, prior
                 size="icon"
                 variant="ghost"
                 className="h-7 w-7"
-                title="Copiar enlace"
+                title={t.copyLink}
                 aria-label={t.copyLinkTask.replace("{id}", task.id)}
                 onClick={() => onCopyLink(task.id, "tarea")}
               >
