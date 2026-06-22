@@ -1500,6 +1500,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                 </TableCell>
                                 <TableCell className="text-sm">
                                   {task.assignee || <span className="text-muted-foreground italic">{t.unassigned}</span>}
+                                </TableCell>
                                 {source === "tfs" && tfsBaseUrl && (
                                   <TableCell className="text-right">
                                     <div className="flex items-center justify-end gap-0.5">
