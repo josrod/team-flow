@@ -1259,6 +1259,7 @@ export const translations = {
     prioritiesCleared: "Priorities cleared",
     priorityScopeFor: "Order saved for {name}",
     priorityScopeAll: "Order saved for everyone",
+    manualOrderToggle: "Manual order",
     // Bulk edit
     bulkEditBtn: "Bulk edit",
     bulkMembersLabel: "Members ({count} selected)",
