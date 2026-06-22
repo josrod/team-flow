@@ -1727,7 +1727,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     style={{ background: `${stateColorVar.blocked}20`, color: stateColorVar.blocked }}
                                   >
                                     <AlertOctagon className="h-3 w-3" />
-                                    {group.blocked.length} bloqueadas
+                                    {group.blocked.length} {t.blockedPlural}
                                   </Badge>
                                 )}
                                 {group.done.length > 0 && (
