@@ -41,6 +41,10 @@ import { PriorityLevel, sortByPriority } from "@/lib/taskPriority";
 import { PrioritySelect } from "@/components/PrioritySelect";
 import { PriorityMenu } from "@/components/PriorityMenu";
 import { SortableRows } from "@/components/SortableRows";
+import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 
 type DataSource = "tfs" | "local";
 
