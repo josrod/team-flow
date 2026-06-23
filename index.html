@@ -3,10 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Security headers. CSP is intentionally strict:
+      - script-src 'self' blocks any injected inline / remote script.
+      - connect-src allows Supabase + Lovable hosting; corporate on-prem TFS
+        servers must be allowed at runtime via the user's own browser policy
+        (the on-prem hostname is not known at build time).
+      - frame-ancestors 'none' prevents clickjacking.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.lovable.app https://storage.googleapis.com http: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    <meta name="permissions-policy" content="camera=(), microphone=(), geolocation=(), interest-cohort=()" />
     <title>ROSEN CUSW Team Flow</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     <meta name="description" content="Internal tool for PO for tracking  team work">
     <meta name="author" content="Lovable" />
+
 
     <!-- TODO: Update og:title to match your application name -->
     
