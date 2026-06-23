@@ -908,18 +908,18 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   // Group filtered tasks by assignee, keeping only open/in-progress items.
   // Sorted by total desc; "Sin asignar" pushed to the end.
   const tasksByPerson = useMemo(() => {
-    const map = new Map<string, { active: UnifiedTask[]; pending: UnifiedTask[]; blocked: UnifiedTask[]; done: UnifiedTask[] }>();
+    const map = new Map<string, { active: UnifiedTask[]; pending: UnifiedTask[]; blocked: UnifiedTask[]; done: UnifiedTask[]; resolved: UnifiedTask[]; closed: UnifiedTask[] }>();
     filteredTasks.forEach((task) => {
       const norm = normalizeState(task.state);
       if (!stateFilter.has(norm)) return;
       const key = task.assignee || t.unassigned;
-      if (!map.has(key)) map.set(key, { active: [], pending: [], blocked: [], done: [] });
+      if (!map.has(key)) map.set(key, { active: [], pending: [], blocked: [], done: [], resolved: [], closed: [] });
       map.get(key)![norm].push(task);
     });
     const arr = Array.from(map.entries()).map(([person, v]) => ({
       person,
       ...v,
-      total: v.active.length + v.pending.length + v.blocked.length + v.done.length,
+      total: v.active.length + v.pending.length + v.blocked.length + v.done.length + v.resolved.length + v.closed.length,
     }));
     arr.sort((a, b) => {
       if (a.person === t.unassigned) return 1;
