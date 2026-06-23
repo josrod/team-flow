@@ -1183,6 +1183,8 @@ export const translations = {
     pendingPlural: "pending",
     blockedPlural: "blocked",
     completedPlural: "completed",
+    resolvedPlural: "resolved",
+    closedPlural: "closed",
     confirmChangesBeforeApply: "Confirm changes before applying",
     unappliedChanges: "Unapplied changes",
     discard: "Discard",
