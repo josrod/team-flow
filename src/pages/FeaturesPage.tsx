@@ -37,7 +37,7 @@ import { WorkloadMatrix } from "@/components/WorkloadMatrix";
 import { TaskTypeFilter } from "@/components/TaskTypeFilter";
 import { computeAvailableTaskTypes, isExcludedTaskType } from "@/lib/taskTypeFilter";
 import { useTaskPriorities } from "@/hooks/use-task-priorities";
-import { PriorityLevel, sortByPriority } from "@/lib/taskPriority";
+import { PriorityLevel, sortByPriority, moveTo, ALL_BUCKET } from "@/lib/taskPriority";
 import { PrioritySelect } from "@/components/PrioritySelect";
 import { PriorityMenu } from "@/components/PriorityMenu";
 import { SortableRows } from "@/components/SortableRows";
