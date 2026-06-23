@@ -34,6 +34,7 @@ import {
   type TfsDiagnosticResult,
 } from "@/services/tfs";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
+import { encryptPat, decryptPat } from "@/services/tfsPatVault";
 import { TfsPatDiagnosticsPanel } from "@/components/TfsPatDiagnosticsPanel";
 import { TfsFieldHint } from "@/components/TfsFieldHint";
 import { TfsAutocompleteInput } from "@/components/TfsAutocompleteInput";
@@ -104,7 +105,7 @@ export const AzureDevOpsSettingsPage = () => {
           setPat(plainPat);
         } catch {
           setPat("");
-          toast.error(t.adoPatDecryptError ?? "Could not decrypt your saved PAT — please re-enter it.");
+          toast.error("Could not decrypt your saved PAT — please re-enter it.");
         }
         setAutoSync(data.auto_sync_enabled);
         setSyncInterval(String(data.sync_interval_minutes));
