@@ -480,6 +480,8 @@ export const translations = {
     chipPending: "Pendiente",
     chipBlocked: "Bloqueada",
     chipCompleted: "Completada",
+    chipResolved: "Resuelta",
+    chipClosed: "Cerrada",
     fewerTasks: "Menos tareas",
     nameAZ: "Nombre A→Z",
     nameZA: "Nombre Z→A",
