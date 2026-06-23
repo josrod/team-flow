@@ -267,9 +267,22 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const [showFlatList, setShowFlatList] = useState(false);
   const [handoverPerson, setHandoverPerson] = useState<string | null>(null);
   type TaskStateKey = "active" | "pending" | "blocked" | "done" | "resolved" | "closed";
+  type TaskOnlyStateKey = "active" | "pending" | "blocked" | "done";
+  type BugOnlyStateKey = "active" | "pending" | "blocked" | "resolved" | "closed";
   type TaskSortKey = "total-desc" | "total-asc" | "name-asc" | "name-desc" | "priority";
-  const [stateFilter, setStateFilter] = useState<Set<TaskStateKey>>(
-    () => new Set<TaskStateKey>(["active", "pending", "resolved", "closed"]),
+
+  // Bugs are identified by their type string (TFS uses "Bug"). Anything else
+  // is treated as a task for the purposes of state filtering.
+  const isBugType = (type: string | undefined): boolean =>
+    typeof type === "string" && type.toLowerCase() === "bug";
+
+  // Two independent state filters so users can filter tasks and bugs
+  // separately (tasks don't have Resolved/Closed; bugs don't have Completed).
+  const [taskStateFilter, setTaskStateFilter] = useState<Set<TaskOnlyStateKey>>(
+    () => new Set<TaskOnlyStateKey>(["active", "pending", "blocked"]),
+  );
+  const [bugStateFilter, setBugStateFilter] = useState<Set<BugOnlyStateKey>>(
+    () => new Set<BugOnlyStateKey>(["active", "pending", "blocked", "resolved", "closed"]),
   );
   // Type filter: empty set means "show all types".
   const [typeFilter, setTypeFilter] = useState<Set<string>>(() => new Set<string>());
@@ -291,16 +304,30 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       // Ignore storage errors (private mode, quota, etc.).
     }
   }, [taskSort]);
-  const toggleStateFilter = (key: TaskStateKey) => {
-    setStateFilter((prev) => {
+  const toggleTaskStateFilter = (key: TaskOnlyStateKey) => {
+    setTaskStateFilter((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) {
-        if (next.size > 1) next.delete(key);
-      } else {
-        next.add(key);
-      }
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
+  };
+  const toggleBugStateFilter = (key: BugOnlyStateKey) => {
+    setBugStateFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+  // Returns true if the given task passes the appropriate state filter for
+  // its type (bug filter for bugs, task filter for everything else).
+  const passesStateFilter = (type: string | undefined, state: string): boolean => {
+    const norm = normalizeState(state);
+    if (isBugType(type)) {
+      return bugStateFilter.has(norm as BugOnlyStateKey);
+    }
+    return taskStateFilter.has(norm as TaskOnlyStateKey);
   };
   const toggleTypeFilter = (key: string) => {
     setTypeFilter((prev) => {
@@ -850,11 +877,11 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       if (activeTeam !== "all" && teamIdByAssignee.get(t.assignee) !== activeTeam) return;
       if (activePerson !== "all" && t.assignee !== activePerson) return;
       if (searchLower && !t.title.toLowerCase().includes(searchLower)) return;
-      if (stateFilter.size > 0 && !stateFilter.has(normalizeState(t.state))) return;
+      if (!passesStateFilter(t.type, t.state)) return;
       counts[t.type] = (counts[t.type] || 0) + 1;
     });
     return counts;
-  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee, stateFilter, view]);
+  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee, taskStateFilter, bugStateFilter, view]);
 
 
   // Stats for visuals
@@ -911,7 +938,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
     const map = new Map<string, { active: UnifiedTask[]; pending: UnifiedTask[]; blocked: UnifiedTask[]; done: UnifiedTask[]; resolved: UnifiedTask[]; closed: UnifiedTask[] }>();
     filteredTasks.forEach((task) => {
       const norm = normalizeState(task.state);
-      if (!stateFilter.has(norm)) return;
+      if (!passesStateFilter(task.type, task.state)) return;
       const key = task.assignee || t.unassigned;
       if (!map.has(key)) map.set(key, { active: [], pending: [], blocked: [], done: [], resolved: [], closed: [] });
       map.get(key)![norm].push(task);
@@ -933,7 +960,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       }
     });
     return arr;
-  }, [filteredTasks, stateFilter, taskSort]);
+  }, [filteredTasks, taskStateFilter, bugStateFilter, taskSort]);
 
   const defaultOpenPeople = useMemo(
     () => tasksByPerson.filter((p) => p.active.length > 0).map((p) => p.person),
@@ -1354,7 +1381,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <UsersIcon className="h-4 w-4" /> {t.tasksPerPerson}
                 </CardTitle>
                 <CardDescription>
-                  {tasksByPerson.length === 1 ? t.personCount.replace("{count}", String(tasksByPerson.length)) : t.personsCount.replace("{count}", String(tasksByPerson.length))} · {t.filtering} {Array.from(stateFilter).map((k) => k === "active" ? t.inProgressPlural : k === "pending" ? t.pendingPlural : k === "blocked" ? t.blockedPlural : k === "resolved" ? t.resolvedPlural : k === "closed" ? t.closedPlural : t.completedPlural).join(", ")}
+                  {tasksByPerson.length === 1 ? t.personCount.replace("{count}", String(tasksByPerson.length)) : t.personsCount.replace("{count}", String(tasksByPerson.length))}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -1387,31 +1414,58 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 </div>
               </div>
             </div>
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3">
-              <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t.filterByStateAria}>
-                <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">{t.stateColumn}</span>
-                {(["active", "pending", "blocked", "resolved", "closed", "done"] as const).map((key) => {
-                  const active = stateFilter.has(key);
-                  const color = stateColorVar[key];
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => toggleStateFilter(key)}
-                      aria-pressed={active}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
-                        active
-                          ? "border-transparent text-foreground"
-                          : "border-border/60 text-muted-foreground hover:bg-muted/40",
-                      )}
-                      style={active ? { background: `${color}25`, color } : undefined}
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
-                      {key === "active" ? t.chipInProgress : key === "pending" ? t.chipPending : key === "blocked" ? t.chipBlocked : key === "resolved" ? t.chipResolved : key === "closed" ? t.chipClosed : t.chipCompleted}
-                    </button>
-                  );
-                })}
+            <div className="mt-3 flex flex-col gap-2 border-t border-border/60 pt-3 lg:flex-row lg:flex-wrap lg:items-start lg:justify-between">
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={`${t.tasks} · ${t.filterByStateAria}`}>
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">{t.tasks}</span>
+                  {(["active", "pending", "blocked", "done"] as const).map((key) => {
+                    const active = taskStateFilter.has(key);
+                    const color = stateColorVar[key];
+                    return (
+                      <button
+                        key={`task-${key}`}
+                        type="button"
+                        onClick={() => toggleTaskStateFilter(key)}
+                        aria-pressed={active}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                          active
+                            ? "border-transparent text-foreground"
+                            : "border-border/60 text-muted-foreground hover:bg-muted/40",
+                        )}
+                        style={active ? { background: `${color}25`, color } : undefined}
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+                        {key === "active" ? t.chipInProgress : key === "pending" ? t.chipPending : key === "blocked" ? t.chipBlocked : t.chipCompleted}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={`${t.bugs} · ${t.filterByStateAria}`}>
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">{t.bugs}</span>
+                  {(["active", "pending", "blocked", "resolved", "closed"] as const).map((key) => {
+                    const active = bugStateFilter.has(key);
+                    const color = stateColorVar[key];
+                    return (
+                      <button
+                        key={`bug-${key}`}
+                        type="button"
+                        onClick={() => toggleBugStateFilter(key)}
+                        aria-pressed={active}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                          active
+                            ? "border-transparent text-foreground"
+                            : "border-border/60 text-muted-foreground hover:bg-muted/40",
+                        )}
+                        style={active ? { background: `${color}25`, color } : undefined}
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+                        {key === "active" ? t.chipInProgress : key === "pending" ? t.chipPending : key === "blocked" ? t.chipBlocked : key === "resolved" ? t.chipResolved : t.chipClosed}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <TaskTypeFilter
                 types={availableTypes}
