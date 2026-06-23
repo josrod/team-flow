@@ -96,7 +96,16 @@ export const AzureDevOpsSettingsPage = () => {
         setOrganization(data.organization ?? "");
         setProject(data.project);
         setTeam(data.team ?? "");
-        setPat(data.pat_encrypted);
+        // Decrypt PAT via the vault edge function. Legacy plaintext rows
+        // (pat_iv = null) round-trip as-is, so existing users aren't broken.
+        try {
+          const patIv = (data as { pat_iv?: string | null }).pat_iv ?? null;
+          const plainPat = await decryptPat(data.pat_encrypted, patIv);
+          setPat(plainPat);
+        } catch {
+          setPat("");
+          toast.error(t.adoPatDecryptError ?? "Could not decrypt your saved PAT — please re-enter it.");
+        }
         setAutoSync(data.auto_sync_enabled);
         setSyncInterval(String(data.sync_interval_minutes));
         const rawAreas = (data as { area_paths?: string[] | null }).area_paths;
