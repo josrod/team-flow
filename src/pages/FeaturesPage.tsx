@@ -938,7 +938,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
     const map = new Map<string, { active: UnifiedTask[]; pending: UnifiedTask[]; blocked: UnifiedTask[]; done: UnifiedTask[]; resolved: UnifiedTask[]; closed: UnifiedTask[] }>();
     filteredTasks.forEach((task) => {
       const norm = normalizeState(task.state);
-      if (!stateFilter.has(norm)) return;
+      if (!passesStateFilter(task.type, task.state)) return;
       const key = task.assignee || t.unassigned;
       if (!map.has(key)) map.set(key, { active: [], pending: [], blocked: [], done: [], resolved: [], closed: [] });
       map.get(key)![norm].push(task);
@@ -960,7 +960,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       }
     });
     return arr;
-  }, [filteredTasks, stateFilter, taskSort]);
+  }, [filteredTasks, taskStateFilter, bugStateFilter, taskSort]);
 
   const defaultOpenPeople = useMemo(
     () => tasksByPerson.filter((p) => p.active.length > 0).map((p) => p.person),
