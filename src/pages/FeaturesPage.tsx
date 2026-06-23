@@ -266,10 +266,10 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const [draftSearch, setDraftSearch] = useState<string>(search);
   const [showFlatList, setShowFlatList] = useState(false);
   const [handoverPerson, setHandoverPerson] = useState<string | null>(null);
-  type TaskStateKey = "active" | "pending" | "blocked" | "done";
+  type TaskStateKey = "active" | "pending" | "blocked" | "done" | "resolved" | "closed";
   type TaskSortKey = "total-desc" | "total-asc" | "name-asc" | "name-desc" | "priority";
   const [stateFilter, setStateFilter] = useState<Set<TaskStateKey>>(
-    () => new Set<TaskStateKey>(["active", "pending"]),
+    () => new Set<TaskStateKey>(["active", "pending", "resolved", "closed"]),
   );
   // Type filter: empty set means "show all types".
   const [typeFilter, setTypeFilter] = useState<Set<string>>(() => new Set<string>());
