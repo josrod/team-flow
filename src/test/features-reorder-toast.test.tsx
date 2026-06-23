@@ -44,10 +44,22 @@ vi.mock("@/context/AuthContext", () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
+interface SortableRowsMockProps<T extends { id: string }> {
+  items: T[];
+  enabled: boolean;
+  onReorder: (activeId: string, overId: string) => void;
+  renderCells: (item: T, dragHandle: React.ReactNode) => React.ReactNode;
+}
+
 vi.mock("@/components/SortableRows", () => ({
-  SortableRows: ({ items, enabled, onReorder, renderCells }: any) => (
+  SortableRows: <T extends { id: string }>({
+    items,
+    enabled,
+    onReorder,
+    renderCells,
+  }: SortableRowsMockProps<T>) => (
     <>
-      {items.map((item: any) => (
+      {items.map((item) => (
         <tr key={item.id} data-testid={`row-${item.id}`}>
           {renderCells(
             item,
@@ -56,7 +68,7 @@ vi.mock("@/components/SortableRows", () => ({
                 type="button"
                 data-testid={`reorder-${item.id}`}
                 onClick={() => {
-                  const overId = items.find((it: any) => it.id !== item.id)?.id ?? item.id;
+                  const overId = items.find((it) => it.id !== item.id)?.id ?? item.id;
                   onReorder(item.id, overId);
                 }}
               >
