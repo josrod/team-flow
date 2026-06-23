@@ -2038,7 +2038,12 @@ interface SortableTaskRowsProps {
   items: UnifiedTask[];
   enabled: boolean;
   onReorder: (activeId: string, overId: string) => void;
-  renderRow: (task: UnifiedTask, dragHandle: ReactNode) => ReactNode;
+  renderRow: (
+    task: UnifiedTask,
+    dragHandle: ReactNode,
+    rowRef?: (node: HTMLTableRowElement | null) => void,
+    rowStyle?: CSSProperties,
+  ) => ReactNode;
 }
 
 function SortableTaskRows({ items, enabled, onReorder, renderRow }: SortableTaskRowsProps) {
@@ -2065,7 +2070,18 @@ function SortableTaskRows({ items, enabled, onReorder, renderRow }: SortableTask
   );
 }
 
-function SortableTaskRowItem({ task, renderRow }: { task: UnifiedTask; renderRow: (task: UnifiedTask, dragHandle: ReactNode) => ReactNode }) {
+function SortableTaskRowItem({
+  task,
+  renderRow,
+}: {
+  task: UnifiedTask;
+  renderRow: (
+    task: UnifiedTask,
+    dragHandle: ReactNode,
+    rowRef?: (node: HTMLTableRowElement | null) => void,
+    rowStyle?: CSSProperties,
+  ) => ReactNode;
+}) {
   const { t } = useLang();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
   const style: CSSProperties = {
@@ -2084,34 +2100,6 @@ function SortableTaskRowItem({ task, renderRow }: { task: UnifiedTask; renderRow
       <GripVertical className="h-3.5 w-3.5" />
     </button>
   );
-  // The renderRow callback must render a <TableRow> using rowRef/rowStyle via the inner component.
-  // We provide setNodeRef/style indirectly: caller renders TaskRowWithHandover which forwards rowRef.
-  return <SortableTaskRowSlot setNodeRef={setNodeRef} style={style}>{renderRow(task, handle)}</SortableTaskRowSlot>;
+  return <>{renderRow(task, handle, setNodeRef, style)}</>;
 }
 
-// Slot that injects the ref/style into the first <TableRow> rendered by TaskRowWithHandover.
-// We accomplish this by cloning children: TaskRowWithHandover supports rowRef/rowStyle directly,
-// so we re-render via a wrapper that passes them in. But since renderRow already returns the
-// element, we instead expose ref/style by re-invoking renderRow with a stable inline approach below.
-function SortableTaskRowSlot({ setNodeRef, style, children }: { setNodeRef: (node: HTMLElement | null) => void; style: CSSProperties; children: ReactNode }) {
-  // Children is a fragment containing TableRow(s). Use a ref callback on the first TR via portal-like wrap.
-  return (
-    <SortableRefBridge setNodeRef={setNodeRef} style={style}>
-      {children}
-    </SortableRefBridge>
-  );
-}
-
-function SortableRefBridge({ setNodeRef, style, children }: { setNodeRef: (node: HTMLElement | null) => void; style: CSSProperties; children: ReactNode }) {
-  // Attach the dnd ref to the first rendered <tr> via a ref callback on a tbody wrapper is invalid,
-  // so we rely on TaskRowWithHandover forwarding rowRef/rowStyle. Render children inside a
-  // fragment-like wrapper and apply ref via a hidden mutation observer is overkill — instead,
-  // wrap with a <tbody>-incompatible tag. Best approach: use a tr ref via React.Children.map.
-  const mapped = require("react").Children.map(children, (child: ReactNode, idx: number) => {
-    if (idx === 0 && child && typeof child === "object") {
-      return require("react").cloneElement(child as never, { ref: setNodeRef, style });
-    }
-    return child;
-  });
-  return <>{mapped}</>;
-}
