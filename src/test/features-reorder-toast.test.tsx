@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { toast } from "sonner";
 
 import { LanguageProvider } from "@/context/LanguageContext";
 import { AppProvider } from "@/context/AppContext";
