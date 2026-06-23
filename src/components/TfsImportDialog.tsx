@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { listTfsTeamMembers, TfsTeamMemberIdentity, TfsConnection, TfsError } from "@/services/tfs";
+import { decryptPat } from "@/services/tfsPatVault";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
