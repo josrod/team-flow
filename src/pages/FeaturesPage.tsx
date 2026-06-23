@@ -67,10 +67,16 @@ interface UnifiedTask {
   iterationPath?: string;
 }
 
-// Map a TFS state to a normalized bucket for charts/visuals
-const normalizeState = (state: string): "active" | "pending" | "done" | "blocked" => {
+// Map a TFS state to a normalized bucket for charts/visuals.
+// Bugs (since the query brought back the last 10 days) can now arrive in
+// "Resolved" or "Closed" — we surface those as their own buckets instead of
+// folding them into the generic "done" group so users can see them in the
+// Tasks view.
+const normalizeState = (state: string): "active" | "pending" | "done" | "blocked" | "resolved" | "closed" => {
   const s = state.toLowerCase();
-  if (s.includes("done") || s.includes("closed") || s.includes("resolved") || s.includes("completed")) return "done";
+  if (s.includes("resolved")) return "resolved";
+  if (s.includes("closed")) return "closed";
+  if (s.includes("done") || s.includes("completed")) return "done";
   if (s.includes("block")) return "blocked";
   if (s.includes("active") || s.includes("progress") || s.includes("committed") || s.includes("doing")) return "active";
   return "pending";
@@ -81,6 +87,8 @@ const stateColorVar: Record<string, string> = {
   pending: "hsl(var(--status-vacation))",
   done: "hsl(var(--status-available))",
   blocked: "hsl(var(--status-sick))",
+  resolved: "hsl(var(--status-available))",
+  closed: "hsl(var(--muted-foreground))",
 };
 
 const stateLabel: Record<string, string> = {
@@ -88,6 +96,8 @@ const stateLabel: Record<string, string> = {
   pending: "Pending",
   done: "Done",
   blocked: "Blocked",
+  resolved: "Resolved",
+  closed: "Closed",
 };
 
 interface FeaturesPageProps {
@@ -256,10 +266,10 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const [draftSearch, setDraftSearch] = useState<string>(search);
   const [showFlatList, setShowFlatList] = useState(false);
   const [handoverPerson, setHandoverPerson] = useState<string | null>(null);
-  type TaskStateKey = "active" | "pending" | "blocked" | "done";
+  type TaskStateKey = "active" | "pending" | "blocked" | "done" | "resolved" | "closed";
   type TaskSortKey = "total-desc" | "total-asc" | "name-asc" | "name-desc" | "priority";
   const [stateFilter, setStateFilter] = useState<Set<TaskStateKey>>(
-    () => new Set<TaskStateKey>(["active", "pending"]),
+    () => new Set<TaskStateKey>(["active", "pending", "resolved", "closed"]),
   );
   // Type filter: empty set means "show all types".
   const [typeFilter, setTypeFilter] = useState<Set<string>>(() => new Set<string>());
@@ -849,7 +859,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
 
   // Stats for visuals
   const stateDistribution = useMemo(() => {
-    const counts: Record<string, number> = { active: 0, pending: 0, done: 0, blocked: 0 };
+    const counts: Record<string, number> = { active: 0, pending: 0, done: 0, blocked: 0, resolved: 0, closed: 0 };
     filteredTasks.forEach((t) => {
       counts[normalizeState(t.state)]++;
     });
@@ -859,14 +869,14 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   }, [filteredTasks]);
 
   const workloadByPerson = useMemo(() => {
-    const map: Record<string, { active: number; pending: number; done: number; blocked: number }> = {};
+    const map: Record<string, { active: number; pending: number; done: number; blocked: number; resolved: number; closed: number }> = {};
     filteredTasks.forEach((task) => {
       const name = task.assignee || t.unassigned;
-      if (!map[name]) map[name] = { active: 0, pending: 0, done: 0, blocked: 0 };
+      if (!map[name]) map[name] = { active: 0, pending: 0, done: 0, blocked: 0, resolved: 0, closed: 0 };
       map[name][normalizeState(task.state)]++;
     });
     return Object.entries(map)
-      .map(([name, v]) => ({ name, ...v, total: v.active + v.pending + v.done + v.blocked }))
+      .map(([name, v]) => ({ name, ...v, total: v.active + v.pending + v.done + v.blocked + v.resolved + v.closed }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 12);
   }, [filteredTasks]);
@@ -888,7 +898,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   }, [filteredFeatures]);
 
   const taskStats = useMemo(() => {
-    const counts = { active: 0, pending: 0, done: 0, blocked: 0 };
+    const counts = { active: 0, pending: 0, done: 0, blocked: 0, resolved: 0, closed: 0 };
     filteredTasks.forEach((t) => {
       counts[normalizeState(t.state)]++;
     });
@@ -898,18 +908,18 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   // Group filtered tasks by assignee, keeping only open/in-progress items.
   // Sorted by total desc; "Sin asignar" pushed to the end.
   const tasksByPerson = useMemo(() => {
-    const map = new Map<string, { active: UnifiedTask[]; pending: UnifiedTask[]; blocked: UnifiedTask[]; done: UnifiedTask[] }>();
+    const map = new Map<string, { active: UnifiedTask[]; pending: UnifiedTask[]; blocked: UnifiedTask[]; done: UnifiedTask[]; resolved: UnifiedTask[]; closed: UnifiedTask[] }>();
     filteredTasks.forEach((task) => {
       const norm = normalizeState(task.state);
       if (!stateFilter.has(norm)) return;
       const key = task.assignee || t.unassigned;
-      if (!map.has(key)) map.set(key, { active: [], pending: [], blocked: [], done: [] });
+      if (!map.has(key)) map.set(key, { active: [], pending: [], blocked: [], done: [], resolved: [], closed: [] });
       map.get(key)![norm].push(task);
     });
     const arr = Array.from(map.entries()).map(([person, v]) => ({
       person,
       ...v,
-      total: v.active.length + v.pending.length + v.blocked.length + v.done.length,
+      total: v.active.length + v.pending.length + v.blocked.length + v.done.length + v.resolved.length + v.closed.length,
     }));
     arr.sort((a, b) => {
       if (a.person === t.unassigned) return 1;
@@ -1326,6 +1336,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <Bar dataKey="active" stackId="a" fill={stateColorVar.active} name={t.chartActive} />
                   <Bar dataKey="pending" stackId="a" fill={stateColorVar.pending} name={t.chipPending} />
                   <Bar dataKey="blocked" stackId="a" fill={stateColorVar.blocked} name={t.chipBlocked} />
+                  <Bar dataKey="resolved" stackId="a" fill={stateColorVar.resolved} name={t.chipResolved} />
+                  <Bar dataKey="closed" stackId="a" fill={stateColorVar.closed} name={t.chipClosed} />
                   <Bar dataKey="done" stackId="a" fill={stateColorVar.done} name={t.chartDone} />
                 </BarChart>
               </ResponsiveContainer>
@@ -1342,7 +1354,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <UsersIcon className="h-4 w-4" /> {t.tasksPerPerson}
                 </CardTitle>
                 <CardDescription>
-                  {tasksByPerson.length === 1 ? t.personCount.replace("{count}", String(tasksByPerson.length)) : t.personsCount.replace("{count}", String(tasksByPerson.length))} · {t.filtering} {Array.from(stateFilter).map((k) => k === "active" ? t.inProgressPlural : k === "pending" ? t.pendingPlural : k === "blocked" ? t.blockedPlural : t.completedPlural).join(", ")}
+                  {tasksByPerson.length === 1 ? t.personCount.replace("{count}", String(tasksByPerson.length)) : t.personsCount.replace("{count}", String(tasksByPerson.length))} · {t.filtering} {Array.from(stateFilter).map((k) => k === "active" ? t.inProgressPlural : k === "pending" ? t.pendingPlural : k === "blocked" ? t.blockedPlural : k === "resolved" ? t.resolvedPlural : k === "closed" ? t.closedPlural : t.completedPlural).join(", ")}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -1378,7 +1390,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3">
               <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t.filterByStateAria}>
                 <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">{t.stateColumn}</span>
-                {(["active", "pending", "blocked", "done"] as const).map((key) => {
+                {(["active", "pending", "blocked", "resolved", "closed", "done"] as const).map((key) => {
                   const active = stateFilter.has(key);
                   const color = stateColorVar[key];
                   return (
@@ -1396,7 +1408,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                       style={active ? { background: `${color}25`, color } : undefined}
                     >
                       <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
-                      {key === "active" ? t.chipInProgress : key === "pending" ? t.chipPending : key === "blocked" ? t.chipBlocked : t.chipCompleted}
+                      {key === "active" ? t.chipInProgress : key === "pending" ? t.chipPending : key === "blocked" ? t.chipBlocked : key === "resolved" ? t.chipResolved : key === "closed" ? t.chipClosed : t.chipCompleted}
                     </button>
                   );
                 })}
@@ -1722,7 +1734,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                         .slice(0, 2)
                         .join("")
                         .toUpperCase() || "?";
-                      const baseItems = [...group.active, ...group.pending, ...group.blocked, ...group.done].slice(0, 100);
+                      const baseItems = [...group.active, ...group.pending, ...group.blocked, ...group.resolved, ...group.closed, ...group.done].slice(0, 100);
                       const groupBucketKey = group.person;
                       const groupMap = taskPriorities.mapFor(groupBucketKey);
                       const groupPriorityLevel = (id: string): PriorityLevel =>
@@ -1771,6 +1783,26 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                   >
                                     <AlertOctagon className="h-3 w-3" />
                                     {group.blocked.length} {t.blockedPlural}
+                                  </Badge>
+                                )}
+                                {group.resolved.length > 0 && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px] gap-1"
+                                    style={{ background: `${stateColorVar.resolved}20`, color: stateColorVar.resolved }}
+                                  >
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    {group.resolved.length} {t.resolvedPlural}
+                                  </Badge>
+                                )}
+                                {group.closed.length > 0 && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px] gap-1"
+                                    style={{ background: `${stateColorVar.closed}20`, color: stateColorVar.closed }}
+                                  >
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    {group.closed.length} {t.closedPlural}
                                   </Badge>
                                 )}
                                 {group.done.length > 0 && (
@@ -1968,7 +2000,7 @@ function PersonCombobox({ value, onChange, people }: PersonComboboxProps) {
 
 interface TaskRowWithHandoverProps {
   task: UnifiedTask;
-  norm: "active" | "pending" | "done" | "blocked";
+  norm: "active" | "pending" | "done" | "blocked" | "resolved" | "closed";
   tfsBaseUrl: string | null;
   source: DataSource;
   onCopyLink: (id: string, type: "feature" | "tarea") => void;
