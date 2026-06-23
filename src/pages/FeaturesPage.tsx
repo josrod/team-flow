@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
 import { useLang } from "@/context/LanguageContext";
@@ -41,6 +41,10 @@ import { PriorityLevel, sortByPriority } from "@/lib/taskPriority";
 import { PrioritySelect } from "@/components/PrioritySelect";
 import { PriorityMenu } from "@/components/PriorityMenu";
 import { SortableRows } from "@/components/SortableRows";
+import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 
 type DataSource = "tfs" | "local";
 
@@ -1693,11 +1697,13 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                         .slice(0, 2)
                         .join("")
                         .toUpperCase() || "?";
-                      const items = [...group.active, ...group.pending, ...group.blocked, ...group.done].slice(0, 100);
+                      const baseItems = [...group.active, ...group.pending, ...group.blocked, ...group.done].slice(0, 100);
                       const groupBucketKey = group.person;
                       const groupMap = taskPriorities.mapFor(groupBucketKey);
                       const groupPriorityLevel = (id: string): PriorityLevel =>
                         groupMap[id]?.level ?? "medium";
+                      const dndEnabled = taskSort === "priority";
+                      const items = dndEnabled ? sortByPriority(baseItems, groupMap) : baseItems;
                       return (
                         <AccordionItem key={group.person} value={group.person}>
                           <AccordionTrigger className="hover:no-underline">
@@ -1771,6 +1777,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                               <Table>
                                 <TableHeader>
                                   <TableRow>
+                                    {dndEnabled && <TableHead className="w-[36px]"><span className="sr-only">{t.reorderSrOnly}</span></TableHead>}
                                     <TableHead className="w-[60px]">#</TableHead>
                                     <TableHead>{t.title}</TableHead>
                                     <TableHead className="w-[100px]">{t.typeColumn}</TableHead>
@@ -1784,18 +1791,32 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                  {items.map((t) => (
-                                    <TaskRowWithHandover
-                                      key={t.id}
-                                      task={t}
-                                      norm={normalizeState(t.state)}
-                                      tfsBaseUrl={tfsBaseUrl}
-                                      source={source}
-                                      onCopyLink={copyWorkItemLink}
-                                      priority={groupPriorityLevel(t.id)}
-                                      onPriorityChange={(level) => taskPriorities.setLevel(groupBucketKey, t.id, level)}
-                                    />
-                                  ))}
+                                  <SortableTaskRows
+                                    items={items}
+                                    enabled={dndEnabled}
+                                    onReorder={(activeId, overId) => {
+                                      const overEntry = groupMap[overId];
+                                      const targetLevel: PriorityLevel = overEntry?.level ?? "medium";
+                                      const inLevel = items.filter((it) => (groupMap[it.id]?.level ?? "medium") === targetLevel);
+                                      const overIndex = inLevel.findIndex((it) => it.id === overId);
+                                      taskPriorities.move(groupBucketKey, activeId, targetLevel, Math.max(0, overIndex));
+                                    }}
+                                    renderRow={(task, dragHandle, rowRef, rowStyle) => (
+                                      <TaskRowWithHandover
+                                        key={task.id}
+                                        task={task}
+                                        norm={normalizeState(task.state)}
+                                        tfsBaseUrl={tfsBaseUrl}
+                                        source={source}
+                                        onCopyLink={copyWorkItemLink}
+                                        priority={groupPriorityLevel(task.id)}
+                                        onPriorityChange={(level) => taskPriorities.setLevel(groupBucketKey, task.id, level)}
+                                        dragHandle={dragHandle}
+                                        rowRef={rowRef}
+                                        rowStyle={rowStyle}
+                                      />
+                                    )}
+                                  />
                                 </TableBody>
                               </Table>
                               {group.total > 100 && (
@@ -1927,16 +1948,22 @@ interface TaskRowWithHandoverProps {
   onCopyLink: (id: string, type: "feature" | "tarea") => void;
   priority: PriorityLevel;
   onPriorityChange: (level: PriorityLevel) => void;
+  dragHandle?: ReactNode;
+  rowRef?: (node: HTMLTableRowElement | null) => void;
+  rowStyle?: CSSProperties;
 }
 
-function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, priority, onPriorityChange }: TaskRowWithHandoverProps) {
+function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, priority, onPriorityChange, dragHandle, rowRef, rowStyle }: TaskRowWithHandoverProps) {
   const [open, setOpen] = useState(false);
   const { t } = useLang();
   const showActions = source === "tfs" && !!tfsBaseUrl;
-  const colSpan = 7 + (showActions ? 1 : 0);
+  const colSpan = 7 + (showActions ? 1 : 0) + (dragHandle !== undefined ? 1 : 0);
   return (
     <>
-      <TableRow>
+      <TableRow ref={rowRef} style={rowStyle}>
+        {dragHandle !== undefined && (
+          <TableCell className="py-1 align-middle">{dragHandle}</TableCell>
+        )}
         <TableCell className="font-mono text-xs text-muted-foreground">{task.id}</TableCell>
         <TableCell className="font-medium text-sm">{task.title}</TableCell>
         <TableCell>
@@ -2006,5 +2033,75 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, prior
       )}
     </>
   );
+}
+
+
+interface SortableTaskRowsProps {
+  items: UnifiedTask[];
+  enabled: boolean;
+  onReorder: (activeId: string, overId: string) => void;
+  renderRow: (
+    task: UnifiedTask,
+    dragHandle: ReactNode,
+    rowRef?: (node: HTMLTableRowElement | null) => void,
+    rowStyle?: CSSProperties,
+  ) => ReactNode;
+}
+
+function SortableTaskRows({ items, enabled, onReorder, renderRow }: SortableTaskRowsProps) {
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+
+  if (!enabled) {
+    return <>{items.map((task) => renderRow(task, undefined))}</>;
+  }
+
+  const handleEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    onReorder(String(active.id), String(over.id));
+  };
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleEnd}>
+      <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+        {items.map((task) => (
+          <SortableTaskRowItem key={task.id} task={task} renderRow={renderRow} />
+        ))}
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+function SortableTaskRowItem({
+  task,
+  renderRow,
+}: {
+  task: UnifiedTask;
+  renderRow: (
+    task: UnifiedTask,
+    dragHandle: ReactNode,
+    rowRef?: (node: HTMLTableRowElement | null) => void,
+    rowStyle?: CSSProperties,
+  ) => ReactNode;
+}) {
+  const { t } = useLang();
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  const handle = (
+    <button
+      type="button"
+      aria-label={t.dragToReorder}
+      className="inline-flex h-6 w-6 cursor-grab items-center justify-center rounded text-muted-foreground hover:bg-muted active:cursor-grabbing"
+      {...attributes}
+      {...listeners}
+    >
+      <GripVertical className="h-3.5 w-3.5" />
+    </button>
+  );
+  return <>{renderRow(task, handle, setNodeRef, style)}</>;
 }
 
