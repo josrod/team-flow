@@ -309,6 +309,30 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const priorityLevelFor = (id: string): PriorityLevel =>
     flatPriorityMap[id]?.level ?? "medium";
 
+  const showReorderToast = (
+    bucketKey: string,
+    activeId: string,
+    targetLevel: PriorityLevel,
+    targetIndex: number,
+    currentItems: UnifiedTask[],
+    currentMap: Record<string, { level: PriorityLevel; rank: number; updatedAt: string }>,
+  ) => {
+    const nextMap = moveTo(currentMap, activeId, targetLevel, targetIndex);
+    const ordered = sortByPriority(currentItems, nextMap);
+    const position = ordered.findIndex((it) => it.id === activeId) + 1;
+    const bucketName = bucketKey === ALL_BUCKET ? t.bucketLabelAll : bucketKey;
+    toast.success(t.taskReorderedTitle, {
+      description: t.taskReorderedDesc
+        .replace("{id}", activeId)
+        .replace("{position}", String(position))
+        .replace("{total}", String(ordered.length))
+        .replace("{bucket}", bucketName),
+    });
+  };
+
+
+
+
 
 
 
