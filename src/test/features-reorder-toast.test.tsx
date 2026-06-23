@@ -89,7 +89,7 @@ function renderTasks(initialUrl: string) {
 describe("Tasks page — drag-and-drop reorder toast", () => {
   beforeEach(() => {
     localStorage.clear();
-    toastSuccess.mockClear();
+    vi.mocked(toast).success.mockClear();
   });
 
   it("shows a toast with the new task order and developer bucket after reordering", async () => {
