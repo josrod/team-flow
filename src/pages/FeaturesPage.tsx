@@ -1569,6 +1569,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                   const inLevel = visible.filter((it) => priorityLevelFor(it.id) === targetLevel);
                                   const overIndex = inLevel.findIndex((it) => it.id === overId);
                                   taskPriorities.move(flatBucketKey, activeId, targetLevel, Math.max(0, overIndex));
+                                  showReorderToast(flatBucketKey, activeId, targetLevel, Math.max(0, overIndex), visible, flatPriorityMap);
                                 }}
 
                                 renderCells={(task, handle) => {
