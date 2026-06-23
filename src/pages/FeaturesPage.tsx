@@ -859,7 +859,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
 
   // Stats for visuals
   const stateDistribution = useMemo(() => {
-    const counts: Record<string, number> = { active: 0, pending: 0, done: 0, blocked: 0 };
+    const counts: Record<string, number> = { active: 0, pending: 0, done: 0, blocked: 0, resolved: 0, closed: 0 };
     filteredTasks.forEach((t) => {
       counts[normalizeState(t.state)]++;
     });
@@ -869,14 +869,14 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   }, [filteredTasks]);
 
   const workloadByPerson = useMemo(() => {
-    const map: Record<string, { active: number; pending: number; done: number; blocked: number }> = {};
+    const map: Record<string, { active: number; pending: number; done: number; blocked: number; resolved: number; closed: number }> = {};
     filteredTasks.forEach((task) => {
       const name = task.assignee || t.unassigned;
-      if (!map[name]) map[name] = { active: 0, pending: 0, done: 0, blocked: 0 };
+      if (!map[name]) map[name] = { active: 0, pending: 0, done: 0, blocked: 0, resolved: 0, closed: 0 };
       map[name][normalizeState(task.state)]++;
     });
     return Object.entries(map)
-      .map(([name, v]) => ({ name, ...v, total: v.active + v.pending + v.done + v.blocked }))
+      .map(([name, v]) => ({ name, ...v, total: v.active + v.pending + v.done + v.blocked + v.resolved + v.closed }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 12);
   }, [filteredTasks]);
@@ -898,7 +898,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   }, [filteredFeatures]);
 
   const taskStats = useMemo(() => {
-    const counts = { active: 0, pending: 0, done: 0, blocked: 0 };
+    const counts = { active: 0, pending: 0, done: 0, blocked: 0, resolved: 0, closed: 0 };
     filteredTasks.forEach((t) => {
       counts[normalizeState(t.state)]++;
     });
