@@ -67,10 +67,16 @@ interface UnifiedTask {
   iterationPath?: string;
 }
 
-// Map a TFS state to a normalized bucket for charts/visuals
-const normalizeState = (state: string): "active" | "pending" | "done" | "blocked" => {
+// Map a TFS state to a normalized bucket for charts/visuals.
+// Bugs (since the query brought back the last 10 days) can now arrive in
+// "Resolved" or "Closed" — we surface those as their own buckets instead of
+// folding them into the generic "done" group so users can see them in the
+// Tasks view.
+const normalizeState = (state: string): "active" | "pending" | "done" | "blocked" | "resolved" | "closed" => {
   const s = state.toLowerCase();
-  if (s.includes("done") || s.includes("closed") || s.includes("resolved") || s.includes("completed")) return "done";
+  if (s.includes("resolved")) return "resolved";
+  if (s.includes("closed")) return "closed";
+  if (s.includes("done") || s.includes("completed")) return "done";
   if (s.includes("block")) return "blocked";
   if (s.includes("active") || s.includes("progress") || s.includes("committed") || s.includes("doing")) return "active";
   return "pending";
@@ -81,6 +87,8 @@ const stateColorVar: Record<string, string> = {
   pending: "hsl(var(--status-vacation))",
   done: "hsl(var(--status-available))",
   blocked: "hsl(var(--status-sick))",
+  resolved: "hsl(var(--status-available))",
+  closed: "hsl(var(--muted-foreground))",
 };
 
 const stateLabel: Record<string, string> = {
@@ -88,6 +96,8 @@ const stateLabel: Record<string, string> = {
   pending: "Pending",
   done: "Done",
   blocked: "Blocked",
+  resolved: "Resolved",
+  closed: "Closed",
 };
 
 interface FeaturesPageProps {
