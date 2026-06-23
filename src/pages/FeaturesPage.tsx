@@ -1785,6 +1785,26 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     {group.blocked.length} {t.blockedPlural}
                                   </Badge>
                                 )}
+                                {group.resolved.length > 0 && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px] gap-1"
+                                    style={{ background: `${stateColorVar.resolved}20`, color: stateColorVar.resolved }}
+                                  >
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    {group.resolved.length} {t.resolvedPlural}
+                                  </Badge>
+                                )}
+                                {group.closed.length > 0 && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px] gap-1"
+                                    style={{ background: `${stateColorVar.closed}20`, color: stateColorVar.closed }}
+                                  >
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    {group.closed.length} {t.closedPlural}
+                                  </Badge>
+                                )}
                                 {group.done.length > 0 && (
                                   <Badge
                                     variant="secondary"
