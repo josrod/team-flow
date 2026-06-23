@@ -877,11 +877,11 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       if (activeTeam !== "all" && teamIdByAssignee.get(t.assignee) !== activeTeam) return;
       if (activePerson !== "all" && t.assignee !== activePerson) return;
       if (searchLower && !t.title.toLowerCase().includes(searchLower)) return;
-      if (stateFilter.size > 0 && !stateFilter.has(normalizeState(t.state))) return;
+      if (!passesStateFilter(t.type, t.state)) return;
       counts[t.type] = (counts[t.type] || 0) + 1;
     });
     return counts;
-  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee, stateFilter, view]);
+  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee, taskStateFilter, bugStateFilter, view]);
 
 
   // Stats for visuals
