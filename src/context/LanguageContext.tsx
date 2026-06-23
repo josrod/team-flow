@@ -1225,6 +1225,8 @@ export const translations = {
     chipPending: "Pending",
     chipBlocked: "Blocked",
     chipCompleted: "Completed",
+    chipResolved: "Resolved",
+    chipClosed: "Closed",
     fewerTasks: "Fewer tasks",
     nameAZ: "Name A→Z",
     nameZA: "Name Z→A",
