@@ -521,6 +521,9 @@ export const translations = {
     prioritiesCleared: "Prioridades eliminadas",
     priorityScopeFor: "Orden guardado para {name}",
     priorityScopeAll: "Orden guardado para todos",
+    taskReorderedTitle: "Tarea reordenada",
+    taskReorderedDesc: "La tarea {id} ahora ocupa la posición {position} de {total} en la lista de {bucket}",
+    bucketLabelAll: "todos",
     manualOrderToggle: "Orden manual",
     // Bulk edit
     bulkEditBtn: "Edición en Bloque",
@@ -1259,6 +1262,9 @@ export const translations = {
     prioritiesCleared: "Priorities cleared",
     priorityScopeFor: "Order saved for {name}",
     priorityScopeAll: "Order saved for everyone",
+    taskReorderedTitle: "Task reordered",
+    taskReorderedDesc: "Task {id} is now at position {position} of {total} in {bucket}'s list",
+    bucketLabelAll: "everyone",
     manualOrderToggle: "Manual order",
     // Bulk edit
     bulkEditBtn: "Bulk edit",

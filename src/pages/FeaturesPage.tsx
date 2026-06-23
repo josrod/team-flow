@@ -37,7 +37,7 @@ import { WorkloadMatrix } from "@/components/WorkloadMatrix";
 import { TaskTypeFilter } from "@/components/TaskTypeFilter";
 import { computeAvailableTaskTypes, isExcludedTaskType } from "@/lib/taskTypeFilter";
 import { useTaskPriorities } from "@/hooks/use-task-priorities";
-import { PriorityLevel, sortByPriority } from "@/lib/taskPriority";
+import { PriorityLevel, sortByPriority, moveTo, ALL_BUCKET } from "@/lib/taskPriority";
 import { PrioritySelect } from "@/components/PrioritySelect";
 import { PriorityMenu } from "@/components/PriorityMenu";
 import { SortableRows } from "@/components/SortableRows";
@@ -308,6 +308,30 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const flatPriorityMap = taskPriorities.mapFor(flatBucketKey);
   const priorityLevelFor = (id: string): PriorityLevel =>
     flatPriorityMap[id]?.level ?? "medium";
+
+  const showReorderToast = (
+    bucketKey: string,
+    activeId: string,
+    targetLevel: PriorityLevel,
+    targetIndex: number,
+    currentItems: UnifiedTask[],
+    currentMap: Record<string, { level: PriorityLevel; rank: number; updatedAt: string }>,
+  ) => {
+    const nextMap = moveTo(currentMap, activeId, targetLevel, targetIndex);
+    const ordered = sortByPriority(currentItems, nextMap);
+    const position = ordered.findIndex((it) => it.id === activeId) + 1;
+    const bucketName = bucketKey === ALL_BUCKET ? t.bucketLabelAll : bucketKey;
+    toast.success(t.taskReorderedTitle, {
+      description: t.taskReorderedDesc
+        .replace("{id}", activeId)
+        .replace("{position}", String(position))
+        .replace("{total}", String(ordered.length))
+        .replace("{bucket}", bucketName),
+    });
+  };
+
+
+
 
 
 
@@ -1545,6 +1569,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                   const inLevel = visible.filter((it) => priorityLevelFor(it.id) === targetLevel);
                                   const overIndex = inLevel.findIndex((it) => it.id === overId);
                                   taskPriorities.move(flatBucketKey, activeId, targetLevel, Math.max(0, overIndex));
+                                  showReorderToast(flatBucketKey, activeId, targetLevel, Math.max(0, overIndex), visible, flatPriorityMap);
                                 }}
 
                                 renderCells={(task, handle) => {
@@ -1800,6 +1825,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       const inLevel = items.filter((it) => (groupMap[it.id]?.level ?? "medium") === targetLevel);
                                       const overIndex = inLevel.findIndex((it) => it.id === overId);
                                       taskPriorities.move(groupBucketKey, activeId, targetLevel, Math.max(0, overIndex));
+                                      showReorderToast(groupBucketKey, activeId, targetLevel, Math.max(0, overIndex), items, groupMap);
                                     }}
                                     renderRow={(task, dragHandle, rowRef, rowStyle) => (
                                       <TaskRowWithHandover
