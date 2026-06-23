@@ -89,7 +89,7 @@ function renderTasks(initialUrl: string) {
 describe("Tasks page — drag-and-drop reorder toast", () => {
   beforeEach(() => {
     localStorage.clear();
-    vi.mocked(toast).success.mockClear();
+    (vi.mocked(toast.success) as unknown as ReturnType<typeof vi.fn>).mockClear();
   });
 
   it("shows a toast with the new task order and developer bucket after reordering", async () => {
@@ -108,10 +108,10 @@ describe("Tasks page — drag-and-drop reorder toast", () => {
     fireEvent.click(reorderBtn);
 
     await waitFor(() => {
-      expect(toastSuccess).toHaveBeenCalled();
+      expect(vi.mocked(toast.success)).toHaveBeenCalled();
     });
 
-    const call = toastSuccess.mock.calls[0];
+    const call = (vi.mocked(toast.success) as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(call[0]).toBe("Tarea reordenada");
     expect(call[1].description).toMatch(/topic-0-0/);
     expect(call[1].description).toMatch(/Carlos/);
