@@ -1978,7 +1978,7 @@ function PersonCombobox({ value, onChange, people }: PersonComboboxProps) {
 
 interface TaskRowWithHandoverProps {
   task: UnifiedTask;
-  norm: "active" | "pending" | "done" | "blocked";
+  norm: "active" | "pending" | "done" | "blocked" | "resolved" | "closed";
   tfsBaseUrl: string | null;
   source: DataSource;
   onCopyLink: (id: string, type: "feature" | "tarea") => void;
