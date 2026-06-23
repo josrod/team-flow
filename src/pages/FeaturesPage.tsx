@@ -1354,7 +1354,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <UsersIcon className="h-4 w-4" /> {t.tasksPerPerson}
                 </CardTitle>
                 <CardDescription>
-                  {tasksByPerson.length === 1 ? t.personCount.replace("{count}", String(tasksByPerson.length)) : t.personsCount.replace("{count}", String(tasksByPerson.length))} · {t.filtering} {Array.from(stateFilter).map((k) => k === "active" ? t.inProgressPlural : k === "pending" ? t.pendingPlural : k === "blocked" ? t.blockedPlural : t.completedPlural).join(", ")}
+                  {tasksByPerson.length === 1 ? t.personCount.replace("{count}", String(tasksByPerson.length)) : t.personsCount.replace("{count}", String(tasksByPerson.length))} · {t.filtering} {Array.from(stateFilter).map((k) => k === "active" ? t.inProgressPlural : k === "pending" ? t.pendingPlural : k === "blocked" ? t.blockedPlural : k === "resolved" ? t.resolvedPlural : k === "closed" ? t.closedPlural : t.completedPlural).join(", ")}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
