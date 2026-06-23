@@ -49,7 +49,7 @@ interface SortableRowsMockProps<T extends { id: string }> {
   items: T[];
   enabled: boolean;
   onReorder: (activeId: string, overId: string) => void;
-  renderCells: (item: T, dragHandle: React.ReactNode) => React.ReactNode;
+  renderCells: (item: T, dragHandle: ReactNode) => ReactNode;
 }
 
 vi.mock("@/components/SortableRows", () => ({
