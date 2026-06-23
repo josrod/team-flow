@@ -1734,7 +1734,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                         .slice(0, 2)
                         .join("")
                         .toUpperCase() || "?";
-                      const baseItems = [...group.active, ...group.pending, ...group.blocked, ...group.done].slice(0, 100);
+                      const baseItems = [...group.active, ...group.pending, ...group.blocked, ...group.resolved, ...group.closed, ...group.done].slice(0, 100);
                       const groupBucketKey = group.person;
                       const groupMap = taskPriorities.mapFor(groupBucketKey);
                       const groupPriorityLevel = (id: string): PriorityLevel =>
