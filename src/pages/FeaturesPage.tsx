@@ -1390,7 +1390,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3">
               <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t.filterByStateAria}>
                 <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">{t.stateColumn}</span>
-                {(["active", "pending", "blocked", "done"] as const).map((key) => {
+                {(["active", "pending", "blocked", "resolved", "closed", "done"] as const).map((key) => {
                   const active = stateFilter.has(key);
                   const color = stateColorVar[key];
                   return (
