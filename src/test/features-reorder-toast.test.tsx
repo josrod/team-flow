@@ -13,10 +13,9 @@ window.ResizeObserver = vi.fn().mockImplementation(() => ({
   disconnect: vi.fn(),
 }));
 
-const toastSuccess = vi.fn();
 vi.mock("sonner", async () => ({
   toast: {
-    success: toastSuccess,
+    success: vi.fn(),
     error: vi.fn(),
     warning: vi.fn(),
     info: vi.fn(),
