@@ -12,6 +12,7 @@ import { useLang } from "@/context/LanguageContext";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { fetchTfsBugDetail, type TfsBug, type TfsBugDetail, type TfsError } from "@/services/tfs";
+import { sanitizeRichText } from "@/lib/sanitizeHtml";
 
 interface BugDetailDialogProps {
   bug: TfsBug | null;
