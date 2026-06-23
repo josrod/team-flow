@@ -1801,7 +1801,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       const overIndex = inLevel.findIndex((it) => it.id === overId);
                                       taskPriorities.move(groupBucketKey, activeId, targetLevel, Math.max(0, overIndex));
                                     }}
-                                    renderRow={(task, dragHandle) => (
+                                    renderRow={(task, dragHandle, rowRef, rowStyle) => (
                                       <TaskRowWithHandover
                                         key={task.id}
                                         task={task}
@@ -1812,6 +1812,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                         priority={groupPriorityLevel(task.id)}
                                         onPriorityChange={(level) => taskPriorities.setLevel(groupBucketKey, task.id, level)}
                                         dragHandle={dragHandle}
+                                        rowRef={rowRef}
+                                        rowStyle={rowStyle}
                                       />
                                     )}
                                   />
