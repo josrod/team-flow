@@ -357,6 +357,10 @@ export const AzureDevOpsSettingsPage = () => {
         return;
       }
 
+      // Encrypt the PAT server-side before persisting. The plaintext never
+      // touches the database, so a DB compromise alone cannot leak ADO tokens.
+      const { ciphertext, iv } = await encryptPat(pat.trim());
+
       const payload = {
         user_id: user.id,
         server_url: serverUrl.trim(),
@@ -364,7 +368,8 @@ export const AzureDevOpsSettingsPage = () => {
         organization: organization.trim() || null,
         project: project.trim(),
         team: team.trim() || null,
-        pat_encrypted: pat.trim(),
+        pat_encrypted: ciphertext,
+        pat_iv: iv,
         auto_sync_enabled: autoSync,
         sync_interval_minutes: Number(syncInterval),
         area_paths: areaPaths,
