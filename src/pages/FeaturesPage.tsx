@@ -1777,6 +1777,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                               <Table>
                                 <TableHeader>
                                   <TableRow>
+                                    {dndEnabled && <TableHead className="w-[36px]"><span className="sr-only">{t.reorderSrOnly}</span></TableHead>}
                                     <TableHead className="w-[60px]">#</TableHead>
                                     <TableHead>{t.title}</TableHead>
                                     <TableHead className="w-[100px]">{t.typeColumn}</TableHead>
@@ -1790,18 +1791,30 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                  {items.map((t) => (
-                                    <TaskRowWithHandover
-                                      key={t.id}
-                                      task={t}
-                                      norm={normalizeState(t.state)}
-                                      tfsBaseUrl={tfsBaseUrl}
-                                      source={source}
-                                      onCopyLink={copyWorkItemLink}
-                                      priority={groupPriorityLevel(t.id)}
-                                      onPriorityChange={(level) => taskPriorities.setLevel(groupBucketKey, t.id, level)}
-                                    />
-                                  ))}
+                                  <SortableTaskRows
+                                    items={items}
+                                    enabled={dndEnabled}
+                                    onReorder={(activeId, overId) => {
+                                      const overEntry = groupMap[overId];
+                                      const targetLevel: PriorityLevel = overEntry?.level ?? "medium";
+                                      const inLevel = items.filter((it) => (groupMap[it.id]?.level ?? "medium") === targetLevel);
+                                      const overIndex = inLevel.findIndex((it) => it.id === overId);
+                                      taskPriorities.move(groupBucketKey, activeId, targetLevel, Math.max(0, overIndex));
+                                    }}
+                                    renderRow={(task, dragHandle) => (
+                                      <TaskRowWithHandover
+                                        key={task.id}
+                                        task={task}
+                                        norm={normalizeState(task.state)}
+                                        tfsBaseUrl={tfsBaseUrl}
+                                        source={source}
+                                        onCopyLink={copyWorkItemLink}
+                                        priority={groupPriorityLevel(task.id)}
+                                        onPriorityChange={(level) => taskPriorities.setLevel(groupBucketKey, task.id, level)}
+                                        dragHandle={dragHandle}
+                                      />
+                                    )}
+                                  />
                                 </TableBody>
                               </Table>
                               {group.total > 100 && (
