@@ -1414,31 +1414,58 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 </div>
               </div>
             </div>
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3">
-              <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t.filterByStateAria}>
-                <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">{t.stateColumn}</span>
-                {(["active", "pending", "blocked", "resolved", "closed", "done"] as const).map((key) => {
-                  const active = stateFilter.has(key);
-                  const color = stateColorVar[key];
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => toggleStateFilter(key)}
-                      aria-pressed={active}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
-                        active
-                          ? "border-transparent text-foreground"
-                          : "border-border/60 text-muted-foreground hover:bg-muted/40",
-                      )}
-                      style={active ? { background: `${color}25`, color } : undefined}
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
-                      {key === "active" ? t.chipInProgress : key === "pending" ? t.chipPending : key === "blocked" ? t.chipBlocked : key === "resolved" ? t.chipResolved : key === "closed" ? t.chipClosed : t.chipCompleted}
-                    </button>
-                  );
-                })}
+            <div className="mt-3 flex flex-col gap-2 border-t border-border/60 pt-3 lg:flex-row lg:flex-wrap lg:items-start lg:justify-between">
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={`${t.tasks} · ${t.filterByStateAria}`}>
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">{t.tasks}</span>
+                  {(["active", "pending", "blocked", "done"] as const).map((key) => {
+                    const active = taskStateFilter.has(key);
+                    const color = stateColorVar[key];
+                    return (
+                      <button
+                        key={`task-${key}`}
+                        type="button"
+                        onClick={() => toggleTaskStateFilter(key)}
+                        aria-pressed={active}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                          active
+                            ? "border-transparent text-foreground"
+                            : "border-border/60 text-muted-foreground hover:bg-muted/40",
+                        )}
+                        style={active ? { background: `${color}25`, color } : undefined}
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+                        {key === "active" ? t.chipInProgress : key === "pending" ? t.chipPending : key === "blocked" ? t.chipBlocked : t.chipCompleted}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={`${t.bugs} · ${t.filterByStateAria}`}>
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">{t.bugs}</span>
+                  {(["active", "pending", "blocked", "resolved", "closed"] as const).map((key) => {
+                    const active = bugStateFilter.has(key);
+                    const color = stateColorVar[key];
+                    return (
+                      <button
+                        key={`bug-${key}`}
+                        type="button"
+                        onClick={() => toggleBugStateFilter(key)}
+                        aria-pressed={active}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                          active
+                            ? "border-transparent text-foreground"
+                            : "border-border/60 text-muted-foreground hover:bg-muted/40",
+                        )}
+                        style={active ? { background: `${color}25`, color } : undefined}
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+                        {key === "active" ? t.chipInProgress : key === "pending" ? t.chipPending : key === "blocked" ? t.chipBlocked : key === "resolved" ? t.chipResolved : t.chipClosed}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <TaskTypeFilter
                 types={availableTypes}
