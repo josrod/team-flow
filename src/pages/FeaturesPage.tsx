@@ -1336,6 +1336,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <Bar dataKey="active" stackId="a" fill={stateColorVar.active} name={t.chartActive} />
                   <Bar dataKey="pending" stackId="a" fill={stateColorVar.pending} name={t.chipPending} />
                   <Bar dataKey="blocked" stackId="a" fill={stateColorVar.blocked} name={t.chipBlocked} />
+                  <Bar dataKey="resolved" stackId="a" fill={stateColorVar.resolved} name={t.chipResolved} />
+                  <Bar dataKey="closed" stackId="a" fill={stateColorVar.closed} name={t.chipClosed} />
                   <Bar dataKey="done" stackId="a" fill={stateColorVar.done} name={t.chartDone} />
                 </BarChart>
               </ResponsiveContainer>
