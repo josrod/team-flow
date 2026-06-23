@@ -1408,7 +1408,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                       style={active ? { background: `${color}25`, color } : undefined}
                     >
                       <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
-                      {key === "active" ? t.chipInProgress : key === "pending" ? t.chipPending : key === "blocked" ? t.chipBlocked : t.chipCompleted}
+                      {key === "active" ? t.chipInProgress : key === "pending" ? t.chipPending : key === "blocked" ? t.chipBlocked : key === "resolved" ? t.chipResolved : key === "closed" ? t.chipClosed : t.chipCompleted}
                     </button>
                   );
                 })}
