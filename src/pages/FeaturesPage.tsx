@@ -267,9 +267,22 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const [showFlatList, setShowFlatList] = useState(false);
   const [handoverPerson, setHandoverPerson] = useState<string | null>(null);
   type TaskStateKey = "active" | "pending" | "blocked" | "done" | "resolved" | "closed";
+  type TaskOnlyStateKey = "active" | "pending" | "blocked" | "done";
+  type BugOnlyStateKey = "active" | "pending" | "blocked" | "resolved" | "closed";
   type TaskSortKey = "total-desc" | "total-asc" | "name-asc" | "name-desc" | "priority";
-  const [stateFilter, setStateFilter] = useState<Set<TaskStateKey>>(
-    () => new Set<TaskStateKey>(["active", "pending", "resolved", "closed"]),
+
+  // Bugs are identified by their type string (TFS uses "Bug"). Anything else
+  // is treated as a task for the purposes of state filtering.
+  const isBugType = (type: string | undefined): boolean =>
+    typeof type === "string" && type.toLowerCase() === "bug";
+
+  // Two independent state filters so users can filter tasks and bugs
+  // separately (tasks don't have Resolved/Closed; bugs don't have Completed).
+  const [taskStateFilter, setTaskStateFilter] = useState<Set<TaskOnlyStateKey>>(
+    () => new Set<TaskOnlyStateKey>(["active", "pending", "blocked"]),
+  );
+  const [bugStateFilter, setBugStateFilter] = useState<Set<BugOnlyStateKey>>(
+    () => new Set<BugOnlyStateKey>(["active", "pending", "blocked", "resolved", "closed"]),
   );
   // Type filter: empty set means "show all types".
   const [typeFilter, setTypeFilter] = useState<Set<string>>(() => new Set<string>());
@@ -291,16 +304,30 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       // Ignore storage errors (private mode, quota, etc.).
     }
   }, [taskSort]);
-  const toggleStateFilter = (key: TaskStateKey) => {
-    setStateFilter((prev) => {
+  const toggleTaskStateFilter = (key: TaskOnlyStateKey) => {
+    setTaskStateFilter((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) {
-        if (next.size > 1) next.delete(key);
-      } else {
-        next.add(key);
-      }
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
+  };
+  const toggleBugStateFilter = (key: BugOnlyStateKey) => {
+    setBugStateFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+  // Returns true if the given task passes the appropriate state filter for
+  // its type (bug filter for bugs, task filter for everything else).
+  const passesStateFilter = (type: string | undefined, state: string): boolean => {
+    const norm = normalizeState(state);
+    if (isBugType(type)) {
+      return bugStateFilter.has(norm as BugOnlyStateKey);
+    }
+    return taskStateFilter.has(norm as TaskOnlyStateKey);
   };
   const toggleTypeFilter = (key: string) => {
     setTypeFilter((prev) => {
