@@ -1825,6 +1825,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       const inLevel = items.filter((it) => (groupMap[it.id]?.level ?? "medium") === targetLevel);
                                       const overIndex = inLevel.findIndex((it) => it.id === overId);
                                       taskPriorities.move(groupBucketKey, activeId, targetLevel, Math.max(0, overIndex));
+                                      showReorderToast(groupBucketKey, activeId, targetLevel, Math.max(0, overIndex), items, groupMap);
                                     }}
                                     renderRow={(task, dragHandle, rowRef, rowStyle) => (
                                       <TaskRowWithHandover
