@@ -1946,16 +1946,22 @@ interface TaskRowWithHandoverProps {
   onCopyLink: (id: string, type: "feature" | "tarea") => void;
   priority: PriorityLevel;
   onPriorityChange: (level: PriorityLevel) => void;
+  dragHandle?: ReactNode;
+  rowRef?: (node: HTMLTableRowElement | null) => void;
+  rowStyle?: CSSProperties;
 }
 
-function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, priority, onPriorityChange }: TaskRowWithHandoverProps) {
+function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, priority, onPriorityChange, dragHandle, rowRef, rowStyle }: TaskRowWithHandoverProps) {
   const [open, setOpen] = useState(false);
   const { t } = useLang();
   const showActions = source === "tfs" && !!tfsBaseUrl;
-  const colSpan = 7 + (showActions ? 1 : 0);
+  const colSpan = 7 + (showActions ? 1 : 0) + (dragHandle !== undefined ? 1 : 0);
   return (
     <>
-      <TableRow>
+      <TableRow ref={rowRef} style={rowStyle}>
+        {dragHandle !== undefined && (
+          <TableCell className="py-1 align-middle">{dragHandle}</TableCell>
+        )}
         <TableCell className="font-mono text-xs text-muted-foreground">{task.id}</TableCell>
         <TableCell className="font-medium text-sm">{task.title}</TableCell>
         <TableCell>
