@@ -440,6 +440,8 @@ export const translations = {
     pendingPlural: "pendientes",
     blockedPlural: "bloqueadas",
     completedPlural: "completadas",
+    resolvedPlural: "resueltas",
+    closedPlural: "cerradas",
     confirmChangesBeforeApply: "Confirmar cambios antes de aplicar",
     unappliedChanges: "Cambios sin aplicar",
     discard: "Descartar",
