@@ -161,8 +161,9 @@ export const BugDetailDialog = ({ bug, open, onOpenChange, connection }: BugDeta
               ) : detail?.description ? (
                 <div
                   className="prose prose-sm dark:prose-invert max-w-none text-sm [&_a]:text-primary"
+                  // Sanitized via DOMPurify to neutralise stored XSS from ADO.
                   // eslint-disable-next-line react/no-danger
-                  dangerouslySetInnerHTML={{ __html: detail.description }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeRichText(detail.description) }}
                 />
               ) : (
                 <p className="text-sm text-muted-foreground italic">{t.bugDetailNoDescription}</p>
@@ -174,8 +175,9 @@ export const BugDetailDialog = ({ bug, open, onOpenChange, connection }: BugDeta
                 <div className="text-xs text-muted-foreground mb-1.5">{t.bugDetailReproSteps}</div>
                 <div
                   className="prose prose-sm dark:prose-invert max-w-none text-sm [&_a]:text-primary"
+                  // Sanitized via DOMPurify to neutralise stored XSS from ADO.
                   // eslint-disable-next-line react/no-danger
-                  dangerouslySetInnerHTML={{ __html: detail.reproSteps }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeRichText(detail.reproSteps) }}
                 />
               </div>
             )}
