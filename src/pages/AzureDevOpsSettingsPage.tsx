@@ -34,6 +34,7 @@ import {
   type TfsDiagnosticResult,
 } from "@/services/tfs";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
+import { encryptPat, decryptPat } from "@/services/tfsPatVault";
 import { TfsPatDiagnosticsPanel } from "@/components/TfsPatDiagnosticsPanel";
 import { TfsFieldHint } from "@/components/TfsFieldHint";
 import { TfsAutocompleteInput } from "@/components/TfsAutocompleteInput";
@@ -96,7 +97,16 @@ export const AzureDevOpsSettingsPage = () => {
         setOrganization(data.organization ?? "");
         setProject(data.project);
         setTeam(data.team ?? "");
-        setPat(data.pat_encrypted);
+        // Decrypt PAT via the vault edge function. Legacy plaintext rows
+        // (pat_iv = null) round-trip as-is, so existing users aren't broken.
+        try {
+          const patIv = (data as { pat_iv?: string | null }).pat_iv ?? null;
+          const plainPat = await decryptPat(data.pat_encrypted, patIv);
+          setPat(plainPat);
+        } catch {
+          setPat("");
+          toast.error("Could not decrypt your saved PAT — please re-enter it.");
+        }
         setAutoSync(data.auto_sync_enabled);
         setSyncInterval(String(data.sync_interval_minutes));
         const rawAreas = (data as { area_paths?: string[] | null }).area_paths;
@@ -347,6 +357,10 @@ export const AzureDevOpsSettingsPage = () => {
         return;
       }
 
+      // Encrypt the PAT server-side before persisting. The plaintext never
+      // touches the database, so a DB compromise alone cannot leak ADO tokens.
+      const { ciphertext, iv } = await encryptPat(pat.trim());
+
       const payload = {
         user_id: user.id,
         server_url: serverUrl.trim(),
@@ -354,7 +368,8 @@ export const AzureDevOpsSettingsPage = () => {
         organization: organization.trim() || null,
         project: project.trim(),
         team: team.trim() || null,
-        pat_encrypted: pat.trim(),
+        pat_encrypted: ciphertext,
+        pat_iv: iv,
         auto_sync_enabled: autoSync,
         sync_interval_minutes: Number(syncInterval),
         area_paths: areaPaths,

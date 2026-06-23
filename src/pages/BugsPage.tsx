@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { useLang } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
+import { decryptPat } from "@/services/tfsPatVault";
 import { BugDetailDialog } from "@/components/BugDetailDialog";
 import { SeverityBadge, normalizeSeverity } from "@/components/SeverityBadge";
 import { fetchTfsBugsByIterations, type TfsBug, type TfsError } from "@/services/tfs";
@@ -88,16 +89,24 @@ export const BugsPage = () => {
           project: string;
           team: string | null;
           pat_encrypted: string;
+          pat_iv: string | null;
           iteration_paths?: string[] | null;
         };
-        setSettings({
-          serverUrl: raw.server_url ?? "",
-          collection: raw.collection ?? "",
-          project: raw.project,
-          team: raw.team ?? undefined,
-          pat: raw.pat_encrypted,
-          iterationPaths: Array.isArray(raw.iteration_paths) ? raw.iteration_paths : [],
-        });
+        try {
+          // Decrypt the PAT via the vault before exposing it to the in-memory
+          // TfsConnection that the on-prem TFS calls need.
+          const plainPat = await decryptPat(raw.pat_encrypted, raw.pat_iv);
+          setSettings({
+            serverUrl: raw.server_url ?? "",
+            collection: raw.collection ?? "",
+            project: raw.project,
+            team: raw.team ?? undefined,
+            pat: plainPat,
+            iterationPaths: Array.isArray(raw.iteration_paths) ? raw.iteration_paths : [],
+          });
+        } catch {
+          setSettings(null);
+        }
       }
       setSettingsLoading(false);
     };

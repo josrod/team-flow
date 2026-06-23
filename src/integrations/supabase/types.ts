@@ -28,6 +28,7 @@ export type Database = {
           last_synced_at: string | null
           organization: string | null
           pat_encrypted: string
+          pat_iv: string | null
           project: string
           server_url: string | null
           sync_interval_minutes: number
@@ -48,6 +49,7 @@ export type Database = {
           last_synced_at?: string | null
           organization?: string | null
           pat_encrypted: string
+          pat_iv?: string | null
           project: string
           server_url?: string | null
           sync_interval_minutes?: number
@@ -68,6 +70,7 @@ export type Database = {
           last_synced_at?: string | null
           organization?: string | null
           pat_encrypted?: string
+          pat_iv?: string | null
           project?: string
           server_url?: string | null
           sync_interval_minutes?: number

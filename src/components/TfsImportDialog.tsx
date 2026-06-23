@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { listTfsTeamMembers, TfsTeamMemberIdentity, TfsConnection, TfsError } from "@/services/tfs";
+import { decryptPat } from "@/services/tfsPatVault";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -125,7 +126,7 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
       try {
         const { data: config } = await supabase
           .from("azure_devops_settings")
-          .select("server_url, collection, project, team, pat_encrypted")
+          .select("server_url, collection, project, team, pat_encrypted, pat_iv")
           .eq("user_id", user.id)
           .maybeSingle();
 
@@ -140,12 +141,16 @@ export function TfsImportDialog({ open, onOpenChange, teamId }: TfsImportDialogP
           return;
         }
 
+        // Decrypt the PAT before handing it to the in-browser TFS client.
+        const patIv = (config as { pat_iv?: string | null }).pat_iv ?? null;
+        const plainPat = await decryptPat(config.pat_encrypted, patIv);
+
         const conn: TfsConnection = {
           serverUrl: config.server_url,
           collection: config.collection,
           project: config.project,
           team: config.team,
-          pat: config.pat_encrypted,
+          pat: plainPat,
         };
 
         const result = await listTfsTeamMembers(conn);

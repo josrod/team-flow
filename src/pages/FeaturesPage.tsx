@@ -26,6 +26,7 @@ import { MessageSquarePlus, ChevronUp, FileText } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, peekTfsAreaPathCache, peekTfsPeopleCache, peekTfsPeopleCacheForConnection, writeTfsPeopleCache, RODAT_AREA_PATH, RODAT_ITERATION_PATH, type TfsConnection, type TfsWorkItem } from "@/services/tfs";
+import { decryptPat } from "@/services/tfsPatVault";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
@@ -453,7 +454,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       if (!user) return;
       const { data } = await supabase
         .from("azure_devops_settings")
-        .select("server_url, collection, project, team, pat_encrypted, area_paths, iteration_paths")
+        .select("server_url, collection, project, team, pat_encrypted, pat_iv, area_paths, iteration_paths")
         .eq("user_id", user.id)
         .maybeSingle();
       if (data?.server_url && data?.collection && data?.project && data?.pat_encrypted) {
@@ -497,6 +498,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
             project: string | null;
             team: string | null;
             pat_encrypted: string | null;
+            pat_iv: string | null;
             area_paths: string[] | null;
             iteration_paths: string[] | null;
           };
@@ -513,6 +515,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
             project: next.project,
             team: next.team,
             pat_encrypted: next.pat_encrypted,
+            pat_iv: next.pat_iv,
             area_paths: next.area_paths,
             iteration_paths: next.iteration_paths,
           });
@@ -533,6 +536,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       project: string;
       team: string | null;
       pat_encrypted: string;
+      pat_iv: string | null;
       area_paths?: string[] | null;
       iteration_paths?: string[] | null;
     },
@@ -546,7 +550,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       if (!settings) {
         const { data } = await supabase
           .from("azure_devops_settings")
-          .select("server_url, collection, project, team, pat_encrypted, area_paths, iteration_paths")
+          .select("server_url, collection, project, team, pat_encrypted, pat_iv, area_paths, iteration_paths")
           .eq("user_id", user.id)
           .maybeSingle();
         settings = data ?? undefined;
@@ -556,12 +560,23 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         setSource("local");
         return;
       }
+      // Decrypt the PAT via the vault edge function. The in-memory TfsConnection
+      // needs plaintext to authenticate against the on-prem TFS server (the
+      // browser must call TFS directly since it lives behind the corporate VPN).
+      let plainPat: string;
+      try {
+        plainPat = await decryptPat(settings.pat_encrypted, settings.pat_iv);
+      } catch {
+        setTfsError(t.errIncompleteAdoConfig);
+        setSource("local");
+        return;
+      }
       const conn = {
         serverUrl: settings.server_url,
         collection: settings.collection,
         project: settings.project,
         team: settings.team ?? undefined,
-        pat: settings.pat_encrypted,
+        pat: plainPat,
       };
       setTfsConn(conn);
       // Build base URL for "Open in Azure DevOps" links
