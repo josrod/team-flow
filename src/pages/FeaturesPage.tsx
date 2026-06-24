@@ -357,8 +357,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const taskPriorities = useTaskPriorities();
   const flatBucketKey = activePerson === "all" ? "__all__" : activePerson;
   const flatPriorityMap = taskPriorities.mapFor(flatBucketKey);
-  const priorityLevelFor = (id: string): PriorityLevel =>
-    flatPriorityMap[id]?.level ?? "medium";
+  const priorityLevelFor = (task: UnifiedTask): PriorityLevel =>
+    flatPriorityMap[task.id]?.level ?? (isBugType(task.type) ? "low" : "medium");
 
   const showReorderToast = (
     bucketKey: string,
@@ -1661,10 +1661,11 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                 enabled={taskSort === "priority"}
                                 onReorder={(activeId, overId) => {
                                   const overEntry = flatPriorityMap[overId];
-                                  const targetLevel: PriorityLevel = overEntry?.level ?? "medium";
+                                  const overItem = visible.find((it) => it.id === overId);
+                                  const targetLevel: PriorityLevel = overEntry?.level ?? (isBugType(overItem?.type) ? "low" : "medium");
                                   // Compute the over index inside the target level
                                   // among the currently visible items.
-                                  const inLevel = visible.filter((it) => priorityLevelFor(it.id) === targetLevel);
+                                  const inLevel = visible.filter((it) => priorityLevelFor(it) === targetLevel);
                                   const overIndex = inLevel.findIndex((it) => it.id === overId);
                                   taskPriorities.move(flatBucketKey, activeId, targetLevel, Math.max(0, overIndex));
                                   showReorderToast(flatBucketKey, activeId, targetLevel, Math.max(0, overIndex), visible, flatPriorityMap);
@@ -1702,7 +1703,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       </TableCell>
                                       <TableCell>
                                         <PrioritySelect
-                                          value={priorityLevelFor(task.id)}
+                                          value={priorityLevelFor(task)}
                                           onChange={(level) => taskPriorities.setLevel(flatBucketKey, task.id, level)}
                                         />
                                       </TableCell>
@@ -1829,8 +1830,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                       const baseItems = [...group.active, ...group.pending, ...group.blocked, ...group.resolved, ...group.closed, ...group.done].slice(0, 100);
                       const groupBucketKey = group.person;
                       const groupMap = taskPriorities.mapFor(groupBucketKey);
-                      const groupPriorityLevel = (id: string): PriorityLevel =>
-                        groupMap[id]?.level ?? "medium";
+                      const groupPriorityLevel = (task: UnifiedTask): PriorityLevel =>
+                        groupMap[task.id]?.level ?? (isBugType(task.type) ? "low" : "medium");
                       const dndEnabled = taskSort === "priority";
                       const items = dndEnabled ? sortByPriority(baseItems, groupMap) : baseItems;
                       return (
@@ -1947,8 +1948,9 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     enabled={dndEnabled}
                                     onReorder={(activeId, overId) => {
                                       const overEntry = groupMap[overId];
-                                      const targetLevel: PriorityLevel = overEntry?.level ?? "medium";
-                                      const inLevel = items.filter((it) => (groupMap[it.id]?.level ?? "medium") === targetLevel);
+                                      const overItem = items.find((it) => it.id === overId);
+                                      const targetLevel: PriorityLevel = overEntry?.level ?? (isBugType(overItem?.type) ? "low" : "medium");
+                                      const inLevel = items.filter((it) => (groupMap[it.id]?.level ?? (isBugType(it.type) ? "low" : "medium")) === targetLevel);
                                       const overIndex = inLevel.findIndex((it) => it.id === overId);
                                       taskPriorities.move(groupBucketKey, activeId, targetLevel, Math.max(0, overIndex));
                                       showReorderToast(groupBucketKey, activeId, targetLevel, Math.max(0, overIndex), items, groupMap);
@@ -1961,7 +1963,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                         tfsBaseUrl={tfsBaseUrl}
                                         source={source}
                                         onCopyLink={copyWorkItemLink}
-                                        priority={groupPriorityLevel(task.id)}
+                                        priority={groupPriorityLevel(task)}
                                         onPriorityChange={(level) => taskPriorities.setLevel(groupBucketKey, task.id, level)}
                                         dragHandle={dragHandle}
                                         rowRef={rowRef}
