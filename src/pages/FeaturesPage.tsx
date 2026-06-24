@@ -66,7 +66,20 @@ interface UnifiedTask {
   assignee?: string;
   featureId?: string;
   iterationPath?: string;
+  changedDate?: string;
+  closedDate?: string;
 }
+
+// Format an ISO date as DD/MM/YYYY for table display. Returns "—" when missing or invalid.
+const formatTaskDate = (iso?: string): string => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+};
 
 // Map a TFS state to a normalized bucket for charts/visuals.
 // Bugs (since the query brought back the last 10 days) can now arrive in
@@ -710,6 +723,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         type: t.workItemType,
         assignee: t.assignedTo,
         iterationPath: t.iterationPath,
+        changedDate: t.changedDate,
+        closedDate: t.closedDate,
       }));
       return { features: feats, tasks: tks };
     }
@@ -1625,6 +1640,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                             <TableHead className="w-[100px]">{t.typeColumn}</TableHead>
                             <TableHead className="w-[120px]">{t.stateColumn}</TableHead>
                             <TableHead className="w-[180px]">{t.iterationColumn}</TableHead>
+                            <TableHead className="w-[110px]">{t.changedDateColumn}</TableHead>
+                            <TableHead className="w-[110px]">{t.closedDateColumn}</TableHead>
                             <TableHead className="w-[140px]">{t.priorityColumn}</TableHead>
                             <TableHead className="w-[180px]">{t.assignedToColumn}</TableHead>
                             {source === "tfs" && tfsBaseUrl && (
@@ -1676,6 +1693,12 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       </TableCell>
                                       <TableCell className="max-w-[180px] truncate text-xs text-muted-foreground" title={task.iterationPath || undefined}>
                                         {task.iterationPath || <span className="italic">—</span>}
+                                      </TableCell>
+                                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                                        {formatTaskDate(task.changedDate)}
+                                      </TableCell>
+                                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                                        {formatTaskDate(task.closedDate)}
                                       </TableCell>
                                       <TableCell>
                                         <PrioritySelect
@@ -1909,6 +1932,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     <TableHead className="w-[100px]">{t.typeColumn}</TableHead>
                                     <TableHead className="w-[140px]">{t.stateColumn}</TableHead>
                                     <TableHead className="w-[180px]">{t.iterationColumn}</TableHead>
+                                    <TableHead className="w-[110px]">{t.changedDateColumn}</TableHead>
+                                    <TableHead className="w-[110px]">{t.closedDateColumn}</TableHead>
                                     <TableHead className="w-[140px]">{t.priorityColumn}</TableHead>
                                     <TableHead className="w-[120px] text-right">{t.handoverColumn}</TableHead>
                                     {source === "tfs" && tfsBaseUrl && (
@@ -2084,7 +2109,7 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, prior
   const [open, setOpen] = useState(false);
   const { t } = useLang();
   const showActions = source === "tfs" && !!tfsBaseUrl;
-  const colSpan = 7 + (showActions ? 1 : 0) + (dragHandle !== undefined ? 1 : 0);
+  const colSpan = 9 + (showActions ? 1 : 0) + (dragHandle !== undefined ? 1 : 0);
   return (
     <>
       <TableRow ref={rowRef} style={rowStyle}>
@@ -2107,6 +2132,12 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, prior
         </TableCell>
         <TableCell className="max-w-[180px] truncate text-xs text-muted-foreground" title={task.iterationPath || undefined}>
           {task.iterationPath || <span className="italic">—</span>}
+        </TableCell>
+        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+          {formatTaskDate(task.changedDate)}
+        </TableCell>
+        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+          {formatTaskDate(task.closedDate)}
         </TableCell>
         <TableCell>
           <PrioritySelect value={priority} onChange={onPriorityChange} />
