@@ -1640,6 +1640,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                             <TableHead className="w-[100px]">{t.typeColumn}</TableHead>
                             <TableHead className="w-[120px]">{t.stateColumn}</TableHead>
                             <TableHead className="w-[180px]">{t.iterationColumn}</TableHead>
+                            <TableHead className="w-[110px]">{t.changedDateColumn}</TableHead>
+                            <TableHead className="w-[110px]">{t.closedDateColumn}</TableHead>
                             <TableHead className="w-[140px]">{t.priorityColumn}</TableHead>
                             <TableHead className="w-[180px]">{t.assignedToColumn}</TableHead>
                             {source === "tfs" && tfsBaseUrl && (
@@ -1691,6 +1693,12 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       </TableCell>
                                       <TableCell className="max-w-[180px] truncate text-xs text-muted-foreground" title={task.iterationPath || undefined}>
                                         {task.iterationPath || <span className="italic">—</span>}
+                                      </TableCell>
+                                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                                        {formatTaskDate(task.changedDate)}
+                                      </TableCell>
+                                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                                        {formatTaskDate(task.closedDate)}
                                       </TableCell>
                                       <TableCell>
                                         <PrioritySelect
