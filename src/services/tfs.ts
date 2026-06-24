@@ -609,6 +609,8 @@ export interface TfsWorkItem {
   effort?: number;
   originalEstimate?: number;
   remainingWork?: number;
+  changedDate?: string;
+  closedDate?: string;
 }
 
 interface WiqlResultRef {
@@ -665,6 +667,8 @@ const mapRawToWorkItem = (raw: RawWorkItem): TfsWorkItem => {
     effort: typeof f["Microsoft.VSTS.Scheduling.Effort"] === "number" ? f["Microsoft.VSTS.Scheduling.Effort"] : undefined,
     originalEstimate: typeof f["Microsoft.VSTS.Scheduling.OriginalEstimate"] === "number" ? f["Microsoft.VSTS.Scheduling.OriginalEstimate"] : undefined,
     remainingWork: typeof f["Microsoft.VSTS.Scheduling.RemainingWork"] === "number" ? f["Microsoft.VSTS.Scheduling.RemainingWork"] : undefined,
+    changedDate: typeof f["System.ChangedDate"] === "string" ? (f["System.ChangedDate"] as string) : undefined,
+    closedDate: typeof f["Microsoft.VSTS.Common.ClosedDate"] === "string" ? (f["Microsoft.VSTS.Common.ClosedDate"] as string) : undefined,
   };
 };
 
