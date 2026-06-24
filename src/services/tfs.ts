@@ -969,6 +969,8 @@ ORDER BY [System.ChangedDate] DESC`;
     "System.IterationPath",
     "System.AreaPath",
     "System.Tags",
+    "System.ChangedDate",
+    "Microsoft.VSTS.Common.ClosedDate",
   ]);
 };
 
@@ -1012,6 +1014,8 @@ ORDER BY [System.ChangedDate] DESC`;
     "Microsoft.VSTS.Scheduling.Effort",
     "Microsoft.VSTS.Scheduling.OriginalEstimate",
     "Microsoft.VSTS.Scheduling.RemainingWork",
+    "System.ChangedDate",
+    "Microsoft.VSTS.Common.ClosedDate",
   ]);
 };
 
