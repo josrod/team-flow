@@ -357,8 +357,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const taskPriorities = useTaskPriorities();
   const flatBucketKey = activePerson === "all" ? "__all__" : activePerson;
   const flatPriorityMap = taskPriorities.mapFor(flatBucketKey);
-  const priorityLevelFor = (id: string): PriorityLevel =>
-    flatPriorityMap[id]?.level ?? "medium";
+  const priorityLevelFor = (task: UnifiedTask): PriorityLevel =>
+    flatPriorityMap[task.id]?.level ?? (isBugType(task.type) ? "low" : "medium");
 
   const showReorderToast = (
     bucketKey: string,
