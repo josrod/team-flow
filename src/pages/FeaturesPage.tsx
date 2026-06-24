@@ -66,7 +66,20 @@ interface UnifiedTask {
   assignee?: string;
   featureId?: string;
   iterationPath?: string;
+  changedDate?: string;
+  closedDate?: string;
 }
+
+// Format an ISO date as DD/MM/YYYY for table display. Returns "—" when missing or invalid.
+const formatTaskDate = (iso?: string): string => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+};
 
 // Map a TFS state to a normalized bucket for charts/visuals.
 // Bugs (since the query brought back the last 10 days) can now arrive in
@@ -710,6 +723,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         type: t.workItemType,
         assignee: t.assignedTo,
         iterationPath: t.iterationPath,
+        changedDate: t.changedDate,
+        closedDate: t.closedDate,
       }));
       return { features: feats, tasks: tks };
     }
