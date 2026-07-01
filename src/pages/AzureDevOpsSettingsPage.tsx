@@ -121,6 +121,7 @@ export const AzureDevOpsSettingsPage = () => {
         if (Array.isArray(rawIters)) setIterationPaths(rawIters);
         setBugsQueryId((data as { bugs_query_id?: string | null }).bugs_query_id ?? "");
         setEpicsQueryId((data as { epics_query_id?: string | null }).epics_query_id ?? "");
+        setEpicsProject((data as { epics_project?: string | null }).epics_project ?? "");
         const rawEpicTags = (data as { epics_tags?: string[] | null }).epics_tags;
         if (Array.isArray(rawEpicTags)) setEpicsTags(rawEpicTags);
 
