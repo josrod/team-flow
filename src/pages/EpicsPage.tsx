@@ -583,7 +583,7 @@ export const EpicsPage = () => {
             ? {
                 serverUrl: settings.serverUrl,
                 collection: settings.collection,
-                project: settings.project,
+                project: settings.epicsProject.trim() || settings.project,
                 team: settings.team,
                 pat: settings.pat,
               }
