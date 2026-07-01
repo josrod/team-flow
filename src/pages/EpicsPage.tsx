@@ -99,7 +99,7 @@ export const EpicsPage = () => {
       if (next.get("tags") === value) return;
       next.set("tags", value);
     }
-    setSearchParams(next, { replace: true });
+    setSearchParams(next);
   }, [selectedTags, searchParams, setSearchParams]);
 
   // Restore from URL when user navigates back/forward.
