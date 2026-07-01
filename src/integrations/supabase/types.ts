@@ -21,6 +21,7 @@ export type Database = {
           bugs_query_id: string | null
           collection: string | null
           created_at: string
+          epics_project: string | null
           epics_query_id: string | null
           epics_tags: string[]
           id: string
@@ -44,6 +45,7 @@ export type Database = {
           bugs_query_id?: string | null
           collection?: string | null
           created_at?: string
+          epics_project?: string | null
           epics_query_id?: string | null
           epics_tags?: string[]
           id?: string
@@ -67,6 +69,7 @@ export type Database = {
           bugs_query_id?: string | null
           collection?: string | null
           created_at?: string
+          epics_project?: string | null
           epics_query_id?: string | null
           epics_tags?: string[]
           id?: string
