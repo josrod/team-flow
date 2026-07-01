@@ -59,6 +59,7 @@ export const AzureDevOpsSettingsPage = () => {
   const [iterationPaths, setIterationPaths] = useState<string[]>([]);
   const [bugsQueryId, setBugsQueryId] = useState("");
   const [epicsQueryId, setEpicsQueryId] = useState("");
+  const [epicsProject, setEpicsProject] = useState("");
   const [epicsTags, setEpicsTags] = useState<string[]>([]);
   const [epicsTagInput, setEpicsTagInput] = useState("");
 
@@ -120,6 +121,7 @@ export const AzureDevOpsSettingsPage = () => {
         if (Array.isArray(rawIters)) setIterationPaths(rawIters);
         setBugsQueryId((data as { bugs_query_id?: string | null }).bugs_query_id ?? "");
         setEpicsQueryId((data as { epics_query_id?: string | null }).epics_query_id ?? "");
+        setEpicsProject((data as { epics_project?: string | null }).epics_project ?? "");
         const rawEpicTags = (data as { epics_tags?: string[] | null }).epics_tags;
         if (Array.isArray(rawEpicTags)) setEpicsTags(rawEpicTags);
 
@@ -208,6 +210,7 @@ export const AzureDevOpsSettingsPage = () => {
           iteration_paths: iterationPaths,
           bugs_query_id: bugsQueryId.trim() || null,
           epics_query_id: epicsQueryId.trim() || null,
+          epics_project: epicsProject.trim() || null,
           epics_tags: epicsTags,
         })
         .eq("user_id", user.id);
@@ -221,7 +224,7 @@ export const AzureDevOpsSettingsPage = () => {
         window.clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, epicsQueryId, epicsTags, hasExisting]);
+  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, epicsQueryId, epicsProject, epicsTags, hasExisting]);
 
   const resetStatus = () => {
     setConnectionStatus("idle");
@@ -393,6 +396,7 @@ export const AzureDevOpsSettingsPage = () => {
         iteration_paths: iterationPaths,
         bugs_query_id: bugsQueryId.trim() || null,
         epics_query_id: epicsQueryId.trim() || null,
+        epics_project: epicsProject.trim() || null,
         epics_tags: epicsTags,
       };
 
@@ -899,6 +903,17 @@ export const AzureDevOpsSettingsPage = () => {
               <div>
                 <h3 className="text-sm font-semibold">{t.adoEpicsSectionTitle}</h3>
                 <p className="text-xs text-muted-foreground">{t.adoEpicsSectionDesc}</p>
+              </div>
+              <div>
+                <Label htmlFor="ado-epics-project">{t.adoEpicsProjectLabel}</Label>
+                <Input
+                  id="ado-epics-project"
+                  placeholder={t.adoEpicsProjectPlaceholder}
+                  value={epicsProject}
+                  onChange={(e) => setEpicsProject(e.target.value)}
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1.5">{t.adoEpicsProjectHint}</p>
               </div>
               <div>
                 <Label htmlFor="ado-epics-query">{t.adoEpicsQueryIdLabel}</Label>

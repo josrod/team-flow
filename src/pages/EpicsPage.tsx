@@ -40,6 +40,7 @@ interface EpicsSettings {
   pat: string;
   areaPaths: string[];
   epicsQueryId: string;
+  epicsProject: string;
   epicsTags: string[];
 }
 
@@ -134,6 +135,7 @@ export const EpicsPage = () => {
           pat_iv: string | null;
           area_paths?: string[] | null;
           epics_query_id?: string | null;
+          epics_project?: string | null;
           epics_tags?: string[] | null;
         };
         try {
@@ -146,6 +148,7 @@ export const EpicsPage = () => {
             pat: plainPat,
             areaPaths: Array.isArray(raw.area_paths) ? raw.area_paths : [],
             epicsQueryId: raw.epics_query_id ?? "",
+            epicsProject: raw.epics_project ?? "",
             epicsTags: Array.isArray(raw.epics_tags) ? raw.epics_tags : [],
           });
         } catch {
@@ -169,11 +172,12 @@ export const EpicsPage = () => {
     loadTimeoutRef.current = setTimeout(() => controller.abort(), LOAD_EPICS_TIMEOUT_MS);
     setLoading(true);
     setError(null);
+    const effectiveProject = settings.epicsProject.trim() || settings.project;
     const result = await fetchTfsEpics(
       {
         serverUrl: settings.serverUrl,
         collection: settings.collection,
-        project: settings.project,
+        project: effectiveProject,
         team: settings.team,
         pat: settings.pat,
       },
@@ -579,7 +583,7 @@ export const EpicsPage = () => {
             ? {
                 serverUrl: settings.serverUrl,
                 collection: settings.collection,
-                project: settings.project,
+                project: settings.epicsProject.trim() || settings.project,
                 team: settings.team,
                 pat: settings.pat,
               }
