@@ -460,6 +460,23 @@ export const EpicsPage = () => {
           </CardContent>
         </Card>
       </motion.div>
+
+      <EpicDetailDrawer
+        epic={selectedEpic}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        connection={
+          settings
+            ? {
+                serverUrl: settings.serverUrl,
+                collection: settings.collection,
+                project: settings.project,
+                team: settings.team,
+                pat: settings.pat,
+              }
+            : null
+        }
+      />
     </div>
   );
 };
