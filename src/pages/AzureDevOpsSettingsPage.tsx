@@ -892,9 +892,86 @@ export const AzureDevOpsSettingsPage = () => {
                 hideValid
               />
             </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-sm font-semibold">{t.adoEpicsSectionTitle}</h3>
+                <p className="text-xs text-muted-foreground">{t.adoEpicsSectionDesc}</p>
+              </div>
+              <div>
+                <Label htmlFor="ado-epics-query">{t.adoEpicsQueryIdLabel}</Label>
+                <Input
+                  id="ado-epics-query"
+                  placeholder={t.adoEpicsQueryIdPlaceholder}
+                  value={epicsQueryId}
+                  onChange={(e) => setEpicsQueryId(e.target.value)}
+                  aria-invalid={fieldValidation.epicsQueryId.status === "invalid"}
+                  className={cn("mt-1", inputStateClass(fieldValidation.epicsQueryId.status))}
+                />
+                <TfsFieldHint
+                  validation={fieldValidation.epicsQueryId}
+                  defaultHint={t.adoEpicsQueryIdHint}
+                  hideValid
+                />
+              </div>
+              <div>
+                <Label htmlFor="ado-epics-tags">{t.adoEpicsTagsLabel}</Label>
+                <Input
+                  id="ado-epics-tags"
+                  placeholder={t.adoEpicsTagsPlaceholder}
+                  value={epicsTagInput}
+                  onChange={(e) => setEpicsTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === ",") {
+                      e.preventDefault();
+                      const value = epicsTagInput.trim().replace(/,+$/, "");
+                      if (value && !epicsTags.includes(value)) {
+                        setEpicsTags([...epicsTags, value]);
+                      }
+                      setEpicsTagInput("");
+                    } else if (e.key === "Backspace" && epicsTagInput === "" && epicsTags.length > 0) {
+                      setEpicsTags(epicsTags.slice(0, -1));
+                    }
+                  }}
+                  onBlur={() => {
+                    const value = epicsTagInput.trim();
+                    if (value && !epicsTags.includes(value)) {
+                      setEpicsTags([...epicsTags, value]);
+                    }
+                    setEpicsTagInput("");
+                  }}
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1.5">{t.adoEpicsTagsHint}</p>
+                {epicsTags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {epicsTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => setEpicsTags(epicsTags.filter((t) => t !== tag))}
+                          className="hover:text-destructive"
+                          aria-label={`Remove ${tag}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </motion.div>
+
+
 
 
 
