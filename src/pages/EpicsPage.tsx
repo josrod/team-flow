@@ -416,9 +416,19 @@ export const EpicsPage = () => {
                         </TableHeader>
                         <TableBody>
                           {filtered.map((epic) => (
-                            <TableRow key={epic.id} className="hover:bg-muted/50">
+                            <TableRow
+                              key={epic.id}
+                              className="hover:bg-muted/50 cursor-pointer"
+                              onClick={() => openEpic(epic)}
+                            >
                               <TableCell className="font-mono text-xs">
-                                <a href={epic.htmlUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:underline text-primary">
+                                <a
+                                  href={epic.htmlUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1 hover:underline text-primary"
+                                >
                                   #{epic.id}
                                   <ExternalLink className="h-3 w-3" />
                                 </a>
