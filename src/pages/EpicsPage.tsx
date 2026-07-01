@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { AlertCircle, Check, ChevronsUpDown, ExternalLink, Loader2, RefreshCw, Search, Settings, Target, X } from "lucide-react";
 import { motion } from "framer-motion";
 
