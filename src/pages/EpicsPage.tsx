@@ -357,12 +357,11 @@ export const EpicsPage = () => {
                                   <p className="text-xs text-muted-foreground text-center py-4">—</p>
                                 ) : (
                                   bucketEpics.map((epic) => (
-                                    <a
+                                    <button
                                       key={epic.id}
-                                      href={epic.htmlUrl}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="block rounded-md border bg-background p-2.5 hover:border-primary hover:shadow-sm transition-all"
+                                      type="button"
+                                      onClick={() => openEpic(epic)}
+                                      className="block w-full text-left rounded-md border bg-background p-2.5 hover:border-primary hover:shadow-sm transition-all"
                                     >
                                       <div className="flex items-start justify-between gap-2">
                                         <span className="text-xs font-mono text-muted-foreground">#{epic.id}</span>
@@ -386,7 +385,7 @@ export const EpicsPage = () => {
                                         </span>
                                         <span className="font-mono">{formatDate(epic.targetDate)}</span>
                                       </div>
-                                    </a>
+                                    </button>
                                   ))
                                 )}
                               </div>
