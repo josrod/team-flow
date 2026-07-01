@@ -78,10 +78,40 @@ export const EpicsPage = () => {
   }, []);
   const [error, setError] = useState<TfsError | null>(null);
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [stateFilter, setStateFilter] = useState<string>(ALL);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>(() => {
+    const raw = searchParams.get("tags");
+    if (!raw) return [];
+    return raw.split(",").map((s) => s.trim()).filter(Boolean);
+  });
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
+
+  // Sync selectedTags → URL (?tags=a,b,c). Removes the param when empty.
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (selectedTags.length === 0) {
+      if (!next.has("tags")) return;
+      next.delete("tags");
+    } else {
+      const value = selectedTags.join(",");
+      if (next.get("tags") === value) return;
+      next.set("tags", value);
+    }
+    setSearchParams(next, { replace: true });
+  }, [selectedTags, searchParams, setSearchParams]);
+
+  // Restore from URL when user navigates back/forward.
+  useEffect(() => {
+    const raw = searchParams.get("tags");
+    const fromUrl = raw ? raw.split(",").map((s) => s.trim()).filter(Boolean) : [];
+    setSelectedTags((prev) => {
+      if (prev.length === fromUrl.length && prev.every((t, i) => t === fromUrl[i])) return prev;
+      return fromUrl;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.get("tags")]);
 
   useEffect(() => {
     const loadSettings = async () => {
