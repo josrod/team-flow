@@ -224,7 +224,7 @@ export const AzureDevOpsSettingsPage = () => {
         window.clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, epicsQueryId, epicsTags, hasExisting]);
+  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, epicsQueryId, epicsProject, epicsTags, hasExisting]);
 
   const resetStatus = () => {
     setConnectionStatus("idle");
