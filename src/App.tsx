@@ -18,6 +18,8 @@ import FeaturesPage from "./pages/FeaturesPage";
 import TasksPage from "./pages/TasksPage";
 import AzureDevOpsSettingsPage from "./pages/AzureDevOpsSettingsPage";
 import { BugsPage } from "./pages/BugsPage";
+import { EpicsPage } from "./pages/EpicsPage";
+
 import AuthPage from "./pages/AuthPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import NotFound from "./pages/NotFound";
@@ -46,6 +48,8 @@ const App = () => (
                   <Route path="/workload" element={<ProtectedRoute><AppLayout><FeaturesPage view="workload" /></AppLayout></ProtectedRoute>} />
                   <Route path="/pulse" element={<ProtectedRoute><AppLayout><TeamPulseDashboard /></AppLayout></ProtectedRoute>} />
                   <Route path="/bugs" element={<ProtectedRoute><AppLayout><BugsPage /></AppLayout></ProtectedRoute>} />
+                  <Route path="/epics" element={<ProtectedRoute><AppLayout><EpicsPage /></AppLayout></ProtectedRoute>} />
+
                   <Route path="/settings/azure-devops" element={<ProtectedRoute><AppLayout><AzureDevOpsSettingsPage /></AppLayout></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

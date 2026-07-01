@@ -1636,3 +1636,232 @@ export const fetchTfsBugDetail = async (
     window.clearTimeout(timeoutId);
   }
 };
+
+// ---------------------------------------------------------------------------
+// Epics — fetch Work Items of type "Epic" either from a saved query or via a
+// fallback WIQL. Then filter by allowed tags.
+// ---------------------------------------------------------------------------
+
+export interface TfsEpic {
+  id: number;
+  title: string;
+  state: string;
+  assignedTo?: string;
+  assignedToEmail?: string;
+  areaPath?: string;
+  iterationPath?: string;
+  tags: string[];
+  targetDate?: string;
+  startDate?: string;
+  changedDate?: string;
+  description?: string;
+  htmlUrl: string;
+}
+
+const GUID_ONLY = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const EPIC_FIELDS = [
+  "System.Id",
+  "System.Title",
+  "System.State",
+  "System.AssignedTo",
+  "System.AreaPath",
+  "System.IterationPath",
+  "System.Tags",
+  "System.ChangedDate",
+  "System.Description",
+  "Microsoft.VSTS.Scheduling.TargetDate",
+  "Microsoft.VSTS.Scheduling.StartDate",
+];
+
+const runEpicsWiql = async (
+  conn: TfsConnection,
+  wiql: string,
+  signal: AbortSignal,
+): Promise<{ ids: number[]; error?: TfsError; url: string }> => {
+  const base = buildCollectionUrl(conn.serverUrl, conn.collection);
+  const projectSeg = encodeURIComponent(conn.project.trim());
+  const url = `${base}/${projectSeg}/_apis/wit/wiql?api-version=${API_VERSION}`;
+  if (isMixedContent(url)) {
+    return { ids: [], url, error: { kind: "mixed_content", url, message: "Mixed content (HTTPS → HTTP)." } };
+  }
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: buildAuthHeader(conn.pat),
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query: wiql }),
+    signal,
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    return {
+      ids: [],
+      url,
+      error: {
+        kind: res.status === 401 ? "unauthorized" : res.status === 403 ? "forbidden" : res.status === 404 ? "not_found" : "http",
+        status: res.status,
+        url,
+        message: `Epics query failed with HTTP ${res.status}.`,
+        detail: body.slice(0, 300),
+      },
+    };
+  }
+  const data = (await res.json()) as WiqlResponse;
+  return { ids: (data.workItems ?? []).map((w) => w.id), url };
+};
+
+const runSavedQuery = async (
+  conn: TfsConnection,
+  queryId: string,
+  signal: AbortSignal,
+): Promise<{ ids: number[]; error?: TfsError; url: string }> => {
+  const base = buildCollectionUrl(conn.serverUrl, conn.collection);
+  const projectSeg = encodeURIComponent(conn.project.trim());
+  const idOrPath = queryId.trim();
+  // TFS returns the WIQL text so we can execute it via the WIQL endpoint and
+  // still filter/select the fields we care about.
+  const url = `${base}/${projectSeg}/_apis/wit/queries/${encodeURI(idOrPath)}?$expand=wiql&api-version=${API_VERSION}`;
+  if (isMixedContent(url)) {
+    return { ids: [], url, error: { kind: "mixed_content", url, message: "Mixed content (HTTPS → HTTP)." } };
+  }
+  const res = await fetch(url, {
+    method: "GET",
+    headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
+    signal,
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    return {
+      ids: [],
+      url,
+      error: {
+        kind: res.status === 401 ? "unauthorized" : res.status === 403 ? "forbidden" : res.status === 404 ? "not_found" : "http",
+        status: res.status,
+        url,
+        message: `Could not resolve saved query (HTTP ${res.status}).`,
+        detail: body.slice(0, 300),
+      },
+    };
+  }
+  const data = (await res.json()) as { wiql?: string };
+  if (!data.wiql) {
+    return { ids: [], url, error: { kind: "unknown", url, message: "Saved query does not expose a WIQL body." } };
+  }
+  return runEpicsWiql(conn, data.wiql, signal);
+};
+
+export interface FetchEpicsOptions {
+  queryId?: string;
+  tags?: string[];
+  areaPaths?: string[];
+}
+
+export const fetchTfsEpics = async (
+  conn: TfsConnection,
+  options: FetchEpicsOptions,
+  externalSignal?: AbortSignal,
+): Promise<TfsDiscoveryResult<TfsEpic>> => {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const onExternalAbort = () => controller.abort();
+  if (externalSignal) {
+    if (externalSignal.aborted) controller.abort();
+    else externalSignal.addEventListener("abort", onExternalAbort, { once: true });
+  }
+
+  const base = buildCollectionUrl(conn.serverUrl, conn.collection);
+  let fetchUrl = base;
+
+  try {
+    let ids: number[] = [];
+    if (options.queryId && options.queryId.trim()) {
+      const q = options.queryId.trim();
+      // Use saved query resolver for both GUID and path forms.
+      const res = q.match(GUID_ONLY)
+        ? await runSavedQuery(conn, q, controller.signal)
+        : await runSavedQuery(conn, q, controller.signal);
+      fetchUrl = res.url;
+      if (res.error) return { items: [], error: res.error };
+      ids = res.ids;
+    } else {
+      // Fallback WIQL: all Epics in the project, optionally under area paths.
+      let where = `[System.TeamProject] = @project AND [System.WorkItemType] = 'Epic'`;
+      const paths = (options.areaPaths ?? []).map((p) => p.trim()).filter(Boolean);
+      if (paths.length > 0) {
+        const clause = paths.map((p) => `[System.AreaPath] UNDER '${escapeWiqlString(p)}'`).join(" OR ");
+        where += ` AND (${clause})`;
+      }
+      const wiql = `SELECT [System.Id] FROM WorkItems WHERE ${where}`;
+      const res = await runEpicsWiql(conn, wiql, controller.signal);
+      fetchUrl = res.url;
+      if (res.error) return { items: [], error: res.error };
+      ids = res.ids;
+    }
+
+    if (ids.length === 0) return { items: [] };
+
+    const batches: number[][] = [];
+    for (let i = 0; i < ids.length; i += 200) batches.push(ids.slice(i, i + 200));
+
+    const all: TfsEpic[] = [];
+    for (const batch of batches) {
+      const fieldsParam = encodeURIComponent(EPIC_FIELDS.join(","));
+      const detailsUrl = `${base}/_apis/wit/workitems?ids=${batch.join(",")}&fields=${fieldsParam}&api-version=${API_VERSION}`;
+      fetchUrl = detailsUrl;
+      const detailsRes = await fetch(detailsUrl, {
+        method: "GET",
+        headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
+        signal: controller.signal,
+      });
+      if (!detailsRes.ok) continue;
+      const data = (await detailsRes.json()) as RawWorkItemsResponse;
+      for (const raw of data.value ?? []) {
+        const f = raw.fields ?? {};
+        const assigned = parseAssignedTo(f["System.AssignedTo"]);
+        const tagsRaw = f["System.Tags"];
+        const tags =
+          typeof tagsRaw === "string" && tagsRaw.trim()
+            ? tagsRaw.split(";").map((s) => s.trim()).filter(Boolean)
+            : [];
+        all.push({
+          id: raw.id,
+          title: String(f["System.Title"] ?? ""),
+          state: String(f["System.State"] ?? ""),
+          assignedTo: assigned.name,
+          assignedToEmail: assigned.email,
+          areaPath: f["System.AreaPath"] as string | undefined,
+          iterationPath: f["System.IterationPath"] as string | undefined,
+          tags,
+          targetDate: f["Microsoft.VSTS.Scheduling.TargetDate"] as string | undefined,
+          startDate: f["Microsoft.VSTS.Scheduling.StartDate"] as string | undefined,
+          changedDate: f["System.ChangedDate"] as string | undefined,
+          description: f["System.Description"] as string | undefined,
+          htmlUrl: buildWorkItemHtmlUrl(conn, raw.id),
+        });
+      }
+    }
+
+    // Tag filter (case-insensitive intersection). Skip when list is empty.
+    const allowed = (options.tags ?? []).map((t) => t.trim().toLowerCase()).filter(Boolean);
+    const filtered = allowed.length === 0
+      ? all
+      : all.filter((e) => e.tags.some((t) => allowed.includes(t.toLowerCase())));
+
+    return { items: filtered };
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return { items: [], error: { kind: "timeout", url: fetchUrl, message: "Timed out." } };
+    }
+    if (isNetworkLevelError(err)) {
+      return { items: [], error: { kind: "cors", url: fetchUrl, message: "No response (CORS, VPN or firewall)." } };
+    }
+    return { items: [], error: { kind: "unknown", url: fetchUrl, message: err instanceof Error ? err.message : "Unknown error." } };
+  } finally {
+    window.clearTimeout(timeoutId);
+    if (externalSignal) externalSignal.removeEventListener("abort", onExternalAbort);
+  }
+};
+

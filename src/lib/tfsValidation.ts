@@ -133,6 +133,7 @@ export interface ConnectionValidation {
   project: FieldValidation;
   team: FieldValidation;
   bugsQueryId: FieldValidation;
+  epicsQueryId: FieldValidation;
   /** True only when every required field is valid and team is valid (or empty). */
   allRequiredValid: boolean;
 }
@@ -143,24 +144,27 @@ export const validateConnectionFields = (input: {
   project: string;
   team: string;
   bugsQueryId?: string;
+  epicsQueryId?: string;
 }): ConnectionValidation => {
   const serverUrl = validateServerUrl(input.serverUrl);
   const collection = validateCollection(input.collection);
   const project = validateProject(input.project);
   const team = validateTeam(input.team);
   const bugsQueryId = validateQueryId(input.bugsQueryId ?? "");
+  const epicsQueryId = validateQueryId(input.epicsQueryId ?? "");
 
   const allRequiredValid =
     serverUrl.status === "valid" &&
     collection.status === "valid" &&
     project.status === "valid" &&
     team.status !== "invalid" &&
-    bugsQueryId.status !== "invalid";
+    bugsQueryId.status !== "invalid" &&
+    epicsQueryId.status !== "invalid";
 
-  return { serverUrl, collection, project, team, bugsQueryId, allRequiredValid };
+  return { serverUrl, collection, project, team, bugsQueryId, epicsQueryId, allRequiredValid };
 };
 
-export type SaveBlockReason = "not-tested" | "invalid-bugs-query";
+export type SaveBlockReason = "not-tested" | "invalid-bugs-query" | "invalid-epics-query";
 
 export interface SaveGuardResult {
   canSave: boolean;
@@ -175,6 +179,7 @@ export interface SaveGuardResult {
 export const evaluateSaveGuard = (input: {
   connectionStatus: "idle" | "testing" | "success" | "error" | string;
   bugsQueryId: FieldValidation;
+  epicsQueryId?: FieldValidation;
 }): SaveGuardResult => {
   if (input.connectionStatus !== "success") {
     return { canSave: false, reason: "not-tested" };
@@ -182,5 +187,9 @@ export const evaluateSaveGuard = (input: {
   if (input.bugsQueryId.status === "invalid") {
     return { canSave: false, reason: "invalid-bugs-query" };
   }
+  if (input.epicsQueryId && input.epicsQueryId.status === "invalid") {
+    return { canSave: false, reason: "invalid-epics-query" };
+  }
   return { canSave: true };
 };
+

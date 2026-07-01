@@ -58,6 +58,11 @@ export const AzureDevOpsSettingsPage = () => {
   const [areaPaths, setAreaPaths] = useState<string[]>([]);
   const [iterationPaths, setIterationPaths] = useState<string[]>([]);
   const [bugsQueryId, setBugsQueryId] = useState("");
+  const [epicsQueryId, setEpicsQueryId] = useState("");
+  const [epicsTags, setEpicsTags] = useState<string[]>([]);
+  const [epicsTagInput, setEpicsTagInput] = useState("");
+
+
   
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -114,6 +119,10 @@ export const AzureDevOpsSettingsPage = () => {
         if (Array.isArray(rawAreas)) setAreaPaths(rawAreas);
         if (Array.isArray(rawIters)) setIterationPaths(rawIters);
         setBugsQueryId((data as { bugs_query_id?: string | null }).bugs_query_id ?? "");
+        setEpicsQueryId((data as { epics_query_id?: string | null }).epics_query_id ?? "");
+        const rawEpicTags = (data as { epics_tags?: string[] | null }).epics_tags;
+        if (Array.isArray(rawEpicTags)) setEpicsTags(rawEpicTags);
+
         setLastSynced(data.last_synced_at);
         setHasExisting(true);
         setConnectionStatus("success");
@@ -198,18 +207,21 @@ export const AzureDevOpsSettingsPage = () => {
           area_paths: areaPaths,
           iteration_paths: iterationPaths,
           bugs_query_id: bugsQueryId.trim() || null,
+          epics_query_id: epicsQueryId.trim() || null,
+          epics_tags: epicsTags,
         })
         .eq("user_id", user.id);
 
       if (!error) setAutoSavedAt(new Date().toISOString());
     }, 800);
 
+
     return () => {
       if (autoSaveTimerRef.current !== null) {
         window.clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, hasExisting]);
+  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, epicsQueryId, epicsTags, hasExisting]);
 
   const resetStatus = () => {
     setConnectionStatus("idle");
@@ -221,9 +233,10 @@ export const AzureDevOpsSettingsPage = () => {
 
   // Real-time validation of connection fields. Recomputed on every keystroke.
   const fieldValidation = useMemo(
-    () => validateConnectionFields({ serverUrl, collection, project, team, bugsQueryId }),
-    [serverUrl, collection, project, team, bugsQueryId],
+    () => validateConnectionFields({ serverUrl, collection, project, team, bugsQueryId, epicsQueryId }),
+    [serverUrl, collection, project, team, bugsQueryId, epicsQueryId],
   );
+
 
   const inputStateClass = (status: "empty" | "valid" | "invalid") =>
     cn(
@@ -337,15 +350,19 @@ export const AzureDevOpsSettingsPage = () => {
     const guard = evaluateSaveGuard({
       connectionStatus,
       bugsQueryId: fieldValidation.bugsQueryId,
+      epicsQueryId: fieldValidation.epicsQueryId,
     });
     if (!guard.canSave) {
       if (guard.reason === "not-tested") {
         toast.error(t.adoTestFirst);
       } else if (guard.reason === "invalid-bugs-query") {
         toast.error("Corrige el campo 'Query de Bugs' antes de guardar.");
+      } else if (guard.reason === "invalid-epics-query") {
+        toast.error("Corrige el campo 'Query de Epics' antes de guardar.");
       }
       return;
     }
+
 
     setSaving(true);
     try {
@@ -375,7 +392,10 @@ export const AzureDevOpsSettingsPage = () => {
         area_paths: areaPaths,
         iteration_paths: iterationPaths,
         bugs_query_id: bugsQueryId.trim() || null,
+        epics_query_id: epicsQueryId.trim() || null,
+        epics_tags: epicsTags,
       };
+
 
       if (hasExisting) {
         const { error } = await supabase
@@ -872,9 +892,86 @@ export const AzureDevOpsSettingsPage = () => {
                 hideValid
               />
             </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-sm font-semibold">{t.adoEpicsSectionTitle}</h3>
+                <p className="text-xs text-muted-foreground">{t.adoEpicsSectionDesc}</p>
+              </div>
+              <div>
+                <Label htmlFor="ado-epics-query">{t.adoEpicsQueryIdLabel}</Label>
+                <Input
+                  id="ado-epics-query"
+                  placeholder={t.adoEpicsQueryIdPlaceholder}
+                  value={epicsQueryId}
+                  onChange={(e) => setEpicsQueryId(e.target.value)}
+                  aria-invalid={fieldValidation.epicsQueryId.status === "invalid"}
+                  className={cn("mt-1", inputStateClass(fieldValidation.epicsQueryId.status))}
+                />
+                <TfsFieldHint
+                  validation={fieldValidation.epicsQueryId}
+                  defaultHint={t.adoEpicsQueryIdHint}
+                  hideValid
+                />
+              </div>
+              <div>
+                <Label htmlFor="ado-epics-tags">{t.adoEpicsTagsLabel}</Label>
+                <Input
+                  id="ado-epics-tags"
+                  placeholder={t.adoEpicsTagsPlaceholder}
+                  value={epicsTagInput}
+                  onChange={(e) => setEpicsTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === ",") {
+                      e.preventDefault();
+                      const value = epicsTagInput.trim().replace(/,+$/, "");
+                      if (value && !epicsTags.includes(value)) {
+                        setEpicsTags([...epicsTags, value]);
+                      }
+                      setEpicsTagInput("");
+                    } else if (e.key === "Backspace" && epicsTagInput === "" && epicsTags.length > 0) {
+                      setEpicsTags(epicsTags.slice(0, -1));
+                    }
+                  }}
+                  onBlur={() => {
+                    const value = epicsTagInput.trim();
+                    if (value && !epicsTags.includes(value)) {
+                      setEpicsTags([...epicsTags, value]);
+                    }
+                    setEpicsTagInput("");
+                  }}
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1.5">{t.adoEpicsTagsHint}</p>
+                {epicsTags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {epicsTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => setEpicsTags(epicsTags.filter((t) => t !== tag))}
+                          className="hover:text-destructive"
+                          aria-label={`Remove ${tag}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </motion.div>
+
+
 
 
 
