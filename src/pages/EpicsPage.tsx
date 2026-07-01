@@ -68,6 +68,13 @@ export const EpicsPage = () => {
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [epics, setEpics] = useState<TfsEpic[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedEpic, setSelectedEpic] = useState<TfsEpic | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  const openEpic = useCallback((epic: TfsEpic) => {
+    setSelectedEpic(epic);
+    setDetailOpen(true);
+  }, []);
   const [error, setError] = useState<TfsError | null>(null);
 
   const [search, setSearch] = useState("");
