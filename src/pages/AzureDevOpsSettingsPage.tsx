@@ -905,6 +905,17 @@ export const AzureDevOpsSettingsPage = () => {
                 <p className="text-xs text-muted-foreground">{t.adoEpicsSectionDesc}</p>
               </div>
               <div>
+                <Label htmlFor="ado-epics-project">{t.adoEpicsProjectLabel}</Label>
+                <Input
+                  id="ado-epics-project"
+                  placeholder={t.adoEpicsProjectPlaceholder}
+                  value={epicsProject}
+                  onChange={(e) => setEpicsProject(e.target.value)}
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1.5">{t.adoEpicsProjectHint}</p>
+              </div>
+              <div>
                 <Label htmlFor="ado-epics-query">{t.adoEpicsQueryIdLabel}</Label>
                 <Input
                   id="ado-epics-query"
