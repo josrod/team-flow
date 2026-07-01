@@ -193,7 +193,7 @@ export const EpicDetailDrawer = ({ epic, open, onOpenChange, connection }: EpicD
                         <a
                           href={l.url}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           className="text-primary hover:underline break-all"
                         >
                           {l.name || l.url}
@@ -252,11 +252,11 @@ export const EpicDetailDrawer = ({ epic, open, onOpenChange, connection }: EpicD
         </ScrollArea>
 
         <div className="px-6 py-3 border-t flex justify-end">
-          <Button asChild>
-            <a href={current.htmlUrl} target="_blank" rel="noreferrer">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              {t.epicDetailOpenInAdo}
-            </a>
+          <Button
+            onClick={() => window.open(current.htmlUrl, "_blank", "noopener,noreferrer")}
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            {t.epicDetailOpenInAdo}
           </Button>
         </div>
       </SheetContent>
