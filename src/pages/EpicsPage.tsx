@@ -425,8 +425,12 @@ export const EpicsPage = () => {
                                 <a
                                   href={epic.htmlUrl}
                                   target="_blank"
-                                  rel="noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    window.open(epic.htmlUrl, "_blank", "noopener,noreferrer");
+                                  }}
                                   className="inline-flex items-center gap-1 hover:underline text-primary"
                                 >
                                   #{epic.id}
