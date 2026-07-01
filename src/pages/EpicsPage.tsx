@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, ExternalLink, Loader2, RefreshCw, Search, Settings, Target } from "lucide-react";
+import { AlertCircle, Check, ChevronsUpDown, ExternalLink, Loader2, RefreshCw, Search, Settings, Target, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 import { useLang } from "@/context/LanguageContext";
@@ -79,7 +80,8 @@ export const EpicsPage = () => {
 
   const [search, setSearch] = useState("");
   const [stateFilter, setStateFilter] = useState<string>(ALL);
-  const [tagFilter, setTagFilter] = useState<string>(ALL);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -186,9 +188,10 @@ export const EpicsPage = () => {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+    const tagSet = new Set(selectedTags.map((t) => t.toLowerCase()));
     return epics.filter((e) => {
       if (stateFilter !== ALL && e.state !== stateFilter) return false;
-      if (tagFilter !== ALL && !e.tags.some((tg) => tg.toLowerCase() === tagFilter.toLowerCase())) return false;
+      if (tagSet.size > 0 && !e.tags.some((tg) => tagSet.has(tg.toLowerCase()))) return false;
       if (!q) return true;
       return (
         String(e.id).includes(q) ||
@@ -196,7 +199,7 @@ export const EpicsPage = () => {
         (e.assignedTo?.toLowerCase().includes(q) ?? false)
       );
     });
-  }, [epics, search, stateFilter, tagFilter]);
+  }, [epics, search, stateFilter, selectedTags]);
 
   const grouped = useMemo(() => {
     const map = new Map<QuarterBucket, TfsEpic[]>();
@@ -303,16 +306,83 @@ export const EpicsPage = () => {
                   {availableStates.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
-              <div className="min-w-[160px]">
-                <label className="text-xs text-muted-foreground">{t.epicsFilterTag}</label>
-                <select
-                  value={tagFilter}
-                  onChange={(e) => setTagFilter(e.target.value)}
-                  className="mt-1 h-9 w-full rounded-md border bg-background px-2 text-sm"
-                >
-                  <option value={ALL}>{t.epicsFilterAll}</option>
-                  {availableTags.map((tg) => <option key={tg} value={tg}>{tg}</option>)}
-                </select>
+              <div className="min-w-[220px] flex-1 max-w-sm">
+                <label className="text-xs text-muted-foreground">{t.epicsFilterTags}</label>
+                <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      className="mt-1 h-9 w-full justify-between font-normal"
+                      disabled={availableTags.length === 0}
+                    >
+                      <span className="truncate text-left">
+                        {selectedTags.length === 0
+                          ? t.epicsFilterTagsPlaceholder
+                          : `${selectedTags.length} ${t.epicsFilterTagsSelected}`}
+                      </span>
+                      <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                    <div className="flex items-center justify-between border-b px-3 py-2">
+                      <span className="text-xs text-muted-foreground">
+                        {selectedTags.length} / {availableTags.length}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setSelectedTags([])}
+                        disabled={selectedTags.length === 0}
+                      >
+                        {t.epicsFilterClear}
+                      </Button>
+                    </div>
+                    <div className="max-h-72 overflow-auto py-1">
+                      {availableTags.map((tg) => {
+                        const selected = selectedTags.includes(tg);
+                        return (
+                          <button
+                            key={tg}
+                            type="button"
+                            onClick={() =>
+                              setSelectedTags((prev) =>
+                                prev.includes(tg) ? prev.filter((p) => p !== tg) : [...prev, tg],
+                              )
+                            }
+                            className={cn(
+                              "flex w-full items-center gap-2 px-3 py-1.5 text-xs text-left hover:bg-accent",
+                              selected && "bg-accent/50",
+                            )}
+                          >
+                            <Check className={cn("h-3.5 w-3.5 shrink-0", selected ? "opacity-100" : "opacity-0")} />
+                            <span className="truncate">{tg}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                {selectedTags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {selectedTags.map((tg) => (
+                      <Badge key={tg} variant="secondary" className="gap-1 text-[11px]">
+                        {tg}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTags((prev) => prev.filter((p) => p !== tg))}
+                          className="ml-0.5 hover:text-destructive"
+                          aria-label={`Remove ${tg}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
