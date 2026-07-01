@@ -392,7 +392,10 @@ export const AzureDevOpsSettingsPage = () => {
         area_paths: areaPaths,
         iteration_paths: iterationPaths,
         bugs_query_id: bugsQueryId.trim() || null,
+        epics_query_id: epicsQueryId.trim() || null,
+        epics_tags: epicsTags,
       };
+
 
       if (hasExisting) {
         const { error } = await supabase
