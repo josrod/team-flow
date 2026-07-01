@@ -172,11 +172,12 @@ export const EpicsPage = () => {
     loadTimeoutRef.current = setTimeout(() => controller.abort(), LOAD_EPICS_TIMEOUT_MS);
     setLoading(true);
     setError(null);
+    const effectiveProject = settings.epicsProject.trim() || settings.project;
     const result = await fetchTfsEpics(
       {
         serverUrl: settings.serverUrl,
         collection: settings.collection,
-        project: settings.project,
+        project: effectiveProject,
         team: settings.team,
         pat: settings.pat,
       },
