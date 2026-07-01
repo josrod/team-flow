@@ -210,6 +210,7 @@ export const AzureDevOpsSettingsPage = () => {
           iteration_paths: iterationPaths,
           bugs_query_id: bugsQueryId.trim() || null,
           epics_query_id: epicsQueryId.trim() || null,
+          epics_project: epicsProject.trim() || null,
           epics_tags: epicsTags,
         })
         .eq("user_id", user.id);
