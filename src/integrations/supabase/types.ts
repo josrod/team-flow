@@ -21,6 +21,8 @@ export type Database = {
           bugs_query_id: string | null
           collection: string | null
           created_at: string
+          epics_query_id: string | null
+          epics_tags: string[]
           id: string
           iteration_paths: string[]
           last_diagnostic: Json | null
@@ -42,6 +44,8 @@ export type Database = {
           bugs_query_id?: string | null
           collection?: string | null
           created_at?: string
+          epics_query_id?: string | null
+          epics_tags?: string[]
           id?: string
           iteration_paths?: string[]
           last_diagnostic?: Json | null
@@ -63,6 +67,8 @@ export type Database = {
           bugs_query_id?: string | null
           collection?: string | null
           created_at?: string
+          epics_query_id?: string | null
+          epics_tags?: string[]
           id?: string
           iteration_paths?: string[]
           last_diagnostic?: Json | null

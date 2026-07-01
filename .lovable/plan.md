@@ -1,44 +1,124 @@
-# Add Closed date & Changed date columns to Tasks view
+# Plan: Vista "Epics"
 
-Show two new columns in the Tasks view (`/tasks`) so each row (task or bug) displays:
-- **Changed date** — last modification in Azure DevOps (`System.ChangedDate`)
-- **Closed date** — when the item was closed/resolved (`Microsoft.VSTS.Common.ClosedDate`)
+Nueva sección de navegación bajo **Bugs** que consume Work Items de tipo Epic desde TFS, filtra por tags configurables y ofrece dos vistas: **Delivery Plan** (roadmap por trimestre) y **Lista**.
 
-Both fields come from the existing TFS connector; only the list query currently omits them.
+## 1. Configuración (Azure DevOps Settings)
 
-## Scope
+Se añaden dos campos nuevos en `AzureDevOpsSettingsPage.tsx` y en la tabla `azure_devops_settings`:
 
-- Applies only when the data source is TFS/Azure DevOps. For the local/mock source the columns render `—`.
-- Only the Tasks view tables are touched. Features view and Workload view are untouched.
-- Dates formatted as `DD/MM/YYYY` (per project convention). Empty values render as `—`.
+- `epics_query_id` (uuid opcional): ID de un query TFS que devuelve Epics. Si está vacío, se usa un WIQL fijo interno.
+- `epics_tags` (text[]): lista de tags permitidos. Solo se muestran los Epics que contengan al menos uno.
 
-## Changes
+Ambos campos entran en el mismo flujo de auto-save y validación ya existente (`validateConnectionFields`, `evaluateSaveGuard`). Se añade una tarjeta "Epics" en el formulario, análoga a la sección de Bugs, con:
 
-1. **`src/services/tfs.ts`**
-   - Extend `TfsWorkItem` with `changedDate?: string` and `closedDate?: string`.
-   - In `mapRawToWorkItem`, read `System.ChangedDate` and `Microsoft.VSTS.Common.ClosedDate` from `fields`.
-   - In `listTfsTasks` (and, for symmetry, `listTfsFeatures`), add `"System.ChangedDate"` and `"Microsoft.VSTS.Common.ClosedDate"` to the requested fields array passed into `runWiqlAndFetch`.
+- Input de query ID (validado por regex UUID como `bugsQueryId`).
+- Multi-input de tags (chips estilo TfsMultiSelect, entrada libre por Enter/coma).
 
-2. **`src/pages/FeaturesPage.tsx`**
-   - Extend `UnifiedTask` with `changedDate?: string` and `closedDate?: string`.
-   - In the TFS branch of the `{ features, tasks }` `useMemo` (~line 706), map both fields from the TFS item into the unified task.
-   - Add two `TableHead` cells in the Tasks-view table header (around line 1627, after the Iteration column) labelled with the new i18n keys.
-   - Render the dates in the corresponding `TableCell`s using a small `formatDate` helper (returns `DD/MM/YYYY` or `—`).
-   - Update the `colSpan` math in `TaskRowWithHandover` (currently `7 + …`) to account for the two extra columns, and add the two cells in its row template as well — used by the per-person grouping table around line 1904.
+## 2. Capa de servicio (`src/services/tfs.ts`)
 
-3. **`src/context/LanguageContext.tsx`**
-   - Add new keys in both Spanish and English blocks:
-     - `changedDateColumn`: "Modificado" / "Changed"
-     - `closedDateColumn`: "Cerrado" / "Closed"
+Se añaden dos funciones nuevas siguiendo el patrón de `fetchTfsBugsByIterations`:
 
-## Technical notes
+- `fetchTfsEpicsByQuery(conn, queryId, signal)`: ejecuta el query guardado y expande los Work Items.
+- `fetchTfsEpicsByWiql(conn, areaPaths, signal)`: WIQL de fallback:
+  `SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Epic' AND [System.TeamProject] = @project [AND System.AreaPath UNDER ...]`.
 
-- WIQL `SELECT` clause is `[System.Id]` only — Azure DevOps returns the requested fields via the second `workitems` batch call, which is driven by the `fields` array passed into `runWiqlAndFetch`. Adding the two field names there is sufficient; the WIQL string itself does not need to change.
-- `Microsoft.VSTS.Common.ClosedDate` is populated by Azure DevOps when an item transitions to `Closed` (and for Bugs also when `Resolved`, depending on process template). It will be `undefined` for active items — that's the intended `—` case.
-- `formatDate` lives next to the table render block (small local helper, no new file). Parses ISO string with `new Date(...)`; if `Number.isNaN(date.getTime())` return `—`.
+Ambas devuelven `{ items: TfsEpic[]; error?: TfsError }`. Nuevo tipo:
 
-## Out of scope
+```ts
+export interface TfsEpic {
+  id: number;
+  title: string;
+  state: string;
+  assignedTo?: string;
+  areaPath?: string;
+  iterationPath?: string;
+  tags: string[];        // parseado del campo System.Tags (";" separado)
+  targetDate?: string;   // Microsoft.VSTS.Scheduling.TargetDate
+  startDate?: string;    // Microsoft.VSTS.Scheduling.StartDate
+  changedDate?: string;
+  url: string;
+}
+```
 
-- Sorting/filtering by these new columns.
-- Showing them in `BugDetailDialog` (already shows "Changed" separately).
-- Mobile-specific layout tweaks; existing horizontal scroll on the table wrapper handles overflow.
+Wrapper `fetchTfsEpics(conn, { queryId, tags, areaPaths }, signal)` que:
+1. Llama a `fetchTfsEpicsByQuery` si `queryId` presente, si no `fetchTfsEpicsByWiql`.
+2. Filtra por intersección con `tags` (case-insensitive) si la lista no está vacía.
+
+## 3. Nueva página `src/pages/EpicsPage.tsx`
+
+Estructura basada en `BugsPage.tsx` para consistencia:
+
+- Carga de `azure_devops_settings` (misma lógica de decrypt PAT).
+- Estado vacío con enlace a Settings si faltan `epics_query_id` o `epics_tags`.
+- Barra superior: buscador por título/ID, filtro por Estado (multi-select) y por Tag (multi-select derivado de los datos).
+- Tabs shadcn `<Tabs defaultValue="roadmap">`:
+  - **Delivery Plan (por defecto)** — componente `EpicsRoadmap`.
+  - **Lista** — componente `EpicsTable`.
+
+### 3.1 `EpicsRoadmap.tsx`
+
+Roadmap por trimestre a partir del `targetDate`:
+
+- Agrupa Epics por `Q{n} YYYY` calculado desde `targetDate` (`Math.floor(month/3)+1`).
+- Bucket adicional **"Sin fecha"** para Epics sin `targetDate`.
+- Layout: rejilla horizontal con scroll, una columna por trimestre visible desde el trimestre actual hasta el más lejano encontrado (mínimo 4 columnas: Q actual + 3 siguientes).
+- Cada Epic es una `Card` compacta: título, ID (link a TFS), estado (StatusBadge), assignee (avatar/iniciales), tags como badges pequeños, y `targetDate` formateado `DD/MM/YYYY`.
+- Ordenación dentro de cada columna: por `targetDate` ascendente y luego por estado.
+- Header por columna con contador y rango de fechas (`Q2 2026 · Abr–Jun · 5 epics`).
+
+```text
+┌──── Q2 2026 ────┐┌──── Q3 2026 ────┐┌──── Q4 2026 ────┐┌──── Sin fecha ────┐
+│ [Epic card]     ││ [Epic card]     ││ [Epic card]     ││ [Epic card]       │
+│ [Epic card]     ││ [Epic card]     ││                 ││                   │
+└─────────────────┘└─────────────────┘└─────────────────┘└───────────────────┘
+```
+
+### 3.2 `EpicsTable.tsx`
+
+Tabla ordenable (patrón de BugsPage): ID, Título, Estado, Assignee, Tags, Área, Target Date, Changed Date. Clic en fila abre `EpicDetailDialog` (calcado de `BugDetailDialog`, adaptado a Epic).
+
+## 4. Navegación
+
+- `AppSidebar.tsx`: nuevo item `{ title: t.epics, url: "/epics", icon: Target }` insertado inmediatamente después de Bugs.
+- `App.tsx`: ruta `/epics` protegida usando `AppLayout` y la nueva `EpicsPage`.
+
+## 5. i18n
+
+Se añaden claves en `src/context/LanguageContext.tsx` (ES/EN):
+
+- `epics`, `epicsPageTitle`, `epicsPageDescription`
+- `epicsEmptyNoSettings`, `epicsEmptyNoTags`, `epicsNoResults`
+- `epicsTabRoadmap`, `epicsTabList`
+- `epicsColTargetDate`, `epicsColTags`, `epicsColArea`, `epicsColState`, `epicsColAssignee`
+- `epicsFilterTags`, `epicsFilterState`, `epicsNoDateBucket`
+- `adoEpicsSectionTitle`, `adoEpicsQueryIdLabel`, `adoEpicsTagsLabel`, `adoEpicsTagsHint`
+
+## 6. Cambios en base de datos
+
+Migración añadiendo dos columnas opcionales a `azure_devops_settings`:
+
+- `epics_query_id uuid null`
+- `epics_tags text[] not null default '{}'`
+
+Sin cambios de RLS (la tabla ya está protegida por `user_id`).
+
+## 7. Detalles técnicos
+
+- Aborto y timeout de fetch: patrón `AbortController` de `BugsPage` (`LOAD_EPICS_TIMEOUT_MS = 20000`).
+- Cálculo trimestre: función pura en `src/lib/quarters.ts` con test unitario (`getQuarterKey`, `getQuarterRange`).
+- Parseo de tags TFS: función pura `parseTfsTags(raw?: string): string[]` en `src/lib/tfsTags.ts` con test.
+- Formato de fechas: `DD/MM/YYYY` (regla de proyecto).
+- Iconos: `Target` de lucide-react para Epics; badges de tags con `Badge variant="secondary"`.
+- El roadmap usa scroll horizontal en pantallas estrechas; en móvil las columnas colapsan a acordeón (patrón `useIsMobile`).
+
+## 8. Tests
+
+- `src/test/quarters.test.ts` — trimestre y rangos.
+- `src/test/tfs-tags.test.ts` — parseo y filtrado por tags (intersección, case-insensitive).
+- `src/test/epics-page-empty-state.test.tsx` — renderiza empty state cuando faltan settings.
+
+## 9. Fuera de alcance (para no ampliar la tarea)
+
+- Edición de Epics desde la app.
+- Sincronización automática o notificaciones.
+- Sub-agrupación por Feature/PBI hija dentro del roadmap.
