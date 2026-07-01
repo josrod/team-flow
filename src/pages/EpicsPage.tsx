@@ -80,7 +80,8 @@ export const EpicsPage = () => {
 
   const [search, setSearch] = useState("");
   const [stateFilter, setStateFilter] = useState<string>(ALL);
-  const [tagFilter, setTagFilter] = useState<string>(ALL);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
