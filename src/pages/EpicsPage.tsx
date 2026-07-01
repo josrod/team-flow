@@ -30,6 +30,7 @@ import {
   type QuarterBucket,
 } from "@/lib/quarters";
 import { uniqueTags } from "@/lib/tfsTags";
+import { parseTagsParam, pruneUnknownTags, serializeTagsParam } from "@/lib/epicsTagsParam";
 
 interface EpicsSettings {
   serverUrl: string;
@@ -81,11 +82,9 @@ export const EpicsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [stateFilter, setStateFilter] = useState<string>(ALL);
-  const [selectedTags, setSelectedTags] = useState<string[]>(() => {
-    const raw = searchParams.get("tags");
-    if (!raw) return [];
-    return raw.split(",").map((s) => s.trim()).filter(Boolean);
-  });
+  const [selectedTags, setSelectedTags] = useState<string[]>(() =>
+    parseTagsParam(searchParams.get("tags")),
+  );
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
 
   // Sync selectedTags → URL (?tags=a,b,c). Removes the param when empty.
@@ -95,17 +94,17 @@ export const EpicsPage = () => {
       if (!next.has("tags")) return;
       next.delete("tags");
     } else {
-      const value = selectedTags.join(",");
+      const value = serializeTagsParam(selectedTags);
       if (next.get("tags") === value) return;
       next.set("tags", value);
     }
     setSearchParams(next);
   }, [selectedTags, searchParams, setSearchParams]);
 
-  // Restore from URL when user navigates back/forward.
+  // Restore from URL when user navigates back/forward. Tolerates empty
+  // values, extra commas, and duplicates via parseTagsParam.
   useEffect(() => {
-    const raw = searchParams.get("tags");
-    const fromUrl = raw ? raw.split(",").map((s) => s.trim()).filter(Boolean) : [];
+    const fromUrl = parseTagsParam(searchParams.get("tags"));
     setSelectedTags((prev) => {
       if (prev.length === fromUrl.length && prev.every((t, i) => t === fromUrl[i])) return prev;
       return fromUrl;
@@ -215,6 +214,12 @@ export const EpicsPage = () => {
   }, [epics]);
 
   const availableTags = useMemo(() => uniqueTags(epics), [epics]);
+
+  // Prune tags that no longer exist in the dataset once epics finish loading.
+  useEffect(() => {
+    if (loading || epics.length === 0) return;
+    setSelectedTags((prev) => pruneUnknownTags(prev, availableTags));
+  }, [availableTags, loading, epics.length]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
