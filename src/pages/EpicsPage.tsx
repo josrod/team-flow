@@ -188,9 +188,10 @@ export const EpicsPage = () => {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+    const tagSet = new Set(selectedTags.map((t) => t.toLowerCase()));
     return epics.filter((e) => {
       if (stateFilter !== ALL && e.state !== stateFilter) return false;
-      if (tagFilter !== ALL && !e.tags.some((tg) => tg.toLowerCase() === tagFilter.toLowerCase())) return false;
+      if (tagSet.size > 0 && !e.tags.some((tg) => tagSet.has(tg.toLowerCase()))) return false;
       if (!q) return true;
       return (
         String(e.id).includes(q) ||
@@ -198,7 +199,7 @@ export const EpicsPage = () => {
         (e.assignedTo?.toLowerCase().includes(q) ?? false)
       );
     });
-  }, [epics, search, stateFilter, tagFilter]);
+  }, [epics, search, stateFilter, selectedTags]);
 
   const grouped = useMemo(() => {
     const map = new Map<QuarterBucket, TfsEpic[]>();
