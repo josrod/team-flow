@@ -1658,6 +1658,201 @@ export interface TfsEpic {
   htmlUrl: string;
 }
 
+export interface TfsEpicLink {
+  rel: string;
+  url: string;
+  name?: string;
+  comment?: string;
+}
+
+export interface TfsEpicRevision {
+  rev: number;
+  revisedDate?: string;
+  revisedBy?: string;
+  changes: Array<{ field: string; oldValue?: string; newValue?: string }>;
+}
+
+export interface TfsEpicDetail extends TfsEpic {
+  createdBy?: string;
+  createdDate?: string;
+  links: TfsEpicLink[];
+  revisions: TfsEpicRevision[];
+}
+
+// Human-friendly labels for the most common ADO fields shown in the history.
+const EPIC_HISTORY_FIELD_LABELS: Record<string, string> = {
+  "System.State": "State",
+  "System.AssignedTo": "Assigned to",
+  "System.Title": "Title",
+  "System.Tags": "Tags",
+  "System.AreaPath": "Area",
+  "System.IterationPath": "Iteration",
+  "System.Description": "Description",
+  "Microsoft.VSTS.Scheduling.TargetDate": "Target date",
+  "Microsoft.VSTS.Scheduling.StartDate": "Start date",
+  "Microsoft.VSTS.Common.Priority": "Priority",
+};
+
+// Fields we hide from the timeline (noise from ADO internal bookkeeping).
+const EPIC_HISTORY_HIDDEN_FIELDS = new Set<string>([
+  "System.Rev",
+  "System.ChangedDate",
+  "System.ChangedBy",
+  "System.AuthorizedDate",
+  "System.AuthorizedAs",
+  "System.RevisedDate",
+  "System.PersonId",
+  "System.Watermark",
+  "System.CommentCount",
+  "Microsoft.VSTS.Common.StateChangeDate",
+]);
+
+export const humanizeEpicHistoryField = (field: string): string =>
+  EPIC_HISTORY_FIELD_LABELS[field] ?? field.replace(/^.*\./, "");
+
+const formatHistoryValue = (value: unknown): string | undefined => {
+  if (value === null || value === undefined) return undefined;
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (typeof value === "object") {
+    const obj = value as { displayName?: string; uniqueName?: string };
+    if (obj.displayName) return obj.displayName;
+    if (obj.uniqueName) return obj.uniqueName;
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+};
+
+interface RawEpicUpdate {
+  rev: number;
+  revisedDate?: string;
+  revisedBy?: { displayName?: string; uniqueName?: string };
+  fields?: Record<string, { oldValue?: unknown; newValue?: unknown }>;
+}
+
+export const fetchTfsEpicDetail = async (
+  conn: TfsConnection,
+  id: number,
+  externalSignal?: AbortSignal,
+): Promise<{ item?: TfsEpicDetail; error?: TfsError }> => {
+  const base = buildCollectionUrl(conn.serverUrl, conn.collection);
+  const detailUrl = `${base}/_apis/wit/workitems/${id}?$expand=relations&api-version=${API_VERSION}`;
+  const updatesUrl = `${base}/_apis/wit/workitems/${id}/updates?api-version=${API_VERSION}`;
+
+  if (isMixedContent(detailUrl)) {
+    return { error: { kind: "mixed_content", url: detailUrl, message: "Mixed content (HTTPS → HTTP)." } };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const onExternalAbort = () => controller.abort();
+  if (externalSignal) {
+    if (externalSignal.aborted) controller.abort();
+    else externalSignal.addEventListener("abort", onExternalAbort, { once: true });
+  }
+
+  try {
+    const headers = { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" };
+    const [detailRes, updatesRes] = await Promise.all([
+      fetch(detailUrl, { method: "GET", headers, signal: controller.signal }),
+      fetch(updatesUrl, { method: "GET", headers, signal: controller.signal }),
+    ]);
+
+    if (!detailRes.ok) {
+      const body = await detailRes.text().catch(() => "");
+      return {
+        error: {
+          kind:
+            detailRes.status === 401 ? "unauthorized" : detailRes.status === 403 ? "forbidden" : detailRes.status === 404 ? "not_found" : "http",
+          status: detailRes.status,
+          url: detailUrl,
+          message: `Could not load epic (HTTP ${detailRes.status}).`,
+          detail: body.slice(0, 300),
+        },
+      };
+    }
+
+    const raw = (await detailRes.json()) as RawWorkItemDetail;
+    const f = raw.fields ?? {};
+    const assigned = parseAssignedTo(f["System.AssignedTo"]);
+    const createdBy = parseAssignedTo(f["System.CreatedBy"]);
+    const tagsRaw = f["System.Tags"];
+    const tags =
+      typeof tagsRaw === "string" && tagsRaw.trim()
+        ? tagsRaw.split(";").map((s) => s.trim()).filter(Boolean)
+        : [];
+    const links: TfsEpicLink[] = (raw.relations ?? []).map((r) => ({
+      rel: r.rel,
+      url: r.url,
+      name: r.attributes?.name,
+      comment: r.attributes?.comment,
+    }));
+
+    let revisions: TfsEpicRevision[] = [];
+    if (updatesRes.ok) {
+      const updatesData = (await updatesRes.json()) as { value?: RawEpicUpdate[] };
+      revisions = (updatesData.value ?? [])
+        .map((u) => {
+          const changes = Object.entries(u.fields ?? {})
+            .filter(([field]) => !EPIC_HISTORY_HIDDEN_FIELDS.has(field))
+            .map(([field, val]) => ({
+              field,
+              oldValue: formatHistoryValue(val.oldValue),
+              newValue: formatHistoryValue(val.newValue),
+            }))
+            .filter((c) => c.oldValue !== c.newValue);
+          return {
+            rev: u.rev,
+            revisedDate: u.revisedDate,
+            revisedBy: u.revisedBy?.displayName ?? u.revisedBy?.uniqueName,
+            changes,
+          };
+        })
+        .filter((u) => u.changes.length > 0)
+        .sort((a, b) => (b.revisedDate ?? "").localeCompare(a.revisedDate ?? ""));
+    }
+
+    return {
+      item: {
+        id: raw.id,
+        title: String(f["System.Title"] ?? ""),
+        state: String(f["System.State"] ?? ""),
+        assignedTo: assigned.name,
+        assignedToEmail: assigned.email,
+        areaPath: f["System.AreaPath"] as string | undefined,
+        iterationPath: f["System.IterationPath"] as string | undefined,
+        tags,
+        targetDate: f["Microsoft.VSTS.Scheduling.TargetDate"] as string | undefined,
+        startDate: f["Microsoft.VSTS.Scheduling.StartDate"] as string | undefined,
+        changedDate: f["System.ChangedDate"] as string | undefined,
+        description: f["System.Description"] as string | undefined,
+        htmlUrl: buildWorkItemHtmlUrl(conn, raw.id),
+        createdBy: createdBy.name,
+        createdDate: f["System.CreatedDate"] as string | undefined,
+        links,
+        revisions,
+      },
+    };
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return { error: { kind: "timeout", url: detailUrl, message: "Timed out." } };
+    }
+    if (isNetworkLevelError(err)) {
+      return { error: { kind: "cors", url: detailUrl, message: "No response (CORS, VPN or firewall)." } };
+    }
+    return { error: { kind: "unknown", url: detailUrl, message: err instanceof Error ? err.message : "Unknown error." } };
+  } finally {
+    window.clearTimeout(timeoutId);
+    if (externalSignal) externalSignal.removeEventListener("abort", onExternalAbort);
+  }
+};
+
+
+
 const GUID_ONLY = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const EPIC_FIELDS = [

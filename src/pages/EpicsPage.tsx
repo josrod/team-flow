@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useLang } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
+import { EpicDetailDrawer } from "@/components/EpicDetailDrawer";
 import { decryptPat } from "@/services/tfsPatVault";
 import { fetchTfsEpics, type TfsEpic, type TfsError } from "@/services/tfs";
 import {
@@ -67,6 +68,13 @@ export const EpicsPage = () => {
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [epics, setEpics] = useState<TfsEpic[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedEpic, setSelectedEpic] = useState<TfsEpic | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  const openEpic = useCallback((epic: TfsEpic) => {
+    setSelectedEpic(epic);
+    setDetailOpen(true);
+  }, []);
   const [error, setError] = useState<TfsError | null>(null);
 
   const [search, setSearch] = useState("");
@@ -349,12 +357,11 @@ export const EpicsPage = () => {
                                   <p className="text-xs text-muted-foreground text-center py-4">—</p>
                                 ) : (
                                   bucketEpics.map((epic) => (
-                                    <a
+                                    <button
                                       key={epic.id}
-                                      href={epic.htmlUrl}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="block rounded-md border bg-background p-2.5 hover:border-primary hover:shadow-sm transition-all"
+                                      type="button"
+                                      onClick={() => openEpic(epic)}
+                                      className="block w-full text-left rounded-md border bg-background p-2.5 hover:border-primary hover:shadow-sm transition-all"
                                     >
                                       <div className="flex items-start justify-between gap-2">
                                         <span className="text-xs font-mono text-muted-foreground">#{epic.id}</span>
@@ -378,7 +385,7 @@ export const EpicsPage = () => {
                                         </span>
                                         <span className="font-mono">{formatDate(epic.targetDate)}</span>
                                       </div>
-                                    </a>
+                                    </button>
                                   ))
                                 )}
                               </div>
@@ -409,9 +416,19 @@ export const EpicsPage = () => {
                         </TableHeader>
                         <TableBody>
                           {filtered.map((epic) => (
-                            <TableRow key={epic.id} className="hover:bg-muted/50">
+                            <TableRow
+                              key={epic.id}
+                              className="hover:bg-muted/50 cursor-pointer"
+                              onClick={() => openEpic(epic)}
+                            >
                               <TableCell className="font-mono text-xs">
-                                <a href={epic.htmlUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:underline text-primary">
+                                <a
+                                  href={epic.htmlUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1 hover:underline text-primary"
+                                >
                                   #{epic.id}
                                   <ExternalLink className="h-3 w-3" />
                                 </a>
@@ -443,6 +460,23 @@ export const EpicsPage = () => {
           </CardContent>
         </Card>
       </motion.div>
+
+      <EpicDetailDrawer
+        epic={selectedEpic}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        connection={
+          settings
+            ? {
+                serverUrl: settings.serverUrl,
+                collection: settings.collection,
+                project: settings.project,
+                team: settings.team,
+                pat: settings.pat,
+              }
+            : null
+        }
+      />
     </div>
   );
 };
