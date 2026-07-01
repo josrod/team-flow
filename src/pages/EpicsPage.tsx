@@ -40,6 +40,7 @@ interface EpicsSettings {
   pat: string;
   areaPaths: string[];
   epicsQueryId: string;
+  epicsProject: string;
   epicsTags: string[];
 }
 
