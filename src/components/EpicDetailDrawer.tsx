@@ -193,7 +193,7 @@ export const EpicDetailDrawer = ({ epic, open, onOpenChange, connection }: EpicD
                         <a
                           href={l.url}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           className="text-primary hover:underline break-all"
                         >
                           {l.name || l.url}
