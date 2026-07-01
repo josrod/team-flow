@@ -787,6 +787,17 @@ export const translations = {
     adoEpicsTagsLabel: "Tags permitidos",
     adoEpicsTagsPlaceholder: "Escribe un tag y pulsa Enter",
     adoEpicsTagsHint: "Solo se mostrarán los Epics que contengan alguno de estos tags.",
+    epicDetailCreatedBy: "Creado por",
+    epicDetailCreated: "Creado",
+    epicDetailStartDate: "Start date",
+    epicDetailIteration: "Iteración",
+    epicDetailDescription: "Descripción",
+    epicDetailNoDescription: "Sin descripción.",
+    epicDetailLinks: "Enlaces y relaciones",
+    epicDetailNoLinks: "Sin enlaces.",
+    epicDetailHistory: "Historial de cambios",
+    epicDetailNoHistory: "Sin cambios registrados.",
+    epicDetailOpenInAdo: "Abrir en Azure DevOps",
   },
 
   en: {
