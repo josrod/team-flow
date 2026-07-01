@@ -58,6 +58,11 @@ export const AzureDevOpsSettingsPage = () => {
   const [areaPaths, setAreaPaths] = useState<string[]>([]);
   const [iterationPaths, setIterationPaths] = useState<string[]>([]);
   const [bugsQueryId, setBugsQueryId] = useState("");
+  const [epicsQueryId, setEpicsQueryId] = useState("");
+  const [epicsTags, setEpicsTags] = useState<string[]>([]);
+  const [epicsTagInput, setEpicsTagInput] = useState("");
+
+
   
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -114,6 +119,10 @@ export const AzureDevOpsSettingsPage = () => {
         if (Array.isArray(rawAreas)) setAreaPaths(rawAreas);
         if (Array.isArray(rawIters)) setIterationPaths(rawIters);
         setBugsQueryId((data as { bugs_query_id?: string | null }).bugs_query_id ?? "");
+        setEpicsQueryId((data as { epics_query_id?: string | null }).epics_query_id ?? "");
+        const rawEpicTags = (data as { epics_tags?: string[] | null }).epics_tags;
+        if (Array.isArray(rawEpicTags)) setEpicsTags(rawEpicTags);
+
         setLastSynced(data.last_synced_at);
         setHasExisting(true);
         setConnectionStatus("success");
@@ -198,18 +207,21 @@ export const AzureDevOpsSettingsPage = () => {
           area_paths: areaPaths,
           iteration_paths: iterationPaths,
           bugs_query_id: bugsQueryId.trim() || null,
+          epics_query_id: epicsQueryId.trim() || null,
+          epics_tags: epicsTags,
         })
         .eq("user_id", user.id);
 
       if (!error) setAutoSavedAt(new Date().toISOString());
     }, 800);
 
+
     return () => {
       if (autoSaveTimerRef.current !== null) {
         window.clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, hasExisting]);
+  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, epicsQueryId, epicsTags, hasExisting]);
 
   const resetStatus = () => {
     setConnectionStatus("idle");
@@ -221,9 +233,10 @@ export const AzureDevOpsSettingsPage = () => {
 
   // Real-time validation of connection fields. Recomputed on every keystroke.
   const fieldValidation = useMemo(
-    () => validateConnectionFields({ serverUrl, collection, project, team, bugsQueryId }),
-    [serverUrl, collection, project, team, bugsQueryId],
+    () => validateConnectionFields({ serverUrl, collection, project, team, bugsQueryId, epicsQueryId }),
+    [serverUrl, collection, project, team, bugsQueryId, epicsQueryId],
   );
+
 
   const inputStateClass = (status: "empty" | "valid" | "invalid") =>
     cn(
@@ -337,15 +350,19 @@ export const AzureDevOpsSettingsPage = () => {
     const guard = evaluateSaveGuard({
       connectionStatus,
       bugsQueryId: fieldValidation.bugsQueryId,
+      epicsQueryId: fieldValidation.epicsQueryId,
     });
     if (!guard.canSave) {
       if (guard.reason === "not-tested") {
         toast.error(t.adoTestFirst);
       } else if (guard.reason === "invalid-bugs-query") {
         toast.error("Corrige el campo 'Query de Bugs' antes de guardar.");
+      } else if (guard.reason === "invalid-epics-query") {
+        toast.error("Corrige el campo 'Query de Epics' antes de guardar.");
       }
       return;
     }
+
 
     setSaving(true);
     try {
