@@ -135,6 +135,7 @@ export const EpicsPage = () => {
           pat_iv: string | null;
           area_paths?: string[] | null;
           epics_query_id?: string | null;
+          epics_project?: string | null;
           epics_tags?: string[] | null;
         };
         try {
@@ -147,6 +148,7 @@ export const EpicsPage = () => {
             pat: plainPat,
             areaPaths: Array.isArray(raw.area_paths) ? raw.area_paths : [],
             epicsQueryId: raw.epics_query_id ?? "",
+            epicsProject: raw.epics_project ?? "",
             epicsTags: Array.isArray(raw.epics_tags) ? raw.epics_tags : [],
           });
         } catch {
