@@ -603,8 +603,8 @@ export const EpicsPage = () => {
             ? {
                 serverUrl: settings.serverUrl,
                 collection: settings.collection,
-                project: settings.epicsProject.trim() || settings.project,
-                team: settings.team,
+                project: effectiveProject,
+                team: isEpicsProjectOverride ? undefined : settings.team,
                 pat: settings.pat,
               }
             : null
