@@ -17,6 +17,8 @@ import { useLang } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { EpicDetailDrawer } from "@/components/EpicDetailDrawer";
+import { EpicsTimeline } from "@/components/EpicsTimeline";
+import { EpicsHeatmap } from "@/components/EpicsHeatmap";
 import { decryptPat } from "@/services/tfsPatVault";
 import { fetchTfsEpics, type TfsEpic, type TfsError } from "@/services/tfs";
 import {
