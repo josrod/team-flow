@@ -1599,6 +1599,7 @@ export const translations = {
     adoEpicsProjectLabel: "Epics project (optional)",
     adoEpicsProjectPlaceholder: "e.g. Software",
     adoEpicsProjectHint: "If the Epics live in another project of the same collection (e.g. 'Software' instead of 'SDES'), set it here. Leave empty to use the main project.",
+    adoEpicsProjectSameAsMain: "Same as main project",
     epicDetailCreatedBy: "Created by",
     epicDetailCreated: "Created",
     epicDetailStartDate: "Start date",
