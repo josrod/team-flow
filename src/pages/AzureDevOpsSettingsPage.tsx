@@ -39,6 +39,7 @@ import { TfsPatDiagnosticsPanel } from "@/components/TfsPatDiagnosticsPanel";
 import { TfsFieldHint } from "@/components/TfsFieldHint";
 import { TfsAutocompleteInput } from "@/components/TfsAutocompleteInput";
 import { TfsMultiSelect } from "@/components/TfsMultiSelect";
+import { TfsScopeFields } from "@/components/TfsScopeFields";
 import { evaluateSaveGuard, validateConnectionFields, validateServerUrl } from "@/lib/tfsValidation";
 import { mapBugsQueryIdError } from "@/lib/supabaseErrorMapping";
 import { cn } from "@/lib/utils";
@@ -888,101 +889,38 @@ export const AzureDevOpsSettingsPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
-            <div>
-              <Label htmlFor="ado-areas">Áreas (Features y Tareas)</Label>
-              <div className="mt-1">
-                <TfsMultiSelect
-                  id="ado-areas"
-                  value={areaPaths}
-                  onChange={setAreaPaths}
-                  placeholder="Selecciona una o varias áreas…"
-                  emptyHint="No se encontraron áreas para este proyecto."
-                  disabled={
-                    validateServerUrl(serverUrl).status !== "valid" ||
-                    !collection.trim() ||
-                    !project.trim() ||
-                    !pat.trim()
-                  }
-                  disabledReason="Configura servidor, colección, proyecto y PAT para cargar las áreas."
-                  loadOptions={async () => {
-                    const res = await listTfsClassificationNodes(
-                      serverUrl,
-                      collection,
-                      project,
-                      pat,
-                      "areas",
-                    );
-                    return {
-                      items: res.items.map((n) => ({
-                        path: n.path,
-                        name: n.name,
-                        depth: n.depth,
-                      })),
-                      errorMessage: res.error?.message,
-                    };
-                  }}
-                />
+            <TfsScopeFields
+              idPrefix="ado"
+              serverUrl={serverUrl}
+              collection={collection}
+              project={project}
+              pat={pat}
+              areaPaths={areaPaths}
+              onAreaPathsChange={setAreaPaths}
+              iterationPaths={iterationPaths}
+              onIterationPathsChange={setIterationPaths}
+              areasLabel="Áreas (Features y Tareas)"
+              iterationsLabel="Iteraciones (solo Tareas)"
+              areasHint="Las features y tareas se filtrarán a estas áreas (incluye descendientes)."
+              iterationsHint="Las tareas se filtrarán a estas iteraciones (incluye descendientes)."
+              disabledReason="Configura servidor, colección, proyecto y PAT para cargar los datos."
+            />
+
+            {iterationPaths.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {iterationPaths.map((path) => (
+                  <span
+                    key={path}
+                    className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
+                  >
+                    {path}
+                  </span>
+                ))}
               </div>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                Las features y tareas se filtrarán a estas áreas (incluye descendientes).
-              </p>
-            </div>
+            )}
 
             <Separator />
 
-            <div>
-              <Label htmlFor="ado-iterations">Iteraciones (solo Tareas)</Label>
-              <div className="mt-1">
-                <TfsMultiSelect
-                  id="ado-iterations"
-                  value={iterationPaths}
-                  onChange={setIterationPaths}
-                  placeholder="Selecciona una o varias iteraciones…"
-                  emptyHint="No se encontraron iteraciones para este proyecto."
-                  disabled={
-                    validateServerUrl(serverUrl).status !== "valid" ||
-                    !collection.trim() ||
-                    !project.trim() ||
-                    !pat.trim()
-                  }
-                  disabledReason="Configura servidor, colección, proyecto y PAT para cargar las iteraciones."
-                  loadOptions={async () => {
-                    const res = await listTfsClassificationNodes(
-                      serverUrl,
-                      collection,
-                      project,
-                      pat,
-                      "iterations",
-                    );
-                    return {
-                      items: res.items.map((n) => ({
-                        path: n.path,
-                        name: n.name,
-                        depth: n.depth,
-                      })),
-                      errorMessage: res.error?.message,
-                    };
-                  }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                Las tareas se filtrarán a estas iteraciones (incluye descendientes).
-              </p>
-              {iterationPaths.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {iterationPaths.map((path) => (
-                    <span
-                      key={path}
-                      className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
-                    >
-                      {path}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <Separator />
 
             <div>
               <Label htmlFor="ado-bugs-query">Query de Bugs (ID o ruta)</Label>
@@ -1053,77 +991,23 @@ export const AzureDevOpsSettingsPage = () => {
 
             <Separator />
 
-            <div>
-              <Label htmlFor="ado-epics-areas">{t.adoEpicsAreaPathsLabel}</Label>
-              <div className="mt-1">
-                <TfsMultiSelect
-                  id="ado-epics-areas"
-                  value={epicsAreaPaths}
-                  onChange={setEpicsAreaPaths}
-                  placeholder="Selecciona una o varias áreas…"
-                  emptyHint="No se encontraron áreas para este proyecto."
-                  disabled={
-                    validateServerUrl(serverUrl).status !== "valid" ||
-                    !collection.trim() ||
-                    !(epicsProject.trim() || project).trim() ||
-                    !pat.trim()
-                  }
-                  disabledReason="Configura servidor, colección, proyecto y PAT para cargar las áreas."
-                  loadOptions={async () => {
-                    const res = await listTfsClassificationNodes(
-                      serverUrl,
-                      collection,
-                      epicsProject.trim() || project,
-                      pat,
-                      "areas",
-                    );
-                    return {
-                      items: res.items.map((n) => ({ path: n.path, name: n.name, depth: n.depth })),
-                      errorMessage: res.error?.message,
-                    };
-                  }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                Las épicas se filtrarán a estas áreas (incluye descendientes).
-              </p>
-            </div>
+            <TfsScopeFields
+              idPrefix="ado-epics"
+              serverUrl={serverUrl}
+              collection={collection}
+              project={epicsProject.trim() || project}
+              pat={pat}
+              areaPaths={epicsAreaPaths}
+              onAreaPathsChange={setEpicsAreaPaths}
+              iterationPaths={epicsIterationPaths}
+              onIterationPathsChange={setEpicsIterationPaths}
+              areasLabel={t.adoEpicsAreaPathsLabel}
+              iterationsLabel={t.adoEpicsIterationPathsLabel}
+              areasHint="Las épicas se filtrarán a estas áreas (incluye descendientes)."
+              iterationsHint={t.adoEpicsScopeHint}
+              disabledReason="Configura servidor, colección, proyecto y PAT para cargar los datos."
+            />
 
-            <Separator />
-
-            <div>
-              <Label htmlFor="ado-epics-iterations">{t.adoEpicsIterationPathsLabel}</Label>
-              <div className="mt-1">
-                <TfsMultiSelect
-                  id="ado-epics-iterations"
-                  value={epicsIterationPaths}
-                  onChange={setEpicsIterationPaths}
-                  placeholder="Selecciona una o varias iteraciones…"
-                  emptyHint="No se encontraron iteraciones para este proyecto."
-                  disabled={
-                    validateServerUrl(serverUrl).status !== "valid" ||
-                    !collection.trim() ||
-                    !(epicsProject.trim() || project).trim() ||
-                    !pat.trim()
-                  }
-                  disabledReason="Configura servidor, colección, proyecto y PAT para cargar las iteraciones."
-                  loadOptions={async () => {
-                    const res = await listTfsClassificationNodes(
-                      serverUrl,
-                      collection,
-                      epicsProject.trim() || project,
-                      pat,
-                      "iterations",
-                    );
-                    return {
-                      items: res.items.map((n) => ({ path: n.path, name: n.name, depth: n.depth })),
-                      errorMessage: res.error?.message,
-                    };
-                  }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1.5">{t.adoEpicsScopeHint}</p>
-            </div>
 
             <Separator />
 
