@@ -125,6 +125,11 @@ export const AzureDevOpsSettingsPage = () => {
         setBugsQueryId((data as { bugs_query_id?: string | null }).bugs_query_id ?? "");
         setEpicsQueryId((data as { epics_query_id?: string | null }).epics_query_id ?? "");
         setEpicsProject((data as { epics_project?: string | null }).epics_project ?? "");
+        setEpicsTeam((data as { epics_team?: string | null }).epics_team ?? "");
+        const rawEpicAreas = (data as { epics_area_paths?: string[] | null }).epics_area_paths;
+        const rawEpicIters = (data as { epics_iteration_paths?: string[] | null }).epics_iteration_paths;
+        if (Array.isArray(rawEpicAreas)) setEpicsAreaPaths(rawEpicAreas);
+        if (Array.isArray(rawEpicIters)) setEpicsIterationPaths(rawEpicIters);
         const rawEpicTags = (data as { epics_tags?: string[] | null }).epics_tags;
         if (Array.isArray(rawEpicTags)) setEpicsTags(rawEpicTags);
 
