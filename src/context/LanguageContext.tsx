@@ -781,6 +781,9 @@ export const translations = {
     epicsUnassigned: "Sin asignar",
     epicsOpenSettings: "Abrir ajustes",
     epicsTagsConfiguredLabel: "Tags configurados",
+    epicsEffectiveProjectLabel: "Proyecto consultado",
+    epicsEffectiveProjectMain: "Proyecto principal",
+    epicsEffectiveProjectOverride: "Proyecto de Epics",
     epicsQuarterEpicsSuffix: "epics",
     // Settings — Epics section
     adoEpicsSectionTitle: "Epics",
@@ -1586,6 +1589,9 @@ export const translations = {
     epicsUnassigned: "Unassigned",
     epicsOpenSettings: "Open settings",
     epicsTagsConfiguredLabel: "Configured tags",
+    epicsEffectiveProjectLabel: "Queried project",
+    epicsEffectiveProjectMain: "Main project",
+    epicsEffectiveProjectOverride: "Epics project",
     epicsQuarterEpicsSuffix: "epics",
     // Settings — Epics section
     adoEpicsSectionTitle: "Epics",

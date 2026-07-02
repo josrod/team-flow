@@ -163,6 +163,15 @@ export const EpicsPage = () => {
   const loadControllerRef = useRef<AbortController | null>(null);
   const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const effectiveProject = useMemo(
+    () => settings?.epicsProject.trim() || settings?.project || "",
+    [settings],
+  );
+  const isEpicsProjectOverride = useMemo(
+    () => Boolean(settings?.epicsProject.trim() && settings?.epicsProject.trim() !== settings?.project),
+    [settings],
+  );
+
   const loadEpics = useCallback(async () => {
     if (!settings) return;
     loadControllerRef.current?.abort();
@@ -172,7 +181,6 @@ export const EpicsPage = () => {
     loadTimeoutRef.current = setTimeout(() => controller.abort(), LOAD_EPICS_TIMEOUT_MS);
     setLoading(true);
     setError(null);
-    const effectiveProject = settings.epicsProject.trim() || settings.project;
     const result = await fetchTfsEpics(
       {
         serverUrl: settings.serverUrl,
@@ -197,7 +205,7 @@ export const EpicsPage = () => {
     if (result.error) setError(result.error);
     setEpics(result.items);
     setLoading(false);
-  }, [settings]);
+  }, [settings, effectiveProject]);
 
   useEffect(() => {
     if (settings && settings.epicsTags.length > 0) loadEpics();
@@ -330,7 +338,16 @@ export const EpicsPage = () => {
             <CardTitle className="text-lg font-display">
               {filtered.length} / {epics.length} {t.epicsCount}
             </CardTitle>
-            <CardDescription>{settings.project}</CardDescription>
+            <CardDescription className="flex flex-wrap items-center gap-2">
+              <span>
+                {t.epicsEffectiveProjectLabel}: <span className="font-medium">{effectiveProject}</span>
+              </span>
+              {isEpicsProjectOverride ? (
+                <Badge variant="outline" className="text-[10px]">{t.epicsEffectiveProjectOverride}</Badge>
+              ) : (
+                <Badge variant="secondary" className="text-[10px]">{t.epicsEffectiveProjectMain}</Badge>
+              )}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap gap-3">
