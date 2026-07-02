@@ -373,6 +373,83 @@ export const AzureDevOpsSettingsPage = () => {
     }
   };
 
+  const handleTestEpicsScope = async () => {
+    if (!serverUrl.trim() || !collection.trim() || !pat.trim()) {
+      toast.error(t.adoFillAllFields);
+      return;
+    }
+    const effectiveProject = (epicsProject.trim() || project.trim());
+    if (!effectiveProject) {
+      toast.error(t.adoFillAllFields);
+      return;
+    }
+
+    setEpicsTesting(true);
+    setEpicsTestResult(null);
+
+    try {
+      const conn = await testTfsConnection({
+        serverUrl: serverUrl.trim(),
+        collection: collection.trim(),
+        project: effectiveProject,
+        pat: pat.trim(),
+      });
+
+      if (!conn.success) {
+        setEpicsTestResult({
+          ok: false,
+          project: effectiveProject,
+          error: conn.error?.message ?? "Connection failed",
+        });
+        toast.error(`❌ ${conn.error?.message ?? "Connection failed"}`);
+        return;
+      }
+
+      const [teamsRes, areasRes, itersRes] = await Promise.all([
+        listTfsTeams(serverUrl.trim(), collection.trim(), effectiveProject, pat.trim()),
+        listTfsClassificationNodes(serverUrl.trim(), collection.trim(), effectiveProject, pat.trim(), "areas"),
+        listTfsClassificationNodes(serverUrl.trim(), collection.trim(), effectiveProject, pat.trim(), "iterations"),
+      ]);
+
+      const teamName = epicsTeam.trim().toLowerCase();
+      const teamFound = teamName
+        ? teamsRes.items.some((t) => t.name.toLowerCase() === teamName)
+        : undefined;
+
+      const areaPathsSet = new Set(areasRes.items.map((n) => n.path));
+      const iterPathsSet = new Set(itersRes.items.map((n) => n.path));
+      const areasMissing = epicsAreaPaths.filter((p) => !areaPathsSet.has(p));
+      const iterationsMissing = epicsIterationPaths.filter((p) => !iterPathsSet.has(p));
+
+      const anyMissing =
+        (teamFound === false) || areasMissing.length > 0 || iterationsMissing.length > 0;
+
+      setEpicsTestResult({
+        ok: !anyMissing,
+        project: effectiveProject,
+        teamsCount: teamsRes.items.length,
+        teamFound,
+        areasCount: areasRes.items.length,
+        iterationsCount: itersRes.items.length,
+        areasMissing,
+        iterationsMissing,
+      });
+
+      if (anyMissing) {
+        toast.warning(t.adoEpicsScopeTestPartial);
+      } else {
+        toast.success(`✅ ${t.adoEpicsScopeTestOk}`);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Network error";
+      setEpicsTestResult({ ok: false, project: effectiveProject, error: msg });
+      toast.error(`❌ ${msg}`);
+    } finally {
+      setEpicsTesting(false);
+    }
+  };
+
+
   const handleSave = async () => {
     const guard = evaluateSaveGuard({
       connectionStatus,
