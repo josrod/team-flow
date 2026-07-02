@@ -1859,6 +1859,7 @@ const EPIC_FIELDS = [
   "System.Id",
   "System.Title",
   "System.State",
+  "System.WorkItemType",
   "System.AssignedTo",
   "System.AreaPath",
   "System.IterationPath",
