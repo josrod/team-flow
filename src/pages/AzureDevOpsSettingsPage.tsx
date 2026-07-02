@@ -65,6 +65,19 @@ export const AzureDevOpsSettingsPage = () => {
   const [epicsIterationPaths, setEpicsIterationPaths] = useState<string[]>([]);
   const [epicsTags, setEpicsTags] = useState<string[]>([]);
   const [epicsTagInput, setEpicsTagInput] = useState("");
+  const [epicsTesting, setEpicsTesting] = useState(false);
+  const [epicsTestResult, setEpicsTestResult] = useState<{
+    ok: boolean;
+    project?: string;
+    teamsCount?: number;
+    teamFound?: boolean;
+    areasCount?: number;
+    iterationsCount?: number;
+    areasMissing?: string[];
+    iterationsMissing?: string[];
+    error?: string;
+  } | null>(null);
+
 
 
   
@@ -359,6 +372,83 @@ export const AzureDevOpsSettingsPage = () => {
       setTesting(false);
     }
   };
+
+  const handleTestEpicsScope = async () => {
+    if (!serverUrl.trim() || !collection.trim() || !pat.trim()) {
+      toast.error(t.adoFillAllFields);
+      return;
+    }
+    const effectiveProject = (epicsProject.trim() || project.trim());
+    if (!effectiveProject) {
+      toast.error(t.adoFillAllFields);
+      return;
+    }
+
+    setEpicsTesting(true);
+    setEpicsTestResult(null);
+
+    try {
+      const conn = await testTfsConnection({
+        serverUrl: serverUrl.trim(),
+        collection: collection.trim(),
+        project: effectiveProject,
+        pat: pat.trim(),
+      });
+
+      if (!conn.success) {
+        setEpicsTestResult({
+          ok: false,
+          project: effectiveProject,
+          error: conn.error?.message ?? "Connection failed",
+        });
+        toast.error(`❌ ${conn.error?.message ?? "Connection failed"}`);
+        return;
+      }
+
+      const [teamsRes, areasRes, itersRes] = await Promise.all([
+        listTfsTeams(serverUrl.trim(), collection.trim(), effectiveProject, pat.trim()),
+        listTfsClassificationNodes(serverUrl.trim(), collection.trim(), effectiveProject, pat.trim(), "areas"),
+        listTfsClassificationNodes(serverUrl.trim(), collection.trim(), effectiveProject, pat.trim(), "iterations"),
+      ]);
+
+      const teamName = epicsTeam.trim().toLowerCase();
+      const teamFound = teamName
+        ? teamsRes.items.some((t) => t.name.toLowerCase() === teamName)
+        : undefined;
+
+      const areaPathsSet = new Set(areasRes.items.map((n) => n.path));
+      const iterPathsSet = new Set(itersRes.items.map((n) => n.path));
+      const areasMissing = epicsAreaPaths.filter((p) => !areaPathsSet.has(p));
+      const iterationsMissing = epicsIterationPaths.filter((p) => !iterPathsSet.has(p));
+
+      const anyMissing =
+        (teamFound === false) || areasMissing.length > 0 || iterationsMissing.length > 0;
+
+      setEpicsTestResult({
+        ok: !anyMissing,
+        project: effectiveProject,
+        teamsCount: teamsRes.items.length,
+        teamFound,
+        areasCount: areasRes.items.length,
+        iterationsCount: itersRes.items.length,
+        areasMissing,
+        iterationsMissing,
+      });
+
+      if (anyMissing) {
+        toast.warning(t.adoEpicsScopeTestPartial);
+      } else {
+        toast.success(`✅ ${t.adoEpicsScopeTestOk}`);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Network error";
+      setEpicsTestResult({ ok: false, project: effectiveProject, error: msg });
+      toast.error(`❌ ${msg}`);
+    } finally {
+      setEpicsTesting(false);
+    }
+  };
+
 
   const handleSave = async () => {
     const guard = evaluateSaveGuard({
@@ -1099,6 +1189,88 @@ export const AzureDevOpsSettingsPage = () => {
               </div>
               <p className="text-xs text-muted-foreground mt-1.5">{t.adoEpicsScopeHint}</p>
             </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleTestEpicsScope}
+                disabled={
+                  epicsTesting ||
+                  validateServerUrl(serverUrl).status !== "valid" ||
+                  !collection.trim() ||
+                  !(epicsProject.trim() || project.trim()) ||
+                  !pat.trim()
+                }
+              >
+                {epicsTesting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Plug className="h-4 w-4 mr-2" />
+                )}
+                {t.adoEpicsScopeTestButton}
+              </Button>
+
+              {epicsTestResult && (
+                <div
+                  className={cn(
+                    "rounded-md border p-3 text-sm space-y-1.5",
+                    epicsTestResult.ok
+                      ? "border-emerald-500/30 bg-emerald-500/5"
+                      : epicsTestResult.error
+                      ? "border-destructive/40 bg-destructive/5"
+                      : "border-amber-500/40 bg-amber-500/5",
+                  )}
+                >
+                  {epicsTestResult.error ? (
+                    <div className="flex items-start gap-2 text-destructive">
+                      <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                      <span>{epicsTestResult.error}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2">
+                        {epicsTestResult.ok ? (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        ) : (
+                          <AlertTriangle className="h-4 w-4 text-amber-600" />
+                        )}
+                        <span className="font-medium">{epicsTestResult.project}</span>
+                      </div>
+                      <ul className="text-xs text-muted-foreground space-y-0.5 ml-6 list-disc">
+                        <li>
+                          {t.adoEpicsScopeTestTeamsFound}: {epicsTestResult.teamsCount ?? 0}
+                          {epicsTestResult.teamFound === false && (
+                            <span className="text-destructive ml-1">
+                              — {t.adoEpicsScopeTestTeamMissing}
+                            </span>
+                          )}
+                        </li>
+                        <li>
+                          {t.adoEpicsScopeTestAreasFound}: {epicsTestResult.areasCount ?? 0}
+                          {epicsTestResult.areasMissing && epicsTestResult.areasMissing.length > 0 && (
+                            <span className="text-destructive ml-1">
+                              — {t.adoEpicsScopeTestAreasMissing}: {epicsTestResult.areasMissing.join(", ")}
+                            </span>
+                          )}
+                        </li>
+                        <li>
+                          {t.adoEpicsScopeTestIterationsFound}: {epicsTestResult.iterationsCount ?? 0}
+                          {epicsTestResult.iterationsMissing && epicsTestResult.iterationsMissing.length > 0 && (
+                            <span className="text-destructive ml-1">
+                              — {t.adoEpicsScopeTestIterationsMissing}: {epicsTestResult.iterationsMissing.join(", ")}
+                            </span>
+                          )}
+                        </li>
+                      </ul>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
           </CardContent>
         </Card>
       </motion.div>
