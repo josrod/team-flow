@@ -906,13 +906,19 @@ export const AzureDevOpsSettingsPage = () => {
               </div>
               <div>
                 <Label htmlFor="ado-epics-project">{t.adoEpicsProjectLabel}</Label>
-                <Input
-                  id="ado-epics-project"
-                  placeholder={t.adoEpicsProjectPlaceholder}
-                  value={epicsProject}
-                  onChange={(e) => setEpicsProject(e.target.value)}
-                  className="mt-1"
-                />
+                <Select
+                  value={epicsProject.trim() === "" ? "__main__" : epicsProject}
+                  onValueChange={(v) => setEpicsProject(v === "__main__" ? "" : v)}
+                >
+                  <SelectTrigger id="ado-epics-project" className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__main__">{t.adoEpicsProjectSameAsMain}</SelectItem>
+                    <SelectItem value="Software">Software</SelectItem>
+                    <SelectItem value="SDES">RODAT (SDES)</SelectItem>
+                  </SelectContent>
+                </Select>
                 <p className="text-xs text-muted-foreground mt-1.5">{t.adoEpicsProjectHint}</p>
               </div>
               <div>
