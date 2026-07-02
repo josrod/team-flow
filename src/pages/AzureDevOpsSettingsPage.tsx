@@ -991,77 +991,23 @@ export const AzureDevOpsSettingsPage = () => {
 
             <Separator />
 
-            <div>
-              <Label htmlFor="ado-epics-areas">{t.adoEpicsAreaPathsLabel}</Label>
-              <div className="mt-1">
-                <TfsMultiSelect
-                  id="ado-epics-areas"
-                  value={epicsAreaPaths}
-                  onChange={setEpicsAreaPaths}
-                  placeholder="Selecciona una o varias áreas…"
-                  emptyHint="No se encontraron áreas para este proyecto."
-                  disabled={
-                    validateServerUrl(serverUrl).status !== "valid" ||
-                    !collection.trim() ||
-                    !(epicsProject.trim() || project).trim() ||
-                    !pat.trim()
-                  }
-                  disabledReason="Configura servidor, colección, proyecto y PAT para cargar las áreas."
-                  loadOptions={async () => {
-                    const res = await listTfsClassificationNodes(
-                      serverUrl,
-                      collection,
-                      epicsProject.trim() || project,
-                      pat,
-                      "areas",
-                    );
-                    return {
-                      items: res.items.map((n) => ({ path: n.path, name: n.name, depth: n.depth })),
-                      errorMessage: res.error?.message,
-                    };
-                  }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                Las épicas se filtrarán a estas áreas (incluye descendientes).
-              </p>
-            </div>
+            <TfsScopeFields
+              idPrefix="ado-epics"
+              serverUrl={serverUrl}
+              collection={collection}
+              project={epicsProject.trim() || project}
+              pat={pat}
+              areaPaths={epicsAreaPaths}
+              onAreaPathsChange={setEpicsAreaPaths}
+              iterationPaths={epicsIterationPaths}
+              onIterationPathsChange={setEpicsIterationPaths}
+              areasLabel={t.adoEpicsAreaPathsLabel}
+              iterationsLabel={t.adoEpicsIterationPathsLabel}
+              areasHint="Las épicas se filtrarán a estas áreas (incluye descendientes)."
+              iterationsHint={t.adoEpicsScopeHint}
+              disabledReason="Configura servidor, colección, proyecto y PAT para cargar los datos."
+            />
 
-            <Separator />
-
-            <div>
-              <Label htmlFor="ado-epics-iterations">{t.adoEpicsIterationPathsLabel}</Label>
-              <div className="mt-1">
-                <TfsMultiSelect
-                  id="ado-epics-iterations"
-                  value={epicsIterationPaths}
-                  onChange={setEpicsIterationPaths}
-                  placeholder="Selecciona una o varias iteraciones…"
-                  emptyHint="No se encontraron iteraciones para este proyecto."
-                  disabled={
-                    validateServerUrl(serverUrl).status !== "valid" ||
-                    !collection.trim() ||
-                    !(epicsProject.trim() || project).trim() ||
-                    !pat.trim()
-                  }
-                  disabledReason="Configura servidor, colección, proyecto y PAT para cargar las iteraciones."
-                  loadOptions={async () => {
-                    const res = await listTfsClassificationNodes(
-                      serverUrl,
-                      collection,
-                      epicsProject.trim() || project,
-                      pat,
-                      "iterations",
-                    );
-                    return {
-                      items: res.items.map((n) => ({ path: n.path, name: n.name, depth: n.depth })),
-                      errorMessage: res.error?.message,
-                    };
-                  }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1.5">{t.adoEpicsScopeHint}</p>
-            </div>
 
             <Separator />
 
