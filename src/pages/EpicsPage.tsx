@@ -629,7 +629,7 @@ export const EpicsPage = () => {
                 serverUrl: settings.serverUrl,
                 collection: settings.collection,
                 project: effectiveProject,
-                team: isEpicsProjectOverride ? undefined : settings.team,
+                team: effectiveTeam,
                 pat: settings.pat,
               }
             : null
