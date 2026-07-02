@@ -60,6 +60,9 @@ export const AzureDevOpsSettingsPage = () => {
   const [bugsQueryId, setBugsQueryId] = useState("");
   const [epicsQueryId, setEpicsQueryId] = useState("");
   const [epicsProject, setEpicsProject] = useState("");
+  const [epicsTeam, setEpicsTeam] = useState("");
+  const [epicsAreaPaths, setEpicsAreaPaths] = useState<string[]>([]);
+  const [epicsIterationPaths, setEpicsIterationPaths] = useState<string[]>([]);
   const [epicsTags, setEpicsTags] = useState<string[]>([]);
   const [epicsTagInput, setEpicsTagInput] = useState("");
 
