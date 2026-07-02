@@ -2031,6 +2031,10 @@ export const fetchTfsEpics = async (
       const data = (await detailsRes.json()) as RawWorkItemsResponse;
       for (const raw of data.value ?? []) {
         const f = raw.fields ?? {};
+        // Hard-filter: only include Work Items of type "Epic". Saved queries
+        // may return Features or other types; we ignore them here.
+        const workItemType = String(f["System.WorkItemType"] ?? "").trim().toLowerCase();
+        if (workItemType !== "epic") continue;
         const assigned = parseAssignedTo(f["System.AssignedTo"]);
         const tagsRaw = f["System.Tags"];
         const tags =
