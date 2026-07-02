@@ -205,7 +205,7 @@ export const EpicsPage = () => {
     if (result.error) setError(result.error);
     setEpics(result.items);
     setLoading(false);
-  }, [settings]);
+  }, [settings, effectiveProject]);
 
   useEffect(() => {
     if (settings && settings.epicsTags.length > 0) loadEpics();
