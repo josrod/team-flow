@@ -478,9 +478,15 @@ export const EpicsPage = () => {
                 <p className="text-xs text-muted-foreground text-center">{t.epicsLoading}</p>
               </div>
             ) : (
-              <Tabs defaultValue="roadmap" className="w-full">
+              <Tabs
+                value={viewMode}
+                onValueChange={(v) => setViewMode(v as ViewMode)}
+                className="w-full"
+              >
                 <TabsList>
                   <TabsTrigger value="roadmap">{t.epicsTabRoadmap}</TabsTrigger>
+                  <TabsTrigger value="timeline">{t.epicsTabTimeline}</TabsTrigger>
+                  <TabsTrigger value="heatmap">{t.epicsTabHeatmap}</TabsTrigger>
                   <TabsTrigger value="list">{t.epicsTabList}</TabsTrigger>
                 </TabsList>
                 <TabsContent value="roadmap" className="mt-4">
