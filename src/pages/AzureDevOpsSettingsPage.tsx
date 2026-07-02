@@ -1012,10 +1012,33 @@ export const AzureDevOpsSettingsPage = () => {
       >
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg font-display">{t.adoEpicsScopeTitle}</CardTitle>
+            <CardTitle className="text-lg font-display flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5" />
+              {t.adoEpicsScopeTitle}
+            </CardTitle>
             <CardDescription>{t.adoEpicsScopeDesc}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
+            <div>
+              <Label htmlFor="ado-epics-project">{t.adoEpicsProjectLabel}</Label>
+              <Select
+                value={epicsProject.trim() === "" ? "__main__" : epicsProject}
+                onValueChange={(v) => setEpicsProject(v === "__main__" ? "" : v)}
+              >
+                <SelectTrigger id="ado-epics-project" className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__main__">{t.adoEpicsProjectSameAsMain}</SelectItem>
+                  <SelectItem value="Software">Software</SelectItem>
+                  <SelectItem value="SDES">RODAT (SDES)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1.5">{t.adoEpicsProjectHint}</p>
+            </div>
+
+            <Separator />
+
             <div>
               <Label htmlFor="ado-epics-team">{t.adoEpicsTeamLabel}</Label>
               <Input
@@ -1061,6 +1084,9 @@ export const AzureDevOpsSettingsPage = () => {
                   }}
                 />
               </div>
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Las épicas se filtrarán a estas áreas (incluye descendientes).
+              </p>
             </div>
 
             <Separator />
@@ -1101,6 +1127,78 @@ export const AzureDevOpsSettingsPage = () => {
 
             <Separator />
 
+            <div>
+              <Label htmlFor="ado-epics-query">{t.adoEpicsQueryIdLabel}</Label>
+              <Input
+                id="ado-epics-query"
+                placeholder={t.adoEpicsQueryIdPlaceholder}
+                value={epicsQueryId}
+                onChange={(e) => setEpicsQueryId(e.target.value)}
+                aria-invalid={fieldValidation.epicsQueryId.status === "invalid"}
+                className={cn("mt-1", inputStateClass(fieldValidation.epicsQueryId.status))}
+              />
+              <TfsFieldHint
+                validation={fieldValidation.epicsQueryId}
+                defaultHint={t.adoEpicsQueryIdHint}
+                hideValid
+              />
+            </div>
+
+            <Separator />
+
+            <div>
+              <Label htmlFor="ado-epics-tags">{t.adoEpicsTagsLabel}</Label>
+              <Input
+                id="ado-epics-tags"
+                placeholder={t.adoEpicsTagsPlaceholder}
+                value={epicsTagInput}
+                onChange={(e) => setEpicsTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === ",") {
+                    e.preventDefault();
+                    const value = epicsTagInput.trim().replace(/,+$/, "");
+                    if (value && !epicsTags.includes(value)) {
+                      setEpicsTags([...epicsTags, value]);
+                    }
+                    setEpicsTagInput("");
+                  } else if (e.key === "Backspace" && epicsTagInput === "" && epicsTags.length > 0) {
+                    setEpicsTags(epicsTags.slice(0, -1));
+                  }
+                }}
+                onBlur={() => {
+                  const value = epicsTagInput.trim();
+                  if (value && !epicsTags.includes(value)) {
+                    setEpicsTags([...epicsTags, value]);
+                  }
+                  setEpicsTagInput("");
+                }}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1.5">{t.adoEpicsTagsHint}</p>
+              {epicsTags.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {epicsTags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => setEpicsTags(epicsTags.filter((x) => x !== tag))}
+                        className="hover:text-destructive"
+                        aria-label={`Remove ${tag}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Separator />
+
             <div className="space-y-3">
               <Button
                 type="button"
@@ -1113,6 +1211,7 @@ export const AzureDevOpsSettingsPage = () => {
                   !(epicsProject.trim() || project.trim()) ||
                   !pat.trim()
                 }
+                className="w-full"
               >
                 {epicsTesting ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -1179,10 +1278,10 @@ export const AzureDevOpsSettingsPage = () => {
                 </div>
               )}
             </div>
-
           </CardContent>
         </Card>
       </motion.div>
+
 
 
 
