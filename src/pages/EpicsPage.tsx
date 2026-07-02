@@ -180,6 +180,19 @@ export const EpicsPage = () => {
     () => Boolean(settings?.epicsProject.trim() && settings?.epicsProject.trim() !== settings?.project),
     [settings],
   );
+  const effectiveTeam = useMemo(() => {
+    if (!settings) return undefined;
+    const overrideTeam = settings.epicsTeam.trim();
+    if (overrideTeam) return overrideTeam;
+    // Fall back to the main team only when the Epics project matches the
+    // main project — a team from the main project is invalid under a
+    // different project.
+    return isEpicsProjectOverride ? undefined : settings.team;
+  }, [settings, isEpicsProjectOverride]);
+  const effectiveAreaPaths = useMemo(() => {
+    if (!settings) return [] as string[];
+    return settings.epicsAreaPaths.length > 0 ? settings.epicsAreaPaths : settings.areaPaths;
+  }, [settings]);
 
   const loadEpics = useCallback(async () => {
     if (!settings) return;
@@ -195,16 +208,13 @@ export const EpicsPage = () => {
         serverUrl: settings.serverUrl,
         collection: settings.collection,
         project: effectiveProject,
-        // Only pass the team when the epics project matches the main project.
-        // The stored team belongs to the main project and is invalid under a
-        // different project (e.g. RODAT team does not exist under Software).
-        team: isEpicsProjectOverride ? undefined : settings.team,
+        team: effectiveTeam,
         pat: settings.pat,
       },
       {
         queryId: settings.epicsQueryId,
         tags: settings.epicsTags,
-        areaPaths: settings.areaPaths,
+        areaPaths: effectiveAreaPaths,
       },
       controller.signal,
     );
@@ -217,7 +227,7 @@ export const EpicsPage = () => {
     if (result.error) setError(result.error);
     setEpics(result.items);
     setLoading(false);
-  }, [settings, effectiveProject, isEpicsProjectOverride]);
+  }, [settings, effectiveProject, effectiveTeam, effectiveAreaPaths]);
 
   useEffect(() => {
     if (settings && settings.epicsTags.length > 0) loadEpics();
