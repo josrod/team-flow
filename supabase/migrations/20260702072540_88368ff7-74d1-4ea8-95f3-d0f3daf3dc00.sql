@@ -1,0 +1,1 @@
+UPDATE public.azure_devops_settings SET epics_project = 'Software' WHERE user_id = '649a393b-58e0-4775-95eb-b38c17b63825' AND (epics_project IS NULL OR epics_project = '');
