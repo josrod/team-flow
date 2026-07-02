@@ -1,124 +1,56 @@
-# Plan: Vista "Epics"
+# Epics scope — separate Software team settings
 
-Nueva sección de navegación bajo **Bugs** que consume Work Items de tipo Epic desde TFS, filtra por tags configurables y ofrece dos vistas: **Delivery Plan** (roadmap por trimestre) y **Lista**.
+## 1. Nueva sección en Azure DevOps Settings
 
-## 1. Configuración (Azure DevOps Settings)
+Añadir un bloque "Alcance de Epics" independiente del bloque principal (RODAT), con los mismos campos que hoy tiene la conexión principal, pero aplicados sólo a la vista Epics:
 
-Se añaden dos campos nuevos en `AzureDevOpsSettingsPage.tsx` y en la tabla `azure_devops_settings`:
+- Proyecto (`epics_project`) — ya existe
+- **Equipo** (`epics_team`) — nuevo
+- **Area paths** (`epics_area_paths`) — nuevo
+- **Iteration paths** (`epics_iteration_paths`) — nuevo
+- Query ID (`epics_query_id`) — ya existe
+- Tags (`epics_tags`) — ya existe
 
-- `epics_query_id` (uuid opcional): ID de un query TFS que devuelve Epics. Si está vacío, se usa un WIQL fijo interno.
-- `epics_tags` (text[]): lista de tags permitidos. Solo se muestran los Epics que contengan al menos uno.
+Reutiliza server URL, collection y PAT del bloque principal (no tiene sentido duplicar credenciales). Si el usuario deja el bloque vacío, la vista Epics cae al scope principal (comportamiento actual).
 
-Ambos campos entran en el mismo flujo de auto-save y validación ya existente (`validateConnectionFields`, `evaluateSaveGuard`). Se añade una tarjeta "Epics" en el formulario, análoga a la sección de Bugs, con:
+UI: card separada en la página de settings con título "Alcance de Epics (equipo Software)", debajo del card actual, con los mismos componentes (`TfsAutocompleteInput`, `TfsMultiSelect`) alimentados por el mismo PAT.
 
-- Input de query ID (validado por regex UUID como `bugsQueryId`).
-- Multi-input de tags (chips estilo TfsMultiSelect, entrada libre por Enter/coma).
+## 2. Base de datos
 
-## 2. Capa de servicio (`src/services/tfs.ts`)
+Migración añadiendo tres columnas nullable a `azure_devops_settings`:
 
-Se añaden dos funciones nuevas siguiendo el patrón de `fetchTfsBugsByIterations`:
+- `epics_team text`
+- `epics_area_paths text[] not null default '{}'`
+- `epics_iteration_paths text[] not null default '{}'`
 
-- `fetchTfsEpicsByQuery(conn, queryId, signal)`: ejecuta el query guardado y expande los Work Items.
-- `fetchTfsEpicsByWiql(conn, areaPaths, signal)`: WIQL de fallback:
-  `SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Epic' AND [System.TeamProject] = @project [AND System.AreaPath UNDER ...]`.
+Sin cambios en policies (ya cubren la tabla completa).
 
-Ambas devuelven `{ items: TfsEpic[]; error?: TfsError }`. Nuevo tipo:
+## 3. Consumo en EpicsPage
 
-```ts
-export interface TfsEpic {
-  id: number;
-  title: string;
-  state: string;
-  assignedTo?: string;
-  areaPath?: string;
-  iterationPath?: string;
-  tags: string[];        // parseado del campo System.Tags (";" separado)
-  targetDate?: string;   // Microsoft.VSTS.Scheduling.TargetDate
-  startDate?: string;    // Microsoft.VSTS.Scheduling.StartDate
-  changedDate?: string;
-  url: string;
-}
-```
+- Construir la `TfsConnection` de Epics con: `project = epics_project || project`, `team = epics_team || (mismo proyecto ? team : undefined)`.
+- Pasar `areaPaths = epics_area_paths.length ? epics_area_paths : areaPaths` al fallback WIQL.
+- Actualizar el badge "Proyecto consultado" para mostrar también el equipo efectivo.
 
-Wrapper `fetchTfsEpics(conn, { queryId, tags, areaPaths }, signal)` que:
-1. Llama a `fetchTfsEpicsByQuery` si `queryId` presente, si no `fetchTfsEpicsByWiql`.
-2. Filtra por intersección con `tags` (case-insensitive) si la lista no está vacía.
+## 4. Filtrar Features fuera de Epics
 
-## 3. Nueva página `src/pages/EpicsPage.tsx`
+Aunque el query guardado debería devolver sólo Epics, hoy no lo forzamos. Cambios en `fetchTfsEpics` (`src/services/tfs.ts`):
 
-Estructura basada en `BugsPage.tsx` para consistencia:
-
-- Carga de `azure_devops_settings` (misma lógica de decrypt PAT).
-- Estado vacío con enlace a Settings si faltan `epics_query_id` o `epics_tags`.
-- Barra superior: buscador por título/ID, filtro por Estado (multi-select) y por Tag (multi-select derivado de los datos).
-- Tabs shadcn `<Tabs defaultValue="roadmap">`:
-  - **Delivery Plan (por defecto)** — componente `EpicsRoadmap`.
-  - **Lista** — componente `EpicsTable`.
-
-### 3.1 `EpicsRoadmap.tsx`
-
-Roadmap por trimestre a partir del `targetDate`:
-
-- Agrupa Epics por `Q{n} YYYY` calculado desde `targetDate` (`Math.floor(month/3)+1`).
-- Bucket adicional **"Sin fecha"** para Epics sin `targetDate`.
-- Layout: rejilla horizontal con scroll, una columna por trimestre visible desde el trimestre actual hasta el más lejano encontrado (mínimo 4 columnas: Q actual + 3 siguientes).
-- Cada Epic es una `Card` compacta: título, ID (link a TFS), estado (StatusBadge), assignee (avatar/iniciales), tags como badges pequeños, y `targetDate` formateado `DD/MM/YYYY`.
-- Ordenación dentro de cada columna: por `targetDate` ascendente y luego por estado.
-- Header por columna con contador y rango de fechas (`Q2 2026 · Abr–Jun · 5 epics`).
-
-```text
-┌──── Q2 2026 ────┐┌──── Q3 2026 ────┐┌──── Q4 2026 ────┐┌──── Sin fecha ────┐
-│ [Epic card]     ││ [Epic card]     ││ [Epic card]     ││ [Epic card]       │
-│ [Epic card]     ││ [Epic card]     ││                 ││                   │
-└─────────────────┘└─────────────────┘└─────────────────┘└───────────────────┘
-```
-
-### 3.2 `EpicsTable.tsx`
-
-Tabla ordenable (patrón de BugsPage): ID, Título, Estado, Assignee, Tags, Área, Target Date, Changed Date. Clic en fila abre `EpicDetailDialog` (calcado de `BugDetailDialog`, adaptado a Epic).
-
-## 4. Navegación
-
-- `AppSidebar.tsx`: nuevo item `{ title: t.epics, url: "/epics", icon: Target }` insertado inmediatamente después de Bugs.
-- `App.tsx`: ruta `/epics` protegida usando `AppLayout` y la nueva `EpicsPage`.
+- Añadir `System.WorkItemType` a `EPIC_FIELDS`.
+- Tras hidratar los work items, descartar todo lo que no sea exactamente `Epic` (case-insensitive). Así, si el saved query incluye Features/otros tipos, la vista sigue siendo estrictamente de Epics.
 
 ## 5. i18n
 
-Se añaden claves en `src/context/LanguageContext.tsx` (ES/EN):
+Nuevas claves ES/EN en `LanguageContext`:
 
-- `epics`, `epicsPageTitle`, `epicsPageDescription`
-- `epicsEmptyNoSettings`, `epicsEmptyNoTags`, `epicsNoResults`
-- `epicsTabRoadmap`, `epicsTabList`
-- `epicsColTargetDate`, `epicsColTags`, `epicsColArea`, `epicsColState`, `epicsColAssignee`
-- `epicsFilterTags`, `epicsFilterState`, `epicsNoDateBucket`
-- `adoEpicsSectionTitle`, `adoEpicsQueryIdLabel`, `adoEpicsTagsLabel`, `adoEpicsTagsHint`
+- `adoEpicsScopeTitle`, `adoEpicsScopeDescription`
+- `adoEpicsTeamLabel`, `adoEpicsAreaPathsLabel`, `adoEpicsIterationPathsLabel`
+- `epicsEffectiveTeamLabel`
 
-## 6. Cambios en base de datos
+## Notas técnicas
 
-Migración añadiendo dos columnas opcionales a `azure_devops_settings`:
+- El selector actual "Proyecto de Epics" (dropdown Software/RODAT/Igual) se mantiene tal cual; el nuevo bloque simplemente añade team + areas + iterations.
+- La ejecución por ID del saved query (`/_apis/wit/wiql/{id}`) ya respeta el contexto del query; el nuevo `epics_team` sólo se usa cuando cae al fallback WIQL o cuando el usuario quiere forzar contexto distinto.
+- No se toca la lógica de tags ni el filtro de la lista/roadmap.
+- Sin nuevos tests salvo verificar build.
 
-- `epics_query_id uuid null`
-- `epics_tags text[] not null default '{}'`
-
-Sin cambios de RLS (la tabla ya está protegida por `user_id`).
-
-## 7. Detalles técnicos
-
-- Aborto y timeout de fetch: patrón `AbortController` de `BugsPage` (`LOAD_EPICS_TIMEOUT_MS = 20000`).
-- Cálculo trimestre: función pura en `src/lib/quarters.ts` con test unitario (`getQuarterKey`, `getQuarterRange`).
-- Parseo de tags TFS: función pura `parseTfsTags(raw?: string): string[]` en `src/lib/tfsTags.ts` con test.
-- Formato de fechas: `DD/MM/YYYY` (regla de proyecto).
-- Iconos: `Target` de lucide-react para Epics; badges de tags con `Badge variant="secondary"`.
-- El roadmap usa scroll horizontal en pantallas estrechas; en móvil las columnas colapsan a acordeón (patrón `useIsMobile`).
-
-## 8. Tests
-
-- `src/test/quarters.test.ts` — trimestre y rangos.
-- `src/test/tfs-tags.test.ts` — parseo y filtrado por tags (intersección, case-insensitive).
-- `src/test/epics-page-empty-state.test.tsx` — renderiza empty state cuando faltan settings.
-
-## 9. Fuera de alcance (para no ampliar la tarea)
-
-- Edición de Epics desde la app.
-- Sincronización automática o notificaciones.
-- Sub-agrupación por Feature/PBI hija dentro del roadmap.
+¿Procedo con la migración y los cambios de UI?
