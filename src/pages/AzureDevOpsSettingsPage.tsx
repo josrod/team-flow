@@ -888,101 +888,38 @@ export const AzureDevOpsSettingsPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
-            <div>
-              <Label htmlFor="ado-areas">Áreas (Features y Tareas)</Label>
-              <div className="mt-1">
-                <TfsMultiSelect
-                  id="ado-areas"
-                  value={areaPaths}
-                  onChange={setAreaPaths}
-                  placeholder="Selecciona una o varias áreas…"
-                  emptyHint="No se encontraron áreas para este proyecto."
-                  disabled={
-                    validateServerUrl(serverUrl).status !== "valid" ||
-                    !collection.trim() ||
-                    !project.trim() ||
-                    !pat.trim()
-                  }
-                  disabledReason="Configura servidor, colección, proyecto y PAT para cargar las áreas."
-                  loadOptions={async () => {
-                    const res = await listTfsClassificationNodes(
-                      serverUrl,
-                      collection,
-                      project,
-                      pat,
-                      "areas",
-                    );
-                    return {
-                      items: res.items.map((n) => ({
-                        path: n.path,
-                        name: n.name,
-                        depth: n.depth,
-                      })),
-                      errorMessage: res.error?.message,
-                    };
-                  }}
-                />
+            <TfsScopeFields
+              idPrefix="ado"
+              serverUrl={serverUrl}
+              collection={collection}
+              project={project}
+              pat={pat}
+              areaPaths={areaPaths}
+              onAreaPathsChange={setAreaPaths}
+              iterationPaths={iterationPaths}
+              onIterationPathsChange={setIterationPaths}
+              areasLabel="Áreas (Features y Tareas)"
+              iterationsLabel="Iteraciones (solo Tareas)"
+              areasHint="Las features y tareas se filtrarán a estas áreas (incluye descendientes)."
+              iterationsHint="Las tareas se filtrarán a estas iteraciones (incluye descendientes)."
+              disabledReason="Configura servidor, colección, proyecto y PAT para cargar los datos."
+            />
+
+            {iterationPaths.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {iterationPaths.map((path) => (
+                  <span
+                    key={path}
+                    className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
+                  >
+                    {path}
+                  </span>
+                ))}
               </div>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                Las features y tareas se filtrarán a estas áreas (incluye descendientes).
-              </p>
-            </div>
+            )}
 
             <Separator />
 
-            <div>
-              <Label htmlFor="ado-iterations">Iteraciones (solo Tareas)</Label>
-              <div className="mt-1">
-                <TfsMultiSelect
-                  id="ado-iterations"
-                  value={iterationPaths}
-                  onChange={setIterationPaths}
-                  placeholder="Selecciona una o varias iteraciones…"
-                  emptyHint="No se encontraron iteraciones para este proyecto."
-                  disabled={
-                    validateServerUrl(serverUrl).status !== "valid" ||
-                    !collection.trim() ||
-                    !project.trim() ||
-                    !pat.trim()
-                  }
-                  disabledReason="Configura servidor, colección, proyecto y PAT para cargar las iteraciones."
-                  loadOptions={async () => {
-                    const res = await listTfsClassificationNodes(
-                      serverUrl,
-                      collection,
-                      project,
-                      pat,
-                      "iterations",
-                    );
-                    return {
-                      items: res.items.map((n) => ({
-                        path: n.path,
-                        name: n.name,
-                        depth: n.depth,
-                      })),
-                      errorMessage: res.error?.message,
-                    };
-                  }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                Las tareas se filtrarán a estas iteraciones (incluye descendientes).
-              </p>
-              {iterationPaths.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {iterationPaths.map((path) => (
-                    <span
-                      key={path}
-                      className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
-                    >
-                      {path}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <Separator />
 
             <div>
               <Label htmlFor="ado-bugs-query">Query de Bugs (ID o ruta)</Label>
