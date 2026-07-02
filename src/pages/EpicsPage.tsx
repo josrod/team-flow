@@ -338,7 +338,16 @@ export const EpicsPage = () => {
             <CardTitle className="text-lg font-display">
               {filtered.length} / {epics.length} {t.epicsCount}
             </CardTitle>
-            <CardDescription>{settings.project}</CardDescription>
+            <CardDescription className="flex flex-wrap items-center gap-2">
+              <span>
+                {t.epicsEffectiveProjectLabel}: <span className="font-medium">{effectiveProject}</span>
+              </span>
+              {isEpicsProjectOverride ? (
+                <Badge variant="outline" className="text-[10px]">{t.epicsEffectiveProjectOverride}</Badge>
+              ) : (
+                <Badge variant="secondary" className="text-[10px]">{t.epicsEffectiveProjectMain}</Badge>
+              )}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap gap-3">
