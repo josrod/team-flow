@@ -65,6 +65,19 @@ export const AzureDevOpsSettingsPage = () => {
   const [epicsIterationPaths, setEpicsIterationPaths] = useState<string[]>([]);
   const [epicsTags, setEpicsTags] = useState<string[]>([]);
   const [epicsTagInput, setEpicsTagInput] = useState("");
+  const [epicsTesting, setEpicsTesting] = useState(false);
+  const [epicsTestResult, setEpicsTestResult] = useState<{
+    ok: boolean;
+    project?: string;
+    teamsCount?: number;
+    teamFound?: boolean;
+    areasCount?: number;
+    iterationsCount?: number;
+    areasMissing?: string[];
+    iterationsMissing?: string[];
+    error?: string;
+  } | null>(null);
+
 
 
   
