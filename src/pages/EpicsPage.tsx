@@ -363,6 +363,12 @@ export const EpicsPage = () => {
             <CardDescription className="flex flex-wrap items-center gap-2">
               <span>
                 {t.epicsEffectiveProjectLabel}: <span className="font-medium">{effectiveProject}</span>
+                {effectiveTeam ? (
+                  <>
+                    {" · "}
+                    {t.epicsEffectiveTeamLabel}: <span className="font-medium">{effectiveTeam}</span>
+                  </>
+                ) : null}
               </span>
               {isEpicsProjectOverride ? (
                 <Badge variant="outline" className="text-[10px]">{t.epicsEffectiveProjectOverride}</Badge>
