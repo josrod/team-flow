@@ -17,6 +17,8 @@ import { useLang } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { EpicDetailDrawer } from "@/components/EpicDetailDrawer";
+import { EpicsTimeline } from "@/components/EpicsTimeline";
+import { EpicsHeatmap } from "@/components/EpicsHeatmap";
 import { decryptPat } from "@/services/tfsPatVault";
 import { fetchTfsEpics, type TfsEpic, type TfsError } from "@/services/tfs";
 import {
@@ -46,6 +48,8 @@ interface EpicsSettings {
   epicsIterationPaths: string[];
   epicsTags: string[];
 }
+
+type ViewMode = "roadmap" | "timeline" | "heatmap" | "list";
 
 const ALL = "__all__";
 const LOAD_EPICS_TIMEOUT_MS = 20000;
@@ -84,6 +88,19 @@ export const EpicsPage = () => {
   const [error, setError] = useState<TfsError | null>(null);
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window === "undefined") return "roadmap";
+    const stored = window.localStorage.getItem("epics-view-mode");
+    if (stored === "roadmap" || stored === "list" || stored === "timeline" || stored === "heatmap") {
+      return stored;
+    }
+    return "roadmap";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("epics-view-mode", viewMode);
+    }
+  }, [viewMode]);
   const [search, setSearch] = useState("");
   const [stateFilter, setStateFilter] = useState<string>(ALL);
   const [selectedTags, setSelectedTags] = useState<string[]>(() =>
@@ -476,9 +493,15 @@ export const EpicsPage = () => {
                 <p className="text-xs text-muted-foreground text-center">{t.epicsLoading}</p>
               </div>
             ) : (
-              <Tabs defaultValue="roadmap" className="w-full">
+              <Tabs
+                value={viewMode}
+                onValueChange={(v) => setViewMode(v as ViewMode)}
+                className="w-full"
+              >
                 <TabsList>
                   <TabsTrigger value="roadmap">{t.epicsTabRoadmap}</TabsTrigger>
+                  <TabsTrigger value="timeline">{t.epicsTabTimeline}</TabsTrigger>
+                  <TabsTrigger value="heatmap">{t.epicsTabHeatmap}</TabsTrigger>
                   <TabsTrigger value="list">{t.epicsTabList}</TabsTrigger>
                 </TabsList>
                 <TabsContent value="roadmap" className="mt-4">
@@ -548,6 +571,20 @@ export const EpicsPage = () => {
                         })}
                       </div>
                     </div>
+                  )}
+                </TabsContent>
+                <TabsContent value="timeline" className="mt-4">
+                  {filtered.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">{t.epicsNoResults}</p>
+                  ) : (
+                    <EpicsTimeline epics={filtered} onOpenEpic={openEpic} />
+                  )}
+                </TabsContent>
+                <TabsContent value="heatmap" className="mt-4">
+                  {filtered.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">{t.epicsNoResults}</p>
+                  ) : (
+                    <EpicsHeatmap epics={filtered} onOpenEpic={openEpic} />
                   )}
                 </TabsContent>
                 <TabsContent value="list" className="mt-4">

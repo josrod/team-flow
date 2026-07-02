@@ -1,56 +1,67 @@
-# Epics scope — separate Software team settings
+# Nuevas visualizaciones en la página de Epics
 
-## 1. Nueva sección en Azure DevOps Settings
+Añadir dos vistas complementarias a la actual (lista/roadmap) para que el equipo entienda mejor el trabajo que viene: **Timeline por quarters** y **Heatmap de carga**. Se integran como pestañas en `EpicsPage`, reutilizando el mismo dataset (`epics` ya filtrado por scope Software) para evitar llamadas extra a Azure DevOps.
 
-Añadir un bloque "Alcance de Epics" independiente del bloque principal (RODAT), con los mismos campos que hoy tiene la conexión principal, pero aplicados sólo a la vista Epics:
+## 1. Selector de vistas
 
-- Proyecto (`epics_project`) — ya existe
-- **Equipo** (`epics_team`) — nuevo
-- **Area paths** (`epics_area_paths`) — nuevo
-- **Iteration paths** (`epics_iteration_paths`) — nuevo
-- Query ID (`epics_query_id`) — ya existe
-- Tags (`epics_tags`) — ya existe
+En `src/pages/EpicsPage.tsx`, sobre el contenido actual, añadir un `Tabs` con tres pestañas:
 
-Reutiliza server URL, collection y PAT del bloque principal (no tiene sentido duplicar credenciales). Si el usuario deja el bloque vacío, la vista Epics cae al scope principal (comportamiento actual).
+- `list` — vista actual (roadmap por quarter, sin cambios).
+- `timeline` — nueva vista Gantt.
+- `heatmap` — nueva matriz de carga.
 
-UI: card separada en la página de settings con título "Alcance de Epics (equipo Software)", debajo del card actual, con los mismos componentes (`TfsAutocompleteInput`, `TfsMultiSelect`) alimentados por el mismo PAT.
+Persistir la pestaña activa en `localStorage` (`epics-view-mode`) para respetar la preferencia entre sesiones.
 
-## 2. Base de datos
+## 2. Timeline / Gantt por quarters
 
-Migración añadiendo tres columnas nullable a `azure_devops_settings`:
+Nuevo componente `src/components/EpicsTimeline.tsx`.
 
-- `epics_team text`
-- `epics_area_paths text[] not null default '{}'`
-- `epics_iteration_paths text[] not null default '{}'`
+Comportamiento:
 
-Sin cambios en policies (ya cubren la tabla completa).
+- Eje X: quarters visibles (usar `ensureUpcomingQuarters` de `src/lib/quarters.ts` para current + 3 quarters, con opción de mostrar 2/4/6).
+- Eje Y: una fila por Epic ordenada por `startDate` ascendente (Epics sin fecha van al final agrupados).
+- Cada Epic se dibuja como una barra horizontal desde `startDate` (o inicio del quarter en curso si falta) hasta `targetDate` (o fin del último quarter visible si falta), con estilo `border-dashed` cuando alguna fecha es inferida.
+- Color de barra según `state` reutilizando los tokens existentes (`New`, `Active`, `Resolved`, `Closed`) — nada de colores hardcoded, usar clases semánticas del tema.
+- Hover: tooltip con `id`, `title`, `assignedTo`, `areaPath`, fechas.
+- Click: abrir `EpicDetailDrawer` existente.
+- Línea vertical "Hoy" superpuesta.
+- Agrupación opcional (Select superior): `Ninguna` | `Area path` | `Assignee` — cuando se agrupa, se pinta un separador con el nombre del grupo y las filas debajo.
+- Scroll horizontal cuando el rango excede el ancho; sticky la columna de títulos a la izquierda (max 260px, `truncate`).
 
-## 3. Consumo en EpicsPage
+## 3. Heatmap de carga por quarter
 
-- Construir la `TfsConnection` de Epics con: `project = epics_project || project`, `team = epics_team || (mismo proyecto ? team : undefined)`.
-- Pasar `areaPaths = epics_area_paths.length ? epics_area_paths : areaPaths` al fallback WIQL.
-- Actualizar el badge "Proyecto consultado" para mostrar también el equipo efectivo.
+Nuevo componente `src/components/EpicsHeatmap.tsx`.
 
-## 4. Filtrar Features fuera de Epics
+Comportamiento:
 
-Aunque el query guardado debería devolver sólo Epics, hoy no lo forzamos. Cambios en `fetchTfsEpics` (`src/services/tfs.ts`):
+- Matriz: filas = Area Path (o Assignee, seleccionable), columnas = quarters visibles.
+- Celda = número de Epics activos en ese quarter para esa fila. Un Epic cuenta en todos los quarters que solapa según `startDate`/`targetDate`; si faltan ambas, entra en la columna "Sin fecha".
+- Intensidad de color escalada al máximo de la matriz (5 pasos usando tokens `bg-primary/10 → /80`), mostrando el número dentro de la celda.
+- Tooltip por celda: lista de Epics (id + title, hasta 5 + "+N").
+- Click en celda: abre un `Dialog` con la lista completa filtrable, cada item abre el `EpicDetailDrawer`.
+- Fila "Total" al final y columna "Total" a la derecha.
 
-- Añadir `System.WorkItemType` a `EPIC_FIELDS`.
-- Tras hidratar los work items, descartar todo lo que no sea exactamente `Epic` (case-insensitive). Así, si el saved query incluye Features/otros tipos, la vista sigue siendo estrictamente de Epics.
+## 4. Datos y utilidades
+
+- Reutilizar helpers de `src/lib/quarters.ts` (`ensureUpcomingQuarters`, `bucketForDate`, `quarterRange`, `quarterLabel`).
+- Nueva utilidad `src/lib/epicSpan.ts` con `getEpicQuarterSpan(epic, visibleBuckets)` que devuelve los buckets que solapa (usada por timeline y heatmap).
+- Sin cambios en `src/services/tfs.ts` ni migraciones.
 
 ## 5. i18n
 
-Nuevas claves ES/EN en `LanguageContext`:
+Nuevas claves ES/EN en `src/context/LanguageContext.tsx`:
 
-- `adoEpicsScopeTitle`, `adoEpicsScopeDescription`
-- `adoEpicsTeamLabel`, `adoEpicsAreaPathsLabel`, `adoEpicsIterationPathsLabel`
-- `epicsEffectiveTeamLabel`
+- `epicsViewList`, `epicsViewTimeline`, `epicsViewHeatmap`
+- `epicsTimelineGroupBy`, `epicsGroupNone`, `epicsGroupArea`, `epicsGroupAssignee`
+- `epicsTimelineTodayLabel`, `epicsTimelineNoDatesHint`
+- `epicsHeatmapRowBy`, `epicsHeatmapNoDateColumn`, `epicsHeatmapTotal`, `epicsHeatmapCellDialogTitle`
+
+## 6. Tests
+
+- `src/test/epic-span.test.ts`: casos de `getEpicQuarterSpan` (sin fechas, solo start, solo target, rango que cruza varios quarters).
 
 ## Notas técnicas
 
-- El selector actual "Proyecto de Epics" (dropdown Software/RODAT/Igual) se mantiene tal cual; el nuevo bloque simplemente añade team + areas + iterations.
-- La ejecución por ID del saved query (`/_apis/wit/wiql/{id}`) ya respeta el contexto del query; el nuevo `epics_team` sólo se usa cuando cae al fallback WIQL o cuando el usuario quiere forzar contexto distinto.
-- No se toca la lógica de tags ni el filtro de la lista/roadmap.
-- Sin nuevos tests salvo verificar build.
-
-¿Procedo con la migración y los cambios de UI?
+- Todo el layout con Tailwind + shadcn (`Tabs`, `Tooltip`, `Dialog`, `Select`, `ScrollArea`). Sin CSS inline salvo `style={{ width, left }}` en las barras del timeline (calculadas en JS).
+- Nada de nuevas llamadas a Azure DevOps: ambas vistas trabajan sobre el array `epics` ya cargado.
+- Fechas en formato DD/MM/YYYY.
