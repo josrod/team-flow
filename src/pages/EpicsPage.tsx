@@ -41,6 +41,9 @@ interface EpicsSettings {
   areaPaths: string[];
   epicsQueryId: string;
   epicsProject: string;
+  epicsTeam: string;
+  epicsAreaPaths: string[];
+  epicsIterationPaths: string[];
   epicsTags: string[];
 }
 
