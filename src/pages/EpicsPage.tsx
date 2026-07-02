@@ -163,6 +163,15 @@ export const EpicsPage = () => {
   const loadControllerRef = useRef<AbortController | null>(null);
   const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const effectiveProject = useMemo(
+    () => settings?.epicsProject.trim() || settings?.project || "",
+    [settings],
+  );
+  const isEpicsProjectOverride = useMemo(
+    () => Boolean(settings?.epicsProject.trim() && settings?.epicsProject.trim() !== settings?.project),
+    [settings],
+  );
+
   const loadEpics = useCallback(async () => {
     if (!settings) return;
     loadControllerRef.current?.abort();
