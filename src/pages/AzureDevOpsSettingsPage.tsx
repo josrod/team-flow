@@ -60,6 +60,9 @@ export const AzureDevOpsSettingsPage = () => {
   const [bugsQueryId, setBugsQueryId] = useState("");
   const [epicsQueryId, setEpicsQueryId] = useState("");
   const [epicsProject, setEpicsProject] = useState("");
+  const [epicsTeam, setEpicsTeam] = useState("");
+  const [epicsAreaPaths, setEpicsAreaPaths] = useState<string[]>([]);
+  const [epicsIterationPaths, setEpicsIterationPaths] = useState<string[]>([]);
   const [epicsTags, setEpicsTags] = useState<string[]>([]);
   const [epicsTagInput, setEpicsTagInput] = useState("");
 
@@ -122,6 +125,11 @@ export const AzureDevOpsSettingsPage = () => {
         setBugsQueryId((data as { bugs_query_id?: string | null }).bugs_query_id ?? "");
         setEpicsQueryId((data as { epics_query_id?: string | null }).epics_query_id ?? "");
         setEpicsProject((data as { epics_project?: string | null }).epics_project ?? "");
+        setEpicsTeam((data as { epics_team?: string | null }).epics_team ?? "");
+        const rawEpicAreas = (data as { epics_area_paths?: string[] | null }).epics_area_paths;
+        const rawEpicIters = (data as { epics_iteration_paths?: string[] | null }).epics_iteration_paths;
+        if (Array.isArray(rawEpicAreas)) setEpicsAreaPaths(rawEpicAreas);
+        if (Array.isArray(rawEpicIters)) setEpicsIterationPaths(rawEpicIters);
         const rawEpicTags = (data as { epics_tags?: string[] | null }).epics_tags;
         if (Array.isArray(rawEpicTags)) setEpicsTags(rawEpicTags);
 
@@ -211,6 +219,9 @@ export const AzureDevOpsSettingsPage = () => {
           bugs_query_id: bugsQueryId.trim() || null,
           epics_query_id: epicsQueryId.trim() || null,
           epics_project: epicsProject.trim() || null,
+          epics_team: epicsTeam.trim() || null,
+          epics_area_paths: epicsAreaPaths,
+          epics_iteration_paths: epicsIterationPaths,
           epics_tags: epicsTags,
         })
         .eq("user_id", user.id);
@@ -224,7 +235,7 @@ export const AzureDevOpsSettingsPage = () => {
         window.clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, epicsQueryId, epicsProject, epicsTags, hasExisting]);
+  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, epicsQueryId, epicsProject, epicsTeam, epicsAreaPaths, epicsIterationPaths, epicsTags, hasExisting]);
 
   const resetStatus = () => {
     setConnectionStatus("idle");
@@ -397,6 +408,9 @@ export const AzureDevOpsSettingsPage = () => {
         bugs_query_id: bugsQueryId.trim() || null,
         epics_query_id: epicsQueryId.trim() || null,
         epics_project: epicsProject.trim() || null,
+        epics_team: epicsTeam.trim() || null,
+        epics_area_paths: epicsAreaPaths,
+        epics_iteration_paths: epicsIterationPaths,
         epics_tags: epicsTags,
       };
 
@@ -987,6 +1001,103 @@ export const AzureDevOpsSettingsPage = () => {
                   </div>
                 )}
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.08 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-display">{t.adoEpicsScopeTitle}</CardTitle>
+            <CardDescription>{t.adoEpicsScopeDesc}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div>
+              <Label htmlFor="ado-epics-team">{t.adoEpicsTeamLabel}</Label>
+              <Input
+                id="ado-epics-team"
+                placeholder={t.adoEpicsTeamPlaceholder}
+                value={epicsTeam}
+                onChange={(e) => setEpicsTeam(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1.5">{t.adoEpicsTeamHint}</p>
+            </div>
+
+            <Separator />
+
+            <div>
+              <Label htmlFor="ado-epics-areas">{t.adoEpicsAreaPathsLabel}</Label>
+              <div className="mt-1">
+                <TfsMultiSelect
+                  id="ado-epics-areas"
+                  value={epicsAreaPaths}
+                  onChange={setEpicsAreaPaths}
+                  placeholder="Selecciona una o varias áreas…"
+                  emptyHint="No se encontraron áreas para este proyecto."
+                  disabled={
+                    validateServerUrl(serverUrl).status !== "valid" ||
+                    !collection.trim() ||
+                    !(epicsProject.trim() || project).trim() ||
+                    !pat.trim()
+                  }
+                  disabledReason="Configura servidor, colección, proyecto y PAT para cargar las áreas."
+                  loadOptions={async () => {
+                    const res = await listTfsClassificationNodes(
+                      serverUrl,
+                      collection,
+                      epicsProject.trim() || project,
+                      pat,
+                      "areas",
+                    );
+                    return {
+                      items: res.items.map((n) => ({ path: n.path, name: n.name, depth: n.depth })),
+                      errorMessage: res.error?.message,
+                    };
+                  }}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            <div>
+              <Label htmlFor="ado-epics-iterations">{t.adoEpicsIterationPathsLabel}</Label>
+              <div className="mt-1">
+                <TfsMultiSelect
+                  id="ado-epics-iterations"
+                  value={epicsIterationPaths}
+                  onChange={setEpicsIterationPaths}
+                  placeholder="Selecciona una o varias iteraciones…"
+                  emptyHint="No se encontraron iteraciones para este proyecto."
+                  disabled={
+                    validateServerUrl(serverUrl).status !== "valid" ||
+                    !collection.trim() ||
+                    !(epicsProject.trim() || project).trim() ||
+                    !pat.trim()
+                  }
+                  disabledReason="Configura servidor, colección, proyecto y PAT para cargar las iteraciones."
+                  loadOptions={async () => {
+                    const res = await listTfsClassificationNodes(
+                      serverUrl,
+                      collection,
+                      epicsProject.trim() || project,
+                      pat,
+                      "iterations",
+                    );
+                    return {
+                      items: res.items.map((n) => ({ path: n.path, name: n.name, depth: n.depth })),
+                      errorMessage: res.error?.message,
+                    };
+                  }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1.5">{t.adoEpicsScopeHint}</p>
             </div>
           </CardContent>
         </Card>

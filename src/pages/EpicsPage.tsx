@@ -41,6 +41,9 @@ interface EpicsSettings {
   areaPaths: string[];
   epicsQueryId: string;
   epicsProject: string;
+  epicsTeam: string;
+  epicsAreaPaths: string[];
+  epicsIterationPaths: string[];
   epicsTags: string[];
 }
 
@@ -136,6 +139,9 @@ export const EpicsPage = () => {
           area_paths?: string[] | null;
           epics_query_id?: string | null;
           epics_project?: string | null;
+          epics_team?: string | null;
+          epics_area_paths?: string[] | null;
+          epics_iteration_paths?: string[] | null;
           epics_tags?: string[] | null;
         };
         try {
@@ -149,6 +155,9 @@ export const EpicsPage = () => {
             areaPaths: Array.isArray(raw.area_paths) ? raw.area_paths : [],
             epicsQueryId: raw.epics_query_id ?? "",
             epicsProject: raw.epics_project ?? "",
+            epicsTeam: raw.epics_team ?? "",
+            epicsAreaPaths: Array.isArray(raw.epics_area_paths) ? raw.epics_area_paths : [],
+            epicsIterationPaths: Array.isArray(raw.epics_iteration_paths) ? raw.epics_iteration_paths : [],
             epicsTags: Array.isArray(raw.epics_tags) ? raw.epics_tags : [],
           });
         } catch {
@@ -171,6 +180,19 @@ export const EpicsPage = () => {
     () => Boolean(settings?.epicsProject.trim() && settings?.epicsProject.trim() !== settings?.project),
     [settings],
   );
+  const effectiveTeam = useMemo(() => {
+    if (!settings) return undefined;
+    const overrideTeam = settings.epicsTeam.trim();
+    if (overrideTeam) return overrideTeam;
+    // Fall back to the main team only when the Epics project matches the
+    // main project — a team from the main project is invalid under a
+    // different project.
+    return isEpicsProjectOverride ? undefined : settings.team;
+  }, [settings, isEpicsProjectOverride]);
+  const effectiveAreaPaths = useMemo(() => {
+    if (!settings) return [] as string[];
+    return settings.epicsAreaPaths.length > 0 ? settings.epicsAreaPaths : settings.areaPaths;
+  }, [settings]);
 
   const loadEpics = useCallback(async () => {
     if (!settings) return;
@@ -186,16 +208,13 @@ export const EpicsPage = () => {
         serverUrl: settings.serverUrl,
         collection: settings.collection,
         project: effectiveProject,
-        // Only pass the team when the epics project matches the main project.
-        // The stored team belongs to the main project and is invalid under a
-        // different project (e.g. RODAT team does not exist under Software).
-        team: isEpicsProjectOverride ? undefined : settings.team,
+        team: effectiveTeam,
         pat: settings.pat,
       },
       {
         queryId: settings.epicsQueryId,
         tags: settings.epicsTags,
-        areaPaths: settings.areaPaths,
+        areaPaths: effectiveAreaPaths,
       },
       controller.signal,
     );
@@ -208,7 +227,7 @@ export const EpicsPage = () => {
     if (result.error) setError(result.error);
     setEpics(result.items);
     setLoading(false);
-  }, [settings, effectiveProject, isEpicsProjectOverride]);
+  }, [settings, effectiveProject, effectiveTeam, effectiveAreaPaths]);
 
   useEffect(() => {
     if (settings && settings.epicsTags.length > 0) loadEpics();
@@ -344,6 +363,12 @@ export const EpicsPage = () => {
             <CardDescription className="flex flex-wrap items-center gap-2">
               <span>
                 {t.epicsEffectiveProjectLabel}: <span className="font-medium">{effectiveProject}</span>
+                {effectiveTeam ? (
+                  <>
+                    {" · "}
+                    {t.epicsEffectiveTeamLabel}: <span className="font-medium">{effectiveTeam}</span>
+                  </>
+                ) : null}
               </span>
               {isEpicsProjectOverride ? (
                 <Badge variant="outline" className="text-[10px]">{t.epicsEffectiveProjectOverride}</Badge>
@@ -604,7 +629,7 @@ export const EpicsPage = () => {
                 serverUrl: settings.serverUrl,
                 collection: settings.collection,
                 project: effectiveProject,
-                team: isEpicsProjectOverride ? undefined : settings.team,
+                team: effectiveTeam,
                 pat: settings.pat,
               }
             : null
