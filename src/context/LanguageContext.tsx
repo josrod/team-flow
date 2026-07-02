@@ -1589,6 +1589,9 @@ export const translations = {
     epicsUnassigned: "Unassigned",
     epicsOpenSettings: "Open settings",
     epicsTagsConfiguredLabel: "Configured tags",
+    epicsEffectiveProjectLabel: "Queried project",
+    epicsEffectiveProjectMain: "Main project",
+    epicsEffectiveProjectOverride: "Epics project",
     epicsQuarterEpicsSuffix: "epics",
     // Settings — Epics section
     adoEpicsSectionTitle: "Epics",
