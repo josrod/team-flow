@@ -49,6 +49,8 @@ interface EpicsSettings {
   epicsTags: string[];
 }
 
+type ViewMode = "roadmap" | "timeline" | "heatmap" | "list";
+
 const ALL = "__all__";
 const LOAD_EPICS_TIMEOUT_MS = 20000;
 
@@ -86,6 +88,19 @@ export const EpicsPage = () => {
   const [error, setError] = useState<TfsError | null>(null);
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window === "undefined") return "roadmap";
+    const stored = window.localStorage.getItem("epics-view-mode");
+    if (stored === "roadmap" || stored === "list" || stored === "timeline" || stored === "heatmap") {
+      return stored;
+    }
+    return "roadmap";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("epics-view-mode", viewMode);
+    }
+  }, [viewMode]);
   const [search, setSearch] = useState("");
   const [stateFilter, setStateFilter] = useState<string>(ALL);
   const [selectedTags, setSelectedTags] = useState<string[]>(() =>
