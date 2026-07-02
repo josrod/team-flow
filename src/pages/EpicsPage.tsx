@@ -139,6 +139,9 @@ export const EpicsPage = () => {
           area_paths?: string[] | null;
           epics_query_id?: string | null;
           epics_project?: string | null;
+          epics_team?: string | null;
+          epics_area_paths?: string[] | null;
+          epics_iteration_paths?: string[] | null;
           epics_tags?: string[] | null;
         };
         try {
@@ -152,6 +155,9 @@ export const EpicsPage = () => {
             areaPaths: Array.isArray(raw.area_paths) ? raw.area_paths : [],
             epicsQueryId: raw.epics_query_id ?? "",
             epicsProject: raw.epics_project ?? "",
+            epicsTeam: raw.epics_team ?? "",
+            epicsAreaPaths: Array.isArray(raw.epics_area_paths) ? raw.epics_area_paths : [],
+            epicsIterationPaths: Array.isArray(raw.epics_iteration_paths) ? raw.epics_iteration_paths : [],
             epicsTags: Array.isArray(raw.epics_tags) ? raw.epics_tags : [],
           });
         } catch {
