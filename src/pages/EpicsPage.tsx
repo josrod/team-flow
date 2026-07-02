@@ -186,7 +186,10 @@ export const EpicsPage = () => {
         serverUrl: settings.serverUrl,
         collection: settings.collection,
         project: effectiveProject,
-        team: settings.team,
+        // Only pass the team when the epics project matches the main project.
+        // The stored team belongs to the main project and is invalid under a
+        // different project (e.g. RODAT team does not exist under Software).
+        team: isEpicsProjectOverride ? undefined : settings.team,
         pat: settings.pat,
       },
       {
