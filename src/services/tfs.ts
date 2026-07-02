@@ -1915,10 +1915,12 @@ const runSavedQuery = async (
 ): Promise<{ ids: number[]; error?: TfsError; url: string }> => {
   const base = buildCollectionUrl(conn.serverUrl, conn.collection);
   const projectSeg = encodeURIComponent(conn.project.trim());
+  const teamSeg = conn.team && conn.team.trim() ? `/${encodeURIComponent(conn.team.trim())}` : "";
   const idOrPath = queryId.trim();
-  // TFS returns the WIQL text so we can execute it via the WIQL endpoint and
-  // still filter/select the fields we care about.
-  const url = `${base}/${projectSeg}/_apis/wit/queries/${encodeURI(idOrPath)}?$expand=wiql&api-version=${API_VERSION}`;
+  // Execute the saved query in its original team/project context so macros
+  // like @team and team-default area paths resolve correctly. This is the
+  // "run query by id" endpoint, which returns work-item ids directly.
+  const url = `${base}/${projectSeg}${teamSeg}/_apis/wit/wiql/${encodeURI(idOrPath)}?api-version=${API_VERSION}`;
   if (isMixedContent(url)) {
     return { ids: [], url, error: { kind: "mixed_content", url, message: "Mixed content (HTTPS → HTTP)." } };
   }
@@ -1927,23 +1929,36 @@ const runSavedQuery = async (
     headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
     signal,
   });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
+  if (res.ok) {
+    const data = (await res.json()) as WiqlResponse;
+    return { ids: (data.workItems ?? []).map((w) => w.id), url };
+  }
+
+  // Fallback: fetch WIQL text and execute it manually. Useful when the run-by-id
+  // endpoint is not exposed (older TFS) or the query id is a path rather than a GUID.
+  const fallbackUrl = `${base}/${projectSeg}/_apis/wit/queries/${encodeURI(idOrPath)}?$expand=wiql&api-version=${API_VERSION}`;
+  const fallbackRes = await fetch(fallbackUrl, {
+    method: "GET",
+    headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
+    signal,
+  });
+  if (!fallbackRes.ok) {
+    const body = await fallbackRes.text().catch(() => "");
     return {
       ids: [],
-      url,
+      url: fallbackUrl,
       error: {
-        kind: res.status === 401 ? "unauthorized" : res.status === 403 ? "forbidden" : res.status === 404 ? "not_found" : "http",
-        status: res.status,
-        url,
-        message: `Could not resolve saved query (HTTP ${res.status}).`,
+        kind: fallbackRes.status === 401 ? "unauthorized" : fallbackRes.status === 403 ? "forbidden" : fallbackRes.status === 404 ? "not_found" : "http",
+        status: fallbackRes.status,
+        url: fallbackUrl,
+        message: `Could not resolve saved query (HTTP ${fallbackRes.status}).`,
         detail: body.slice(0, 300),
       },
     };
   }
-  const data = (await res.json()) as { wiql?: string };
+  const data = (await fallbackRes.json()) as { wiql?: string };
   if (!data.wiql) {
-    return { ids: [], url, error: { kind: "unknown", url, message: "Saved query does not expose a WIQL body." } };
+    return { ids: [], url: fallbackUrl, error: { kind: "unknown", url: fallbackUrl, message: "Saved query does not expose a WIQL body." } };
   }
   return runEpicsWiql(conn, data.wiql, signal);
 };

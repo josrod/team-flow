@@ -186,7 +186,10 @@ export const EpicsPage = () => {
         serverUrl: settings.serverUrl,
         collection: settings.collection,
         project: effectiveProject,
-        team: settings.team,
+        // Only pass the team when the epics project matches the main project.
+        // The stored team belongs to the main project and is invalid under a
+        // different project (e.g. RODAT team does not exist under Software).
+        team: isEpicsProjectOverride ? undefined : settings.team,
         pat: settings.pat,
       },
       {
@@ -205,7 +208,7 @@ export const EpicsPage = () => {
     if (result.error) setError(result.error);
     setEpics(result.items);
     setLoading(false);
-  }, [settings, effectiveProject]);
+  }, [settings, effectiveProject, isEpicsProjectOverride]);
 
   useEffect(() => {
     if (settings && settings.epicsTags.length > 0) loadEpics();
@@ -600,8 +603,8 @@ export const EpicsPage = () => {
             ? {
                 serverUrl: settings.serverUrl,
                 collection: settings.collection,
-                project: settings.epicsProject.trim() || settings.project,
-                team: settings.team,
+                project: effectiveProject,
+                team: isEpicsProjectOverride ? undefined : settings.team,
                 pat: settings.pat,
               }
             : null
