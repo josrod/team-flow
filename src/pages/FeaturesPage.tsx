@@ -14,6 +14,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Tooltip as UiTooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
   PieChart, Pie, Legend,
@@ -1868,11 +1869,15 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                   <p className="text-sm font-medium truncate">{group.person}</p>
                                   {(() => {
                                     // WIP = Open + In Progress, plus (in tasks view) bugs closed in the last 10 days.
+                                    const activeTasks = group.active.filter((it) => !isBugType(it.type)).length;
+                                    const activeBugs = group.active.filter((it) => isBugType(it.type)).length;
+                                    const pendingTasks = group.pending.filter((it) => !isBugType(it.type)).length;
+                                    const pendingBugs = group.pending.filter((it) => isBugType(it.type)).length;
                                     const recentClosedBugs =
                                       view === "tasks"
                                         ? [...group.resolved, ...group.closed, ...group.done].filter((it) => isBugType(it.type)).length
                                         : 0;
-                                    const wip = group.active.length + group.pending.length + recentClosedBugs;
+                                    const wip = activeTasks + activeBugs + pendingTasks + pendingBugs + recentClosedBugs;
                                     if (wip === 0) return null;
                                     // Load tiers: 1-5 light (green), 6-9 medium (amber), 10+ heavy (red)
                                     const tier =
@@ -1882,29 +1887,58 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                         ? "border-status-vacation/40 text-status-vacation bg-status-vacation/10"
                                         : "border-status-sick/50 text-status-sick bg-status-sick/10";
                                     const label = t.wipBadgeTooltip.replace("{n}", String(wip));
+                                    const breakdown: Array<{ key: string; label: string; count: number }> = [
+                                      { key: "at", label: t.wipBreakdownActiveTasks, count: activeTasks },
+                                      { key: "ab", label: t.wipBreakdownActiveBugs, count: activeBugs },
+                                      { key: "pt", label: t.wipBreakdownPendingTasks, count: pendingTasks },
+                                      { key: "pb", label: t.wipBreakdownPendingBugs, count: pendingBugs },
+                                      { key: "rb", label: t.wipBreakdownRecentClosedBugs, count: recentClosedBugs },
+                                    ].filter((row) => row.count > 0);
                                     return (
-                                      <Badge
-                                        variant="outline"
-                                        role="button"
-                                        tabIndex={0}
-                                        className={`shrink-0 text-[10px] font-semibold cursor-pointer hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${tier}`}
-                                        title={label}
-                                        aria-label={label}
-                                        onPointerDown={(e) => e.stopPropagation()}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setWipPerson(group.person);
-                                        }}
-                                        onKeyDown={(e) => {
-                                          if (e.key === "Enter" || e.key === " ") {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            setWipPerson(group.person);
-                                          }
-                                        }}
-                                      >
-                                        {t.wipBadgeLabel} · {wip}
-                                      </Badge>
+                                      <UiTooltip>
+                                        <TooltipTrigger asChild>
+                                          <Badge
+                                            variant="outline"
+                                            role="button"
+                                            tabIndex={0}
+                                            className={`shrink-0 text-[10px] font-semibold cursor-pointer hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${tier}`}
+                                            aria-label={label}
+                                            onPointerDown={(e) => e.stopPropagation()}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setWipPerson(group.person);
+                                            }}
+                                            onKeyDown={(e) => {
+                                              if (e.key === "Enter" || e.key === " ") {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setWipPerson(group.person);
+                                              }
+                                            }}
+                                          >
+                                            {t.wipBadgeLabel} · {wip}
+                                          </Badge>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="max-w-xs">
+                                          <div className="space-y-1.5">
+                                            <p className="text-xs font-medium">{label}</p>
+                                            <p className="text-[11px] text-muted-foreground">
+                                              {view === "tasks" ? t.wipTooltipFormulaTasks : t.wipTooltipFormulaAll}
+                                            </p>
+                                            {breakdown.length > 0 && (
+                                              <ul className="text-[11px] space-y-0.5 pt-1 border-t border-border/40">
+                                                {breakdown.map((row) => (
+                                                  <li key={row.key} className="flex justify-between gap-3">
+                                                    <span>{row.label}</span>
+                                                    <span className="font-mono font-semibold">{row.count}</span>
+                                                  </li>
+                                                ))}
+                                              </ul>
+                                            )}
+                                            <p className="text-[10px] text-muted-foreground pt-1">{t.wipTooltipClickHint}</p>
+                                          </div>
+                                        </TooltipContent>
+                                      </UiTooltip>
                                     );
                                   })()}
                                 </div>
