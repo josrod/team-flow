@@ -440,6 +440,7 @@ export const translations = {
     pendingPlural: "pendientes",
     wipBadgeLabel: "WIP",
     wipBadgeTooltip: "{n} tareas/bugs en curso o pendientes",
+    tasksViewFilterHint: "Mostrando tareas abiertas / en curso y bugs cerrados en los últimos 10 días.",
     blockedPlural: "bloqueadas",
     completedPlural: "completadas",
     resolvedPlural: "resueltas",
