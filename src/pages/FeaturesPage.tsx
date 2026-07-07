@@ -876,7 +876,24 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   // Filtered tasks
   const filteredTasks = useMemo(() => {
     const searchLower = debouncedSearch ? debouncedSearch.toLowerCase() : "";
+    const recentCloseCutoff = view === "tasks" ? Date.now() - 10 * 24 * 60 * 60 * 1000 : 0;
     return tasks.filter((t) => {
+      // Tasks view: only Open/In Progress, plus Bugs closed in the last 10 days.
+      if (view === "tasks") {
+        const norm = normalizeState(t.state);
+        const isOpenOrInProgress = norm === "active" || norm === "pending";
+        const isBug = /bug/i.test(t.type);
+        const isClosedRecentBug =
+          isBug &&
+          (norm === "done" || norm === "resolved" || norm === "closed") &&
+          (() => {
+            const closeIso = t.closedDate ?? t.changedDate;
+            if (!closeIso) return false;
+            const ts = Date.parse(closeIso);
+            return Number.isFinite(ts) && ts >= recentCloseCutoff;
+          })();
+        if (!isOpenOrInProgress && !isClosedRecentBug) return false;
+      }
       // Team filter — map assignee name → teamId in both local and TFS modes
       if (activeTeam !== "all") {
         if (teamIdByAssignee.get(t.assignee) !== activeTeam) return false;
