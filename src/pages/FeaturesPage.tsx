@@ -1842,7 +1842,19 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                 {group.person === t.unassigned ? <UserIcon className="h-4 w-4" /> : initials}
                               </div>
                               <div className="min-w-0 flex-1 text-left">
-                                <p className="text-sm font-medium truncate">{group.person}</p>
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <p className="text-sm font-medium truncate">{group.person}</p>
+                                  {(group.active.length + group.pending.length) > 0 && (
+                                    <Badge
+                                      variant="outline"
+                                      className="shrink-0 text-[10px] font-medium border-primary/30 text-primary bg-primary/5"
+                                      title={t.wipBadgeTooltip.replace("{n}", String(group.active.length + group.pending.length))}
+                                      aria-label={t.wipBadgeTooltip.replace("{n}", String(group.active.length + group.pending.length))}
+                                    >
+                                      {t.wipBadgeLabel} · {group.active.length + group.pending.length}
+                                    </Badge>
+                                  )}
+                                </div>
                                 <p className="text-[11px] text-muted-foreground">
                                   {group.total} {group.total === 1 ? t.taskWord : t.tasksWord}
                                 </p>
