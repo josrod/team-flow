@@ -2077,6 +2077,73 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
           />
         );
       })()}
+
+      {wipPerson && (() => {
+        const group = tasksByPerson.find((g) => g.person === wipPerson);
+        const items = group
+          ? [
+              ...group.active,
+              ...group.pending,
+              ...(view === "tasks"
+                ? [...group.resolved, ...group.closed, ...group.done].filter((it) => isBugType(it.type))
+                : []),
+            ]
+          : [];
+        return (
+          <Dialog open={!!wipPerson} onOpenChange={(o) => !o && setWipPerson(null)}>
+            <DialogContent className="max-w-3xl">
+              <DialogHeader>
+                <DialogTitle>{t.wipDetailsTitle.replace("{person}", wipPerson)}</DialogTitle>
+                <DialogDescription>
+                  {t.wipDetailsDescription.replace("{n}", String(items.length))}
+                </DialogDescription>
+              </DialogHeader>
+              {items.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">{t.wipDetailsEmpty}</p>
+              ) : (
+                <div className="max-h-[60vh] overflow-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[80px]">#</TableHead>
+                        <TableHead>{t.title}</TableHead>
+                        <TableHead className="w-[100px]">{t.typeColumn}</TableHead>
+                        <TableHead className="w-[140px]">{t.stateColumn}</TableHead>
+                        <TableHead className="w-[110px]">{t.closedDateColumn}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.map((it) => (
+                        <TableRow key={it.id}>
+                          <TableCell className="font-mono text-xs">
+                            {source === "tfs" && tfsBaseUrl ? (
+                              <a
+                                href={`${tfsBaseUrl.replace(/\/$/, "")}/_workitems/edit/${it.id}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary hover:underline inline-flex items-center gap-1"
+                              >
+                                {it.id}
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            ) : (
+                              it.id
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm">{it.title}</TableCell>
+                          <TableCell className="text-xs">{it.type}</TableCell>
+                          <TableCell className="text-xs">{it.state}</TableCell>
+                          <TableCell className="text-xs">{formatTaskDate(it.closedDate ?? it.changedDate)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
     </div>
   );
 }
