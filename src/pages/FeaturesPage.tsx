@@ -1430,6 +1430,9 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 <CardDescription>
                   {tasksByPerson.length === 1 ? t.personCount.replace("{count}", String(tasksByPerson.length)) : t.personsCount.replace("{count}", String(tasksByPerson.length))}
                 </CardDescription>
+                {view === "tasks" && (
+                  <p className="mt-1 text-xs text-muted-foreground">{t.tasksViewFilterHint}</p>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <div className="relative">
