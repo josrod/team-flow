@@ -1281,6 +1281,8 @@ export const translations = {
     filtering: "filtering",
     inProgressPlural: "in progress",
     pendingPlural: "pending",
+    wipBadgeLabel: "WIP",
+    wipBadgeTooltip: "{n} tasks/bugs in progress or pending",
     blockedPlural: "blocked",
     completedPlural: "completed",
     resolvedPlural: "resolved",
