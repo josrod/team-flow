@@ -338,6 +338,31 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       // Ignore storage errors (private mode, quota, etc.).
     }
   }, [taskSort]);
+
+  // Persist state filters in the URL. We compare against the current defaults
+  // and omit the param when the selection matches, keeping URLs clean. An
+  // empty selection is encoded as "none" so we can distinguish it from
+  // "param absent" (which means "use default").
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    const encode = <T extends string>(current: Set<T>, defaults: T[]): string | null => {
+      const sortedCurrent = [...current].sort().join(",");
+      const sortedDefault = [...defaults].sort().join(",");
+      if (sortedCurrent === sortedDefault) return null;
+      if (current.size === 0) return "none";
+      return sortedCurrent;
+    };
+    const taskEncoded = encode(taskStateFilter, TASK_STATE_DEFAULT);
+    const bugEncoded = encode(bugStateFilter, BUG_STATE_DEFAULT);
+    if (taskEncoded === null) next.delete("taskStates");
+    else next.set("taskStates", taskEncoded);
+    if (bugEncoded === null) next.delete("bugStates");
+    else next.set("bugStates", bugEncoded);
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskStateFilter, bugStateFilter]);
   const toggleTaskStateFilter = (key: TaskOnlyStateKey) => {
     setTaskStateFilter((prev) => {
       const next = new Set(prev);
