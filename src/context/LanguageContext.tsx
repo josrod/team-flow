@@ -1284,6 +1284,7 @@ export const translations = {
     pendingPlural: "pending",
     wipBadgeLabel: "WIP",
     wipBadgeTooltip: "{n} tasks/bugs in progress or pending",
+    tasksViewFilterHint: "Showing open / in progress tasks and bugs closed in the last 10 days.",
     blockedPlural: "blocked",
     completedPlural: "completed",
     resolvedPlural: "resolved",
