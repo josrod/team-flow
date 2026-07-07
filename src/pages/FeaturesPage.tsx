@@ -1865,7 +1865,12 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                 <div className="flex items-center gap-2 min-w-0">
                                   <p className="text-sm font-medium truncate">{group.person}</p>
                                   {(() => {
-                                    const wip = group.active.length + group.pending.length;
+                                    // WIP = Open + In Progress, plus (in tasks view) bugs closed in the last 10 days.
+                                    const recentClosedBugs =
+                                      view === "tasks"
+                                        ? [...group.resolved, ...group.closed, ...group.done].filter((it) => isBugType(it.type)).length
+                                        : 0;
+                                    const wip = group.active.length + group.pending.length + recentClosedBugs;
                                     if (wip === 0) return null;
                                     // Load tiers: 1-3 light (green), 4-6 medium (amber), 7+ heavy (red)
                                     const tier =
