@@ -295,11 +295,28 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
 
   // Two independent state filters so users can filter tasks and bugs
   // separately (tasks don't have Resolved/Closed; bugs don't have Completed).
-  const [taskStateFilter, setTaskStateFilter] = useState<Set<TaskOnlyStateKey>>(
-    () => new Set<TaskOnlyStateKey>(["active", "pending", "blocked"]),
+  // Persisted in the URL so a reload keeps the same view.
+  const TASK_STATE_DEFAULT: TaskOnlyStateKey[] = ["active", "pending", "blocked"];
+  const BUG_STATE_DEFAULT: BugOnlyStateKey[] = ["active", "pending", "blocked", "resolved", "closed"];
+  const isTaskOnlyStateKey = (v: string): v is TaskOnlyStateKey =>
+    v === "active" || v === "pending" || v === "blocked" || v === "done";
+  const isBugOnlyStateKey = (v: string): v is BugOnlyStateKey =>
+    v === "active" || v === "pending" || v === "blocked" || v === "resolved" || v === "closed";
+  const parseStateParam = <T extends string>(
+    raw: string | null,
+    fallback: T[],
+    guard: (v: string) => v is T,
+  ): Set<T> => {
+    if (raw === null) return new Set<T>(fallback);
+    if (raw === "none" || raw === "") return new Set<T>();
+    const parsed = raw.split(",").map((s) => s.trim()).filter(guard);
+    return new Set<T>(parsed);
+  };
+  const [taskStateFilter, setTaskStateFilter] = useState<Set<TaskOnlyStateKey>>(() =>
+    parseStateParam(searchParams.get("taskStates"), TASK_STATE_DEFAULT, isTaskOnlyStateKey),
   );
-  const [bugStateFilter, setBugStateFilter] = useState<Set<BugOnlyStateKey>>(
-    () => new Set<BugOnlyStateKey>(["active", "pending", "blocked", "resolved", "closed"]),
+  const [bugStateFilter, setBugStateFilter] = useState<Set<BugOnlyStateKey>>(() =>
+    parseStateParam(searchParams.get("bugStates"), BUG_STATE_DEFAULT, isBugOnlyStateKey),
   );
   // Type filter: empty set means "show all types".
   const [typeFilter, setTypeFilter] = useState<Set<string>>(() => new Set<string>());
@@ -321,6 +338,31 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       // Ignore storage errors (private mode, quota, etc.).
     }
   }, [taskSort]);
+
+  // Persist state filters in the URL. We compare against the current defaults
+  // and omit the param when the selection matches, keeping URLs clean. An
+  // empty selection is encoded as "none" so we can distinguish it from
+  // "param absent" (which means "use default").
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    const encode = <T extends string>(current: Set<T>, defaults: T[]): string | null => {
+      const sortedCurrent = [...current].sort().join(",");
+      const sortedDefault = [...defaults].sort().join(",");
+      if (sortedCurrent === sortedDefault) return null;
+      if (current.size === 0) return "none";
+      return sortedCurrent;
+    };
+    const taskEncoded = encode(taskStateFilter, TASK_STATE_DEFAULT);
+    const bugEncoded = encode(bugStateFilter, BUG_STATE_DEFAULT);
+    if (taskEncoded === null) next.delete("taskStates");
+    else next.set("taskStates", taskEncoded);
+    if (bugEncoded === null) next.delete("bugStates");
+    else next.set("bugStates", bugEncoded);
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskStateFilter, bugStateFilter]);
   const toggleTaskStateFilter = (key: TaskOnlyStateKey) => {
     setTaskStateFilter((prev) => {
       const next = new Set(prev);
