@@ -1885,9 +1885,23 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     return (
                                       <Badge
                                         variant="outline"
-                                        className={`shrink-0 text-[10px] font-semibold ${tier}`}
+                                        role="button"
+                                        tabIndex={0}
+                                        className={`shrink-0 text-[10px] font-semibold cursor-pointer hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${tier}`}
                                         title={label}
                                         aria-label={label}
+                                        onPointerDown={(e) => e.stopPropagation()}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setWipPerson(group.person);
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter" || e.key === " ") {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setWipPerson(group.person);
+                                          }
+                                        }}
                                       >
                                         {t.wipBadgeLabel} · {wip}
                                       </Badge>
