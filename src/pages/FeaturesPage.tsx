@@ -281,6 +281,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const [draftSearch, setDraftSearch] = useState<string>(search);
   const [showFlatList, setShowFlatList] = useState(false);
   const [handoverPerson, setHandoverPerson] = useState<string | null>(null);
+  const [wipPerson, setWipPerson] = useState<string | null>(null);
   type TaskStateKey = "active" | "pending" | "blocked" | "done" | "resolved" | "closed";
   type TaskOnlyStateKey = "active" | "pending" | "blocked" | "done";
   type BugOnlyStateKey = "active" | "pending" | "blocked" | "resolved" | "closed";
