@@ -1872,11 +1872,11 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                         : 0;
                                     const wip = group.active.length + group.pending.length + recentClosedBugs;
                                     if (wip === 0) return null;
-                                    // Load tiers: 1-3 light (green), 4-6 medium (amber), 7+ heavy (red)
+                                    // Load tiers: 1-5 light (green), 6-9 medium (amber), 10+ heavy (red)
                                     const tier =
-                                      wip <= 3
+                                      wip <= 5
                                         ? "border-status-available/40 text-status-available bg-status-available/10"
-                                        : wip <= 6
+                                        : wip <= 9
                                         ? "border-status-vacation/40 text-status-vacation bg-status-vacation/10"
                                         : "border-status-sick/50 text-status-sick bg-status-sick/10";
                                     const label = t.wipBadgeTooltip.replace("{n}", String(wip));
