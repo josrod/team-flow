@@ -438,6 +438,8 @@ export const translations = {
     filtering: "filtrando",
     inProgressPlural: "en progreso",
     pendingPlural: "pendientes",
+    wipBadgeLabel: "WIP",
+    wipBadgeTooltip: "{n} tareas/bugs en curso o pendientes",
     blockedPlural: "bloqueadas",
     completedPlural: "completadas",
     resolvedPlural: "resueltas",
