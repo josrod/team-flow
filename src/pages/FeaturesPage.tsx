@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
   PieChart, Pie, Legend,
@@ -280,6 +281,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const [draftSearch, setDraftSearch] = useState<string>(search);
   const [showFlatList, setShowFlatList] = useState(false);
   const [handoverPerson, setHandoverPerson] = useState<string | null>(null);
+  const [wipPerson, setWipPerson] = useState<string | null>(null);
   type TaskStateKey = "active" | "pending" | "blocked" | "done" | "resolved" | "closed";
   type TaskOnlyStateKey = "active" | "pending" | "blocked" | "done";
   type BugOnlyStateKey = "active" | "pending" | "blocked" | "resolved" | "closed";
@@ -1883,9 +1885,23 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     return (
                                       <Badge
                                         variant="outline"
-                                        className={`shrink-0 text-[10px] font-semibold ${tier}`}
+                                        role="button"
+                                        tabIndex={0}
+                                        className={`shrink-0 text-[10px] font-semibold cursor-pointer hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${tier}`}
                                         title={label}
                                         aria-label={label}
+                                        onPointerDown={(e) => e.stopPropagation()}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setWipPerson(group.person);
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter" || e.key === " ") {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setWipPerson(group.person);
+                                          }
+                                        }}
                                       >
                                         {t.wipBadgeLabel} · {wip}
                                       </Badge>
@@ -2059,6 +2075,73 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
             blocked={group?.blocked ?? []}
             tfsBaseUrl={tfsBaseUrl}
           />
+        );
+      })()}
+
+      {wipPerson && (() => {
+        const group = tasksByPerson.find((g) => g.person === wipPerson);
+        const items = group
+          ? [
+              ...group.active,
+              ...group.pending,
+              ...(view === "tasks"
+                ? [...group.resolved, ...group.closed, ...group.done].filter((it) => isBugType(it.type))
+                : []),
+            ]
+          : [];
+        return (
+          <Dialog open={!!wipPerson} onOpenChange={(o) => !o && setWipPerson(null)}>
+            <DialogContent className="max-w-3xl">
+              <DialogHeader>
+                <DialogTitle>{t.wipDetailsTitle.replace("{person}", wipPerson)}</DialogTitle>
+                <DialogDescription>
+                  {t.wipDetailsDescription.replace("{n}", String(items.length))}
+                </DialogDescription>
+              </DialogHeader>
+              {items.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">{t.wipDetailsEmpty}</p>
+              ) : (
+                <div className="max-h-[60vh] overflow-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[80px]">#</TableHead>
+                        <TableHead>{t.title}</TableHead>
+                        <TableHead className="w-[100px]">{t.typeColumn}</TableHead>
+                        <TableHead className="w-[140px]">{t.stateColumn}</TableHead>
+                        <TableHead className="w-[110px]">{t.closedDateColumn}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.map((it) => (
+                        <TableRow key={it.id}>
+                          <TableCell className="font-mono text-xs">
+                            {source === "tfs" && tfsBaseUrl ? (
+                              <a
+                                href={`${tfsBaseUrl.replace(/\/$/, "")}/_workitems/edit/${it.id}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary hover:underline inline-flex items-center gap-1"
+                              >
+                                {it.id}
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            ) : (
+                              it.id
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm">{it.title}</TableCell>
+                          <TableCell className="text-xs">{it.type}</TableCell>
+                          <TableCell className="text-xs">{it.state}</TableCell>
+                          <TableCell className="text-xs">{formatTaskDate(it.closedDate ?? it.changedDate)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         );
       })()}
     </div>
