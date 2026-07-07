@@ -1,67 +1,47 @@
-# Nuevas visualizaciones en la página de Epics
+## Objetivo
 
-Añadir dos vistas complementarias a la actual (lista/roadmap) para que el equipo entienda mejor el trabajo que viene: **Timeline por quarters** y **Heatmap de carga**. Se integran como pestañas en `EpicsPage`, reutilizando el mismo dataset (`epics` ya filtrado por scope Software) para evitar llamadas extra a Azure DevOps.
+En la página de Tasks, mostrar junto al nombre de cada desarrollador un pequeño badge con su WIP (Work In Progress): número total de tasks + bugs que están **In Progress** o **New/Open** (todo lo activo no completado/cerrado/resuelto).
 
-## 1. Selector de vistas
+## Alcance del cambio
 
-En `src/pages/EpicsPage.tsx`, sobre el contenido actual, añadir un `Tabs` con tres pestañas:
+Solo UI de presentación en `src/pages/FeaturesPage.tsx` (vista `tasks`). Sin cambios de datos, servicios ni backend.
 
-- `list` — vista actual (roadmap por quarter, sin cambios).
-- `timeline` — nueva vista Gantt.
-- `heatmap` — nueva matriz de carga.
+## Definición del WIP
 
-Persistir la pestaña activa en `localStorage` (`epics-view-mode`) para respetar la preferencia entre sesiones.
+Para cada persona del grupo `tasksByPerson` (que ya está calculado y agrupa tasks + bugs filtrados por equipo/persona/búsqueda/tipo):
 
-## 2. Timeline / Gantt por quarters
+```
+WIP = group.active.length + group.pending.length
+```
 
-Nuevo componente `src/components/EpicsTimeline.tsx`.
+Esto cubre "In Progress + New/Open" tanto para tasks como para bugs, siguiendo la normalización de estados existente (`normalizeState`). No se cuentan `blocked`, `done`, `resolved` ni `closed`.
 
-Comportamiento:
+## UI
 
-- Eje X: quarters visibles (usar `ensureUpcomingQuarters` de `src/lib/quarters.ts` para current + 3 quarters, con opción de mostrar 2/4/6).
-- Eje Y: una fila por Epic ordenada por `startDate` ascendente (Epics sin fecha van al final agrupados).
-- Cada Epic se dibuja como una barra horizontal desde `startDate` (o inicio del quarter en curso si falta) hasta `targetDate` (o fin del último quarter visible si falta), con estilo `border-dashed` cuando alguna fecha es inferida.
-- Color de barra según `state` reutilizando los tokens existentes (`New`, `Active`, `Resolved`, `Closed`) — nada de colores hardcoded, usar clases semánticas del tema.
-- Hover: tooltip con `id`, `title`, `assignedTo`, `areaPath`, fechas.
-- Click: abrir `EpicDetailDrawer` existente.
-- Línea vertical "Hoy" superpuesta.
-- Agrupación opcional (Select superior): `Ninguna` | `Area path` | `Assignee` — cuando se agrupa, se pinta un separador con el nombre del grupo y las filas debajo.
-- Scroll horizontal cuando el rango excede el ancho; sticky la columna de títulos a la izquierda (max 260px, `truncate`).
+En el header de cada `AccordionItem` de la sección "Tasks por persona" (`src/pages/FeaturesPage.tsx` ~línea 1845), añadir un badge compacto inmediatamente después del nombre de la persona:
 
-## 3. Heatmap de carga por quarter
+- Componente: `<Badge variant="outline">` de shadcn.
+- Texto: `WIP · {n}` (con `{n}` = suma definida arriba).
+- Estilo: `text-[10px] font-medium` con tono `primary` suave (`border-primary/30 text-primary bg-primary/5`) para diferenciarlo de los badges por estado que ya existen a la derecha.
+- Solo se renderiza si `wip > 0`.
+- `title` / `aria-label`: "Work in progress: {n} tasks/bugs activos o pendientes" (i18n).
 
-Nuevo componente `src/components/EpicsHeatmap.tsx`.
+Layout: se coloca inline junto al `<p>` del nombre, en un contenedor flex, para que no rompa el `truncate` del nombre en pantallas estrechas (el badge queda a la derecha del nombre, con `shrink-0`).
 
-Comportamiento:
+## i18n
 
-- Matriz: filas = Area Path (o Assignee, seleccionable), columnas = quarters visibles.
-- Celda = número de Epics activos en ese quarter para esa fila. Un Epic cuenta en todos los quarters que solapa según `startDate`/`targetDate`; si faltan ambas, entra en la columna "Sin fecha".
-- Intensidad de color escalada al máximo de la matriz (5 pasos usando tokens `bg-primary/10 → /80`), mostrando el número dentro de la celda.
-- Tooltip por celda: lista de Epics (id + title, hasta 5 + "+N").
-- Click en celda: abre un `Dialog` con la lista completa filtrable, cada item abre el `EpicDetailDrawer`.
-- Fila "Total" al final y columna "Total" a la derecha.
+Añadir dos claves en `src/context/LanguageContext.tsx` (ES y EN):
 
-## 4. Datos y utilidades
+- `wipBadgeLabel`: "WIP" / "WIP"
+- `wipBadgeTooltip`: "{n} tareas/bugs en curso o pendientes" / "{n} tasks/bugs in progress or pending"
 
-- Reutilizar helpers de `src/lib/quarters.ts` (`ensureUpcomingQuarters`, `bucketForDate`, `quarterRange`, `quarterLabel`).
-- Nueva utilidad `src/lib/epicSpan.ts` con `getEpicQuarterSpan(epic, visibleBuckets)` que devuelve los buckets que solapa (usada por timeline y heatmap).
-- Sin cambios en `src/services/tfs.ts` ni migraciones.
+## Archivos a modificar
 
-## 5. i18n
+- `src/pages/FeaturesPage.tsx` — añadir cálculo de `wip` por grupo y renderizar el badge en el header del acordeón.
+- `src/context/LanguageContext.tsx` — dos claves nuevas.
 
-Nuevas claves ES/EN en `src/context/LanguageContext.tsx`:
+## Verificación
 
-- `epicsViewList`, `epicsViewTimeline`, `epicsViewHeatmap`
-- `epicsTimelineGroupBy`, `epicsGroupNone`, `epicsGroupArea`, `epicsGroupAssignee`
-- `epicsTimelineTodayLabel`, `epicsTimelineNoDatesHint`
-- `epicsHeatmapRowBy`, `epicsHeatmapNoDateColumn`, `epicsHeatmapTotal`, `epicsHeatmapCellDialogTitle`
-
-## 6. Tests
-
-- `src/test/epic-span.test.ts`: casos de `getEpicQuarterSpan` (sin fechas, solo start, solo target, rango que cruza varios quarters).
-
-## Notas técnicas
-
-- Todo el layout con Tailwind + shadcn (`Tabs`, `Tooltip`, `Dialog`, `Select`, `ScrollArea`). Sin CSS inline salvo `style={{ width, left }}` en las barras del timeline (calculadas en JS).
-- Nada de nuevas llamadas a Azure DevOps: ambas vistas trabajan sobre el array `epics` ya cargado.
-- Fechas en formato DD/MM/YYYY.
+- Abrir `/tasks`, comprobar que cada persona con items activos/pendientes muestra el badge `WIP · N` junto al nombre.
+- Cambiar filtros de estado de tasks y bugs y confirmar que el WIP se recalcula (usa `filteredTasks`).
+- Persona sin items abiertos (todo Closed) no muestra el badge.
