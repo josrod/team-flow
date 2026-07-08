@@ -182,6 +182,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getMemberStatus,
     updateTeamName: async (id, name, icon?) => {
       if (!guard()) return;
+      setTeams((prev) => prev.map((x) => (x.id === id ? { ...x, name, ...(icon !== undefined && { icon }) } : x)));
       const patch: { name: string; icon?: string } = { name };
       if (icon !== undefined) patch.icon = icon;
       const { error } = await supabase.from("teams").update(patch).eq("id", id);
@@ -191,6 +192,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addTeam: async (name, icon?) => {
       if (!guard()) return;
       const id = nowId("team");
+      setTeams((prev) => [...prev, { id, name, icon: icon || "users" }]);
       const { error } = await supabase.from("teams").insert({ id, name, icon: icon || "users" });
       if (error) return toast.error(error.message);
       toast.success("🏢", { description: tr().teamCreatedToast.replace("{name}", name) });
@@ -198,6 +200,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     deleteTeam: async (id) => {
       if (!guard()) return;
       const team = teams.find((x) => x.id === id);
+      setTeams((prev) => prev.filter((x) => x.id !== id));
       const { error } = await supabase.from("teams").delete().eq("id", id);
       if (error) return toast.error(error.message);
       toast.success("🗑️", { description: tr().teamDeletedToast.replace("{name}", team?.name ?? "") });
@@ -205,12 +208,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addMember: async (m) => {
       if (!guard()) return;
       const id = nowId("member");
+      setMembers((prev) => [...prev, { ...m, id }]);
       const { error } = await supabase.from("members").insert(memberToRow({ ...m, id }));
       if (error) return toast.error(error.message);
       toast.success("👤", { description: `${m.name} added` });
     },
     updateMember: async (m) => {
       if (!guard()) return;
+      setMembers((prev) => prev.map((x) => (x.id === m.id ? m : x)));
       const { id, ...rest } = memberToRow(m);
       const { error } = await supabase.from("members").update(rest).eq("id", m.id);
       if (error) return toast.error(error.message);
@@ -219,6 +224,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     deleteMember: async (id) => {
       if (!guard()) return;
       const name = members.find((x) => x.id === id)?.name;
+      setMembers((prev) => prev.filter((x) => x.id !== id));
       const { error } = await supabase.from("members").delete().eq("id", id);
       if (error) return toast.error(error.message);
       toast.success("🗑️", { description: `${name} removed` });
@@ -226,6 +232,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addAbsence: async (a) => {
       if (!guard()) return;
       const id = nowId("abs");
+      setAbsences((prev) => [...prev, { ...a, id }]);
       const { error } = await supabase.from("absences").insert(absenceToRow({ ...a, id }));
       if (error) return toast.error(error.message);
       const name = members.find((x) => x.id === a.memberId)?.name;
@@ -233,6 +240,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     },
     updateAbsence: async (a) => {
       if (!guard()) return;
+      setAbsences((prev) => prev.map((x) => (x.id === a.id ? a : x)));
       const { id, ...rest } = absenceToRow(a);
       const { error } = await supabase.from("absences").update(rest).eq("id", a.id);
       if (error) return toast.error(error.message);
@@ -241,6 +249,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     },
     deleteAbsence: async (id) => {
       if (!guard()) return;
+      setAbsences((prev) => prev.filter((x) => x.id !== id));
       const { error } = await supabase.from("absences").delete().eq("id", id);
       if (error) return toast.error(error.message);
       toast.success("🗑️", { description: "Absence deleted" });
@@ -254,6 +263,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       const id = nowId("ho");
       const createdAt = new Date().toISOString().split("T")[0];
+      setHandovers((prev) => [...prev, { ...h, id, createdAt }]);
       void supabase.from("handovers").insert(handoverToRow({ ...h, id, createdAt }))
         .then(({ error }) => {
           if (error) return toast.error(error.message);
@@ -270,6 +280,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         toast.error(validation.message ?? tr().invalidHandover);
         return false;
       }
+      setHandovers((prev) => prev.map((x) => (x.id === h.id ? h : x)));
       const { id, ...rest } = handoverToRow(h);
       void supabase.from("handovers").update(rest).eq("id", h.id)
         .then(({ error }) => {
@@ -282,6 +293,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     },
     deleteHandover: async (id) => {
       if (!guard()) return;
+      setHandovers((prev) => prev.filter((x) => x.id !== id));
       const { error } = await supabase.from("handovers").delete().eq("id", id);
       if (error) return toast.error(error.message);
       toast.success("🗑️", { description: "Handover deleted" });
@@ -289,12 +301,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addWorkTopic: async (t) => {
       if (!guard()) return;
       const id = nowId("topic");
+      setWorkTopics((prev) => [...prev, { ...t, id }]);
       const { error } = await supabase.from("work_topics").insert(topicToRow({ ...t, id }));
       if (error) return toast.error(error.message);
       toast.success("📌", { description: `Topic "${t.name}" created` });
     },
     updateWorkTopic: async (t) => {
       if (!guard()) return;
+      setWorkTopics((prev) => prev.map((x) => (x.id === t.id ? t : x)));
       const { id, ...rest } = topicToRow(t);
       const { error } = await supabase.from("work_topics").update(rest).eq("id", t.id);
       if (error) return toast.error(error.message);
@@ -303,6 +317,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     deleteWorkTopic: async (id) => {
       if (!guard()) return;
       const name = workTopics.find((x) => x.id === id)?.name;
+      setWorkTopics((prev) => prev.filter((x) => x.id !== id));
       const { error } = await supabase.from("work_topics").delete().eq("id", id);
       if (error) return toast.error(error.message);
       toast.success("🗑️", { description: `Topic "${name}" deleted` });
