@@ -41,7 +41,7 @@ import { TfsAutocompleteInput } from "@/components/TfsAutocompleteInput";
 import { TfsMultiSelect } from "@/components/TfsMultiSelect";
 import { TfsScopeFields } from "@/components/TfsScopeFields";
 import { evaluateSaveGuard, validateConnectionFields, validateServerUrl } from "@/lib/tfsValidation";
-import { mapBugsQueryIdError } from "@/lib/supabaseErrorMapping";
+import { mapBugsQueryIdError, describeSupabaseError } from "@/lib/supabaseErrorMapping";
 import { cn } from "@/lib/utils";
 
 export const AzureDevOpsSettingsPage = () => {
