@@ -19,7 +19,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
   PieChart, Pie, Legend,
 } from "recharts";
-import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X, Undo2, AlertTriangle, ShieldCheck, ShieldAlert, ChevronDown, EyeOff, MapPinOff, CalendarOff, User as UserIcon, AlertOctagon, CircleDashed, PlayCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X, Undo2, AlertTriangle, ShieldCheck, ShieldAlert, ChevronDown, EyeOff, MapPinOff, CalendarOff, User as UserIcon, AlertOctagon, CircleDashed, PlayCircle, CheckCircle2, Hourglass } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { TaskHandoverNotes } from "@/components/TaskHandoverNotes";
@@ -39,6 +39,7 @@ import { Settings as SettingsIcon } from "lucide-react";
 import { WorkloadMatrix } from "@/components/WorkloadMatrix";
 import { TaskTypeFilter } from "@/components/TaskTypeFilter";
 import { computeAvailableTaskTypes, isExcludedTaskType } from "@/lib/taskTypeFilter";
+import { parseTfsTags } from "@/lib/tfsTags";
 import { useTaskPriorities } from "@/hooks/use-task-priorities";
 import { PriorityLevel, sortByPriority, moveTo, ALL_BUCKET } from "@/lib/taskPriority";
 import { PrioritySelect } from "@/components/PrioritySelect";
@@ -70,6 +71,7 @@ interface UnifiedTask {
   iterationPath?: string;
   changedDate?: string;
   closedDate?: string;
+  tags?: string[];
 }
 
 // Format an ISO date as DD/MM/YYYY for table display. Returns "—" when missing or invalid.
@@ -770,6 +772,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         iterationPath: t.iterationPath,
         changedDate: t.changedDate,
         closedDate: t.closedDate,
+        tags: parseTfsTags(t.tags),
       }));
       return { features: feats, tasks: tks };
     }
@@ -1018,10 +1021,12 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
 
   const taskStats = useMemo(() => {
     const counts = { active: 0, pending: 0, done: 0, blocked: 0, resolved: 0, closed: 0 };
+    let waiting = 0;
     filteredTasks.forEach((t) => {
       counts[normalizeState(t.state)]++;
+      if (t.tags?.some((tag) => tag.toLowerCase() === "waiting")) waiting++;
     });
-    return { total: filteredTasks.length, ...counts };
+    return { total: filteredTasks.length, ...counts, waiting };
   }, [filteredTasks]);
 
   // Group filtered tasks by assignee, keeping only open/in-progress items.
@@ -1337,7 +1342,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         </div>
 
         {/* Task stats */}
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-5">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-6">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -1386,6 +1391,19 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 <div>
                   <p className="text-2xl font-bold">{taskStats.blocked}</p>
                   <p className="text-xs text-muted-foreground">{t.blockedTasks}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card title="Tasks with the 'waiting' tag">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg" style={{ background: `${stateColorVar.pending}20` }}>
+                  <Hourglass className="h-4 w-4" style={{ color: stateColorVar.pending }} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{taskStats.waiting}</p>
+                  <p className="text-xs text-muted-foreground">Waiting</p>
                 </div>
               </div>
             </CardContent>
