@@ -1560,6 +1560,18 @@ export const translations = {
     invalidSchema: "Invalid schema: {msg}",
     importRejectedHandovers: "Import rejected: there are handovers without a topic or with unknown topics.",
     dataImportedOk: "Data imported successfully",
+    importPreviewTitle: "Import preview",
+    importPreviewDescOk: "Current data will be overwritten with the following:",
+    importPreviewDescError: "This file cannot be imported. Fix the following fields and try again:",
+    importPreviewNoRecords: "The file is valid but contains no records to import.",
+    importPreviewCountTeams: "Teams",
+    importPreviewCountMembers: "Members",
+    importPreviewCountTopics: "Work topics",
+    importPreviewCountAbsences: "Absences",
+    importPreviewCountHandovers: "Handovers",
+    importPreviewConfirm: "Import and overwrite",
+    importPreviewCancel: "Cancel",
+
     // Pat diagnostics
     patAdvancedTitle: "Advanced PAT diagnostic — {ok}/{total} permissions verified",
     patAllOk: "The PAT has all required permissions.",
