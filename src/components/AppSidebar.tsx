@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Download, Upload, Settings, LogOut, LogIn, Layers, ListChecks, Bug, Target, type LucideIcon } from "lucide-react";
 import cuswLogo from "@/assets/cusw-logo.png";
 import { NavLink } from "@/components/NavLink";
@@ -7,6 +8,7 @@ import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
+import { ImportPreviewDialog } from "@/components/ImportPreviewDialog";
 import {
   Sidebar,
   SidebarContent,
@@ -27,6 +29,8 @@ export function AppSidebar() {
   const { signOut, user, isAdmin } = useAuth();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const [pendingJson, setPendingJson] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const handleExport = () => {
     const json = exportData();
@@ -48,19 +52,17 @@ export function AppSidebar() {
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
-      if (!window.confirm(t.confirmImportOverwrite)) return;
       const reader = new FileReader();
       reader.onload = (ev) => {
-        try {
-          importData(ev.target?.result as string);
-        } catch {
-          // toast handled inside importData
-        }
+        const text = (ev.target?.result as string) ?? "";
+        setPendingJson(text);
+        setPreviewOpen(true);
       };
       reader.readAsText(file);
     };
     input.click();
   };
+
 
   const iconMap: Record<string, LucideIcon> = { shield: Shield, cpu: Cpu, rocket: Rocket, globe: Globe, wrench: Wrench, database: Database, server: Server, users: Users };
   const getIcon = (key?: string) => iconMap[key || ""] || Users;
