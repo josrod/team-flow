@@ -6,6 +6,7 @@ interface AuthContextValue {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isAdmin: boolean;
   signUp: (email: string, password: string, displayName?: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -18,6 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
@@ -34,6 +36,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Load admin role whenever the user changes.
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setIsAdmin(Boolean(data));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
     const { error } = await supabase.auth.signUp({
@@ -65,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut, resetPassword }}>
+    <AuthContext.Provider value={{ user, session, loading, isAdmin, signUp, signIn, signOut, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );
