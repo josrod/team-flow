@@ -23,6 +23,11 @@ vi.mock("sonner", () => ({
   }
 }));
 
+vi.mock("@/integrations/supabase/client", async () => {
+  const { supabaseMock } = await import("./mocks/supabase-mock");
+  return { supabase: supabaseMock };
+});
+
 // Mock AuthContext
 vi.mock("@/context/AuthContext", () => ({
   useAuth: () => ({
