@@ -167,7 +167,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const guard = useCallback((): boolean => {
     if (!isAdmin) {
-      toast.error(tr().authAdminOnly ?? "Only admins can modify data");
+      toast.error(lang() === "es" ? "Solo el admin puede modificar datos" : "Only admins can modify data");
       return false;
     }
     return true;
