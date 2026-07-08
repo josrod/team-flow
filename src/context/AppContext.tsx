@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { importDataSchema } from "@/lib/validation";
 import { validateHandoverTopicIds } from "@/lib/handoverValidation";
+import { describeSupabaseError } from "@/lib/supabaseErrorMapping";
+
 import { Team, TeamMember, WorkTopic, Absence, Handover, MemberStatus } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
