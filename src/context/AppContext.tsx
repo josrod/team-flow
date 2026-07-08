@@ -373,9 +373,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         // Per-step runner that surfaces the exact table + reason on failure.
         const runStep = async (
           step: string,
-          op: () => Promise<{ error: unknown }>,
+          op: () => PromiseLike<{ error: unknown }>,
         ): Promise<boolean> => {
           const { error } = await op();
+
           if (error) {
             toast.error(stepLabel(step), {
               description: describeSupabaseError(error, L),
