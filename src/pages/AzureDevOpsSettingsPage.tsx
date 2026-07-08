@@ -536,13 +536,19 @@ export const AzureDevOpsSettingsPage = () => {
       if (mapped) {
         toast.error(mapped);
       } else {
-        const msg = err instanceof Error ? err.message : "Error saving";
-        toast.error(msg);
+        toast.error(describeSupabaseError(err, lang), {
+          description:
+            lang === "es"
+              ? "No se pudieron guardar los ajustes de Azure DevOps."
+              : "Could not save Azure DevOps settings.",
+          duration: 8000,
+        });
       }
     } finally {
       setSaving(false);
     }
   };
+
 
   const handleDelete = async () => {
     const {
