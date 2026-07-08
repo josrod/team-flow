@@ -70,6 +70,55 @@ export const importDataSchema = z.object({
   { message: "The file does not contain valid data" }
 );
 
+export type ImportIssue = { path: string; message: string };
+
+export type ImportPreview =
+  | {
+      ok: true;
+      counts: {
+        teams: number;
+        members: number;
+        workTopics: number;
+        absences: number;
+        handovers: number;
+      };
+    }
+  | { ok: false; issues: ImportIssue[] };
+
+/**
+ * Validates raw JSON text against the import schema and returns either
+ * per-record counts or a list of human-readable field-level issues.
+ */
+export function previewImportJson(json: string): ImportPreview {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(json);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Invalid JSON";
+    return { ok: false, issues: [{ path: "(file)", message }] };
+  }
+  const result = importDataSchema.safeParse(raw);
+  if (!result.success) {
+    const issues: ImportIssue[] = result.error.errors.map((e) => ({
+      path: e.path.length ? e.path.join(".") : "(root)",
+      message: e.message,
+    }));
+    return { ok: false, issues };
+  }
+  const d = result.data;
+  return {
+    ok: true,
+    counts: {
+      teams: d.teams?.length ?? 0,
+      members: d.members?.length ?? 0,
+      workTopics: d.workTopics?.length ?? 0,
+      absences: d.absences?.length ?? 0,
+      handovers: d.handovers?.length ?? 0,
+    },
+  };
+}
+
+
 export function sanitizeText(input: string): string {
   return input
     .replace(/</g, "&lt;")
