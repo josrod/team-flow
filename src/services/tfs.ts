@@ -238,9 +238,9 @@ export const testTfsConnection = async (
           kind: "cors",
           url,
           message:
-            "El navegador bloqueó la petición (probable CORS o servidor inaccesible).",
+            "No se pudo alcanzar el servidor TFS. El TFS es on-prem: necesitas estar conectado a la VPN de ROSEN o dentro de la red corporativa.",
           detail:
-            "El navegador no expone la causa exacta por seguridad. Abre DevTools → Network para ver si es CORS, DNS, certificado o conexión rechazada.",
+            "Si ya estás en la VPN, abre la URL del TFS en otra pestaña para confirmar que el servidor está accesible; si no carga tampoco allí, avisa a IT.",
         },
       };
     }
