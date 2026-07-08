@@ -93,7 +93,7 @@ export function ImportPreviewDialog({
           </ul>
         )}
 
-        {preview && !preview.ok && (
+        {preview && preview.ok === false && (
           <ScrollArea className="max-h-64 rounded-md border">
             <ul className="divide-y">
               {preview.issues.map((issue, idx) => (
@@ -107,6 +107,7 @@ export function ImportPreviewDialog({
             </ul>
           </ScrollArea>
         )}
+
 
         <AlertDialogFooter>
           <AlertDialogCancel>{t.importPreviewCancel}</AlertDialogCancel>
