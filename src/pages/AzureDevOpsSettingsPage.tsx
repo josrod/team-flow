@@ -41,11 +41,11 @@ import { TfsAutocompleteInput } from "@/components/TfsAutocompleteInput";
 import { TfsMultiSelect } from "@/components/TfsMultiSelect";
 import { TfsScopeFields } from "@/components/TfsScopeFields";
 import { evaluateSaveGuard, validateConnectionFields, validateServerUrl } from "@/lib/tfsValidation";
-import { mapBugsQueryIdError } from "@/lib/supabaseErrorMapping";
+import { mapBugsQueryIdError, describeSupabaseError } from "@/lib/supabaseErrorMapping";
 import { cn } from "@/lib/utils";
 
 export const AzureDevOpsSettingsPage = () => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
 
   const [serverUrl, setServerUrl] = useState("");
   const [collection, setCollection] = useState("");
@@ -536,13 +536,19 @@ export const AzureDevOpsSettingsPage = () => {
       if (mapped) {
         toast.error(mapped);
       } else {
-        const msg = err instanceof Error ? err.message : "Error saving";
-        toast.error(msg);
+        toast.error(describeSupabaseError(err, lang), {
+          description:
+            lang === "es"
+              ? "No se pudieron guardar los ajustes de Azure DevOps."
+              : "Could not save Azure DevOps settings.",
+          duration: 8000,
+        });
       }
     } finally {
       setSaving(false);
     }
   };
+
 
   const handleDelete = async () => {
     const {

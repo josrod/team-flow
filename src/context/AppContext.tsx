@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { importDataSchema } from "@/lib/validation";
 import { validateHandoverTopicIds } from "@/lib/handoverValidation";
+import { describeSupabaseError } from "@/lib/supabaseErrorMapping";
+
 import { Team, TeamMember, WorkTopic, Absence, Handover, MemberStatus } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -328,12 +330,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     exportData: () => JSON.stringify({ teams, members, workTopics, absences, handovers }, null, 2),
     importData: async (json: string) => {
       if (!guard()) return;
+      const L = lang();
+      const stepLabel = (step: string) =>
+        L === "es"
+          ? `Error importando ${step}`
+          : `Error importing ${step}`;
       try {
-        const raw = JSON.parse(json);
+        let raw: unknown;
+        try {
+          raw = JSON.parse(json);
+        } catch (parseErr) {
+          toast.error(tr().errImportInvalidJson, {
+            description:
+              parseErr instanceof Error ? parseErr.message : String(parseErr),
+            duration: 8000,
+          });
+          return;
+        }
         const result = importDataSchema.safeParse(raw);
         if (!result.success) {
-          const msg = result.error.errors.map((e) => e.message).join(", ");
-          toast.error(tr().invalidSchema.replace("{msg}", msg));
+          const details = result.error.errors
+            .slice(0, 5)
+            .map((e) => `${e.path.join(".") || "(root)"}: ${e.message}`)
+            .join(" · ");
+          toast.error(tr().invalidSchema.replace("{msg}", details), {
+            duration: 10000,
+          });
           return;
         }
         const data = result.data;
@@ -344,39 +366,71 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             (h) => !validateHandoverTopicIds(h.topicIds, validTopicIds).valid,
           );
           if (invalid) {
-            toast.error(tr().importRejectedHandovers);
+            toast.error(tr().importRejectedHandovers, { duration: 8000 });
             return;
           }
         }
-        // Wipe & re-seed in dependency order.
-        await supabase.from("handovers").delete().neq("id", "");
-        await supabase.from("work_topics").delete().neq("id", "");
-        await supabase.from("absences").delete().neq("id", "");
-        await supabase.from("members").delete().neq("id", "");
-        await supabase.from("teams").delete().neq("id", "");
+        // Per-step runner that surfaces the exact table + reason on failure.
+        const runStep = async (
+          step: string,
+          op: () => PromiseLike<{ error: unknown }>,
+        ): Promise<boolean> => {
+          const { error } = await op();
+
+          if (error) {
+            toast.error(stepLabel(step), {
+              description: describeSupabaseError(error, L),
+              duration: 10000,
+            });
+            return false;
+          }
+          return true;
+        };
+
+        // Wipe in dependency order (children first).
+        if (!(await runStep("handovers", () => supabase.from("handovers").delete().neq("id", "")))) return;
+        if (!(await runStep("work_topics", () => supabase.from("work_topics").delete().neq("id", "")))) return;
+        if (!(await runStep("absences", () => supabase.from("absences").delete().neq("id", "")))) return;
+        if (!(await runStep("members", () => supabase.from("members").delete().neq("id", "")))) return;
+        if (!(await runStep("teams", () => supabase.from("teams").delete().neq("id", "")))) return;
+
         if (data.teams?.length) {
-          await supabase.from("teams").insert(
-            (data.teams as Team[]).map((t) => ({ id: t.id, name: t.name, icon: t.icon ?? "users" })),
-          );
+          if (!(await runStep("teams", () =>
+            supabase.from("teams").insert(
+              (data.teams as Team[]).map((t) => ({ id: t.id, name: t.name, icon: t.icon ?? "users" })),
+            ),
+          ))) return;
         }
         if (data.members?.length) {
-          await supabase.from("members").insert((data.members as TeamMember[]).map(memberToRow));
+          if (!(await runStep("members", () =>
+            supabase.from("members").insert((data.members as TeamMember[]).map(memberToRow)),
+          ))) return;
         }
         if (data.workTopics?.length) {
-          await supabase.from("work_topics").insert((data.workTopics as WorkTopic[]).map(topicToRow));
+          if (!(await runStep("work_topics", () =>
+            supabase.from("work_topics").insert((data.workTopics as WorkTopic[]).map(topicToRow)),
+          ))) return;
         }
         if (data.absences?.length) {
-          await supabase.from("absences").insert((data.absences as Absence[]).map(absenceToRow));
+          if (!(await runStep("absences", () =>
+            supabase.from("absences").insert((data.absences as Absence[]).map(absenceToRow)),
+          ))) return;
         }
         if (data.handovers?.length) {
-          await supabase.from("handovers").insert((data.handovers as Handover[]).map(handoverToRow));
+          if (!(await runStep("handovers", () =>
+            supabase.from("handovers").insert((data.handovers as Handover[]).map(handoverToRow)),
+          ))) return;
         }
         toast.success("📥", { description: tr().dataImportedOk });
-      } catch {
-        toast.error(tr().errImportInvalidJson);
+      } catch (err) {
+        toast.error(tr().errImportInvalidJson, {
+          description: describeSupabaseError(err, L),
+          duration: 10000,
+        });
       }
     },
   }), [teams, members, workTopics, absences, handovers, getMemberStatus, guard]);
+
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
