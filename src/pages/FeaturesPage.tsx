@@ -19,7 +19,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
   PieChart, Pie, Legend,
 } from "recharts";
-import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X, Undo2, AlertTriangle, ShieldCheck, ShieldAlert, ChevronDown, EyeOff, MapPinOff, CalendarOff, User as UserIcon, AlertOctagon, CircleDashed, PlayCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X, Undo2, AlertTriangle, ShieldCheck, ShieldAlert, ChevronDown, EyeOff, MapPinOff, CalendarOff, User as UserIcon, AlertOctagon, CircleDashed, PlayCircle, CheckCircle2, Hourglass } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { TaskHandoverNotes } from "@/components/TaskHandoverNotes";
