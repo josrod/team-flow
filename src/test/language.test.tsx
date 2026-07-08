@@ -26,20 +26,10 @@ vi.mock("sonner", () => ({
 }));
 
 // Mock Supabase
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: {
-    channel: () => ({
-      on: vi.fn().mockReturnThis(),
-      subscribe: vi.fn()
-    }),
-    removeChannel: vi.fn(),
-    from: () => ({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({ data: null })
-    })
-  }
-}));
+vi.mock("@/integrations/supabase/client", async () => {
+  const { supabaseMock } = await import("./mocks/supabase-mock");
+  return { supabase: supabaseMock };
+});
 
 // Mock AuthContext
 vi.mock("@/context/AuthContext", () => ({
