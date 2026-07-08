@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      absences: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          member_id: string
+          start_date: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id: string
+          member_id: string
+          start_date: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          member_id?: string
+          start_date?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "absences_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       azure_devops_settings: {
         Row: {
           area_paths: string[]
@@ -98,6 +136,111 @@ export type Database = {
         }
         Relationships: []
       }
+      handovers: {
+        Row: {
+          absence_id: string
+          created_at: string
+          from_member_id: string
+          handover_date: string
+          id: string
+          notes: string
+          to_member_id: string
+          topic_ids: string[]
+          updated_at: string
+        }
+        Insert: {
+          absence_id: string
+          created_at?: string
+          from_member_id: string
+          handover_date?: string
+          id: string
+          notes?: string
+          to_member_id: string
+          topic_ids?: string[]
+          updated_at?: string
+        }
+        Update: {
+          absence_id?: string
+          created_at?: string
+          from_member_id?: string
+          handover_date?: string
+          id?: string
+          notes?: string
+          to_member_id?: string
+          topic_ids?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handovers_absence_id_fkey"
+            columns: ["absence_id"]
+            isOneToOne: false
+            referencedRelation: "absences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "handovers_from_member_id_fkey"
+            columns: ["from_member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "handovers_to_member_id_fkey"
+            columns: ["to_member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      members: {
+        Row: {
+          avatar: string | null
+          base_capacity: number | null
+          created_at: string
+          id: string
+          login_name: string | null
+          max_capacity: number | null
+          name: string
+          role: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar?: string | null
+          base_capacity?: number | null
+          created_at?: string
+          id: string
+          login_name?: string | null
+          max_capacity?: number | null
+          name: string
+          role: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar?: string | null
+          base_capacity?: number | null
+          created_at?: string
+          id?: string
+          login_name?: string | null
+          max_capacity?: number | null
+          name?: string
+          role?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_handover_notes: {
         Row: {
           author_id: string
@@ -134,6 +277,33 @@ export type Database = {
           task_id?: string
           updated_at?: string
           url?: string | null
+        }
+        Relationships: []
+      }
+      teams: {
+        Row: {
+          created_at: string
+          icon: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string
+          id: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -187,6 +357,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      work_topics: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          member_id: string
+          name: string
+          reassigned_from: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id: string
+          member_id: string
+          name: string
+          reassigned_from?: string | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          member_id?: string
+          name?: string
+          reassigned_from?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_topics_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
