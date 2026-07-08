@@ -1342,7 +1342,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         </div>
 
         {/* Task stats */}
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-5">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-6">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -1391,6 +1391,19 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 <div>
                   <p className="text-2xl font-bold">{taskStats.blocked}</p>
                   <p className="text-xs text-muted-foreground">{t.blockedTasks}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card title="Tasks with the 'waiting' tag">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg" style={{ background: `${stateColorVar.pending}20` }}>
+                  <Hourglass className="h-4 w-4" style={{ color: stateColorVar.pending }} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{taskStats.waiting}</p>
+                  <p className="text-xs text-muted-foreground">Waiting</p>
                 </div>
               </div>
             </CardContent>
