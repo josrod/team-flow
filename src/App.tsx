@@ -7,7 +7,7 @@ import { AppProvider } from "@/context/AppContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { AuthProvider } from "@/context/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AdminRoute } from "@/components/AdminRoute";
 import { AppLayout } from "@/components/AppLayout";
 import { TeamPulseDashboard } from "@/components/TeamPulseDashboard";
 import Index from "./pages/Index";
@@ -39,18 +39,19 @@ const App = () => (
                 <Routes>
                   <Route path="/auth" element={<AuthPage />} />
                   <Route path="/reset-password" element={<ResetPasswordPage />} />
-                  <Route path="/" element={<ProtectedRoute><AppLayout><Index /></AppLayout></ProtectedRoute>} />
-                  <Route path="/team/:teamId" element={<ProtectedRoute><AppLayout><TeamPage /></AppLayout></ProtectedRoute>} />
-                  <Route path="/absences" element={<ProtectedRoute><AppLayout><AbsencesPage /></AppLayout></ProtectedRoute>} />
-                  <Route path="/handovers" element={<ProtectedRoute><AppLayout><HandoversPage /></AppLayout></ProtectedRoute>} />
-                  <Route path="/features" element={<ProtectedRoute><AppLayout><FeaturesPage view="features" /></AppLayout></ProtectedRoute>} />
-                  <Route path="/tasks" element={<ProtectedRoute><AppLayout><TasksPage /></AppLayout></ProtectedRoute>} />
-                  <Route path="/workload" element={<ProtectedRoute><AppLayout><FeaturesPage view="workload" /></AppLayout></ProtectedRoute>} />
-                  <Route path="/pulse" element={<ProtectedRoute><AppLayout><TeamPulseDashboard /></AppLayout></ProtectedRoute>} />
-                  <Route path="/bugs" element={<ProtectedRoute><AppLayout><BugsPage /></AppLayout></ProtectedRoute>} />
-                  <Route path="/epics" element={<ProtectedRoute><AppLayout><EpicsPage /></AppLayout></ProtectedRoute>} />
-
-                  <Route path="/settings/azure-devops" element={<ProtectedRoute><AppLayout><AzureDevOpsSettingsPage /></AppLayout></ProtectedRoute>} />
+                  {/* Public pages (anyone with the link, no login required) */}
+                  <Route path="/" element={<AppLayout><Index /></AppLayout>} />
+                  <Route path="/team/:teamId" element={<AppLayout><TeamPage /></AppLayout>} />
+                  <Route path="/handovers" element={<AppLayout><HandoversPage /></AppLayout>} />
+                  <Route path="/tasks" element={<AppLayout><TasksPage /></AppLayout>} />
+                  <Route path="/bugs" element={<AppLayout><BugsPage /></AppLayout>} />
+                  <Route path="/epics" element={<AppLayout><EpicsPage /></AppLayout>} />
+                  <Route path="/pulse" element={<AppLayout><TeamPulseDashboard /></AppLayout>} />
+                  {/* Admin-only pages */}
+                  <Route path="/features" element={<AdminRoute><AppLayout><FeaturesPage view="features" /></AppLayout></AdminRoute>} />
+                  <Route path="/absences" element={<AdminRoute><AppLayout><AbsencesPage /></AppLayout></AdminRoute>} />
+                  <Route path="/workload" element={<AdminRoute><AppLayout><FeaturesPage view="workload" /></AppLayout></AdminRoute>} />
+                  <Route path="/settings/azure-devops" element={<AdminRoute><AppLayout><AzureDevOpsSettingsPage /></AppLayout></AdminRoute>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </AppProvider>
