@@ -693,6 +693,18 @@ export const translations = {
     invalidSchema: "Esquema inválido: {msg}",
     importRejectedHandovers: "Importación rechazada: hay handovers sin tema o con temas desconocidos.",
     dataImportedOk: "Datos importados correctamente",
+    importPreviewTitle: "Vista previa de importación",
+    importPreviewDescOk: "Se sobrescribirán los datos actuales con lo siguiente:",
+    importPreviewDescError: "El archivo no se puede importar. Corrige los siguientes campos y vuelve a intentarlo:",
+    importPreviewNoRecords: "El archivo es válido pero no contiene ningún registro para importar.",
+    importPreviewCountTeams: "Equipos",
+    importPreviewCountMembers: "Miembros",
+    importPreviewCountTopics: "Temas de trabajo",
+    importPreviewCountAbsences: "Ausencias",
+    importPreviewCountHandovers: "Handovers",
+    importPreviewConfirm: "Importar y sobrescribir",
+    importPreviewCancel: "Cancelar",
+
     // Pat diagnostics
     patAdvancedTitle: "Diagnóstico avanzado del PAT — {ok}/{total} permisos verificados",
     patAllOk: "El PAT tiene todos los permisos necesarios.",
