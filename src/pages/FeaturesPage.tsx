@@ -70,6 +70,7 @@ interface UnifiedTask {
   iterationPath?: string;
   changedDate?: string;
   closedDate?: string;
+  tags?: string[];
 }
 
 // Format an ISO date as DD/MM/YYYY for table display. Returns "—" when missing or invalid.
