@@ -45,7 +45,7 @@ import { mapBugsQueryIdError, describeSupabaseError } from "@/lib/supabaseErrorM
 import { cn } from "@/lib/utils";
 
 export const AzureDevOpsSettingsPage = () => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
 
   const [serverUrl, setServerUrl] = useState("");
   const [collection, setCollection] = useState("");
