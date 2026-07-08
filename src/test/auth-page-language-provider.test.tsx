@@ -10,6 +10,7 @@ vi.mock("@/context/AuthContext", () => ({
   useAuth: () => ({
     user: null,
     session: null,
+    isAdmin: true,
     signIn: vi.fn(),
     signUp: vi.fn(),
     signOut: vi.fn(),
