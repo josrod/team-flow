@@ -1,64 +1,67 @@
 
-# Compartir la app manteniendo páginas privadas
+# Migrar datos compartidos a Lovable Cloud
 
 ## Objetivo
 
-- Cualquiera con el enlace puede entrar sin login y ver: Dashboard, Teams, Handovers, Tasks, Bugs, Epics, Pulse.
-- Solo tu cuenta (admin) puede ver: Settings (Azure DevOps), Features, Absences, Workload.
-- Nadie que no sea admin puede modificar datos ni ver los settings/PAT de Azure DevOps.
+Que cualquiera con el enlace vea los mismos teams, members, absences, handovers y work topics que tú. Solo el admin puede crear/editar/borrar.
 
-## Modelo de acceso
+## Esquema en Lovable Cloud
 
-Rol admin identificado por tu `user_id` en una tabla `user_roles` (patrón seguro estándar, nunca en `profiles`).
+Cinco tablas nuevas en `public`, todas con lectura pública (`anon` + `authenticated`) y escritura solo admin (vía `has_role(auth.uid(),'admin')`):
 
 ```text
-Visitante anónimo ─► ve páginas públicas (solo lectura)
-Usuario logueado no-admin ─► ve páginas públicas (solo lectura)
-Tú (admin) ─► ve todo + puede editar
+teams        (id text PK, name text, icon text, sort_order int)
+members      (id text PK, team_id text FK→teams, name, role, avatar,
+              base_capacity int, max_capacity int, login_name)
+work_topics  (id text PK, member_id text FK→members, name, description,
+              status text, reassigned_from text)
+absences     (id text PK, member_id text FK→members, type text,
+              start_date date, end_date date)
+handovers    (id text PK, from_member_id text FK→members,
+              to_member_id text FK→members, absence_id text FK→absences,
+              topic_ids text[], notes text, created_at date)
 ```
 
-## Cambios en el frontend
+- Uso de PK `text` para preservar los IDs existentes (`team-1`, `member-3`, etc.) y no romper referencias en localStorage/exports.
+- `ON DELETE CASCADE` para mantener la limpieza al borrar team/member.
+- Cada tabla con `created_at` / `updated_at` + trigger de `updated_at`.
+- Grants explícitos: `SELECT` a `anon` y `authenticated`; `INSERT/UPDATE/DELETE` a `authenticated` restringido por policy admin; `ALL` a `service_role`.
 
-1. **`ProtectedRoute` → `AdminRoute`**: nuevo componente que exige `user` **y** rol `admin`. Si no cumple, redirige a `/`.
-2. **`App.tsx`**: quitar `ProtectedRoute` de las rutas públicas y envolver con `AdminRoute` solo:
-   - `/settings/azure-devops`
-   - `/features`
-   - `/absences`
-   - `/workload`
-   Las demás rutas quedan accesibles sin login dentro de `AppLayout`.
-3. **`AppSidebar`**: ocultar los enlaces Settings / Features / Absences / Workload cuando el usuario no sea admin. Mostrar botón "Login como admin" cuando no haya sesión, en vez de solo el email.
-4. **`AuthContext`**: añadir `isAdmin: boolean` cargado tras `getUser()` consultando `has_role(auth.uid(),'admin')`.
-5. **Botones de edición** (crear/editar/borrar members, teams, handovers, tasks, notas, import/export, reset): deshabilitados u ocultos cuando `!isAdmin`. Toda la lógica de escritura queda protegida en cliente + backend.
-6. **`AzureDevOpsSettingsPage`**: además del guard de ruta, no cargar `azure_devops_settings` si no eres admin.
+## Seed inicial
 
-## Cambios en el backend (Lovable Cloud)
+Migración que también inserta los datos actuales de `src/data/mock-data.ts` (teams, members, work topics, absences, handovers) para que la app arranque con contenido real. Usa `ON CONFLICT DO NOTHING` para ser idempotente.
 
-Migración SQL:
+## Refactor de `AppContext`
 
-1. `create type app_role as enum ('admin');`
-2. Tabla `user_roles(user_id, role, unique(user_id, role))` con RLS + `has_role()` security definer (patrón estándar).
-3. **Insertar tu `user_id` como admin** durante la migración (te pediré confirmación del email en build).
-4. **Ajustar RLS de tablas existentes** para permitir lectura pública y escritura solo admin:
-   - `task_handover_notes`: `SELECT` a `anon` + `authenticated`; `INSERT/UPDATE/DELETE` solo si `has_role(auth.uid(),'admin')`.
-   - `azure_devops_settings`: mantener restringido al owner (solo tú lo usas); añadir política que exija admin explícitamente. **No** exponer `pat_encrypted` a anon.
-   - `tfs_import_history`: igual, solo admin.
-   - `GRANT SELECT` a `anon` donde aplique.
-5. **Edge function `tfs-pat-vault`**: verificar rol admin del caller antes de encrypt/decrypt.
+Reescribo `AppProvider` para:
 
-## Datos locales (AppContext / localStorage)
+1. Cargar las 5 colecciones desde Supabase al montar (una consulta por tabla).
+2. Suscribirse a `postgres_changes` en cada tabla → actualiza el estado en vivo (todos los visitantes ven cambios sin recargar).
+3. Cada mutación (`addTeam`, `updateMember`, `deleteHandover`, …) hace la llamada a Supabase; el listener de realtime aplica el cambio local.
+4. Si `!isAdmin`, las mutaciones muestran toast "solo admin" y no llaman a la base de datos.
+5. Se conservan `exportData` (genera JSON con el estado en memoria) e `importData` (inserta en Supabase en lote, solo admin).
+6. Se elimina el uso de `localStorage` y el helper `loadFromStorage`.
 
-Los datos de teams, members, handovers, tasks, etc. viven en `localStorage` del navegador — no en la nube. Esto significa:
+Los tests que mockean `useApp` no cambian; los que renderizan `AppProvider` con Supabase ya lo mockean.
 
-- Cada visitante verá **su propio estado local vacío** al entrar por primera vez, no tus datos.
-- Para que el equipo vea tus datos reales necesitamos publicar el estado. Opciones:
-  - **(a) Recomendada)** Migrar los datos compartidos a Supabase con RLS de lectura pública y escritura admin. Es trabajo mayor y lo abordamos en un plan aparte.
-  - **(b) Rápida)** Exportar el JSON desde tu cuenta y compartirlo; cada usuario lo importa. No es "compartir en vivo".
+## Frontend
 
-**Decisión pendiente**: confirma si quieres que en este mismo plan incluyamos la migración (a). Si es sí, lo extendemos; si no, este plan cubre solo el control de acceso y el equipo verá inicialmente estado vacío hasta que decidamos la sincronización.
+- `AppSidebar`: los botones import/export/reset ya están detrás de `isAdmin` (hecho en el turno anterior).
+- Se revisa que los diálogos de creación/edición estén ocultos o deshabilitados para no-admins (Teams, Members, Absences, Handovers, WorkTopics). Los uso en:
+  - `TeamPage` (add/edit member, edit team, add absence)
+  - `HandoversPage` (crear handover)
+  - `AbsencesPage` (admin-only ya por ruta)
+  - Diálogos varios de member/team
 
 ## Verificación
 
-- Playwright: navegar a `/features`, `/absences`, `/workload`, `/settings/azure-devops` sin sesión → redirige a `/`.
-- Login con tu cuenta → aparecen los 4 enlaces y las páginas cargan.
-- Login con otra cuenta cualquiera → no aparecen los enlaces; acceso directo por URL redirige a `/`.
-- Escaneo de seguridad post-migración (`security--run_security_scan`).
+1. Playwright sin login: navega `/`, `/team/team-1`, `/handovers` — ve los datos reales.
+2. Playwright con admin: crea un member y compruebo que aparece; refresca en otra sesión anónima y sigue ahí.
+3. Playwright con usuario no-admin: no ve botones "Añadir", los intentos directos fallan en RLS.
+4. Tests unitarios siguen pasando.
+
+## Fuera de alcance
+
+- `azure_devops_settings`, `tfs_import_history`, `task_handover_notes` ya están en Cloud y no se tocan.
+- No migro los datos del `localStorage` actual del navegador del admin automáticamente — el seed viene de `mock-data.ts`. Si tienes cambios locales que quieres preservar, primero exporta el JSON y después de la migración lo importas desde el sidebar. ¿Quieres que además añada un botón "Migrar mi localStorage a la nube" para hacerlo en un clic?
+
