@@ -193,6 +193,24 @@ export function AppSidebar() {
           )}
         </div>
       </SidebarFooter>
+      <ImportPreviewDialog
+        open={previewOpen}
+        onOpenChange={(open) => {
+          setPreviewOpen(open);
+          if (!open) setPendingJson(null);
+        }}
+        json={pendingJson}
+        onConfirm={(json) => {
+          setPreviewOpen(false);
+          setPendingJson(null);
+          try {
+            importData(json);
+          } catch {
+            // toast handled inside importData
+          }
+        }}
+      />
     </Sidebar>
   );
 }
+
