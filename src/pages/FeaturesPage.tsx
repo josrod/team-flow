@@ -771,6 +771,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         iterationPath: t.iterationPath,
         changedDate: t.changedDate,
         closedDate: t.closedDate,
+        tags: parseTfsTags(t.tags),
       }));
       return { features: feats, tasks: tks };
     }
