@@ -1021,10 +1021,12 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
 
   const taskStats = useMemo(() => {
     const counts = { active: 0, pending: 0, done: 0, blocked: 0, resolved: 0, closed: 0 };
+    let waiting = 0;
     filteredTasks.forEach((t) => {
       counts[normalizeState(t.state)]++;
+      if (t.tags?.some((tag) => tag.toLowerCase() === "waiting")) waiting++;
     });
-    return { total: filteredTasks.length, ...counts };
+    return { total: filteredTasks.length, ...counts, waiting };
   }, [filteredTasks]);
 
   // Group filtered tasks by assignee, keeping only open/in-progress items.
