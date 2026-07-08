@@ -182,7 +182,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getMemberStatus,
     updateTeamName: async (id, name, icon?) => {
       if (!guard()) return;
-      const patch: Record<string, unknown> = { name };
+      const patch: { name: string; icon?: string } = { name };
       if (icon !== undefined) patch.icon = icon;
       const { error } = await supabase.from("teams").update(patch).eq("id", id);
       if (error) return toast.error(error.message);
