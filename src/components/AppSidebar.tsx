@@ -1,6 +1,7 @@
-import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Download, Upload, Settings, LogOut, Layers, ListChecks, Bug, Target, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Download, Upload, Settings, LogOut, LogIn, Layers, ListChecks, Bug, Target, type LucideIcon } from "lucide-react";
 import cuswLogo from "@/assets/cusw-logo.png";
 import { NavLink } from "@/components/NavLink";
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
@@ -23,7 +24,7 @@ import {
 export function AppSidebar() {
   const { teams, resetData, exportData, importData } = useApp();
   const { t } = useLang();
-  const { signOut, user } = useAuth();
+  const { signOut, user, isAdmin } = useAuth();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
@@ -63,23 +64,25 @@ export function AppSidebar() {
 
   const iconMap: Record<string, LucideIcon> = { shield: Shield, cpu: Cpu, rocket: Rocket, globe: Globe, wrench: Wrench, database: Database, server: Server, users: Users };
   const getIcon = (key?: string) => iconMap[key || ""] || Users;
-  const navItems = [
+
+  type NavItem = { title: string; url: string; icon: LucideIcon; adminOnly?: boolean };
+  const navItems: NavItem[] = [
     { title: t.dashboard, url: "/", icon: LayoutDashboard },
     ...teams.map((team) => ({
       title: team.name,
       url: `/team/${team.id}`,
       icon: getIcon(team.icon),
     })),
-    { title: t.absences, url: "/absences", icon: CalendarDays },
+    { title: t.absences, url: "/absences", icon: CalendarDays, adminOnly: true },
     { title: t.handovers, url: "/handovers", icon: ArrowRightLeft },
-    { title: t.features, url: "/features", icon: Layers },
+    { title: t.features, url: "/features", icon: Layers, adminOnly: true },
     { title: t.tasks, url: "/tasks", icon: ListChecks },
     { title: t.bugs, url: "/bugs", icon: Bug },
     { title: t.epics, url: "/epics", icon: Target },
-    { title: t.workload, url: "/workload", icon: CalendarDays },
-
-    { title: "Azure DevOps", url: "/settings/azure-devops", icon: Settings },
+    { title: t.workload, url: "/workload", icon: CalendarDays, adminOnly: true },
+    { title: "Azure DevOps", url: "/settings/azure-devops", icon: Settings, adminOnly: true },
   ];
+  const visibleItems = navItems.filter((i) => !i.adminOnly || isAdmin);
 
   return (
     <Sidebar collapsible="icon">
@@ -101,7 +104,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
+              {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild>
                     <NavLink
@@ -121,53 +124,72 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="p-3 border-t border-sidebar-border space-y-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleExport}
-          title={t.exportJsonBtn}
-          className={cn("w-full gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs", isCollapsed ? "justify-center px-0" : "justify-start")}
-        >
-          <Download className="h-3.5 w-3.5 shrink-0" />
-          {!isCollapsed && <span>{t.exportJsonBtn}</span>}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleImport}
-          title={t.importJsonBtn}
-          className={cn("w-full gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs", isCollapsed ? "justify-center px-0" : "justify-start")}
-        >
-          <Upload className="h-3.5 w-3.5 shrink-0" />
-          {!isCollapsed && <span>{t.importJsonBtn}</span>}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={resetData}
-          title={t.resetDataBtn}
-          className={cn("w-full gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs", isCollapsed ? "justify-center px-0" : "justify-start")}
-        >
-          <RotateCcw className="h-3.5 w-3.5 shrink-0" />
-          {!isCollapsed && <span>{t.resetDataBtn}</span>}
-        </Button>
-        {user && (
-          <div className="pt-2 border-t border-sidebar-border mt-2">
-            {!isCollapsed && (
-              <p className="text-[10px] text-sidebar-foreground/50 truncate px-2 mb-1">{user.email}</p>
-            )}
+        {isAdmin && (
+          <>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => signOut()}
-              title={t.authLogout}
-              className={cn("w-full gap-2 text-sidebar-foreground/60 hover:text-destructive hover:bg-sidebar-accent text-xs", isCollapsed ? "justify-center px-0" : "justify-start")}
+              onClick={handleExport}
+              title={t.exportJsonBtn}
+              className={cn("w-full gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs", isCollapsed ? "justify-center px-0" : "justify-start")}
             >
-              <LogOut className="h-3.5 w-3.5 shrink-0" />
-              {!isCollapsed && <span>{t.authLogout}</span>}
+              <Download className="h-3.5 w-3.5 shrink-0" />
+              {!isCollapsed && <span>{t.exportJsonBtn}</span>}
             </Button>
-          </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleImport}
+              title={t.importJsonBtn}
+              className={cn("w-full gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs", isCollapsed ? "justify-center px-0" : "justify-start")}
+            >
+              <Upload className="h-3.5 w-3.5 shrink-0" />
+              {!isCollapsed && <span>{t.importJsonBtn}</span>}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetData}
+              title={t.resetDataBtn}
+              className={cn("w-full gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs", isCollapsed ? "justify-center px-0" : "justify-start")}
+            >
+              <RotateCcw className="h-3.5 w-3.5 shrink-0" />
+              {!isCollapsed && <span>{t.resetDataBtn}</span>}
+            </Button>
+          </>
         )}
+        <div className={cn("pt-2 mt-2", isAdmin && "border-t border-sidebar-border")}>
+          {user ? (
+            <>
+              {!isCollapsed && (
+                <p className="text-[10px] text-sidebar-foreground/50 truncate px-2 mb-1">{user.email}</p>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => signOut()}
+                title={t.authLogout}
+                className={cn("w-full gap-2 text-sidebar-foreground/60 hover:text-destructive hover:bg-sidebar-accent text-xs", isCollapsed ? "justify-center px-0" : "justify-start")}
+              >
+                <LogOut className="h-3.5 w-3.5 shrink-0" />
+                {!isCollapsed && <span>{t.authLogout}</span>}
+              </Button>
+            </>
+          ) : (
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              title={t.authLogin}
+              className={cn("w-full gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs", isCollapsed ? "justify-center px-0" : "justify-start")}
+            >
+              <Link to="/auth">
+                <LogIn className="h-3.5 w-3.5 shrink-0" />
+                {!isCollapsed && <span>{t.authLogin}</span>}
+              </Link>
+            </Button>
+          )}
+        </div>
       </SidebarFooter>
     </Sidebar>
   );

@@ -1,8 +1,13 @@
 import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
 
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+/**
+ * Guards a route so only signed-in admins can view it.
+ * - Not signed in → redirect to /auth
+ * - Signed in but not admin → redirect to /
+ */
+export function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading, isAdmin } = useAuth();
 
   if (loading) {
     return (
@@ -14,6 +19,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

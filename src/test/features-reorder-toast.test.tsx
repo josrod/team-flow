@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { toast } from "sonner";
 
 import { LanguageProvider } from "@/context/LanguageContext";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider } from "@/context/AppContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import FeaturesPage from "@/pages/FeaturesPage";
@@ -40,6 +41,7 @@ vi.mock("@/context/AuthContext", () => ({
   useAuth: () => ({
     user: { id: "test-user", email: "test@example.com" },
     session: null,
+    isAdmin: true,
     signOut: vi.fn(),
   }),
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -86,7 +88,7 @@ vi.mock("@/components/SortableRows", () => ({
 function renderTasks(initialUrl: string) {
   return render(
     <MemoryRouter initialEntries={[initialUrl]}>
-      <LanguageProvider>
+      <TooltipProvider><LanguageProvider>
         <ThemeProvider>
           <AppProvider>
             <Routes>
@@ -94,7 +96,7 @@ function renderTasks(initialUrl: string) {
             </Routes>
           </AppProvider>
         </ThemeProvider>
-      </LanguageProvider>
+      </LanguageProvider></TooltipProvider>
     </MemoryRouter>,
   );
 }

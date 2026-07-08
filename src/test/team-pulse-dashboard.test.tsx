@@ -16,6 +16,7 @@ vi.mock("@/context/AuthContext", () => ({
   useAuth: () => ({
     user: { id: "test-user" },
     session: null,
+    isAdmin: true,
     signOut: vi.fn(),
   }),
 }));

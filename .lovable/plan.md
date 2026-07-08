@@ -1,65 +1,64 @@
+
+# Compartir la app manteniendo páginas privadas
+
 ## Objetivo
 
-En la página `/tasks` reducir el ruido: mostrar únicamente items realmente accionables.
+- Cualquiera con el enlace puede entrar sin login y ver: Dashboard, Teams, Handovers, Tasks, Bugs, Epics, Pulse.
+- Solo tu cuenta (admin) puede ver: Settings (Azure DevOps), Features, Absences, Workload.
+- Nadie que no sea admin puede modificar datos ni ver los settings/PAT de Azure DevOps.
 
-- Tasks (tipo `Task`): solo estados **Open / New** e **In Progress**.
-- Bugs (tipo `Bug`): estados **Open / New** e **In Progress**, y además bugs **cerrados/resueltos en los últimos 10 días** (para mantener visibilidad reciente).
+## Modelo de acceso
 
-Todo lo demás (Done/Closed/Resolved antiguos, Blocked) queda oculto en esta vista.
-
-## Alcance
-
-Solo la vista Tasks (`view === "tasks"`), sin tocar Features ni Bugs ni Workload. Cambio de presentación/filtrado en `src/pages/FeaturesPage.tsx`. Sin cambios de datos, servicios ni backend.
-
-## Criterio de filtrado
-
-Se aplica dentro del `useMemo` de `filteredTasks` (línea 877), cuando `view === "tasks"`:
+Rol admin identificado por tu `user_id` en una tabla `user_roles` (patrón seguro estándar, nunca en `profiles`).
 
 ```text
-esOpenOInProgress = normalizeState(state) ∈ {"active", "pending"}
-
-esBugCerradoReciente =
-  tipo == "Bug"
-  ∧ normalizeState(state) ∈ {"done", "resolved", "closed"}
-  ∧ fechaCierre(t) ≥ hoy − 10 días
-
-fechaCierre(t) = t.closedDate ?? t.changedDate  // ISO string
+Visitante anónimo ─► ve páginas públicas (solo lectura)
+Usuario logueado no-admin ─► ve páginas públicas (solo lectura)
+Tú (admin) ─► ve todo + puede editar
 ```
 
-Se mantiene el item si `esOpenOInProgress ∨ esBugCerradoReciente`. Cualquier otro caso se descarta antes de aplicar el resto de filtros (equipo, persona, búsqueda, tipo, exclusión de Product Backlog Item).
+## Cambios en el frontend
 
-Notas:
-- La ventana de 10 días se calcula una vez fuera del `filter` (`Date.now() - 10*24*3600*1000`).
-- Si el bug no tiene ni `closedDate` ni `changedDate`, no cumple el criterio de "cerrado reciente" y queda oculto.
-- Los contadores existentes (`typeCounts`, `stateDistribution`, `tasksByPerson`, badge WIP) siguen funcionando porque se alimentan de `filteredTasks`.
+1. **`ProtectedRoute` → `AdminRoute`**: nuevo componente que exige `user` **y** rol `admin`. Si no cumple, redirige a `/`.
+2. **`App.tsx`**: quitar `ProtectedRoute` de las rutas públicas y envolver con `AdminRoute` solo:
+   - `/settings/azure-devops`
+   - `/features`
+   - `/absences`
+   - `/workload`
+   Las demás rutas quedan accesibles sin login dentro de `AppLayout`.
+3. **`AppSidebar`**: ocultar los enlaces Settings / Features / Absences / Workload cuando el usuario no sea admin. Mostrar botón "Login como admin" cuando no haya sesión, en vez de solo el email.
+4. **`AuthContext`**: añadir `isAdmin: boolean` cargado tras `getUser()` consultando `has_role(auth.uid(),'admin')`.
+5. **Botones de edición** (crear/editar/borrar members, teams, handovers, tasks, notas, import/export, reset): deshabilitados u ocultos cuando `!isAdmin`. Toda la lógica de escritura queda protegida en cliente + backend.
+6. **`AzureDevOpsSettingsPage`**: además del guard de ruta, no cargar `azure_devops_settings` si no eres admin.
 
-## UI
+## Cambios en el backend (Lovable Cloud)
 
-Añadir bajo el título de la vista Tasks un pequeño texto informativo (i18n) que aclare el criterio, para que el usuario entienda por qué no ve items antiguos:
+Migración SQL:
 
-> "Mostrando tareas abiertas / en curso y bugs cerrados en los últimos 10 días."
+1. `create type app_role as enum ('admin');`
+2. Tabla `user_roles(user_id, role, unique(user_id, role))` con RLS + `has_role()` security definer (patrón estándar).
+3. **Insertar tu `user_id` como admin** durante la migración (te pediré confirmación del email en build).
+4. **Ajustar RLS de tablas existentes** para permitir lectura pública y escritura solo admin:
+   - `task_handover_notes`: `SELECT` a `anon` + `authenticated`; `INSERT/UPDATE/DELETE` solo si `has_role(auth.uid(),'admin')`.
+   - `azure_devops_settings`: mantener restringido al owner (solo tú lo usas); añadir política que exija admin explícitamente. **No** exponer `pat_encrypted` a anon.
+   - `tfs_import_history`: igual, solo admin.
+   - `GRANT SELECT` a `anon` donde aplique.
+5. **Edge function `tfs-pat-vault`**: verificar rol admin del caller antes de encrypt/decrypt.
 
-Se coloca como línea `text-xs text-muted-foreground` junto al header existente de la sección Tasks, solo cuando `view === "tasks"`.
+## Datos locales (AppContext / localStorage)
 
-## i18n
+Los datos de teams, members, handovers, tasks, etc. viven en `localStorage` del navegador — no en la nube. Esto significa:
 
-Nueva clave en `src/context/LanguageContext.tsx`:
+- Cada visitante verá **su propio estado local vacío** al entrar por primera vez, no tus datos.
+- Para que el equipo vea tus datos reales necesitamos publicar el estado. Opciones:
+  - **(a) Recomendada)** Migrar los datos compartidos a Supabase con RLS de lectura pública y escritura admin. Es trabajo mayor y lo abordamos en un plan aparte.
+  - **(b) Rápida)** Exportar el JSON desde tu cuenta y compartirlo; cada usuario lo importa. No es "compartir en vivo".
 
-- `tasksViewFilterHint`
-  - ES: "Mostrando tareas abiertas / en curso y bugs cerrados en los últimos 10 días."
-  - EN: "Showing open / in progress tasks and bugs closed in the last 10 days."
-
-## Archivos a modificar
-
-- `src/pages/FeaturesPage.tsx` — ajustar `filteredTasks` con el nuevo criterio cuando `view === "tasks"` y renderizar el hint.
-- `src/context/LanguageContext.tsx` — clave `tasksViewFilterHint` (ES/EN).
+**Decisión pendiente**: confirma si quieres que en este mismo plan incluyamos la migración (a). Si es sí, lo extendemos; si no, este plan cubre solo el control de acceso y el equipo verá inicialmente estado vacío hasta que decidamos la sincronización.
 
 ## Verificación
 
-1. Abrir `/tasks`:
-   - Tasks con estado Done/Closed no aparecen.
-   - Bugs Open / In Progress aparecen.
-   - Bugs Closed/Resolved con `closedDate` (o `changedDate` si falta) dentro de los últimos 10 días aparecen; los más antiguos, no.
-2. Cambiar idioma → el hint cambia ES/EN.
-3. El badge WIP por persona y los contadores por tipo reflejan únicamente los items visibles.
-4. Otras vistas (Features, Bugs, Workload) permanecen sin cambios.
+- Playwright: navegar a `/features`, `/absences`, `/workload`, `/settings/azure-devops` sin sesión → redirige a `/`.
+- Login con tu cuenta → aparecen los 4 enlaces y las páginas cargan.
+- Login con otra cuenta cualquiera → no aparecen los enlaces; acceso directo por URL redirige a `/`.
+- Escaneo de seguridad post-migración (`security--run_security_scan`).

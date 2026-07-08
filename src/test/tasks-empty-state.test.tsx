@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { MemoryRouter, Route, Routes, useSearchParams } from "react-router-dom";
 
 import { LanguageProvider } from "@/context/LanguageContext";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider } from "@/context/AppContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import FeaturesPage from "@/pages/FeaturesPage";
@@ -33,6 +34,7 @@ vi.mock("@/context/AuthContext", () => ({
   useAuth: () => ({
     user: { id: "test-user", email: "test@example.com" },
     session: null,
+    isAdmin: true,
     signOut: vi.fn(),
   }),
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -48,7 +50,7 @@ function SearchParamsProbe() {
 function renderTasks(initialUrl: string) {
   return render(
     <MemoryRouter initialEntries={[initialUrl]}>
-      <LanguageProvider>
+      <TooltipProvider><LanguageProvider>
         <ThemeProvider>
           <AppProvider>
             <SearchParamsProbe />
@@ -57,7 +59,7 @@ function renderTasks(initialUrl: string) {
             </Routes>
           </AppProvider>
         </ThemeProvider>
-      </LanguageProvider>
+      </LanguageProvider></TooltipProvider>
     </MemoryRouter>,
   );
 }
