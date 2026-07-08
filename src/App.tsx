@@ -46,7 +46,8 @@ const App = () => (
                   <Route path="/tasks" element={<AppLayout><TasksPage /></AppLayout>} />
                   <Route path="/bugs" element={<AppLayout><BugsPage /></AppLayout>} />
                   <Route path="/epics" element={<AppLayout><EpicsPage /></AppLayout>} />
-                  <Route path="/pulse" element={<AppLayout><TeamPulseDashboard /></AppLayout>} />
+                  {/* Pulse is admin-only */}
+                  <Route path="/pulse" element={<AdminRoute><AppLayout><TeamPulseDashboard /></AppLayout></AdminRoute>} />
                   {/* Admin-only pages */}
                   <Route path="/features" element={<AdminRoute><AppLayout><FeaturesPage view="features" /></AppLayout></AdminRoute>} />
                   <Route path="/absences" element={<AdminRoute><AppLayout><AbsencesPage /></AppLayout></AdminRoute>} />
