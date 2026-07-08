@@ -40,6 +40,7 @@ vi.mock("@/context/AuthContext", () => ({
   useAuth: () => ({
     user: { id: "test-user", email: "test@example.com" },
     session: null,
+    isAdmin: true,
     signOut: vi.fn(),
   }),
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
