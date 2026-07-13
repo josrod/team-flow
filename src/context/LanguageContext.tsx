@@ -461,6 +461,7 @@ export const translations = {
     wipBreakdownPendingTasks: "Tasks pendientes",
     wipBreakdownPendingBugs: "Bugs pendientes",
     tagWaiting: "En espera",
+    waitingOnly: "Solo en espera",
     blockedPlural: "bloqueadas",
     completedPlural: "completadas",
     resolvedPlural: "resueltas",
