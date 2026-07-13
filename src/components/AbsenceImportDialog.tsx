@@ -17,10 +17,11 @@ import { parseISO, isValid, format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { parseInventAbsentFile, validateInventAbsentFile, type ParseResult } from "@/services/inventAbsentParser";
 import { loadLoginMappings, rememberLoginMappings } from "@/services/loginMappingStore";
+import { previewImportJson } from "@/lib/validation";
 import type { AbsenceType } from "@/types";
 
 type Step = "upload" | "mapping" | "preview";
-type Mode = "generic" | "invent";
+type Mode = "generic" | "invent" | "json";
 
 interface RawRow {
   [key: string]: string;
@@ -73,7 +74,7 @@ export interface ImportResultSummary {
 }
 
 export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: boolean; onOpenChange: (open: boolean) => void; onImported?: (result: ImportResultSummary) => void }) {
-  const { members, addAbsence } = useApp();
+  const { members, absences, addAbsence } = useApp();
   const { t } = useLang();
 
   const [mode, setMode] = useState<Mode>("generic");
@@ -88,6 +89,16 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
   });
   const [fileName, setFileName] = useState("");
   const [inventResult, setInventResult] = useState<ParseResult | null>(null);
+  const [jsonResult, setJsonResult] = useState<{
+    rows: Array<{
+      memberId: string | null;
+      memberName: string;
+      type: AbsenceType;
+      startDate: string;
+      endDate: string;
+      status: "ok" | "duplicate" | "missing";
+    }>;
+  } | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [loginAssignments, setLoginAssignments] = useState<Record<string, string>>({});
 
@@ -98,6 +109,7 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
     setMapping({ memberName: "", type: "", startDate: "", endDate: "" });
     setFileName("");
     setInventResult(null);
+    setJsonResult(null);
     setValidationErrors([]);
     setLoginAssignments({});
   }, []);
@@ -131,10 +143,82 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
     setMapping(newMapping);
   };
 
+  const handleJsonFile = useCallback(async (file: File) => {
+    try {
+      const text = await file.text();
+      const preview = previewImportJson(text);
+      if (preview.ok === false) {
+        setValidationErrors(preview.issues.map((i) => `${i.path}: ${i.message}`));
+        return;
+      }
+      const raw = JSON.parse(text) as {
+        members?: Array<{ id: string; name: string }>;
+        absences?: Array<{ memberId: string; type: AbsenceType; startDate: string; endDate: string }>;
+      };
+      const absencesJson = raw.absences ?? [];
+      if (absencesJson.length === 0) {
+        setValidationErrors([t.importJsonNoAbsences]);
+        return;
+      }
+      const membersById = new Map(members.map((m) => [m.id, m]));
+      const membersByName = new Map(members.map((m) => [m.name.toLowerCase(), m]));
+      const jsonMembersById = new Map((raw.members ?? []).map((m) => [m.id, m]));
+      const existingKeys = new Set(
+        absences.map((a) => `${a.memberId}|${a.type}|${a.startDate}|${a.endDate}`),
+      );
+
+      const rows = absencesJson.map((a) => {
+        let member = membersById.get(a.memberId);
+        let memberName = member?.name ?? "";
+        if (!member) {
+          const src = jsonMembersById.get(a.memberId);
+          if (src) {
+            memberName = src.name;
+            member = membersByName.get(src.name.toLowerCase());
+          }
+        }
+        if (!member) {
+          return {
+            memberId: null,
+            memberName: memberName || a.memberId,
+            type: a.type,
+            startDate: a.startDate,
+            endDate: a.endDate,
+            status: "missing" as const,
+          };
+        }
+        const key = `${member.id}|${a.type}|${a.startDate}|${a.endDate}`;
+        return {
+          memberId: member.id,
+          memberName: member.name,
+          type: a.type,
+          startDate: a.startDate,
+          endDate: a.endDate,
+          status: existingKeys.has(key) ? ("duplicate" as const) : ("ok" as const),
+        };
+      });
+      setJsonResult({ rows });
+      setStep("preview");
+    } catch (err) {
+      setValidationErrors([err instanceof Error ? err.message : t.importParseError]);
+    }
+  }, [members, absences, t]);
+
   const handleFile = useCallback(async (file: File) => {
     setFileName(file.name);
     setValidationErrors([]);
     const ext = file.name.split(".").pop()?.toLowerCase();
+
+    if (mode === "json") {
+      if (ext !== "json") {
+        setValidationErrors([t.importUnsupportedFormat]);
+        return;
+      }
+      await handleJsonFile(file);
+      return;
+    }
+
+
 
     if (mode === "invent") {
       if (ext !== "xlsx") {
@@ -226,7 +310,7 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
     } else {
       toast.error(t.importUnsupportedFormat);
     }
-  }, [mode, members, t]);
+  }, [mode, members, t, handleJsonFile]);
 
   const mappedData: MappedAbsence[] = useMemo(() => {
     if (step !== "preview" || mode !== "generic") return [];
@@ -336,11 +420,40 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
     handleClose(false);
   };
 
+  const jsonImportable = jsonResult?.rows.filter((r) => r.status === "ok") ?? [];
+  const jsonDuplicates = jsonResult?.rows.filter((r) => r.status === "duplicate").length ?? 0;
+  const jsonMissing = jsonResult?.rows.filter((r) => r.status === "missing").length ?? 0;
+
+  const handleJsonImport = () => {
+    if (!jsonResult) return;
+    let imported = 0;
+    for (const row of jsonImportable) {
+      if (!row.memberId) continue;
+      addAbsence({
+        memberId: row.memberId,
+        type: row.type,
+        startDate: row.startDate,
+        endDate: row.endDate,
+      });
+      imported++;
+    }
+    toast.success(`📥 ${imported} ${t.importSuccess}`);
+    onImported?.({
+      imported,
+      skipped: jsonDuplicates,
+      unmatched: [],
+      fileName,
+    });
+    handleClose(false);
+  };
+
+
+
 
   const openFilePicker = () => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = mode === "invent" ? ".xlsx" : ".csv,.xlsx,.xls";
+    input.accept = mode === "invent" ? ".xlsx" : mode === "json" ? ".json" : ".csv,.xlsx,.xls";
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) handleFile(file);
@@ -361,9 +474,10 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
         {step === "upload" && (
           <div className="space-y-4">
             <Tabs value={mode} onValueChange={(v) => { setMode(v as Mode); reset(); }}>
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="generic">{t.importModeGeneric}</TabsTrigger>
                 <TabsTrigger value="invent">{t.importModeInvent}</TabsTrigger>
+                <TabsTrigger value="json">{t.importModeJson}</TabsTrigger>
               </TabsList>
             </Tabs>
 
@@ -380,10 +494,10 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
             >
               <Upload className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
               <p className="font-medium">
-                {mode === "invent" ? t.importInventDropzone : t.importDropzone}
+                {mode === "invent" ? t.importInventDropzone : mode === "json" ? t.importJsonDropzone : t.importDropzone}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                {mode === "invent" ? t.importInventFormats : t.importFormats}
+                {mode === "invent" ? t.importInventFormats : mode === "json" ? t.importJsonFormats : t.importFormats}
               </p>
             </div>
 
@@ -620,6 +734,81 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
             </Button>
           </div>
         )}
+
+        {step === "preview" && mode === "json" && jsonResult && (
+          <div className="space-y-3 flex-1 min-h-0 flex flex-col">
+            <div className="flex items-center gap-3 flex-wrap">
+              <p className="text-xs text-muted-foreground flex-1">
+                {fileName} —{" "}
+                {t.importJsonSummary
+                  .replace("{ok}", String(jsonImportable.length))
+                  .replace("{dup}", String(jsonDuplicates))
+                  .replace("{missing}", String(jsonMissing))}
+              </p>
+              <Button variant="ghost" size="sm" onClick={reset}>
+                <X className="h-4 w-4 mr-1" /> {t.importChangeFile}
+              </Button>
+            </div>
+
+            <ScrollArea className="flex-1 min-h-0 border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs py-1 px-2">{t.person}</TableHead>
+                    <TableHead className="text-xs py-1 px-2">{t.type}</TableHead>
+                    <TableHead className="text-xs py-1 px-2">{t.start}</TableHead>
+                    <TableHead className="text-xs py-1 px-2">{t.end}</TableHead>
+                    <TableHead className="text-xs py-1 px-2">{t.status}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {jsonResult.rows.map((r, i) => (
+                    <TableRow
+                      key={i}
+                      className={cn(
+                        r.status === "missing" && "bg-destructive/5",
+                        r.status === "duplicate" && "bg-muted/40",
+                      )}
+                    >
+                      <TableCell className="text-xs py-1 px-2">{r.memberName}</TableCell>
+                      <TableCell className="text-xs py-1 px-2">{r.type}</TableCell>
+                      <TableCell className="text-xs py-1 px-2">{r.startDate}</TableCell>
+                      <TableCell className="text-xs py-1 px-2">{r.endDate}</TableCell>
+                      <TableCell className="text-xs py-1 px-2">
+                        {r.status === "ok" && (
+                          <Badge variant="outline" className="gap-1">
+                            <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                            {t.importJsonStatusOk}
+                          </Badge>
+                        )}
+                        {r.status === "duplicate" && (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            {t.importJsonDuplicate}
+                          </Badge>
+                        )}
+                        {r.status === "missing" && (
+                          <Badge variant="outline" className="gap-1 text-destructive border-destructive/30">
+                            <AlertTriangle className="h-3 w-3" />
+                            {t.importJsonMemberNotFound}
+                          </Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+
+            <Button
+              onClick={handleJsonImport}
+              disabled={jsonImportable.length === 0}
+              className="w-full"
+            >
+              {t.importConfirm} ({jsonImportable.length})
+            </Button>
+          </div>
+        )}
+
       </DialogContent>
     </Dialog>
   );
