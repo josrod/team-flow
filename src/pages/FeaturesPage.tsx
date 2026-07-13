@@ -289,10 +289,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   type BugOnlyStateKey = "active" | "pending" | "blocked" | "resolved" | "closed";
   type TaskSortKey = "total-desc" | "total-asc" | "name-asc" | "name-desc" | "priority";
 
-  // Bugs are identified by their type string (TFS uses "Bug"). Anything else
-  // is treated as a task for the purposes of state filtering.
-  const isBugType = (type: string | undefined): boolean =>
-    typeof type === "string" && type.toLowerCase() === "bug";
+  // `isBugType` is imported from `@/lib/tasksState`.
 
   // Two independent state filters so users can filter tasks and bugs
   // separately (tasks don't have Resolved/Closed; bugs don't have Completed).
