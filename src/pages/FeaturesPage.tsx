@@ -40,6 +40,8 @@ import { WorkloadMatrix } from "@/components/WorkloadMatrix";
 import { TaskTypeFilter } from "@/components/TaskTypeFilter";
 import { computeAvailableTaskTypes, isExcludedTaskType } from "@/lib/taskTypeFilter";
 import { parseTfsTags } from "@/lib/tfsTags";
+import { buildAssigneeIndex, resolveMember } from "@/lib/assigneeMatch";
+import { UnmatchedAssigneesPanel } from "@/components/UnmatchedAssigneesPanel";
 import { useTaskPriorities } from "@/hooks/use-task-priorities";
 import { PriorityLevel, sortByPriority, moveTo, ALL_BUCKET } from "@/lib/taskPriority";
 import { PrioritySelect } from "@/components/PrioritySelect";
