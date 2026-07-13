@@ -465,10 +465,10 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
             >
               <Upload className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
               <p className="font-medium">
-                {mode === "invent" ? t.importInventDropzone : t.importDropzone}
+                {mode === "invent" ? t.importInventDropzone : mode === "json" ? t.importJsonDropzone : t.importDropzone}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                {mode === "invent" ? t.importInventFormats : t.importFormats}
+                {mode === "invent" ? t.importInventFormats : mode === "json" ? t.importJsonFormats : t.importFormats}
               </p>
             </div>
 
