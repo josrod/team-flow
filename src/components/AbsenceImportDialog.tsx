@@ -143,10 +143,82 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
     setMapping(newMapping);
   };
 
+  const handleJsonFile = useCallback(async (file: File) => {
+    try {
+      const text = await file.text();
+      const preview = previewImportJson(text);
+      if (!preview.ok) {
+        setValidationErrors(preview.issues.map((i) => `${i.path}: ${i.message}`));
+        return;
+      }
+      const raw = JSON.parse(text) as {
+        members?: Array<{ id: string; name: string }>;
+        absences?: Array<{ memberId: string; type: AbsenceType; startDate: string; endDate: string }>;
+      };
+      const absencesJson = raw.absences ?? [];
+      if (absencesJson.length === 0) {
+        setValidationErrors([t.importJsonNoAbsences]);
+        return;
+      }
+      const membersById = new Map(members.map((m) => [m.id, m]));
+      const membersByName = new Map(members.map((m) => [m.name.toLowerCase(), m]));
+      const jsonMembersById = new Map((raw.members ?? []).map((m) => [m.id, m]));
+      const existingKeys = new Set(
+        absences.map((a) => `${a.memberId}|${a.type}|${a.startDate}|${a.endDate}`),
+      );
+
+      const rows = absencesJson.map((a) => {
+        let member = membersById.get(a.memberId);
+        let memberName = member?.name ?? "";
+        if (!member) {
+          const src = jsonMembersById.get(a.memberId);
+          if (src) {
+            memberName = src.name;
+            member = membersByName.get(src.name.toLowerCase());
+          }
+        }
+        if (!member) {
+          return {
+            memberId: null,
+            memberName: memberName || a.memberId,
+            type: a.type,
+            startDate: a.startDate,
+            endDate: a.endDate,
+            status: "missing" as const,
+          };
+        }
+        const key = `${member.id}|${a.type}|${a.startDate}|${a.endDate}`;
+        return {
+          memberId: member.id,
+          memberName: member.name,
+          type: a.type,
+          startDate: a.startDate,
+          endDate: a.endDate,
+          status: existingKeys.has(key) ? ("duplicate" as const) : ("ok" as const),
+        };
+      });
+      setJsonResult({ rows });
+      setStep("preview");
+    } catch (err) {
+      setValidationErrors([err instanceof Error ? err.message : t.importParseError]);
+    }
+  }, [members, absences, t]);
+
   const handleFile = useCallback(async (file: File) => {
     setFileName(file.name);
     setValidationErrors([]);
     const ext = file.name.split(".").pop()?.toLowerCase();
+
+    if (mode === "json") {
+      if (ext !== "json") {
+        setValidationErrors([t.importUnsupportedFormat]);
+        return;
+      }
+      await handleJsonFile(file);
+      return;
+    }
+
+
 
     if (mode === "invent") {
       if (ext !== "xlsx") {
