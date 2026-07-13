@@ -147,7 +147,7 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
     try {
       const text = await file.text();
       const preview = previewImportJson(text);
-      if (!preview.ok) {
+      if (preview.ok === false) {
         setValidationErrors(preview.issues.map((i) => `${i.path}: ${i.message}`));
         return;
       }
