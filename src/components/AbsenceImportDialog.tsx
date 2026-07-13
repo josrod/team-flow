@@ -424,7 +424,7 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
   const openFilePicker = () => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = mode === "invent" ? ".xlsx" : ".csv,.xlsx,.xls";
+    input.accept = mode === "invent" ? ".xlsx" : mode === "json" ? ".json" : ".csv,.xlsx,.xls";
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) handleFile(file);
