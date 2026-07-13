@@ -109,6 +109,7 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
     setMapping({ memberName: "", type: "", startDate: "", endDate: "" });
     setFileName("");
     setInventResult(null);
+    setJsonResult(null);
     setValidationErrors([]);
     setLoginAssignments({});
   }, []);
