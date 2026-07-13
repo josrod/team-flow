@@ -53,6 +53,7 @@ export const BugsPage = () => {
   const [state, setState] = useState<string[]>([]);
   const [severity, setSeverity] = useState<string[]>([]);
   const [iteration, setIteration] = useState<string>(ALL);
+  const [waitingOnly, setWaitingOnly] = useState(false);
   const [selectedBug, setSelectedBug] = useState<TfsBug | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
