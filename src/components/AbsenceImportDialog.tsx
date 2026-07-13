@@ -89,6 +89,16 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
   });
   const [fileName, setFileName] = useState("");
   const [inventResult, setInventResult] = useState<ParseResult | null>(null);
+  const [jsonResult, setJsonResult] = useState<{
+    rows: Array<{
+      memberId: string | null;
+      memberName: string;
+      type: AbsenceType;
+      startDate: string;
+      endDate: string;
+      status: "ok" | "duplicate" | "missing";
+    }>;
+  } | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [loginAssignments, setLoginAssignments] = useState<Record<string, string>>({});
 
