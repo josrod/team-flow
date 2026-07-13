@@ -52,6 +52,10 @@ Se recomienda **Supabase self‑hosted** porque conserva 1:1 el esquema, RLS, mi
 
 > 📄 **Variables de entorno**: usa [`.env.example`](./.env.example) en la raíz como referencia única de todas las variables necesarias (SPA + backend + Edge Function). Para el stack Docker de la sección 11, usa además [`docker/.env.example`](./docker/.env.example).
 
+> ⚡ **Automatización**: el [`Makefile`](./Makefile) de la raíz encapsula setup, migraciones, seed y arranque. Empieza con `make help` (o `npm run setup` + `npm run stack:bootstrap`). Ver detalle en la sección 13.
+
+
+
 
 
 ---
@@ -428,3 +432,63 @@ docker compose logs -f <servicio>      # auth | rest | realtime | functions | ko
 | Datos perdidos tras `docker compose down` | Añadiste `-v` y borraste el volumen. | Restaura con `pg_dump` previo. Automatiza backups (sección 11.5). |
 
 Si tras seguir la tabla el problema persiste, comparte el bloque de `docker compose logs` del servicio afectado y la petición/respuesta (URL, método, status y payload) para diagnosticar más a fondo.
+
+---
+
+## 13. Automatización con Make / npm
+
+El [`Makefile`](./Makefile) de la raíz agrupa todas las tareas locales. Cada target tiene también su alias en `package.json` para quien prefiera `npm run …`.
+
+### 13.1 Ver todos los targets
+
+```bash
+make help
+```
+
+### 13.2 Ciclo típico end‑to‑end
+
+```bash
+make setup              # copia .env.example → .env  + docker/.env  + instala deps
+make keys               # imprime valores aleatorios para pegar en docker/.env
+# … edita docker/.env (POSTGRES_PASSWORD, JWT_SECRET, ANON_KEY, SERVICE_ROLE_KEY,
+#   REALTIME_SECRET_KEY_BASE, ADO_PAT_ENC_KEY) …
+make bootstrap          # up -d --build + espera DB + migraciones + seed
+```
+
+Al acabar verás:
+
+```text
+SPA     → http://localhost:8080
+API     → http://localhost:8000
+Studio  → http://localhost:3001
+```
+
+### 13.3 Targets disponibles
+
+| Categoría | `make …` | `npm run …` | Qué hace |
+|-----------|----------|-------------|----------|
+| Setup | `setup` | `setup` | `.env` + `docker/.env` + `bun install` |
+| Setup | `keys` | `keys` | Genera secretos aleatorios con `openssl` |
+| Frontend | `dev` | `dev` | Vite dev server |
+| Frontend | `build` / `test` / `lint` | `build` / `test` / `lint` | Build, tests y lint |
+| Stack | `up` / `down` / `restart` / `ps` | `stack:up` / `stack:down` | Control del `docker-compose` |
+| Stack | `logs S=<svc>` | `stack:logs` | Sigue logs de un servicio (`auth`, `functions`…) |
+| Stack | `bootstrap` | `stack:bootstrap` | One‑shot: up + migraciones + seed |
+| DB | `db-migrate` | `db:migrate` | Aplica `supabase/migrations/*.sql` en orden |
+| DB | `db-seed` | `db:seed` | Carga `supabase/seed.sql` (2 equipos + 3 miembros + 1 ausencia) |
+| DB | `db-reset` | `db:reset` | ⚠ Borra el volumen y rehace todo |
+| DB | `db-shell` | `db:shell` | `psql` interactivo |
+| DB | `db-backup` | `db:backup` | Vuelca a `backups/backup_<fecha>.sql` |
+| DB | `db-restore F=…` | — | Restaura un backup concreto |
+| Functions | `functions-logs` | — | Logs de la Edge Function `tfs-pat-vault` |
+
+### 13.4 Seed de datos
+
+`supabase/seed.sql` es idempotente (`ON CONFLICT DO NOTHING`) — puedes reejecutarlo sin duplicar. **No** crea usuarios de Auth; regístrate en la SPA y luego promuévete a admin:
+
+```sql
+INSERT INTO public.user_roles (user_id, role)
+VALUES ('<uuid_del_usuario_recien_registrado>', 'admin');
+```
+
+Amplía el seed con datos propios (más equipos, handovers, work topics) manteniendo la estructura `ON CONFLICT` para que siga siendo replicable.

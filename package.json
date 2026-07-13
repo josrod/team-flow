@@ -10,7 +10,18 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "setup": "make setup",
+    "keys": "make keys",
+    "stack:up": "make up",
+    "stack:down": "make down",
+    "stack:logs": "make logs",
+    "stack:bootstrap": "make bootstrap",
+    "db:migrate": "make db-migrate",
+    "db:seed": "make db-seed",
+    "db:reset": "make db-reset",
+    "db:shell": "make db-shell",
+    "db:backup": "make db-backup"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
