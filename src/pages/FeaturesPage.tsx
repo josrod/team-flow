@@ -357,11 +357,13 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
     else next.set("taskStates", taskEncoded);
     if (bugEncoded === null) next.delete("bugStates");
     else next.set("bugStates", bugEncoded);
+    if (waitingOnly) next.set("waiting", "1");
+    else next.delete("waiting");
     if (next.toString() !== searchParams.toString()) {
       setSearchParams(next, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskStateFilter, bugStateFilter]);
+  }, [taskStateFilter, bugStateFilter, waitingOnly]);
   const toggleTaskStateFilter = (key: TaskOnlyStateKey) => {
     setTaskStateFilter((prev) => {
       const next = new Set(prev);
