@@ -143,7 +143,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       ? t.featuresSubtitle
       : t.generalOverview;
   const { teams, members, workTopics } = useApp();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const [source, setSource] = useState<DataSource>("local");
   const [loading, setLoading] = useState(false);
@@ -1718,7 +1718,17 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
               </div>
 
 
+              <div className="mt-4">
+                <UnmatchedAssigneesPanel
+                  tasks={tasks}
+                  members={members}
+                  teams={teams}
+                  isAdmin={isAdmin}
+                />
+              </div>
+
               <TabsContent value={activeTeam} className="mt-4">
+
                 {showFlatList ? (
                   filteredTasks.length === 0 ? (
                     <p className="text-sm text-muted-foreground py-8 text-center">
