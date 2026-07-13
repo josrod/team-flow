@@ -40,6 +40,8 @@ import { WorkloadMatrix } from "@/components/WorkloadMatrix";
 import { TaskTypeFilter } from "@/components/TaskTypeFilter";
 import { computeAvailableTaskTypes, isExcludedTaskType } from "@/lib/taskTypeFilter";
 import { parseTfsTags } from "@/lib/tfsTags";
+import { normalizeState, isBugType, computeWip } from "@/lib/tasksState";
+import { WaitingBadge } from "@/components/WaitingBadge";
 import { buildAssigneeIndex, resolveMember } from "@/lib/assigneeMatch";
 import { UnmatchedAssigneesPanel } from "@/components/UnmatchedAssigneesPanel";
 import { useTaskPriorities } from "@/hooks/use-task-priorities";
