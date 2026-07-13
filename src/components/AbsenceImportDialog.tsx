@@ -310,7 +310,7 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
     } else {
       toast.error(t.importUnsupportedFormat);
     }
-  }, [mode, members, t]);
+  }, [mode, members, t, handleJsonFile]);
 
   const mappedData: MappedAbsence[] = useMemo(() => {
     if (step !== "preview" || mode !== "generic") return [];
