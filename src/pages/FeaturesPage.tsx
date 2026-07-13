@@ -1067,10 +1067,10 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
     return arr;
   }, [filteredTasks, taskStateFilter, bugStateFilter, taskSort]);
 
-  const defaultOpenPeople = useMemo(
-    () => tasksByPerson.filter((p) => p.active.length > 0).map((p) => p.person),
-    [tasksByPerson],
-  );
+  // Start with all assignee groups collapsed so the page gives a quick overview
+  // by default. Users can still expand individual groups or the accordion header.
+  const defaultOpenPeople: string[] = [];
+
 
   // Scope validation — audits the raw TFS payload to confirm that every
   // Feature/Task lives under one of the configured area paths, and that
