@@ -1950,16 +1950,12 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                 <div className="flex items-center gap-2 min-w-0">
                                   <p className="text-sm font-medium truncate">{group.person}</p>
                                   {(() => {
-                                    // WIP = Open + In Progress, plus (in tasks view) bugs closed in the last 10 days.
+                                    // WIP = Open + In Progress only (no closed/resolved tasks or bugs).
                                     const activeTasks = group.active.filter((it) => !isBugType(it.type)).length;
                                     const activeBugs = group.active.filter((it) => isBugType(it.type)).length;
                                     const pendingTasks = group.pending.filter((it) => !isBugType(it.type)).length;
                                     const pendingBugs = group.pending.filter((it) => isBugType(it.type)).length;
-                                    const recentClosedBugs =
-                                      view === "tasks"
-                                        ? [...group.resolved, ...group.closed, ...group.done].filter((it) => isBugType(it.type)).length
-                                        : 0;
-                                    const wip = activeTasks + activeBugs + pendingTasks + pendingBugs + recentClosedBugs;
+                                    const wip = activeTasks + activeBugs + pendingTasks + pendingBugs;
                                     if (wip === 0) return null;
                                     // Load tiers: 1-5 light (green), 6-9 medium (amber), 10+ heavy (red)
                                     const tier =
@@ -1974,7 +1970,6 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       { key: "ab", label: t.wipBreakdownActiveBugs, count: activeBugs },
                                       { key: "pt", label: t.wipBreakdownPendingTasks, count: pendingTasks },
                                       { key: "pb", label: t.wipBreakdownPendingBugs, count: pendingBugs },
-                                      { key: "rb", label: t.wipBreakdownRecentClosedBugs, count: recentClosedBugs },
                                     ].filter((row) => row.count > 0);
                                     return (
                                       <UiTooltip>
