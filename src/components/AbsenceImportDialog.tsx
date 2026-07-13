@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { parseInventAbsentFile, validateInventAbsentFile, type ParseResult } from "@/services/inventAbsentParser";
 import { loadLoginMappings, rememberLoginMappings } from "@/services/loginMappingStore";
 import { previewImportJson } from "@/lib/validation";
+import { buildJsonImportPreview } from "@/lib/absencesJsonImport";
 import type { AbsenceType } from "@/types";
 
 type Step = "upload" | "mapping" | "preview";
@@ -160,43 +161,12 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
         setValidationErrors([t.importJsonNoAbsences]);
         return;
       }
-      const membersById = new Map(members.map((m) => [m.id, m]));
-      const membersByName = new Map(members.map((m) => [m.name.toLowerCase(), m]));
-      const jsonMembersById = new Map((raw.members ?? []).map((m) => [m.id, m]));
-      const existingKeys = new Set(
-        absences.map((a) => `${a.memberId}|${a.type}|${a.startDate}|${a.endDate}`),
+      const rows = buildJsonImportPreview(
+        absencesJson,
+        raw.members ?? [],
+        members,
+        absences,
       );
-
-      const rows = absencesJson.map((a) => {
-        let member = membersById.get(a.memberId);
-        let memberName = member?.name ?? "";
-        if (!member) {
-          const src = jsonMembersById.get(a.memberId);
-          if (src) {
-            memberName = src.name;
-            member = membersByName.get(src.name.toLowerCase());
-          }
-        }
-        if (!member) {
-          return {
-            memberId: null,
-            memberName: memberName || a.memberId,
-            type: a.type,
-            startDate: a.startDate,
-            endDate: a.endDate,
-            status: "missing" as const,
-          };
-        }
-        const key = `${member.id}|${a.type}|${a.startDate}|${a.endDate}`;
-        return {
-          memberId: member.id,
-          memberName: member.name,
-          type: a.type,
-          startDate: a.startDate,
-          endDate: a.endDate,
-          status: existingKeys.has(key) ? ("duplicate" as const) : ("ok" as const),
-        };
-      });
       setJsonResult({ rows });
       setStep("preview");
     } catch (err) {
