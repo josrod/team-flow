@@ -348,6 +348,10 @@ En la carpeta [`docker/`](./docker) hay un stack listo para levantar la SPA + Su
 - **Restore**: `cat backup.sql | docker compose exec -T db psql -U postgres -d postgres`.
 - **Actualizar la SPA**: `docker compose up -d --build web`.
 - **Parar todo**: `npm run local:down` (detiene contenedores y limpia redes; usa `npm run local:down:reset` para borrar volúmenes incluyendo la base de datos).
+- **Estado del stack**: `npm run local:status` muestra una tabla con los contenedores y ejecuta health checks contra Postgres, Kong, Auth (GoTrue), PostgREST, Realtime, Edge Runtime y Studio.
+  - `npm run local:status:wait` bloquea hasta 60s esperando a que Postgres y PostgREST estén listos — pensado para encadenar con migraciones (`local:up` ya lo usa internamente).
+  - `npm run local:status:json` devuelve salida estructurada para scripting/CI.
+  - Códigos de salida: `0` = Postgres + Kong + Auth + PostgREST listos (puedes migrar); `1` = falta algún servicio crítico → revisa la sección **Troubleshooting** y `docker compose logs <servicio>`.
 
 ### 11.6 Producción interna
 

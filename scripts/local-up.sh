@@ -72,15 +72,12 @@ fi
 log "docker compose up -d --build"
 $COMPOSE up -d --build
 
-log "Esperando a que Postgres esté listo..."
-for i in $(seq 1 60); do
-  if $DB_EXEC -c 'select 1' >/dev/null 2>&1; then
-    ok "Postgres listo (${i}s)"
-    break
-  fi
-  sleep 1
-  if [ "$i" = "60" ]; then err "Postgres no responde tras 60s"; exit 1; fi
-done
+log "Esperando a que Postgres y PostgREST estén listos..."
+if ! bash "$ROOT_DIR/scripts/local-status.sh" --wait >/dev/null; then
+  err "Los servicios críticos no arrancaron. Ejecuta 'npm run local:status' para el detalle."
+  exit 1
+fi
+ok "Stack listo para migrar"
 
 # --- Migraciones -------------------------------------------------------------
 if [ -d "$MIGRATIONS_DIR" ] && compgen -G "$MIGRATIONS_DIR/*.sql" > /dev/null; then
