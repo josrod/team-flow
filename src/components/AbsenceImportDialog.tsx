@@ -445,9 +445,10 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
         {step === "upload" && (
           <div className="space-y-4">
             <Tabs value={mode} onValueChange={(v) => { setMode(v as Mode); reset(); }}>
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="generic">{t.importModeGeneric}</TabsTrigger>
                 <TabsTrigger value="invent">{t.importModeInvent}</TabsTrigger>
+                <TabsTrigger value="json">{t.importModeJson}</TabsTrigger>
               </TabsList>
             </Tabs>
 
