@@ -2365,7 +2365,17 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, prior
           <TableCell className="py-1 align-middle">{dragHandle}</TableCell>
         )}
         <TableCell className="font-mono text-xs text-muted-foreground">{task.id}</TableCell>
-        <TableCell className="font-medium text-sm">{task.title}</TableCell>
+        <TableCell className="font-medium text-sm">
+          <span className="inline-flex items-center gap-2 flex-wrap">
+            <span>{task.title}</span>
+            {task.tags?.some((tag) => tag.toLowerCase() === "waiting") && (
+              <Badge variant="outline" className="gap-1 border-status-vacation/40 bg-status-vacation/10 text-status-vacation text-[10px]">
+                <Hourglass className="h-3 w-3" />
+                {t.tagWaiting}
+              </Badge>
+            )}
+          </span>
+        </TableCell>
         <TableCell>
           <Badge variant="outline" className="text-[10px]">{task.type}</Badge>
         </TableCell>
