@@ -318,6 +318,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   );
   // Type filter: empty set means "show all types".
   const [typeFilter, setTypeFilter] = useState<Set<string>>(() => new Set<string>());
+  const [waitingOnly, setWaitingOnly] = useState<boolean>(() => searchParams.get("waiting") === "1");
   const TASK_SORT_STORAGE_KEY = "rosen.taskSort.v1";
   const isTaskSortKey = (v: unknown): v is TaskSortKey =>
     v === "total-desc" || v === "total-asc" || v === "name-asc" || v === "name-desc" || v === "priority";
