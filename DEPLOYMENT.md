@@ -50,6 +50,10 @@ Se recomienda **Supabase self‑hosted** porque conserva 1:1 el esquema, RLS, mi
 - Acceso de red al TFS/Azure DevOps on‑premise desde el servidor donde correrán las Edge Functions.
 - Puertos abiertos: `443` (SPA + API), `54321` (Supabase Kong, si se expone), `5432` (Postgres, sólo interno).
 
+> 📄 **Variables de entorno**: usa [`.env.example`](./.env.example) en la raíz como referencia única de todas las variables necesarias (SPA + backend + Edge Function). Para el stack Docker de la sección 11, usa además [`docker/.env.example`](./docker/.env.example).
+
+
+
 ---
 
 ## 3. Base de datos y Auth — Supabase self‑hosted
