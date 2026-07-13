@@ -354,3 +354,77 @@ Para exponer el stack más allá de `localhost`:
 3. Rebuild sólo el SPA para reinyectar las variables: `docker compose up -d --build web`.
 4. Restringe el puerto `5432` a la red interna (o elimina el mapeo `ports:` del servicio `db`).
 5. Rota `JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY` y `ADO_PAT_ENC_KEY` antes del primer uso real.
+
+---
+
+## 12. Troubleshooting
+
+Errores frecuentes al desplegar en local, agrupados por capa. Antes de bucear en cada uno, mira siempre primero:
+
+```bash
+docker compose ps                      # ¿todo healthy?
+docker compose logs -f <servicio>      # auth | rest | realtime | functions | kong | db | web
+```
+
+### 12.1 Auth (GoTrue)
+
+| Síntoma | Causa habitual | Solución |
+|---------|----------------|----------|
+| `Invalid login credentials` inmediato tras registrarse | `GOTRUE_MAILER_AUTOCONFIRM=false` y el correo no se confirma (no hay SMTP local). | Deja `GOTRUE_MAILER_AUTOCONFIRM=true` en `.env` para instalación interna, o configura SMTP (`GOTRUE_SMTP_*`). |
+| `redirect_to is not allowed` al iniciar sesión | `SITE_URL` / `GOTRUE_URI_ALLOW_LIST` no incluyen el dominio real desde el que abres la SPA. | Actualiza `SITE_URL` en `.env`, `docker compose up -d auth` y rebuild del `web`. |
+| `Unsupported provider: google` | Sólo hay email/password configurado. | Añade el proveedor en la config de GoTrue o quita el botón de Google del login. |
+| `JWSError` / `signature verification failed` en `rest`/`realtime` | `JWT_SECRET` distinto entre servicios. | El **mismo** `JWT_SECRET` debe estar en `auth`, `rest`, `realtime` y en los JWT de `ANON_KEY` / `SERVICE_ROLE_KEY`. Regenera claves si dudas. |
+| `over_email_send_rate_limit` (429) | Límite horario de emails de auth. | Sube el límite temporalmente o espera 1 h; en local suele venir de bucles de test. |
+
+### 12.2 RLS y Data API (PostgREST)
+
+| Síntoma | Causa | Solución |
+|---------|-------|----------|
+| `permission denied for table <x>` desde el cliente, pero `psql` como `postgres` funciona | Falta `GRANT` para `anon` / `authenticated` sobre la tabla `public.<x>`. | Ejecuta los `GRANT` explícitos: `GRANT SELECT, INSERT, UPDATE, DELETE ON public.<x> TO authenticated; GRANT ALL ON public.<x> TO service_role;` y sólo `GRANT SELECT ... TO anon` si la política lo permite. |
+| Consultas devuelven **array vacío** sin error | RLS activa pero ninguna policy coincide con `auth.uid()`. | Revisa policies con `SELECT * FROM pg_policies WHERE tablename='<x>';`. Verifica que el JWT lleva el `sub` correcto (inspecciona en <https://jwt.io>). |
+| `new row violates row-level security policy` al insertar | La fila no cumple `WITH CHECK`. Muy típico: falta enviar `user_id = auth.uid()`. | Añade `user_id` en el `insert` desde el cliente o marca la columna como `default auth.uid()` y `NOT NULL`. |
+| El primer admin no ve nada en `/settings` | No hay fila en `public.user_roles` con `role='admin'` para su `user_id`. | `INSERT INTO public.user_roles (user_id, role) VALUES ('<uuid>', 'admin');` |
+| Cambios en policies no surten efecto | PostgREST cachea el esquema. | `docker compose restart rest` o `NOTIFY pgrst, 'reload schema';` desde `psql`. |
+
+### 12.3 CORS
+
+| Síntoma | Causa | Solución |
+|---------|-------|----------|
+| `CORS policy: No 'Access-Control-Allow-Origin' header` al llamar a `/functions/v1/...` | Falta el handler `OPTIONS` o `corsHeaders` en la respuesta de la Edge Function. | Añade en la función: responde a `req.method === 'OPTIONS'` con `corsHeaders` y espárcelos en **todas** las respuestas (incluidos errores). |
+| Preflight OK pero la petición real falla con CORS | `Access-Control-Allow-Headers` no incluye alguna cabecera enviada (`authorization`, `content-type`, `apikey`, `x-client-info`). | Amplía `Access-Control-Allow-Headers` en la función para cubrir todas las cabeceras del cliente. |
+| CORS falla sólo tras poner un reverse proxy con dominio nuevo | El proxy elimina cabeceras o el dominio no está en la lista. | Configura el proxy para preservar cabeceras `Authorization`/`apikey` y usa `Access-Control-Allow-Origin: *` sólo si no envías cookies. |
+
+### 12.4 Edge Functions (`tfs-pat-vault`)
+
+| Síntoma | Causa | Solución |
+|---------|-------|----------|
+| `500 Internal Server Error` al desplegar/arrancar | `deno.lock` incompatible o import remoto caído (esm.sh). | Elimina `deno.lock` y reinicia (`docker compose restart functions`). Prefiere imports `npm:` sobre `https://esm.sh`. |
+| `Missing ADO_PAT_ENC_KEY` en logs | La variable no se propagó al contenedor `functions`. | Confirma que está en `docker/.env` y relanza con `docker compose up -d functions`. |
+| `Invalid key length` al cifrar/descifrar PATs | `ADO_PAT_ENC_KEY` no mide 32 bytes (64 chars hex). | Regenera con `openssl rand -hex 32`. **Aviso:** cualquier PAT ya cifrado con la clave antigua queda irrecuperable — vuelve a introducirlo desde Settings. |
+| `401 Unauthorized` al llamar a la función desde la SPA | La petición no lleva el JWT del usuario (`Authorization: Bearer ...`) y `VERIFY_JWT=true`. | Usa `supabase.functions.invoke(...)` (adjunta el token automáticamente) o pon la cabecera manualmente. |
+| Función no aparece en Kong (`404 no Route matched`) | El nombre en `supabase/functions/<name>` no coincide con la ruta llamada. | Verifica ruta `/functions/v1/<name>` y reinicia `functions` + `kong`. |
+
+### 12.5 Red y TFS on‑premise
+
+| Síntoma | Causa | Solución |
+|---------|-------|----------|
+| "TFS network unreachable (is the ROSEN VPN on?)" en la UI | El navegador (o el contenedor `functions` si haces proxy) no llega al TFS interno. | Activa la VPN corporativa. Si quieres exponer la SPA sin VPN, mete un proxy inverso hacia TFS en la misma red del contenedor. |
+| Certificado TFS self‑signed rechazado por la Edge Function | Deno no confía en la CA interna. | Monta la CA en el contenedor `functions` y arranca con `DENO_CERT=/path/ca.pem`. |
+
+### 12.6 Frontend (Vite + nginx)
+
+| Síntoma | Causa | Solución |
+|---------|-------|----------|
+| Página en blanco tras `docker compose up`, consola: `Cannot read properties of undefined (reading 'auth')` | El build se hizo sin `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY`. | Confirma que las variables están en `docker/.env` y rebuild: `docker compose up -d --build web`. |
+| `404 Not Found` al refrescar una ruta profunda (ej. `/tasks`) | Falta fallback SPA en nginx. | Ya incluido en `docker/nginx.conf` (`try_files $uri /index.html;`). Si usas otro proxy, replica esta regla. |
+| CSS/JS con hash devuelve 304 pero la app queda desactualizada tras deploy | Cache agresiva en el navegador o proxy intermedio. | Ya usamos hashes en `assets/`. Fuerza `Ctrl+Shift+R` una vez y verifica que el proxy no cachea `index.html`. |
+
+### 12.7 Base de datos
+
+| Síntoma | Causa | Solución |
+|---------|-------|----------|
+| `role "authenticator" does not exist` al arrancar `rest` | Se levantó `rest` contra una DB vacía sin las migraciones/roles de Supabase. | Usa la imagen `supabase/postgres` (ya trae los roles) o aplica el bootstrap de Supabase antes de las migraciones del proyecto. |
+| Migraciones fallan con `permission denied for schema public` | Ejecutas como usuario no privilegiado. | Corre las migraciones como `postgres`: `docker compose exec -T db psql -U postgres -d postgres < <archivo>`. |
+| Datos perdidos tras `docker compose down` | Añadiste `-v` y borraste el volumen. | Restaura con `pg_dump` previo. Automatiza backups (sección 11.5). |
+
+Si tras seguir la tabla el problema persiste, comparte el bloque de `docker compose logs` del servicio afectado y la petición/respuesta (URL, método, status y payload) para diagnosticar más a fondo.
