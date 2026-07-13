@@ -40,6 +40,8 @@ import { WorkloadMatrix } from "@/components/WorkloadMatrix";
 import { TaskTypeFilter } from "@/components/TaskTypeFilter";
 import { computeAvailableTaskTypes, isExcludedTaskType } from "@/lib/taskTypeFilter";
 import { parseTfsTags } from "@/lib/tfsTags";
+import { buildAssigneeIndex, resolveMember } from "@/lib/assigneeMatch";
+import { UnmatchedAssigneesPanel } from "@/components/UnmatchedAssigneesPanel";
 import { useTaskPriorities } from "@/hooks/use-task-priorities";
 import { PriorityLevel, sortByPriority, moveTo, ALL_BUCKET } from "@/lib/taskPriority";
 import { PrioritySelect } from "@/components/PrioritySelect";
@@ -67,6 +69,8 @@ interface UnifiedTask {
   state: string;
   type: string;
   assignee?: string;
+  /** TFS AssignedTo.uniqueName (email or DOMAIN\user) — used for robust member matching. */
+  assigneeUniqueName?: string;
   featureId?: string;
   iterationPath?: string;
   changedDate?: string;
@@ -139,7 +143,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       ? t.featuresSubtitle
       : t.generalOverview;
   const { teams, members, workTopics } = useApp();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const [source, setSource] = useState<DataSource>("local");
   const [loading, setLoading] = useState(false);
@@ -769,6 +773,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
         state: t.state,
         type: t.workItemType,
         assignee: t.assignedTo,
+        assigneeUniqueName: t.assignedToEmail,
         iterationPath: t.iterationPath,
         changedDate: t.changedDate,
         closedDate: t.closedDate,
@@ -914,12 +919,19 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   }, [source, tfsConn, activeTeam]);
 
 
-  // Precomputed lookup: assignee name → teamId. O(1) lookups inside filteredTasks.
-  const teamIdByAssignee = useMemo(() => {
-    const map = new Map<string, string>();
-    members.forEach((m) => map.set(m.name, m.teamId));
-    return map;
-  }, [members]);
+  // Robust assignee → member matching (handles accents, "Last, First" order,
+  // login_name via TFS uniqueName, and token-subset fallback). Cached per task.
+  const assigneeIndex = useMemo(() => buildAssigneeIndex(members), [members]);
+  const teamIdFor = useMemo(() => {
+    const cache = new Map<string, string | undefined>();
+    return (t: UnifiedTask): string | undefined => {
+      const key = `${t.assignee ?? ""}\u0001${t.assigneeUniqueName ?? ""}`;
+      if (cache.has(key)) return cache.get(key);
+      const teamId = resolveMember(t.assignee, t.assigneeUniqueName, assigneeIndex)?.teamId;
+      cache.set(key, teamId);
+      return teamId;
+    };
+  }, [assigneeIndex]);
 
   // Filtered tasks
   const filteredTasks = useMemo(() => {
@@ -942,9 +954,9 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
           })();
         if (!isOpenOrInProgress && !isClosedRecentBug) return false;
       }
-      // Team filter — map assignee name → teamId in both local and TFS modes
+      // Team filter — resolve assignee → teamId with fuzzy matching
       if (activeTeam !== "all") {
-        if (teamIdByAssignee.get(t.assignee) !== activeTeam) return false;
+        if (teamIdFor(t) !== activeTeam) return false;
       }
       if (activePerson !== "all" && t.assignee !== activePerson) return false;
       if (searchLower && !t.title.toLowerCase().includes(searchLower)) return false;
@@ -953,7 +965,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       if (isExcludedTaskType(t.type, view)) return false;
       return true;
     });
-  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee, typeFilter, view]);
+  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdFor, typeFilter, view]);
 
   // Distinct task types present in the current dataset (pre type-filter), so
   // the chips remain visible even after the user narrows the selection.
@@ -969,14 +981,14 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
     const searchLower = debouncedSearch ? debouncedSearch.toLowerCase() : "";
     tasks.forEach((t) => {
       if (isExcludedTaskType(t.type, view)) return;
-      if (activeTeam !== "all" && teamIdByAssignee.get(t.assignee) !== activeTeam) return;
+      if (activeTeam !== "all" && teamIdFor(t) !== activeTeam) return;
       if (activePerson !== "all" && t.assignee !== activePerson) return;
       if (searchLower && !t.title.toLowerCase().includes(searchLower)) return;
       if (!passesStateFilter(t.type, t.state)) return;
       counts[t.type] = (counts[t.type] || 0) + 1;
     });
     return counts;
-  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdByAssignee, taskStateFilter, bugStateFilter, view]);
+  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdFor, taskStateFilter, bugStateFilter, view]);
 
 
   // Stats for visuals
@@ -1706,7 +1718,17 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
               </div>
 
 
+              <div className="mt-4">
+                <UnmatchedAssigneesPanel
+                  tasks={tasks}
+                  members={members}
+                  teams={teams}
+                  isAdmin={isAdmin}
+                />
+              </div>
+
               <TabsContent value={activeTeam} className="mt-4">
+
                 {showFlatList ? (
                   filteredTasks.length === 0 ? (
                     <p className="text-sm text-muted-foreground py-8 text-center">
