@@ -40,23 +40,6 @@ export default function AuthPage() {
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (signupPassword.length < 6) {
-      toast.error(t.authPasswordMin);
-      return;
-    }
-    setLoading(true);
-    try {
-      await signUp(signupEmail, signupPassword, signupName);
-      toast.success(t.authSignupSuccess);
-      navigate("/", { replace: true });
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Error");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
