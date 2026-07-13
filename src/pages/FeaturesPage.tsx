@@ -1595,6 +1595,20 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 onToggle={toggleTypeFilter}
                 onClear={() => setTypeFilter(new Set())}
               />
+              <button
+                type="button"
+                onClick={() => setWaitingOnly((v) => !v)}
+                aria-pressed={waitingOnly}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors self-start",
+                  waitingOnly
+                    ? "border-transparent bg-status-vacation/20 text-status-vacation"
+                    : "border-border/60 text-muted-foreground hover:bg-muted/40",
+                )}
+              >
+                <Hourglass className="h-3 w-3" />
+                {t.waitingOnly}
+              </button>
               <div className="flex items-center gap-2">
                 <Label htmlFor="task-sort" className="text-[11px] uppercase tracking-wide text-muted-foreground">{t.sortBy}</Label>
                 <select
