@@ -265,3 +265,88 @@ Actualizaciones:
 - [ ] Primer usuario admin creado en `user_roles`.
 - [ ] Backup automatizado y probado con un restore de prueba.
 - [ ] Conectividad SPA ↔ Supabase ↔ TFS verificada end‑to‑end.
+
+---
+
+## 11. Instalación completa con Docker Compose (todo‑en‑uno)
+
+En la carpeta [`docker/`](./docker) hay un stack listo para levantar la SPA + Supabase self‑hosted + Edge Functions con un solo comando.
+
+### 11.1 Contenido
+
+| Archivo | Descripción |
+|---------|-------------|
+| `docker/docker-compose.yml` | Orquesta Postgres, GoTrue (Auth), PostgREST, Realtime, Kong (API gateway), Edge Runtime, Studio y el SPA. |
+| `docker/.env.example` | Plantilla con todas las variables (contraseñas, JWT, claves API, `ADO_PAT_ENC_KEY`, URLs públicas). |
+| `docker/kong.yml` | Rutas del API gateway (`/auth/v1`, `/rest/v1`, `/realtime/v1`, `/functions/v1`). |
+| `docker/Dockerfile` | Build multi‑stage del SPA (Bun + Vite → nginx). |
+| `docker/nginx.conf` | Config de nginx con fallback SPA y cabeceras de seguridad. |
+
+### 11.2 Requisitos
+
+- Docker Engine ≥ 24 y Docker Compose v2.
+- 4 GB RAM y 5 GB de disco libres.
+- `openssl` (para generar secretos) y `bash`.
+
+### 11.3 Paso a paso
+
+1. **Clona el repo** y sitúate en la raíz del proyecto.
+2. **Prepara el `.env`**:
+   ```bash
+   cd docker
+   cp .env.example .env
+   ```
+3. **Genera los secretos** y pégalos en `.env`:
+   ```bash
+   openssl rand -hex 32   # POSTGRES_PASSWORD
+   openssl rand -hex 32   # JWT_SECRET
+   openssl rand -hex 64   # REALTIME_SECRET_KEY_BASE
+   openssl rand -hex 32   # ADO_PAT_ENC_KEY
+   ```
+4. **Genera `ANON_KEY` y `SERVICE_ROLE_KEY`** (JWT firmados con `JWT_SECRET`) siguiendo la guía oficial: <https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys>. Pega ambos en `.env`.
+5. **Levanta el stack**:
+   ```bash
+   docker compose --env-file .env up -d --build
+   ```
+   La primera build de la SPA tarda 2‑3 min. Verifica con `docker compose ps` que todos los servicios están `healthy`.
+6. **Aplica las migraciones** (una vez, en orden alfabético):
+   ```bash
+   for f in ../supabase/migrations/*.sql; do
+     docker compose exec -T db psql -U postgres -d postgres < "$f"
+   done
+   ```
+7. **Crea el primer usuario admin**:
+   - Regístrate en <http://localhost:8080> (Auth con autoconfirm activado en el `.env.example`).
+   - En Studio (<http://localhost:3001>) o vía `psql`, inserta el rol:
+     ```sql
+     INSERT INTO public.user_roles (user_id, role)
+     VALUES ('<uuid_del_usuario>', 'admin');
+     ```
+8. **Configura Azure DevOps** desde la propia app (Settings → PAT + alcances RODAT / Software).
+
+### 11.4 Endpoints locales
+
+| Servicio | URL |
+|----------|-----|
+| SPA | http://localhost:8080 |
+| API gateway (Supabase) | http://localhost:8000 |
+| Studio (admin DB) | http://localhost:3001 |
+| Postgres | localhost:5432 (usuario `postgres`) |
+
+### 11.5 Operación
+
+- **Logs**: `docker compose logs -f <servicio>` (ej. `functions`, `auth`).
+- **Backup DB**: `docker compose exec db pg_dump -U postgres postgres > backup_$(date +%F).sql`.
+- **Restore**: `cat backup.sql | docker compose exec -T db psql -U postgres -d postgres`.
+- **Actualizar la SPA**: `docker compose up -d --build web`.
+- **Parar todo**: `docker compose down` (añade `-v` para borrar también la base de datos).
+
+### 11.6 Producción interna
+
+Para exponer el stack más allá de `localhost`:
+
+1. Publica la SPA y Kong detrás de un reverse proxy con TLS (Caddy/Traefik/nginx).
+2. Cambia `SITE_URL` y `PUBLIC_SUPABASE_URL` en `.env` al dominio real (ej. `https://team-flow.tuempresa.local`).
+3. Rebuild sólo el SPA para reinyectar las variables: `docker compose up -d --build web`.
+4. Restringe el puerto `5432` a la red interna (o elimina el mapeo `ports:` del servicio `db`).
+5. Rota `JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY` y `ADO_PAT_ENC_KEY` antes del primer uso real.

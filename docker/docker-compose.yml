@@ -1,0 +1,166 @@
+# Full local stack for ROSEN CUSW Team Flow
+# ------------------------------------------
+# Servicios:
+#   - db        : Postgres 15 con las extensiones que usa Supabase
+#   - auth      : GoTrue (Supabase Auth)
+#   - rest      : PostgREST (Data API)
+#   - realtime  : Supabase Realtime (WebSockets)
+#   - kong      : API Gateway que expone /auth, /rest, /realtime, /functions
+#   - functions : Edge Runtime (Deno) — sirve supabase/functions/*
+#   - studio    : Supabase Studio (UI de administración)
+#   - web       : SPA (Vite build) servido por nginx con fallback SPA
+#
+# Uso:
+#   1) cp .env.example .env  (y edita los valores marcados como CAMBIAR)
+#   2) docker compose --env-file .env up -d --build
+#   3) Aplica migraciones:  docker compose exec db psql -U postgres -d postgres -f /migrations/<archivo>.sql
+#   4) Abre la SPA en http://localhost:8080  y Studio en http://localhost:3001
+#
+# Notas:
+#   - El SPA se compila con VITE_SUPABASE_URL=http://localhost:8000 (Kong).
+#   - Cambia POSTGRES_PASSWORD, JWT_SECRET, ANON_KEY, SERVICE_ROLE_KEY y ADO_PAT_ENC_KEY
+#     antes de exponer nada más allá de tu equipo.
+
+name: rosen-team-flow
+
+services:
+  db:
+    image: supabase/postgres:15.6.1.146
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXP: 3600
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ../supabase/migrations:/migrations:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  auth:
+    image: supabase/gotrue:v2.158.1
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      GOTRUE_SITE_URL: ${SITE_URL}
+      GOTRUE_URI_ALLOW_LIST: ${SITE_URL}
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+
+  rest:
+    image: postgrest/postgrest:v12.2.0
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@db:5432/postgres
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+
+  realtime:
+    image: supabase/realtime:v2.30.34
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: postgres
+      DB_USER: supabase_admin
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_ENC_KEY: supabaserealtime
+      API_JWT_SECRET: ${JWT_SECRET}
+      SECRET_KEY_BASE: ${REALTIME_SECRET_KEY_BASE}
+      ERL_AFLAGS: -proto_dist inet_tcp
+      APP_NAME: realtime
+      SEED_SELF_HOST: "true"
+
+  functions:
+    image: supabase/edge-runtime:v1.58.4
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      - start
+      - --main-service
+      - /home/deno/functions/main
+    environment:
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      SUPABASE_DB_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
+      ADO_PAT_ENC_KEY: ${ADO_PAT_ENC_KEY}
+      VERIFY_JWT: "true"
+    volumes:
+      - ../supabase/functions:/home/deno/functions:ro
+
+  kong:
+    image: kong:2.8.1
+    restart: unless-stopped
+    depends_on:
+      - auth
+      - rest
+      - realtime
+      - functions
+    ports:
+      - "8000:8000"
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /var/lib/kong/kong.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+      KONG_PLUGINS: request-transformer,cors,key-auth
+    volumes:
+      - ./kong.yml:/var/lib/kong/kong.yml:ro
+
+  studio:
+    image: supabase/studio:20250106-e00a2be
+    restart: unless-stopped
+    depends_on:
+      - kong
+    ports:
+      - "3001:3000"
+    environment:
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_PUBLIC_URL: http://localhost:8000
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      DEFAULT_ORGANIZATION_NAME: Local
+      DEFAULT_PROJECT_NAME: rosen-team-flow
+
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${PUBLIC_SUPABASE_URL}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${ANON_KEY}
+        VITE_SUPABASE_PROJECT_ID: local
+    restart: unless-stopped
+    depends_on:
+      - kong
+    ports:
+      - "8080:80"
+
+volumes:
+  db-data:
