@@ -145,7 +145,7 @@ describe("buildJsonImportPreview — duplicate detection", () => {
 
   it("does NOT flag as duplicate when the type differs", () => {
     const rows = buildJsonImportPreview(
-      [mkAbsence({ type: "sickness" })],
+      [mkAbsence({ type: "sick-leave" })],
       [],
       members,
       existing,
