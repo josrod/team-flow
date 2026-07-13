@@ -238,13 +238,14 @@ export const BugsPage = () => {
       if (state.length > 0 && !state.includes(b.state)) return false;
       if (severity.length > 0 && (!b.severity || !severity.includes(b.severity))) return false;
       if (iteration !== ALL && (b.iterationPath ?? "") !== iteration) return false;
+      if (waitingOnly && !b.tags?.some((tag) => tag.toLowerCase() === "waiting")) return false;
       if (q) {
         const haystack = `${b.id} ${b.title}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
     });
-  }, [bugs, search, assignee, state, severity, iteration, t.bugsUnassigned]);
+  }, [bugs, search, assignee, state, severity, iteration, waitingOnly, t.bugsUnassigned]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
