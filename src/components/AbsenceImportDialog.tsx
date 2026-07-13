@@ -74,7 +74,7 @@ export interface ImportResultSummary {
 }
 
 export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: boolean; onOpenChange: (open: boolean) => void; onImported?: (result: ImportResultSummary) => void }) {
-  const { members, addAbsence } = useApp();
+  const { members, absences, addAbsence } = useApp();
   const { t } = useLang();
 
   const [mode, setMode] = useState<Mode>("generic");
