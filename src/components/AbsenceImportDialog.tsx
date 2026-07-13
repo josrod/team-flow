@@ -420,6 +420,35 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
     handleClose(false);
   };
 
+  const jsonImportable = jsonResult?.rows.filter((r) => r.status === "ok") ?? [];
+  const jsonDuplicates = jsonResult?.rows.filter((r) => r.status === "duplicate").length ?? 0;
+  const jsonMissing = jsonResult?.rows.filter((r) => r.status === "missing").length ?? 0;
+
+  const handleJsonImport = () => {
+    if (!jsonResult) return;
+    let imported = 0;
+    for (const row of jsonImportable) {
+      if (!row.memberId) continue;
+      addAbsence({
+        memberId: row.memberId,
+        type: row.type,
+        startDate: row.startDate,
+        endDate: row.endDate,
+      });
+      imported++;
+    }
+    toast.success(`📥 ${imported} ${t.importSuccess}`);
+    onImported?.({
+      imported,
+      skipped: jsonDuplicates,
+      unmatched: [],
+      fileName,
+    });
+    handleClose(false);
+  };
+
+
+
 
   const openFilePicker = () => {
     const input = document.createElement("input");
