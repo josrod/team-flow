@@ -1,29 +1,45 @@
-## Diagnóstico
+## Objetivo
 
-La migración anterior revocó `EXECUTE` sobre las funciones SECURITY DEFINER (`has_role`, `update_updated_at_column`, `validate_bugs_query_id`, `validate_epics_query_id`) para los roles `PUBLIC`, `anon` y `authenticated`.
+Permitir importar ausencias desde el archivo JSON del export global de la app, sin tocar el resto de datos. Útil para recuperar sólo las ausencias desde un backup.
 
-Consecuencias en la app:
+## UX
 
-- Todas las políticas RLS de escritura usan `has_role(auth.uid(), 'admin')` en `USING` / `WITH CHECK`. Postgres evalúa esa función bajo el rol de la sesión (`authenticated`), que ahora no tiene `EXECUTE` → cualquier INSERT/UPDATE/DELETE en `azure_devops_settings`, `teams`, `members`, `work_topics`, `absences`, `handovers` falla con "permission denied for function has_role".
-- Por eso guardar los settings de Azure DevOps devuelve error y el import de JSON (que hace inserts masivos) también rompe.
-- Los triggers usan `update_updated_at_column` y `validate_*_query_id`; al no tener `EXECUTE` para `authenticated`, cualquier insert/update disparado desde el cliente también falla.
+En el diálogo "Importar ausencias" se añade una tercera pestaña **JSON** junto a *Genérico* e *Invent*.
 
-## Plan
+1. Zona de drop acepta `.json`.
+2. Al soltar el archivo se valida con el mismo esquema que la importación global (`importDataSchema`). Errores de formato se listan por campo (ruta + mensaje) en el panel de errores ya existente.
+3. Si el JSON no contiene ausencias, mensaje: "El archivo no contiene ausencias".
+4. Paso de preview con tabla:
+   - Nombre del miembro (resuelto), tipo, fecha inicio, fecha fin, estado.
+   - Estado: **OK**, **Miembro no encontrado**, **Duplicada** (ya existe).
+   - Contadores arriba: importables / duplicadas / sin miembro.
+5. Botón **Importar**: crea sólo las ausencias nuevas y válidas. Toast con conteo y callback `onImported` con el mismo shape actual.
 
-1. Nueva migración que restaura `EXECUTE` a `authenticated` en las cuatro funciones (necesarias para RLS y triggers desde el cliente). `anon` y `PUBLIC` siguen sin acceso.
-2. Marcar de nuevo los dos hallazgos de seguridad (`SUPA_anon_security_definer_function_executable`, `SUPA_authenticated_security_definer_function_executable`) como aceptados con justificación en `security-memory`: son helpers internos requeridos por políticas/triggers y su superficie ya está limitada (SECURITY DEFINER con `search_path` fijo, sin lectura de datos sensibles y sin efectos secundarios accesibles por RPC útil para un atacante).
+## Resolución de miembros
 
-### SQL de la migración
+Para cada ausencia del JSON:
 
-```sql
-GRANT EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.update_updated_at_column() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.validate_bugs_query_id() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.validate_epics_query_id() TO authenticated;
-```
+1. Match por `memberId` exacto contra `members` del contexto.
+2. Fallback: si el JSON incluye `members[]`, se busca ese id ahí para obtener el `name` y se hace match case-insensitive por nombre contra los miembros actuales.
+3. Si no hay match → fila marcada "Miembro no encontrado" (no se importa).
 
-## Verificación
+## Detección de duplicados
 
-- Volver a intentar guardar Settings de Azure DevOps → sin error.
-- Volver a hacer import de JSON → inserts se completan.
-- Consultar `pg_proc.proacl` para confirmar `authenticated=X`.
+Una ausencia se considera duplicada si ya existe una con el mismo `memberId + type + startDate + endDate`. Se cuenta pero no se importa.
+
+## Cambios técnicos
+
+- `src/components/AbsenceImportDialog.tsx`
+  - `type Mode = "generic" | "invent" | "json"`.
+  - Nueva pestaña en el `Tabs` existente y textos de dropzone.
+  - Nuevo handler `handleJsonFile(file)` que hace `file.text()` → `previewImportJson` (ya existe en `src/lib/validation.ts`), luego resuelve miembros y duplicados.
+  - Nuevo estado `jsonResult` y bloque de preview JSX para `mode === "json"`.
+  - Usar `absences` del `useApp()` (ya disponible) para el chequeo de duplicados.
+  - Extender `openFilePicker` para aceptar `.json` cuando `mode === "json"`.
+- `src/context/LanguageContext.tsx`
+  - Nuevas claves ES/EN: `importModeJson`, `importJsonDropzone`, `importJsonFormats`, `importJsonNoAbsences`, `importJsonMemberNotFound`, `importJsonDuplicate`, `importJsonSummary`, `importJsonStatusOk`.
+
+## Fuera de alcance
+
+- No se modifica la importación global de JSON (sigue reemplazando todo el estado, sólo admin).
+- No se borran ni actualizan ausencias existentes desde este flujo — sólo se añaden las nuevas.
