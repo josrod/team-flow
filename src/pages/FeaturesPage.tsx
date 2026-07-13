@@ -1953,11 +1953,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                   <p className="text-sm font-medium truncate">{group.person}</p>
                                   {(() => {
                                     // WIP = Open + In Progress only (no closed/resolved tasks or bugs).
-                                    const activeTasks = group.active.filter((it) => !isBugType(it.type)).length;
-                                    const activeBugs = group.active.filter((it) => isBugType(it.type)).length;
-                                    const pendingTasks = group.pending.filter((it) => !isBugType(it.type)).length;
-                                    const pendingBugs = group.pending.filter((it) => isBugType(it.type)).length;
-                                    const wip = activeTasks + activeBugs + pendingTasks + pendingBugs;
+                                    const { activeTasks, activeBugs, pendingTasks, pendingBugs, total: wip } =
+                                      computeWip([...group.active, ...group.pending]);
                                     if (wip === 0) return null;
                                     // Load tiers: 1-5 light (green), 6-9 medium (amber), 10+ heavy (red)
                                     const tier =
