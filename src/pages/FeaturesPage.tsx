@@ -1797,7 +1797,6 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       <TableCell className="font-medium text-sm">
                                         <span className="inline-flex items-center gap-2 flex-wrap">
                                           <span>{task.title}</span>
-                                          <WaitingBadge tags={task.tags} />
                                         </span>
                                       </TableCell>
                                       <TableCell>
@@ -2396,7 +2395,6 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, prior
         <TableCell className="font-medium text-sm">
           <span className="inline-flex items-center gap-2 flex-wrap">
             <span>{task.title}</span>
-            <WaitingBadge tags={task.tags} />
           </span>
         </TableCell>
         <TableCell>
