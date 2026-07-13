@@ -2030,6 +2030,28 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       </UiTooltip>
                                     );
                                   })()}
+                                  {(() => {
+                                    const waitingCount = [...group.active, ...group.pending, ...group.blocked, ...group.done, ...group.resolved, ...group.closed].filter(
+                                      (t) => hasWaitingTag(t.tags),
+                                    ).length;
+                                    if (waitingCount === 0) return null;
+                                    return (
+                                      <UiTooltip>
+                                        <TooltipTrigger asChild>
+                                          <Badge
+                                            variant="outline"
+                                            className="shrink-0 text-[10px] font-semibold border-status-vacation/40 bg-status-vacation/10 text-status-vacation gap-1"
+                                          >
+                                            <Hourglass className="h-3 w-3" />
+                                            {waitingCount}
+                                          </Badge>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top">
+                                          <p className="text-xs font-medium">{waitingCount} {waitingCount === 1 ? t.itemWaitingSingular : t.itemsWaitingPlural}</p>
+                                        </TooltipContent>
+                                      </UiTooltip>
+                                    );
+                                  })()}
                                 </div>
                                 <p className="text-[11px] text-muted-foreground">
                                   {group.total} {group.total === 1 ? t.taskWord : t.tasksWord}
