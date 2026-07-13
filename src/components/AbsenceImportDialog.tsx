@@ -17,10 +17,11 @@ import { parseISO, isValid, format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { parseInventAbsentFile, validateInventAbsentFile, type ParseResult } from "@/services/inventAbsentParser";
 import { loadLoginMappings, rememberLoginMappings } from "@/services/loginMappingStore";
+import { previewImportJson } from "@/lib/validation";
 import type { AbsenceType } from "@/types";
 
 type Step = "upload" | "mapping" | "preview";
-type Mode = "generic" | "invent";
+type Mode = "generic" | "invent" | "json";
 
 interface RawRow {
   [key: string]: string;
