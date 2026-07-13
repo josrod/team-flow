@@ -958,9 +958,10 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       if (typeFilter.size > 0 && !typeFilter.has(t.type)) return false;
       // View-aware exclusion (e.g. Product Backlog Item is hidden in Tasks).
       if (isExcludedTaskType(t.type, view)) return false;
+      if (waitingOnly && !t.tags?.some((tag) => tag.toLowerCase() === "waiting")) return false;
       return true;
     });
-  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdFor, typeFilter, view]);
+  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdFor, typeFilter, view, waitingOnly]);
 
   // Distinct task types present in the current dataset (pre type-filter), so
   // the chips remain visible even after the user narrows the selection.
