@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 
 export default function AuthPage() {
-  const { signIn, signUp, user, resetPassword } = useAuth();
+  const { signIn, user, resetPassword } = useAuth();
   const navigate = useNavigate();
   const { t } = useLang();
   const [loading, setLoading] = useState(false);
