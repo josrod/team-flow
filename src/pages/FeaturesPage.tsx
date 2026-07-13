@@ -2191,15 +2191,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
 
       {wipPerson && (() => {
         const group = tasksByPerson.find((g) => g.person === wipPerson);
-        const items = group
-          ? [
-              ...group.active,
-              ...group.pending,
-              ...(view === "tasks"
-                ? [...group.resolved, ...group.closed, ...group.done].filter((it) => isBugType(it.type))
-                : []),
-            ]
-          : [];
+        // WIP detail only shows open / in-progress items; closed or resolved bugs are excluded.
+        const items = group ? [...group.active, ...group.pending] : [];
         return (
           <Dialog open={!!wipPerson} onOpenChange={(o) => !o && setWipPerson(null)}>
             <DialogContent className="max-w-3xl">
