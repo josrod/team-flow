@@ -52,6 +52,10 @@ Se recomienda **Supabase self‑hosted** porque conserva 1:1 el esquema, RLS, mi
 
 > 📄 **Variables de entorno**: usa [`.env.example`](./.env.example) en la raíz como referencia única de todas las variables necesarias (SPA + backend + Edge Function). Para el stack Docker de la sección 11, usa además [`docker/.env.example`](./docker/.env.example).
 
+> ⚡ **Automatización**: el [`Makefile`](./Makefile) de la raíz encapsula setup, migraciones, seed y arranque. Empieza con `make help` (o `npm run setup` + `npm run stack:bootstrap`). Ver detalle en la sección 13.
+
+
+
 
 
 ---
