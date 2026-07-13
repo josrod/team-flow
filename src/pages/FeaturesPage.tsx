@@ -318,6 +318,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   );
   // Type filter: empty set means "show all types".
   const [typeFilter, setTypeFilter] = useState<Set<string>>(() => new Set<string>());
+  const [waitingOnly, setWaitingOnly] = useState<boolean>(() => searchParams.get("waiting") === "1");
   const TASK_SORT_STORAGE_KEY = "rosen.taskSort.v1";
   const isTaskSortKey = (v: unknown): v is TaskSortKey =>
     v === "total-desc" || v === "total-asc" || v === "name-asc" || v === "name-desc" || v === "priority";
@@ -356,11 +357,13 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
     else next.set("taskStates", taskEncoded);
     if (bugEncoded === null) next.delete("bugStates");
     else next.set("bugStates", bugEncoded);
+    if (waitingOnly) next.set("waiting", "1");
+    else next.delete("waiting");
     if (next.toString() !== searchParams.toString()) {
       setSearchParams(next, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskStateFilter, bugStateFilter]);
+  }, [taskStateFilter, bugStateFilter, waitingOnly]);
   const toggleTaskStateFilter = (key: TaskOnlyStateKey) => {
     setTaskStateFilter((prev) => {
       const next = new Set(prev);
@@ -955,9 +958,10 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       if (typeFilter.size > 0 && !typeFilter.has(t.type)) return false;
       // View-aware exclusion (e.g. Product Backlog Item is hidden in Tasks).
       if (isExcludedTaskType(t.type, view)) return false;
+      if (waitingOnly && !t.tags?.some((tag) => tag.toLowerCase() === "waiting")) return false;
       return true;
     });
-  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdFor, typeFilter, view]);
+  }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdFor, typeFilter, view, waitingOnly]);
 
   // Distinct task types present in the current dataset (pre type-filter), so
   // the chips remain visible even after the user narrows the selection.
@@ -1591,6 +1595,20 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                 onToggle={toggleTypeFilter}
                 onClear={() => setTypeFilter(new Set())}
               />
+              <button
+                type="button"
+                onClick={() => setWaitingOnly((v) => !v)}
+                aria-pressed={waitingOnly}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors self-start",
+                  waitingOnly
+                    ? "border-transparent bg-status-vacation/20 text-status-vacation"
+                    : "border-border/60 text-muted-foreground hover:bg-muted/40",
+                )}
+              >
+                <Hourglass className="h-3 w-3" />
+                {t.waitingOnly}
+              </button>
               <div className="flex items-center gap-2">
                 <Label htmlFor="task-sort" className="text-[11px] uppercase tracking-wide text-muted-foreground">{t.sortBy}</Label>
                 <select

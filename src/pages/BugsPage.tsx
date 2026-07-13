@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Bug, Check, ChevronsUpDown, ExternalLink, Loader2, RefreshCw, Search, Settings, X } from "lucide-react";
+import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Bug, Check, ChevronsUpDown, ExternalLink, Hourglass, Loader2, RefreshCw, Search, Settings, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -53,6 +53,7 @@ export const BugsPage = () => {
   const [state, setState] = useState<string[]>([]);
   const [severity, setSeverity] = useState<string[]>([]);
   const [iteration, setIteration] = useState<string>(ALL);
+  const [waitingOnly, setWaitingOnly] = useState(false);
   const [selectedBug, setSelectedBug] = useState<TfsBug | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
@@ -237,13 +238,14 @@ export const BugsPage = () => {
       if (state.length > 0 && !state.includes(b.state)) return false;
       if (severity.length > 0 && (!b.severity || !severity.includes(b.severity))) return false;
       if (iteration !== ALL && (b.iterationPath ?? "") !== iteration) return false;
+      if (waitingOnly && !b.tags?.some((tag) => tag.toLowerCase() === "waiting")) return false;
       if (q) {
         const haystack = `${b.id} ${b.title}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
     });
-  }, [bugs, search, assignee, state, severity, iteration, t.bugsUnassigned]);
+  }, [bugs, search, assignee, state, severity, iteration, waitingOnly, t.bugsUnassigned]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -757,6 +759,16 @@ export const BugsPage = () => {
               ) : (
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant={waitingOnly ? "default" : "outline"}
+                      className="h-8 gap-1.5"
+                      onClick={() => setWaitingOnly((v) => !v)}
+                      aria-pressed={waitingOnly}
+                    >
+                      <Hourglass className="h-3.5 w-3.5" />
+                      {t.waitingOnly}
+                    </Button>
                     <Button
                       size="sm"
                       variant={manualOrder ? "default" : "outline"}
