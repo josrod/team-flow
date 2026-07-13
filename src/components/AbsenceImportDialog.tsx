@@ -734,6 +734,81 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
             </Button>
           </div>
         )}
+
+        {step === "preview" && mode === "json" && jsonResult && (
+          <div className="space-y-3 flex-1 min-h-0 flex flex-col">
+            <div className="flex items-center gap-3 flex-wrap">
+              <p className="text-xs text-muted-foreground flex-1">
+                {fileName} —{" "}
+                {t.importJsonSummary
+                  .replace("{ok}", String(jsonImportable.length))
+                  .replace("{dup}", String(jsonDuplicates))
+                  .replace("{missing}", String(jsonMissing))}
+              </p>
+              <Button variant="ghost" size="sm" onClick={reset}>
+                <X className="h-4 w-4 mr-1" /> {t.importChangeFile}
+              </Button>
+            </div>
+
+            <ScrollArea className="flex-1 min-h-0 border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs py-1 px-2">{t.person}</TableHead>
+                    <TableHead className="text-xs py-1 px-2">{t.type}</TableHead>
+                    <TableHead className="text-xs py-1 px-2">{t.start}</TableHead>
+                    <TableHead className="text-xs py-1 px-2">{t.end}</TableHead>
+                    <TableHead className="text-xs py-1 px-2">{t.status}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {jsonResult.rows.map((r, i) => (
+                    <TableRow
+                      key={i}
+                      className={cn(
+                        r.status === "missing" && "bg-destructive/5",
+                        r.status === "duplicate" && "bg-muted/40",
+                      )}
+                    >
+                      <TableCell className="text-xs py-1 px-2">{r.memberName}</TableCell>
+                      <TableCell className="text-xs py-1 px-2">{r.type}</TableCell>
+                      <TableCell className="text-xs py-1 px-2">{r.startDate}</TableCell>
+                      <TableCell className="text-xs py-1 px-2">{r.endDate}</TableCell>
+                      <TableCell className="text-xs py-1 px-2">
+                        {r.status === "ok" && (
+                          <Badge variant="outline" className="gap-1">
+                            <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                            {t.importJsonStatusOk}
+                          </Badge>
+                        )}
+                        {r.status === "duplicate" && (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            {t.importJsonDuplicate}
+                          </Badge>
+                        )}
+                        {r.status === "missing" && (
+                          <Badge variant="outline" className="gap-1 text-destructive border-destructive/30">
+                            <AlertTriangle className="h-3 w-3" />
+                            {t.importJsonMemberNotFound}
+                          </Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+
+            <Button
+              onClick={handleJsonImport}
+              disabled={jsonImportable.length === 0}
+              className="w-full"
+            >
+              {t.importConfirm} ({jsonImportable.length})
+            </Button>
+          </div>
+        )}
+
       </DialogContent>
     </Dialog>
   );
