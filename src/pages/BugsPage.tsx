@@ -761,6 +761,16 @@ export const BugsPage = () => {
                   <div className="flex flex-wrap items-center justify-end gap-2">
                     <Button
                       size="sm"
+                      variant={waitingOnly ? "default" : "outline"}
+                      className="h-8 gap-1.5"
+                      onClick={() => setWaitingOnly((v) => !v)}
+                      aria-pressed={waitingOnly}
+                    >
+                      <Hourglass className="h-3.5 w-3.5" />
+                      {t.waitingOnly}
+                    </Button>
+                    <Button
+                      size="sm"
                       variant={manualOrder ? "default" : "outline"}
                       className="h-8 gap-1.5"
                       onClick={() => setManualOrder((v) => !v)}
