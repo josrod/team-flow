@@ -40,6 +40,8 @@ import { WorkloadMatrix } from "@/components/WorkloadMatrix";
 import { TaskTypeFilter } from "@/components/TaskTypeFilter";
 import { computeAvailableTaskTypes, isExcludedTaskType } from "@/lib/taskTypeFilter";
 import { parseTfsTags } from "@/lib/tfsTags";
+import { normalizeState, isBugType, computeWip } from "@/lib/tasksState";
+import { WaitingBadge } from "@/components/WaitingBadge";
 import { buildAssigneeIndex, resolveMember } from "@/lib/assigneeMatch";
 import { UnmatchedAssigneesPanel } from "@/components/UnmatchedAssigneesPanel";
 import { useTaskPriorities } from "@/hooks/use-task-priorities";
@@ -94,15 +96,8 @@ const formatTaskDate = (iso?: string): string => {
 // "Resolved" or "Closed" — we surface those as their own buckets instead of
 // folding them into the generic "done" group so users can see them in the
 // Tasks view.
-const normalizeState = (state: string): "active" | "pending" | "done" | "blocked" | "resolved" | "closed" => {
-  const s = state.toLowerCase();
-  if (s.includes("resolved")) return "resolved";
-  if (s.includes("closed")) return "closed";
-  if (s.includes("done") || s.includes("completed")) return "done";
-  if (s.includes("block")) return "blocked";
-  if (s.includes("active") || s.includes("progress") || s.includes("committed") || s.includes("doing")) return "active";
-  return "pending";
-};
+// State normalization and bug detection helpers live in
+// `@/lib/tasksState` so they can be shared and unit-tested.
 
 const stateColorVar: Record<string, string> = {
   active: "hsl(var(--status-info))",
@@ -294,10 +289,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   type BugOnlyStateKey = "active" | "pending" | "blocked" | "resolved" | "closed";
   type TaskSortKey = "total-desc" | "total-asc" | "name-asc" | "name-desc" | "priority";
 
-  // Bugs are identified by their type string (TFS uses "Bug"). Anything else
-  // is treated as a task for the purposes of state filtering.
-  const isBugType = (type: string | undefined): boolean =>
-    typeof type === "string" && type.toLowerCase() === "bug";
+  // `isBugType` is imported from `@/lib/tasksState`.
 
   // Two independent state filters so users can filter tasks and bugs
   // separately (tasks don't have Resolved/Closed; bugs don't have Completed).
@@ -1787,12 +1779,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       <TableCell className="font-medium text-sm">
                                         <span className="inline-flex items-center gap-2 flex-wrap">
                                           <span>{task.title}</span>
-                                          {task.tags?.some((tag) => tag.toLowerCase() === "waiting") && (
-                                            <Badge variant="outline" className="gap-1 border-status-vacation/40 bg-status-vacation/10 text-status-vacation text-[10px]">
-                                              <Hourglass className="h-3 w-3" />
-                                              {t.tagWaiting}
-                                            </Badge>
-                                          )}
+                                          <WaitingBadge tags={task.tags} />
                                         </span>
                                       </TableCell>
                                       <TableCell>
@@ -1961,11 +1948,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                   <p className="text-sm font-medium truncate">{group.person}</p>
                                   {(() => {
                                     // WIP = Open + In Progress only (no closed/resolved tasks or bugs).
-                                    const activeTasks = group.active.filter((it) => !isBugType(it.type)).length;
-                                    const activeBugs = group.active.filter((it) => isBugType(it.type)).length;
-                                    const pendingTasks = group.pending.filter((it) => !isBugType(it.type)).length;
-                                    const pendingBugs = group.pending.filter((it) => isBugType(it.type)).length;
-                                    const wip = activeTasks + activeBugs + pendingTasks + pendingBugs;
+                                    const { activeTasks, activeBugs, pendingTasks, pendingBugs, total: wip } =
+                                      computeWip([...group.active, ...group.pending]);
                                     if (wip === 0) return null;
                                     // Load tiers: 1-5 light (green), 6-9 medium (amber), 10+ heavy (red)
                                     const tier =
@@ -2368,12 +2352,7 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, prior
         <TableCell className="font-medium text-sm">
           <span className="inline-flex items-center gap-2 flex-wrap">
             <span>{task.title}</span>
-            {task.tags?.some((tag) => tag.toLowerCase() === "waiting") && (
-              <Badge variant="outline" className="gap-1 border-status-vacation/40 bg-status-vacation/10 text-status-vacation text-[10px]">
-                <Hourglass className="h-3 w-3" />
-                {t.tagWaiting}
-              </Badge>
-            )}
+            <WaitingBadge tags={task.tags} />
           </span>
         </TableCell>
         <TableCell>
