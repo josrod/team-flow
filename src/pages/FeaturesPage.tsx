@@ -96,15 +96,8 @@ const formatTaskDate = (iso?: string): string => {
 // "Resolved" or "Closed" — we surface those as their own buckets instead of
 // folding them into the generic "done" group so users can see them in the
 // Tasks view.
-const normalizeState = (state: string): "active" | "pending" | "done" | "blocked" | "resolved" | "closed" => {
-  const s = state.toLowerCase();
-  if (s.includes("resolved")) return "resolved";
-  if (s.includes("closed")) return "closed";
-  if (s.includes("done") || s.includes("completed")) return "done";
-  if (s.includes("block")) return "blocked";
-  if (s.includes("active") || s.includes("progress") || s.includes("committed") || s.includes("doing")) return "active";
-  return "pending";
-};
+// State normalization and bug detection helpers live in
+// `@/lib/tasksState` so they can be shared and unit-tested.
 
 const stateColorVar: Record<string, string> = {
   active: "hsl(var(--status-info))",
