@@ -2047,7 +2047,11 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                           </Badge>
                                         </TooltipTrigger>
                                         <TooltipContent side="top">
-                                          <p className="text-xs font-medium">{waitingCount} {waitingCount === 1 ? t.itemWaitingSingular : t.itemsWaitingPlural}</p>
+                                          <p className="text-xs font-medium">
+                                            {waitingCount === 1
+                                              ? t.itemWaitingSingular
+                                              : t.itemsWaitingPlural.replace("{n}", String(waitingCount))}
+                                          </p>
                                         </TooltipContent>
                                       </UiTooltip>
                                     );
