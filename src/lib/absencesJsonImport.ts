@@ -1,7 +1,7 @@
 // Pure helpers to preview an "absences import" from the global JSON backup.
 // Kept framework-free so it can be unit-tested without React.
 
-import type { AbsenceType } from "@/context/AppContext";
+import type { AbsenceType } from "@/types";
 
 export type JsonImportMemberRef = { id: string; name: string };
 
