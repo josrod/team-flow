@@ -40,8 +40,8 @@ import { WorkloadMatrix } from "@/components/WorkloadMatrix";
 import { TaskTypeFilter } from "@/components/TaskTypeFilter";
 import { computeAvailableTaskTypes, isExcludedTaskType } from "@/lib/taskTypeFilter";
 import { parseTfsTags } from "@/lib/tfsTags";
-import { normalizeState, isBugType, computeWip } from "@/lib/tasksState";
-import { WaitingBadge } from "@/components/WaitingBadge";
+import { normalizeState, isBugType, computeWip, hasWaitingTag } from "@/lib/tasksState";
+
 import { buildAssigneeIndex, resolveMember } from "@/lib/assigneeMatch";
 import { UnmatchedAssigneesPanel } from "@/components/UnmatchedAssigneesPanel";
 import { useTaskPriorities } from "@/hooks/use-task-priorities";
@@ -1067,10 +1067,10 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
     return arr;
   }, [filteredTasks, taskStateFilter, bugStateFilter, taskSort]);
 
-  const defaultOpenPeople = useMemo(
-    () => tasksByPerson.filter((p) => p.active.length > 0).map((p) => p.person),
-    [tasksByPerson],
-  );
+  // Start with all assignee groups collapsed so the page gives a quick overview
+  // by default. Users can still expand individual groups or the accordion header.
+  const defaultOpenPeople: string[] = [];
+
 
   // Scope validation — audits the raw TFS payload to confirm that every
   // Feature/Task lives under one of the configured area paths, and that
@@ -1797,7 +1797,6 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       <TableCell className="font-medium text-sm">
                                         <span className="inline-flex items-center gap-2 flex-wrap">
                                           <span>{task.title}</span>
-                                          <WaitingBadge tags={task.tags} />
                                         </span>
                                       </TableCell>
                                       <TableCell>
@@ -2026,6 +2025,32 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                             )}
                                             <p className="text-[10px] text-muted-foreground pt-1">{t.wipTooltipClickHint}</p>
                                           </div>
+                                        </TooltipContent>
+                                      </UiTooltip>
+                                    );
+                                  })()}
+                                  {(() => {
+                                    const waitingCount = [...group.active, ...group.pending, ...group.blocked, ...group.done, ...group.resolved, ...group.closed].filter(
+                                      (t) => hasWaitingTag(t.tags),
+                                    ).length;
+                                    if (waitingCount === 0) return null;
+                                    return (
+                                      <UiTooltip>
+                                        <TooltipTrigger asChild>
+                                          <Badge
+                                            variant="outline"
+                                            className="shrink-0 text-[10px] font-semibold border-status-vacation/40 bg-status-vacation/10 text-status-vacation gap-1"
+                                          >
+                                            <Hourglass className="h-3 w-3" />
+                                            {waitingCount}
+                                          </Badge>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top">
+                                          <p className="text-xs font-medium">
+                                            {waitingCount === 1
+                                              ? t.itemWaitingSingular
+                                              : t.itemsWaitingPlural.replace("{n}", String(waitingCount))}
+                                          </p>
                                         </TooltipContent>
                                       </UiTooltip>
                                     );
@@ -2370,7 +2395,6 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, prior
         <TableCell className="font-medium text-sm">
           <span className="inline-flex items-center gap-2 flex-wrap">
             <span>{task.title}</span>
-            <WaitingBadge tags={task.tags} />
           </span>
         </TableCell>
         <TableCell>
