@@ -227,6 +227,15 @@ export const translations = {
     importValidationHint: "Encabezados esperados: A=Work date, C=Person, D=Duration, E=Activity kind. Fechas como YYYY-MM-DD, DD/MM/YYYY o celda de fecha de Excel.",
     importUnmatchedRangesLabel: "rangos pendientes",
     importAssignToMember: "Asignar a miembro…",
+    // JSON import (backup)
+    importModeJson: "JSON (backup)",
+    importJsonDropzone: "Arrastra el fichero JSON exportado",
+    importJsonFormats: "Solo .json — se importan únicamente las ausencias",
+    importJsonNoAbsences: "El archivo no contiene ausencias",
+    importJsonMemberNotFound: "Miembro no encontrado",
+    importJsonDuplicate: "Duplicada",
+    importJsonStatusOk: "OK",
+    importJsonSummary: "{ok} nuevas · {dup} duplicadas · {missing} sin miembro",
     loginName: "Login de usuario",
     loginNamePlaceholder: "ej. jsmith",
     // Azure DevOps / TFS
