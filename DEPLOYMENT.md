@@ -347,7 +347,7 @@ En la carpeta [`docker/`](./docker) hay un stack listo para levantar la SPA + Su
 - **Backup DB**: `docker compose exec db pg_dump -U postgres postgres > backup_$(date +%F).sql`.
 - **Restore**: `cat backup.sql | docker compose exec -T db psql -U postgres -d postgres`.
 - **Actualizar la SPA**: `docker compose up -d --build web`.
-- **Parar todo**: `docker compose down` (añade `-v` para borrar también la base de datos).
+- **Parar todo**: `npm run local:down` (detiene contenedores y limpia redes; usa `npm run local:down:reset` para borrar volúmenes incluyendo la base de datos).
 
 ### 11.6 Producción interna
 
