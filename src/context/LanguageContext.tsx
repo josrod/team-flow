@@ -1378,6 +1378,7 @@ export const translations = {
     waitingDependencyUnknown: "Unknown dependency",
     waitingDependencyTooltip: "Blocked by an external dependency: {dependency}",
     waitingDependencyUnknownTooltip: "No external dependency declared. Add a TFS tag such as 'waiting:Customer' or 'blocked-by:QA' to identify it.",
+    waitingDateTooltip: "Field: {field} — {date}",
 
     blockedPlural: "blocked",
     completedPlural: "completed",
