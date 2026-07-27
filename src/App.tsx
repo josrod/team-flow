@@ -19,6 +19,7 @@ import TasksPage from "./pages/TasksPage";
 import AzureDevOpsSettingsPage from "./pages/AzureDevOpsSettingsPage";
 import { BugsPage } from "./pages/BugsPage";
 import { EpicsPage } from "./pages/EpicsPage";
+import { WaitingPage } from "./pages/WaitingPage";
 
 import AuthPage from "./pages/AuthPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -45,6 +46,7 @@ const App = () => (
                   <Route path="/handovers" element={<AppLayout><HandoversPage /></AppLayout>} />
                   <Route path="/tasks" element={<AppLayout><TasksPage /></AppLayout>} />
                   <Route path="/bugs" element={<AppLayout><BugsPage /></AppLayout>} />
+                  <Route path="/waiting" element={<AdminRoute><AppLayout><WaitingPage /></AppLayout></AdminRoute>} />
                   <Route path="/epics" element={<AppLayout><EpicsPage /></AppLayout>} />
                   {/* Pulse is admin-only */}
                   <Route path="/pulse" element={<AdminRoute><AppLayout><TeamPulseDashboard /></AppLayout></AdminRoute>} />
