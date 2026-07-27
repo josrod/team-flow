@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { useLang } from "@/context/LanguageContext";
@@ -27,6 +28,18 @@ import { PrioritySelect } from "@/components/PrioritySelect";
 import { PriorityMenu } from "@/components/PriorityMenu";
 import { useTaskPriorities } from "@/hooks/use-task-priorities";
 import { sortByPriority, type PriorityLevel } from "@/lib/taskPriority";
+import { hasWaitingTag } from "@/lib/tasksState";
+
+// Format an ISO date as DD/MM/YYYY for tooltip display. Returns "—" when missing or invalid.
+const formatBugDate = (iso?: string): string => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+};
 
 interface AdoSettings {
   serverUrl: string;
@@ -238,7 +251,7 @@ export const BugsPage = () => {
       if (state.length > 0 && !state.includes(b.state)) return false;
       if (severity.length > 0 && (!b.severity || !severity.includes(b.severity))) return false;
       if (iteration !== ALL && (b.iterationPath ?? "") !== iteration) return false;
-      if (waitingOnly && !b.tags?.some((tag) => tag.toLowerCase() === "waiting")) return false;
+      if (waitingOnly && !hasWaitingTag(b.tags)) return false;
       if (q) {
         const haystack = `${b.id} ${b.title}`.toLowerCase();
         if (!haystack.includes(q)) return false;
@@ -246,6 +259,16 @@ export const BugsPage = () => {
       return true;
     });
   }, [bugs, search, assignee, state, severity, iteration, waitingOnly, t.bugsUnassigned]);
+
+  const waitingSummary = useMemo(() => {
+    const waitingItems = bugs.filter((b) => hasWaitingTag(b.tags));
+    const count = waitingItems.length;
+    const latestChanged = waitingItems
+      .map((b) => b.changedDate)
+      .filter((d): d is string => Boolean(d))
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
+    return { count, latestDateText: latestChanged ? formatBugDate(latestChanged) : null };
+  }, [bugs]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
