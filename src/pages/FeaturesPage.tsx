@@ -288,7 +288,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   type TaskStateKey = "active" | "pending" | "blocked" | "done" | "resolved" | "closed";
   type TaskOnlyStateKey = "active" | "pending" | "blocked" | "done";
   type BugOnlyStateKey = "active" | "pending" | "blocked" | "resolved" | "closed";
-  type TaskSortKey = "total-desc" | "total-asc" | "name-asc" | "name-desc" | "priority";
+  type TaskSortKey = "total-desc" | "total-asc" | "name-asc" | "name-desc" | "priority" | "waiting-desc";
 
   // `isBugType` is imported from `@/lib/tasksState`.
 
@@ -322,7 +322,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   const [waitingOnly, setWaitingOnly] = useState<boolean>(() => searchParams.get("waiting") === "1");
   const TASK_SORT_STORAGE_KEY = "rosen.taskSort.v1";
   const isTaskSortKey = (v: unknown): v is TaskSortKey =>
-    v === "total-desc" || v === "total-asc" || v === "name-asc" || v === "name-desc" || v === "priority";
+    v === "total-desc" || v === "total-asc" || v === "name-asc" || v === "name-desc" || v === "priority" || v === "waiting-desc";
   const [taskSort, setTaskSort] = useState<TaskSortKey>(() => {
     try {
       const stored = typeof window !== "undefined" ? window.localStorage.getItem(TASK_SORT_STORAGE_KEY) : null;
@@ -1623,6 +1623,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                   <option value="name-asc">{t.nameAZ}</option>
                   <option value="name-desc">{t.nameZA}</option>
                   <option value="priority">{t.personalPriority}</option>
+                  <option value="waiting-desc">{t.sortWaitingRecent}</option>
                 </select>
               </div>
             </div>
