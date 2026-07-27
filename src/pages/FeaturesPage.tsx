@@ -2215,7 +2215,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       showReorderToast(groupBucketKey, activeId, targetLevel, Math.max(0, overIndex), items, groupMap);
                                     }}
                                     renderRow={(task, dragHandle, rowRef, rowStyle) => (
-                                      <TaskRowWithHandover
+                                      <TaskRow
                                         key={task.id}
                                         task={task}
                                         norm={normalizeState(task.state)}
