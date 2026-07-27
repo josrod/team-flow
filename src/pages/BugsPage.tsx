@@ -251,7 +251,7 @@ export const BugsPage = () => {
       if (state.length > 0 && !state.includes(b.state)) return false;
       if (severity.length > 0 && (!b.severity || !severity.includes(b.severity))) return false;
       if (iteration !== ALL && (b.iterationPath ?? "") !== iteration) return false;
-      if (waitingOnly && !b.tags?.some((tag) => tag.toLowerCase() === "waiting")) return false;
+      if (waitingOnly && !hasWaitingTag(b.tags)) return false;
       if (q) {
         const haystack = `${b.id} ${b.title}`.toLowerCase();
         if (!haystack.includes(q)) return false;
@@ -259,6 +259,16 @@ export const BugsPage = () => {
       return true;
     });
   }, [bugs, search, assignee, state, severity, iteration, waitingOnly, t.bugsUnassigned]);
+
+  const waitingSummary = useMemo(() => {
+    const waitingItems = bugs.filter((b) => hasWaitingTag(b.tags));
+    const count = waitingItems.length;
+    const latestChanged = waitingItems
+      .map((b) => b.changedDate)
+      .filter((d): d is string => Boolean(d))
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
+    return { count, latestDateText: latestChanged ? formatBugDate(latestChanged) : null };
+  }, [bugs]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
