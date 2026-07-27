@@ -1348,6 +1348,10 @@ export const translations = {
     waitingOnly: "Waiting only",
     itemWaitingSingular: "1 item waiting",
     itemsWaitingPlural: "{n} items waiting",
+    waitingBadgeTooltip: "Items tagged as 'Waiting' need a response or external dependency before continuing.",
+    waitingSince: "Last activity: {date}",
+    waitingSinceUnknown: "Last activity date unavailable",
+
     blockedPlural: "blocked",
     completedPlural: "completed",
     resolvedPlural: "resolved",
