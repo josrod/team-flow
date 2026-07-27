@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Hourglass, Loader2, RefreshCw, ExternalLink, Search, UserX } from "lucide-react";
+import { Hourglass, Loader2, RefreshCw, ExternalLink, Search, UserX, Link2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { useAuth } from "@/context/AuthContext";
@@ -15,8 +15,10 @@ import { Settings as SettingsIcon } from "lucide-react";
 import { listTfsFeatures, listTfsTasks, RODAT_AREA_PATH, RODAT_ITERATION_PATH, type TfsWorkItem } from "@/services/tfs";
 import { decryptPat } from "@/services/tfsPatVault";
 import { parseTfsTags } from "@/lib/tfsTags";
+import { cn } from "@/lib/utils";
 import { isBugType, normalizeState } from "@/lib/tasksState";
 import {
+  extractWaitingDependency,
   groupWaitingItems,
   latestChangedDate,
   pathLeaf,
@@ -265,6 +267,7 @@ export const WaitingPage = () => {
                     <ul className="space-y-1.5">
                       {theme.items.map((item) => {
                         const itemDate = formatDate(item.changedDate);
+                        const dependency = extractWaitingDependency(item.tags);
                         return (
                           <li
                             key={item.id}
@@ -277,6 +280,26 @@ export const WaitingPage = () => {
                             <Badge variant="outline" className="text-[10px] capitalize">
                               {normalizeState(item.state)}
                             </Badge>
+                            <UiTooltip>
+                              <TooltipTrigger asChild>
+                                <span
+                                  className={cn(
+                                    "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px]",
+                                    dependency
+                                      ? "border-status-vacation/40 bg-status-vacation/10 text-status-vacation"
+                                      : "border-dashed text-muted-foreground italic",
+                                  )}
+                                >
+                                  <Link2 className="h-3 w-3" />
+                                  {dependency ?? t.waitingDependencyUnknown}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                {dependency
+                                  ? t.waitingDependencyTooltip.replace("{dependency}", dependency)
+                                  : t.waitingDependencyUnknownTooltip}
+                              </TooltipContent>
+                            </UiTooltip>
                             {itemDate && (
                               <span className="text-xs text-muted-foreground">
                                 {t.waitingSince.replace("{date}", itemDate)}

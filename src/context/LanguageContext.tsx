@@ -476,6 +476,9 @@ export const translations = {
     waitingUnassigned: "Sin asignar",
     waitingThemesCount: "{n} temas",
     waitingNoTheme: "Sin tema",
+    waitingDependencyUnknown: "Dependencia desconocida",
+    waitingDependencyTooltip: "Bloqueado por una dependencia externa: {dependency}",
+    waitingDependencyUnknownTooltip: "No se ha indicado la dependencia externa. Añade una etiqueta en TFS como 'waiting:Cliente' o 'blocked-by:QA' para identificarla.",
 
     blockedPlural: "bloqueadas",
     completedPlural: "completadas",
@@ -1369,6 +1372,9 @@ export const translations = {
     waitingUnassigned: "Unassigned",
     waitingThemesCount: "{n} themes",
     waitingNoTheme: "No theme",
+    waitingDependencyUnknown: "Unknown dependency",
+    waitingDependencyTooltip: "Blocked by an external dependency: {dependency}",
+    waitingDependencyUnknownTooltip: "No external dependency declared. Add a TFS tag such as 'waiting:Customer' or 'blocked-by:QA' to identify it.",
 
     blockedPlural: "blocked",
     completedPlural: "completed",
