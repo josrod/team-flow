@@ -1516,6 +1516,7 @@ export const fetchTfsBugsByIterations = async (
           iterationPath: f["System.IterationPath"] as string | undefined,
           areaPath: f["System.AreaPath"] as string | undefined,
           tags,
+          changedDate: f["System.ChangedDate"] as string | undefined,
           priority: typeof priorityRaw === "number" ? priorityRaw : undefined,
           severity: f["Microsoft.VSTS.Common.Severity"] as string | undefined,
           htmlUrl: buildWorkItemHtmlUrl(conn, raw.id),
