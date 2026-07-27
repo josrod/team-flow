@@ -14,6 +14,32 @@ export interface WaitingItem {
   changedDate?: string;
 }
 
+/**
+ * Tag prefixes used in TFS to declare which external dependency blocks a
+ * waiting item, e.g. `waiting:Customer`, `blocked-by:QA`, `dep:Vendor`.
+ */
+const DEPENDENCY_PREFIXES = ["waiting:", "waiting-", "blocked-by:", "blockedby:", "dep:", "depends-on:"];
+
+/**
+ * Extracts the external dependency declared on the item's tags. Returns
+ * undefined when no dependency tag exists, so the UI can show it as unknown.
+ */
+export const extractWaitingDependency = (
+  tags: readonly string[] | null | undefined,
+): string | undefined => {
+  if (!tags) return undefined;
+  for (const tag of tags) {
+    if (typeof tag !== "string") continue;
+    const trimmed = tag.trim();
+    const lower = trimmed.toLowerCase();
+    const prefix = DEPENDENCY_PREFIXES.find((p) => lower.startsWith(p) && trimmed.length > p.length);
+    if (!prefix) continue;
+    const value = trimmed.slice(prefix.length).trim();
+    if (value) return value;
+  }
+  return undefined;
+};
+
 export interface WaitingThemeGroup {
   theme: string;
   items: WaitingItem[];
