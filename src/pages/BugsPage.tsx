@@ -201,8 +201,51 @@ export const BugsPage = () => {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [bugs]);
 
-  const [sortColumn, setSortColumn] = useState<"id" | "title" | "assignedTo" | "state" | "severity" | "iterationPath">("severity");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const BUGS_SORT_STORAGE_KEY = "rosen.bugsSort.v1";
+  const BUGS_SORT_COLUMNS = ["id", "title", "assignedTo", "state", "severity", "iterationPath"] as const;
+  const isBugsSortColumn = (v: unknown): v is typeof BUGS_SORT_COLUMNS[number] =>
+    BUGS_SORT_COLUMNS.includes(v as typeof BUGS_SORT_COLUMNS[number]);
+  const isSortDirection = (v: unknown): v is "asc" | "desc" => v === "asc" || v === "desc";
+
+  const [sortColumn, setSortColumn] = useState<"id" | "title" | "assignedTo" | "state" | "severity" | "iterationPath">(() => {
+    try {
+      const stored = typeof window !== "undefined" ? window.localStorage.getItem(BUGS_SORT_STORAGE_KEY) : null;
+      if (stored) {
+        const parsed = JSON.parse(stored) as unknown;
+        if (parsed && typeof parsed === "object") {
+          const col = (parsed as Record<string, unknown>).column;
+          if (isBugsSortColumn(col)) return col;
+        }
+      }
+    } catch {
+      // Ignore corrupted storage values.
+    }
+    return "severity";
+  });
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">(() => {
+    try {
+      const stored = typeof window !== "undefined" ? window.localStorage.getItem(BUGS_SORT_STORAGE_KEY) : null;
+      if (stored) {
+        const parsed = JSON.parse(stored) as unknown;
+        if (parsed && typeof parsed === "object") {
+          const dir = (parsed as Record<string, unknown>).direction;
+          if (isSortDirection(dir)) return dir;
+        }
+      }
+    } catch {
+      // Ignore corrupted storage values.
+    }
+    return "desc";
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(BUGS_SORT_STORAGE_KEY, JSON.stringify({ column: sortColumn, direction: sortDirection }));
+    } catch {
+      // Ignore storage errors (private mode, quota, etc.).
+    }
+  }, [sortColumn, sortDirection]);
+
   const [manualOrder, setManualOrder] = useState(false);
 
   // Per-developer drag & drop priority. Bucket key follows the active assignee
