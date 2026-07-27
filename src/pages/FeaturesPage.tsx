@@ -959,7 +959,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       if (typeFilter.size > 0 && !typeFilter.has(t.type)) return false;
       // View-aware exclusion (e.g. Product Backlog Item is hidden in Tasks).
       if (isExcludedTaskType(t.type, view)) return false;
-      if (waitingOnly && !t.tags?.some((tag) => tag.toLowerCase() === "waiting")) return false;
+      if (waitingOnly && !hasWaitingTag(t.tags)) return false;
       return true;
     });
   }, [tasks, activeTeam, activePerson, debouncedSearch, teamIdFor, typeFilter, view, waitingOnly]);
