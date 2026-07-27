@@ -2414,7 +2414,7 @@ function PersonCombobox({ value, onChange, people }: PersonComboboxProps) {
   );
 }
 
-interface TaskRowWithHandoverProps {
+interface TaskRowProps {
   task: UnifiedTask;
   norm: "active" | "pending" | "done" | "blocked" | "resolved" | "closed";
   tfsBaseUrl: string | null;
@@ -2427,102 +2427,78 @@ interface TaskRowWithHandoverProps {
   rowStyle?: CSSProperties;
 }
 
-function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, priority, onPriorityChange, dragHandle, rowRef, rowStyle }: TaskRowWithHandoverProps) {
-  const [open, setOpen] = useState(false);
+function TaskRow({ task, norm, tfsBaseUrl, source, onCopyLink, priority, onPriorityChange, dragHandle, rowRef, rowStyle }: TaskRowProps) {
   const { t } = useLang();
   const showActions = source === "tfs" && !!tfsBaseUrl;
-  const colSpan = 10 + (showActions ? 1 : 0) + (dragHandle !== undefined ? 1 : 0);
   return (
-    <>
-      <TableRow ref={rowRef} style={rowStyle}>
-        {dragHandle !== undefined && (
-          <TableCell className="py-1 align-middle">{dragHandle}</TableCell>
-        )}
-        <TableCell className="font-mono text-xs text-muted-foreground">{task.id}</TableCell>
-        <TableCell className="font-medium text-sm">
-          <span className="inline-flex items-center gap-2 flex-wrap">
-            <span>{task.title}</span>
-          </span>
-        </TableCell>
-        <TableCell>
-          <Badge variant="outline" className="text-[10px]">{task.type}</Badge>
-        </TableCell>
-        <TableCell>
-          <span
-            className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full"
-            style={{ background: `${stateColorVar[norm]}20`, color: stateColorVar[norm] }}
-          >
-            <span className="h-1.5 w-1.5 rounded-full" style={{ background: stateColorVar[norm] }} />
-            {task.state}
-          </span>
-        </TableCell>
-        <TableCell className="max-w-[180px] truncate text-xs text-muted-foreground" title={task.iterationPath || undefined}>
-          {task.iterationPath || <span className="italic">—</span>}
-        </TableCell>
-        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-          {formatTaskDate(task.changedDate)}
-        </TableCell>
-        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-          {formatTaskDate(task.closedDate)}
-        </TableCell>
-        <TableCell>
-          <PrioritySelect value={priority} onChange={onPriorityChange} />
-        </TableCell>
-        <TableCell>
-          {hasWaitingTag(task.tags) ? (
-            <WaitingBadge tags={task.tags} />
-          ) : (
-            <span className="text-xs text-muted-foreground italic">—</span>
-          )}
-        </TableCell>
-        <TableCell className="text-right">
-          <Button
-            size="sm"
-            variant={open ? "secondary" : "ghost"}
-            className="h-7 gap-1 text-xs"
-            onClick={() => setOpen((v) => !v)}
-            aria-expanded={open}
-            aria-label={open ? t.hideHandover : t.addHandover}
-          >
-            {open ? <ChevronUp className="h-3.5 w-3.5" /> : <MessageSquarePlus className="h-3.5 w-3.5" />}
-            {open ? t.closeBtn : t.handoverColumn}
-          </Button>
-        </TableCell>
-        {showActions && (
-          <TableCell className="text-right">
-            <div className="flex items-center justify-end gap-0.5">
-              <Button asChild size="icon" variant="ghost" className="h-7 w-7" title={t.openInAdo}>
-                <a
-                  href={`${tfsBaseUrl}/_workitems/edit/${task.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={t.openTaskInAdoAria.replace("{id}", task.id)}
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-              </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7"
-                title={t.copyLink}
-                aria-label={t.copyLinkTask.replace("{id}", task.id)}
-                onClick={() => onCopyLink(task.id, "tarea")}
-              >
-                <Copy className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </TableCell>
-        )}
-      </TableRow>
-      {open && (
-        <TableRow>
-          <TableCell colSpan={colSpan} className="bg-muted/10 p-3">
-            <TaskHandoverNotes taskId={task.id} />
-          </TableCell>
-        </TableRow>
+    <TableRow ref={rowRef} style={rowStyle}>
+      {dragHandle !== undefined && (
+        <TableCell className="py-1 align-middle">{dragHandle}</TableCell>
       )}
-    </>
+      <TableCell className="font-mono text-xs text-muted-foreground">{task.id}</TableCell>
+      <TableCell className="font-medium text-sm">
+        <span className="inline-flex items-center gap-2 flex-wrap">
+          <span>{task.title}</span>
+        </span>
+      </TableCell>
+      <TableCell>
+        <Badge variant="outline" className="text-[10px]">{task.type}</Badge>
+      </TableCell>
+      <TableCell>
+        <span
+          className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full"
+          style={{ background: `${stateColorVar[norm]}20`, color: stateColorVar[norm] }}
+        >
+          <span className="h-1.5 w-1.5 rounded-full" style={{ background: stateColorVar[norm] }} />
+          {task.state}
+        </span>
+      </TableCell>
+      <TableCell className="max-w-[180px] truncate text-xs text-muted-foreground" title={task.iterationPath || undefined}>
+        {task.iterationPath || <span className="italic">—</span>}
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+        {formatTaskDate(task.changedDate)}
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+        {formatTaskDate(task.closedDate)}
+      </TableCell>
+      <TableCell>
+        <PrioritySelect value={priority} onChange={onPriorityChange} />
+      </TableCell>
+      <TableCell>
+        {hasWaitingTag(task.tags) ? (
+          <WaitingBadge tags={task.tags} />
+        ) : (
+          <span className="text-xs text-muted-foreground italic">—</span>
+        )}
+      </TableCell>
+      {showActions && (
+        <TableCell className="text-right">
+          <div className="flex items-center justify-end gap-0.5">
+            <Button asChild size="icon" variant="ghost" className="h-7 w-7" title={t.openInAdo}>
+              <a
+                href={`${tfsBaseUrl}/_workitems/edit/${task.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t.openTaskInAdoAria.replace("{id}", task.id)}
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              title={t.copyLink}
+              aria-label={t.copyLinkTask.replace("{id}", task.id)}
+              onClick={() => onCopyLink(task.id, "tarea")}
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </TableCell>
+      )}
+    </TableRow>
   );
 }
 
