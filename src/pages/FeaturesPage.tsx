@@ -19,12 +19,10 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
   PieChart, Pie, Legend,
 } from "recharts";
-import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X, Undo2, AlertTriangle, ShieldCheck, ShieldAlert, ChevronDown, EyeOff, MapPinOff, CalendarOff, User as UserIcon, AlertOctagon, CircleDashed, PlayCircle, CheckCircle2, Hourglass } from "lucide-react";
+import { Loader2, RefreshCw, Cloud, Database, Search, Layers, ListChecks, Users as UsersIcon, ExternalLink, Copy, Check, ChevronsUpDown, X, Undo2, AlertTriangle, ShieldCheck, ShieldAlert, ChevronDown, EyeOff, MapPinOff, CalendarOff, User as UserIcon, AlertOctagon, CircleDashed, PlayCircle, CheckCircle2, Hourglass, FileText } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
-import { TaskHandoverNotes } from "@/components/TaskHandoverNotes";
 import { HandoverSummaryDialog } from "@/components/HandoverSummaryDialog";
-import { MessageSquarePlus, ChevronUp, FileText } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { listTfsFeatures, listTfsTasks, listTfsTeamAreaPaths, peekTfsAreaPathCache, peekTfsPeopleCache, peekTfsPeopleCacheForConnection, writeTfsPeopleCache, RODAT_AREA_PATH, RODAT_ITERATION_PATH, type TfsConnection, type TfsWorkItem } from "@/services/tfs";
@@ -2196,7 +2194,6 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     <TableHead className="w-[110px]">{t.closedDateColumn}</TableHead>
                                     <TableHead className="w-[140px]">{t.priorityColumn}</TableHead>
                                     <TableHead className="w-[90px]">{t.waitingColumn}</TableHead>
-                                    <TableHead className="w-[120px] text-right">{t.handoverColumn}</TableHead>
                                     {source === "tfs" && tfsBaseUrl && (
                                       <TableHead className="w-[90px] text-right">{t.actionsColumn}</TableHead>
                                     )}
@@ -2216,7 +2213,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                       showReorderToast(groupBucketKey, activeId, targetLevel, Math.max(0, overIndex), items, groupMap);
                                     }}
                                     renderRow={(task, dragHandle, rowRef, rowStyle) => (
-                                      <TaskRowWithHandover
+                                      <TaskRow
                                         key={task.id}
                                         task={task}
                                         norm={normalizeState(task.state)}
@@ -2414,7 +2411,7 @@ function PersonCombobox({ value, onChange, people }: PersonComboboxProps) {
   );
 }
 
-interface TaskRowWithHandoverProps {
+interface TaskRowProps {
   task: UnifiedTask;
   norm: "active" | "pending" | "done" | "blocked" | "resolved" | "closed";
   tfsBaseUrl: string | null;
@@ -2427,102 +2424,78 @@ interface TaskRowWithHandoverProps {
   rowStyle?: CSSProperties;
 }
 
-function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, priority, onPriorityChange, dragHandle, rowRef, rowStyle }: TaskRowWithHandoverProps) {
-  const [open, setOpen] = useState(false);
+function TaskRow({ task, norm, tfsBaseUrl, source, onCopyLink, priority, onPriorityChange, dragHandle, rowRef, rowStyle }: TaskRowProps) {
   const { t } = useLang();
   const showActions = source === "tfs" && !!tfsBaseUrl;
-  const colSpan = 10 + (showActions ? 1 : 0) + (dragHandle !== undefined ? 1 : 0);
   return (
-    <>
-      <TableRow ref={rowRef} style={rowStyle}>
-        {dragHandle !== undefined && (
-          <TableCell className="py-1 align-middle">{dragHandle}</TableCell>
-        )}
-        <TableCell className="font-mono text-xs text-muted-foreground">{task.id}</TableCell>
-        <TableCell className="font-medium text-sm">
-          <span className="inline-flex items-center gap-2 flex-wrap">
-            <span>{task.title}</span>
-          </span>
-        </TableCell>
-        <TableCell>
-          <Badge variant="outline" className="text-[10px]">{task.type}</Badge>
-        </TableCell>
-        <TableCell>
-          <span
-            className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full"
-            style={{ background: `${stateColorVar[norm]}20`, color: stateColorVar[norm] }}
-          >
-            <span className="h-1.5 w-1.5 rounded-full" style={{ background: stateColorVar[norm] }} />
-            {task.state}
-          </span>
-        </TableCell>
-        <TableCell className="max-w-[180px] truncate text-xs text-muted-foreground" title={task.iterationPath || undefined}>
-          {task.iterationPath || <span className="italic">—</span>}
-        </TableCell>
-        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-          {formatTaskDate(task.changedDate)}
-        </TableCell>
-        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-          {formatTaskDate(task.closedDate)}
-        </TableCell>
-        <TableCell>
-          <PrioritySelect value={priority} onChange={onPriorityChange} />
-        </TableCell>
-        <TableCell>
-          {hasWaitingTag(task.tags) ? (
-            <WaitingBadge tags={task.tags} />
-          ) : (
-            <span className="text-xs text-muted-foreground italic">—</span>
-          )}
-        </TableCell>
-        <TableCell className="text-right">
-          <Button
-            size="sm"
-            variant={open ? "secondary" : "ghost"}
-            className="h-7 gap-1 text-xs"
-            onClick={() => setOpen((v) => !v)}
-            aria-expanded={open}
-            aria-label={open ? t.hideHandover : t.addHandover}
-          >
-            {open ? <ChevronUp className="h-3.5 w-3.5" /> : <MessageSquarePlus className="h-3.5 w-3.5" />}
-            {open ? t.closeBtn : t.handoverColumn}
-          </Button>
-        </TableCell>
-        {showActions && (
-          <TableCell className="text-right">
-            <div className="flex items-center justify-end gap-0.5">
-              <Button asChild size="icon" variant="ghost" className="h-7 w-7" title={t.openInAdo}>
-                <a
-                  href={`${tfsBaseUrl}/_workitems/edit/${task.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={t.openTaskInAdoAria.replace("{id}", task.id)}
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-              </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7"
-                title={t.copyLink}
-                aria-label={t.copyLinkTask.replace("{id}", task.id)}
-                onClick={() => onCopyLink(task.id, "tarea")}
-              >
-                <Copy className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </TableCell>
-        )}
-      </TableRow>
-      {open && (
-        <TableRow>
-          <TableCell colSpan={colSpan} className="bg-muted/10 p-3">
-            <TaskHandoverNotes taskId={task.id} />
-          </TableCell>
-        </TableRow>
+    <TableRow ref={rowRef} style={rowStyle}>
+      {dragHandle !== undefined && (
+        <TableCell className="py-1 align-middle">{dragHandle}</TableCell>
       )}
-    </>
+      <TableCell className="font-mono text-xs text-muted-foreground">{task.id}</TableCell>
+      <TableCell className="font-medium text-sm">
+        <span className="inline-flex items-center gap-2 flex-wrap">
+          <span>{task.title}</span>
+        </span>
+      </TableCell>
+      <TableCell>
+        <Badge variant="outline" className="text-[10px]">{task.type}</Badge>
+      </TableCell>
+      <TableCell>
+        <span
+          className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full"
+          style={{ background: `${stateColorVar[norm]}20`, color: stateColorVar[norm] }}
+        >
+          <span className="h-1.5 w-1.5 rounded-full" style={{ background: stateColorVar[norm] }} />
+          {task.state}
+        </span>
+      </TableCell>
+      <TableCell className="max-w-[180px] truncate text-xs text-muted-foreground" title={task.iterationPath || undefined}>
+        {task.iterationPath || <span className="italic">—</span>}
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+        {formatTaskDate(task.changedDate)}
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+        {formatTaskDate(task.closedDate)}
+      </TableCell>
+      <TableCell>
+        <PrioritySelect value={priority} onChange={onPriorityChange} />
+      </TableCell>
+      <TableCell>
+        {hasWaitingTag(task.tags) ? (
+          <WaitingBadge tags={task.tags} />
+        ) : (
+          <span className="text-xs text-muted-foreground italic">—</span>
+        )}
+      </TableCell>
+      {showActions && (
+        <TableCell className="text-right">
+          <div className="flex items-center justify-end gap-0.5">
+            <Button asChild size="icon" variant="ghost" className="h-7 w-7" title={t.openInAdo}>
+              <a
+                href={`${tfsBaseUrl}/_workitems/edit/${task.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t.openTaskInAdoAria.replace("{id}", task.id)}
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              title={t.copyLink}
+              aria-label={t.copyLinkTask.replace("{id}", task.id)}
+              onClick={() => onCopyLink(task.id, "tarea")}
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </TableCell>
+      )}
+    </TableRow>
   );
 }
 
