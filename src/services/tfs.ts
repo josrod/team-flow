@@ -1475,6 +1475,7 @@ export const fetchTfsBugsByIterations = async (
       "System.IterationPath",
       "System.AreaPath",
       "System.Tags",
+      "System.ChangedDate",
       "Microsoft.VSTS.Common.Priority",
       "Microsoft.VSTS.Common.Severity",
     ];
