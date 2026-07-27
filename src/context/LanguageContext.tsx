@@ -480,6 +480,7 @@ export const translations = {
     waitingDependencyUnknown: "Dependencia desconocida",
     waitingDependencyTooltip: "Bloqueado por una dependencia externa: {dependency}",
     waitingDependencyUnknownTooltip: "No se ha indicado la dependencia externa. Añade una etiqueta en TFS como 'waiting:Cliente' o 'blocked-by:QA' para identificarla.",
+    waitingDateTooltip: "Campo: {field} — {date}",
 
     blockedPlural: "bloqueadas",
     completedPlural: "completadas",
