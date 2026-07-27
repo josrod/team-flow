@@ -464,6 +464,10 @@ export const translations = {
     waitingOnly: "Solo en espera",
     itemWaitingSingular: "1 item en espera",
     itemsWaitingPlural: "{n} items en espera",
+    waitingBadgeTooltip: "Los items con etiqueta 'En espera' requieren una respuesta o dependencia externa antes de continuar.",
+    waitingSince: "Última actividad: {date}",
+    waitingSinceUnknown: "Fecha de última actividad no disponible",
+
     blockedPlural: "bloqueadas",
     completedPlural: "completadas",
     resolvedPlural: "resueltas",
@@ -1344,6 +1348,10 @@ export const translations = {
     waitingOnly: "Waiting only",
     itemWaitingSingular: "1 item waiting",
     itemsWaitingPlural: "{n} items waiting",
+    waitingBadgeTooltip: "Items tagged as 'Waiting' need a response or external dependency before continuing.",
+    waitingSince: "Last activity: {date}",
+    waitingSinceUnknown: "Last activity date unavailable",
+
     blockedPlural: "blocked",
     completedPlural: "completed",
     resolvedPlural: "resolved",

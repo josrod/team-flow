@@ -2039,10 +2039,16 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     );
                                   })()}
                                   {(() => {
-                                    const waitingCount = [...group.active, ...group.pending, ...group.blocked, ...group.done, ...group.resolved, ...group.closed].filter(
+                                    const waitingItems = [...group.active, ...group.pending, ...group.blocked, ...group.done, ...group.resolved, ...group.closed].filter(
                                       (t) => hasWaitingTag(t.tags),
-                                    ).length;
-                                    if (waitingCount === 0) return null;
+                                    );
+                                    if (waitingItems.length === 0) return null;
+                                    const waitingCount = waitingItems.length;
+                                    const latestChanged = waitingItems
+                                      .map((t) => t.changedDate)
+                                      .filter((d): d is string => Boolean(d))
+                                      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
+                                    const latestDateText = latestChanged ? formatTaskDate(latestChanged) : null;
                                     return (
                                       <UiTooltip>
                                         <TooltipTrigger asChild>
@@ -2054,16 +2060,23 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                             {waitingCount}
                                           </Badge>
                                         </TooltipTrigger>
-                                        <TooltipContent side="top">
-                                          <p className="text-xs font-medium">
-                                            {waitingCount === 1
-                                              ? t.itemWaitingSingular
-                                              : t.itemsWaitingPlural.replace("{n}", String(waitingCount))}
-                                          </p>
+                                        <TooltipContent side="top" className="max-w-[260px]">
+                                          <div className="space-y-1">
+                                            <p className="text-xs font-medium">
+                                              {waitingCount === 1
+                                                ? t.itemWaitingSingular
+                                                : t.itemsWaitingPlural.replace("{n}", String(waitingCount))}
+                                            </p>
+                                            <p className="text-[11px] text-muted-foreground">{t.waitingBadgeTooltip}</p>
+                                            <p className="text-[11px] pt-1 border-t border-border/40">
+                                              {latestDateText ? t.waitingSince.replace("{date}", latestDateText) : t.waitingSinceUnknown}
+                                            </p>
+                                          </div>
                                         </TooltipContent>
                                       </UiTooltip>
                                     );
                                   })()}
+
                                 </div>
                                 <p className="text-[11px] text-muted-foreground">
                                   {group.total} {group.total === 1 ? t.taskWord : t.tasksWord}
