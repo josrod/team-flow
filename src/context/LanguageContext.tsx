@@ -1245,6 +1245,7 @@ export const translations = {
     lessTasks: "Fewer tasks",
     defaultSort: "Default",
     sortBy: "Sort by",
+    sortWaitingRecent: "Waiting recent",
     title: "Title",
     noArea: "(no area)",
     noIteration: "(no iteration)",
