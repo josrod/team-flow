@@ -2196,7 +2196,6 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     <TableHead className="w-[110px]">{t.closedDateColumn}</TableHead>
                                     <TableHead className="w-[140px]">{t.priorityColumn}</TableHead>
                                     <TableHead className="w-[90px]">{t.waitingColumn}</TableHead>
-                                    <TableHead className="w-[120px] text-right">{t.handoverColumn}</TableHead>
                                     {source === "tfs" && tfsBaseUrl && (
                                       <TableHead className="w-[90px] text-right">{t.actionsColumn}</TableHead>
                                     )}
