@@ -348,6 +348,7 @@ export const translations = {
     lessTasks: "Menos tareas",
     defaultSort: "Por defecto",
     sortBy: "Ordenar por",
+    sortWaitingRecent: "En espera recientes",
     title: "Título",
     noArea: "(sin área)",
     noIteration: "(sin iteración)",
