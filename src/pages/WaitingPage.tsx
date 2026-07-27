@@ -274,7 +274,8 @@ export const WaitingPage = () => {
                     </h3>
                     <ul className="space-y-1.5">
                       {theme.items.map((item) => {
-                        const itemDate = formatDate(item.changedDate);
+                        const itemDate = formatDateTime(item.changedDate);
+                        const rawDate = item.changedDate;
                         const dependency = extractWaitingDependency(item.tags);
                         return (
                           <li
@@ -309,9 +310,16 @@ export const WaitingPage = () => {
                               </TooltipContent>
                             </UiTooltip>
                             {itemDate && (
-                              <span className="text-xs text-muted-foreground">
-                                {t.waitingSince.replace("{date}", itemDate)}
-                              </span>
+                              <UiTooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="text-xs text-muted-foreground cursor-help">
+                                    {t.waitingSince.replace("{date}", itemDate)}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-xs space-y-1">
+                                  <p>{t.waitingDateTooltip.replace("{field}", "changedDate").replace("{date}", rawDate ?? "")}</p>
+                                </TooltipContent>
+                              </UiTooltip>
                             )}
                             {baseUrl && (
                               <a
