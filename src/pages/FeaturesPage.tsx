@@ -48,6 +48,7 @@ import { useTaskPriorities } from "@/hooks/use-task-priorities";
 import { PriorityLevel, sortByPriority, moveTo, ALL_BUCKET } from "@/lib/taskPriority";
 import { PrioritySelect } from "@/components/PrioritySelect";
 import { PriorityMenu } from "@/components/PriorityMenu";
+import { WaitingBadge } from "@/components/WaitingBadge";
 import { SortableRows } from "@/components/SortableRows";
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -1758,6 +1759,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                             <TableHead className="w-[110px]">{t.changedDateColumn}</TableHead>
                             <TableHead className="w-[110px]">{t.closedDateColumn}</TableHead>
                             <TableHead className="w-[140px]">{t.priorityColumn}</TableHead>
+                            <TableHead className="w-[90px]">{t.waitingColumn}</TableHead>
                             <TableHead className="w-[180px]">{t.assignedToColumn}</TableHead>
                             {source === "tfs" && tfsBaseUrl && (
                               <TableHead className="w-[90px] text-right">{t.actionsColumn}</TableHead>
@@ -1825,6 +1827,13 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                           value={priorityLevelFor(task)}
                                           onChange={(level) => taskPriorities.setLevel(flatBucketKey, task.id, level)}
                                         />
+                                      </TableCell>
+                                      <TableCell>
+                                        {hasWaitingTag(task.tags) ? (
+                                          <WaitingBadge tags={task.tags} />
+                                        ) : (
+                                          <span className="text-xs text-muted-foreground italic">—</span>
+                                        )}
                                       </TableCell>
                                       <TableCell className="text-sm">
                                         {task.assignee || <span className="text-muted-foreground italic">{t.unassigned}</span>}
@@ -2149,6 +2158,7 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
                                     <TableHead className="w-[110px]">{t.changedDateColumn}</TableHead>
                                     <TableHead className="w-[110px]">{t.closedDateColumn}</TableHead>
                                     <TableHead className="w-[140px]">{t.priorityColumn}</TableHead>
+                                    <TableHead className="w-[90px]">{t.waitingColumn}</TableHead>
                                     <TableHead className="w-[120px] text-right">{t.handoverColumn}</TableHead>
                                     {source === "tfs" && tfsBaseUrl && (
                                       <TableHead className="w-[90px] text-right">{t.actionsColumn}</TableHead>
@@ -2384,7 +2394,7 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, prior
   const [open, setOpen] = useState(false);
   const { t } = useLang();
   const showActions = source === "tfs" && !!tfsBaseUrl;
-  const colSpan = 9 + (showActions ? 1 : 0) + (dragHandle !== undefined ? 1 : 0);
+  const colSpan = 10 + (showActions ? 1 : 0) + (dragHandle !== undefined ? 1 : 0);
   return (
     <>
       <TableRow ref={rowRef} style={rowStyle}>
@@ -2420,6 +2430,13 @@ function TaskRowWithHandover({ task, norm, tfsBaseUrl, source, onCopyLink, prior
         </TableCell>
         <TableCell>
           <PrioritySelect value={priority} onChange={onPriorityChange} />
+        </TableCell>
+        <TableCell>
+          {hasWaitingTag(task.tags) ? (
+            <WaitingBadge tags={task.tags} />
+          ) : (
+            <span className="text-xs text-muted-foreground italic">—</span>
+          )}
         </TableCell>
         <TableCell className="text-right">
           <Button
