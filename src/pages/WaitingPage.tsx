@@ -35,6 +35,14 @@ const formatDate = (iso?: string): string | undefined => {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 };
 
+const formatDateTime = (iso?: string): string | undefined => {
+  if (!iso) return undefined;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return undefined;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+};
+
 const isPathUnder = (path: string | undefined, root: string) =>
   Boolean(path && (path === root || path.startsWith(`${root}\\`)));
 
