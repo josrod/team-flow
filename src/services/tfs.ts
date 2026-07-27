@@ -1368,6 +1368,8 @@ export interface TfsBug {
   priority?: number;
   severity?: string;
   tags?: string[];
+  /** Last modification date (System.ChangedDate), ISO string. */
+  changedDate?: string;
   /** Browser URL to open the work item in Azure DevOps. */
   htmlUrl: string;
 }
