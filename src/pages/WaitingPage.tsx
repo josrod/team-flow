@@ -165,7 +165,7 @@ export const WaitingPage = () => {
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading} className="gap-2">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            {t.refresh}
+            {t.bugsRefresh}
           </Button>
           <Button variant="ghost" size="sm" asChild className="gap-2">
             <Link to="/settings/azure-devops">
