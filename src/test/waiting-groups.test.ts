@@ -67,3 +67,19 @@ describe("waitingGroups", () => {
     expect(pathLeaf(undefined)).toBeUndefined();
   });
 });
+
+describe("extractWaitingDependency", () => {
+  it("reads the dependency from prefixed tags", async () => {
+    const { extractWaitingDependency } = await import("@/lib/waitingGroups");
+    expect(extractWaitingDependency(["waiting", "waiting:Customer"])).toBe("Customer");
+    expect(extractWaitingDependency(["Blocked-By: QA team"])).toBe("QA team");
+    expect(extractWaitingDependency(["dep:Vendor"])).toBe("Vendor");
+  });
+
+  it("returns undefined when no dependency is declared", async () => {
+    const { extractWaitingDependency } = await import("@/lib/waitingGroups");
+    expect(extractWaitingDependency(["waiting"])).toBeUndefined();
+    expect(extractWaitingDependency(["waiting:"])).toBeUndefined();
+    expect(extractWaitingDependency(undefined)).toBeUndefined();
+  });
+});

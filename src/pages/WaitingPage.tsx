@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Hourglass, Loader2, RefreshCw, ExternalLink, Search, UserX } from "lucide-react";
+import { Hourglass, Loader2, RefreshCw, ExternalLink, Search, UserX, Link2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { useAuth } from "@/context/AuthContext";
@@ -15,8 +15,10 @@ import { Settings as SettingsIcon } from "lucide-react";
 import { listTfsFeatures, listTfsTasks, RODAT_AREA_PATH, RODAT_ITERATION_PATH, type TfsWorkItem } from "@/services/tfs";
 import { decryptPat } from "@/services/tfsPatVault";
 import { parseTfsTags } from "@/lib/tfsTags";
+import { cn } from "@/lib/utils";
 import { isBugType, normalizeState } from "@/lib/tasksState";
 import {
+  extractWaitingDependency,
   groupWaitingItems,
   latestChangedDate,
   pathLeaf,
@@ -265,6 +267,7 @@ export const WaitingPage = () => {
                     <ul className="space-y-1.5">
                       {theme.items.map((item) => {
                         const itemDate = formatDate(item.changedDate);
+                        const dependency = extractWaitingDependency(item.tags);
                         return (
                           <li
                             key={item.id}
