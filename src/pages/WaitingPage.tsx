@@ -35,6 +35,14 @@ const formatDate = (iso?: string): string | undefined => {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 };
 
+const formatDateTime = (iso?: string): string | undefined => {
+  if (!iso) return undefined;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return undefined;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+};
+
 const isPathUnder = (path: string | undefined, root: string) =>
   Boolean(path && (path === root || path.startsWith(`${root}\\`)));
 
@@ -266,7 +274,8 @@ export const WaitingPage = () => {
                     </h3>
                     <ul className="space-y-1.5">
                       {theme.items.map((item) => {
-                        const itemDate = formatDate(item.changedDate);
+                        const itemDate = formatDateTime(item.changedDate);
+                        const rawDate = item.changedDate;
                         const dependency = extractWaitingDependency(item.tags);
                         return (
                           <li
@@ -301,9 +310,16 @@ export const WaitingPage = () => {
                               </TooltipContent>
                             </UiTooltip>
                             {itemDate && (
-                              <span className="text-xs text-muted-foreground">
-                                {t.waitingSince.replace("{date}", itemDate)}
-                              </span>
+                              <UiTooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="text-xs text-muted-foreground cursor-help">
+                                    {t.waitingSince.replace("{date}", itemDate)}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-xs space-y-1">
+                                  <p>{t.waitingDateTooltip.replace("{field}", "changedDate").replace("{date}", rawDate ?? "")}</p>
+                                </TooltipContent>
+                              </UiTooltip>
                             )}
                             {baseUrl && (
                               <a
