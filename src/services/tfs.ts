@@ -1368,6 +1368,8 @@ export interface TfsBug {
   priority?: number;
   severity?: string;
   tags?: string[];
+  /** Last modification date (System.ChangedDate), ISO string. */
+  changedDate?: string;
   /** Browser URL to open the work item in Azure DevOps. */
   htmlUrl: string;
 }
@@ -1473,6 +1475,7 @@ export const fetchTfsBugsByIterations = async (
       "System.IterationPath",
       "System.AreaPath",
       "System.Tags",
+      "System.ChangedDate",
       "Microsoft.VSTS.Common.Priority",
       "Microsoft.VSTS.Common.Severity",
     ];
@@ -1513,6 +1516,7 @@ export const fetchTfsBugsByIterations = async (
           iterationPath: f["System.IterationPath"] as string | undefined,
           areaPath: f["System.AreaPath"] as string | undefined,
           tags,
+          changedDate: f["System.ChangedDate"] as string | undefined,
           priority: typeof priorityRaw === "number" ? priorityRaw : undefined,
           severity: f["Microsoft.VSTS.Common.Severity"] as string | undefined,
           htmlUrl: buildWorkItemHtmlUrl(conn, raw.id),
