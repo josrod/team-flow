@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { useLang } from "@/context/LanguageContext";
@@ -27,6 +28,18 @@ import { PrioritySelect } from "@/components/PrioritySelect";
 import { PriorityMenu } from "@/components/PriorityMenu";
 import { useTaskPriorities } from "@/hooks/use-task-priorities";
 import { sortByPriority, type PriorityLevel } from "@/lib/taskPriority";
+import { hasWaitingTag } from "@/lib/tasksState";
+
+// Format an ISO date as DD/MM/YYYY for tooltip display. Returns "—" when missing or invalid.
+const formatBugDate = (iso?: string): string => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+};
 
 interface AdoSettings {
   serverUrl: string;
