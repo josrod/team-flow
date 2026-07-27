@@ -1057,10 +1057,33 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
     arr.sort((a, b) => {
       if (a.person === t.unassigned) return 1;
       if (b.person === t.unassigned) return -1;
+      const latestWaitingDate = (group: typeof arr[number]) => {
+        let max = -Infinity;
+        const allTasks = [
+          ...group.active, ...group.pending, ...group.blocked,
+          ...group.done, ...group.resolved, ...group.closed,
+        ];
+        for (const t of allTasks) {
+          if (!hasWaitingTag(t.tags)) continue;
+          const ts = t.changedDate ? Date.parse(t.changedDate) : NaN;
+          if (Number.isFinite(ts) && ts > max) max = ts;
+        }
+        return max;
+      };
       switch (taskSort) {
         case "total-asc": return a.total - b.total;
         case "name-asc": return a.person.localeCompare(b.person);
         case "name-desc": return b.person.localeCompare(a.person);
+        case "waiting-desc": {
+          const aLatest = latestWaitingDate(a);
+          const bLatest = latestWaitingDate(b);
+          const aHas = aLatest > -Infinity;
+          const bHas = bLatest > -Infinity;
+          if (aHas && !bHas) return -1;
+          if (!aHas && bHas) return 1;
+          if (aHas && bHas) return bLatest - aLatest;
+          return b.total - a.total;
+        }
         case "total-desc":
         default: return b.total - a.total;
       }
