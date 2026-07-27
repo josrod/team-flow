@@ -48,6 +48,7 @@ import { useTaskPriorities } from "@/hooks/use-task-priorities";
 import { PriorityLevel, sortByPriority, moveTo, ALL_BUCKET } from "@/lib/taskPriority";
 import { PrioritySelect } from "@/components/PrioritySelect";
 import { PriorityMenu } from "@/components/PriorityMenu";
+import { WaitingBadge } from "@/components/WaitingBadge";
 import { SortableRows } from "@/components/SortableRows";
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
