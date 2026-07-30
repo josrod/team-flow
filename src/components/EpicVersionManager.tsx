@@ -21,6 +21,9 @@ interface EpicVersionManagerProps {
   onAdd: (name: string, colorKey: string) => Promise<void>;
   onEdit: (id: string, patch: { name?: string; colorKey?: string }) => Promise<void>;
   onRemove: (id: string) => Promise<void>;
+  /** When set, the manager starts inline editing of that version. */
+  editRequestId?: string | null;
+  onEditRequestHandled?: () => void;
 }
 
 const ColorPicker = ({
