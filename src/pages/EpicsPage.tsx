@@ -559,6 +559,72 @@ export const EpicsPage = () => {
                   </div>
                 )}
               </div>
+              <div className="min-w-[200px]">
+                <label className="text-xs text-muted-foreground">{t.epicsFilterVersions}</label>
+                <Popover open={versionPopoverOpen} onOpenChange={setVersionPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      className="mt-1 h-9 w-full justify-between font-normal"
+                      disabled={versions.length === 0}
+                    >
+                      <span className="truncate text-left">
+                        {selectedVersions.length === 0
+                          ? t.epicsFilterVersionsPlaceholder
+                          : `${selectedVersions.length} ${t.epicsFilterTagsSelected}`}
+                      </span>
+                      <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                    <div className="flex items-center justify-end border-b px-3 py-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setSelectedVersions([])}
+                        disabled={selectedVersions.length === 0}
+                      >
+                        {t.epicsFilterClear}
+                      </Button>
+                    </div>
+                    <div className="max-h-72 overflow-auto py-1">
+                      {[...versions.map((v) => ({ key: v.id, label: v.name, colorKey: v.colorKey })),
+                        { key: NO_VERSION, label: t.epicVersionNone, colorKey: null as string | null }].map((opt) => {
+                        const selected = selectedVersions.includes(opt.key);
+                        return (
+                          <button
+                            key={opt.key}
+                            type="button"
+                            onClick={() =>
+                              setSelectedVersions((prev) =>
+                                prev.includes(opt.key)
+                                  ? prev.filter((p) => p !== opt.key)
+                                  : [...prev, opt.key],
+                              )
+                            }
+                            className={cn(
+                              "flex w-full items-center gap-2 px-3 py-1.5 text-xs text-left hover:bg-accent",
+                              selected && "bg-accent/50",
+                            )}
+                          >
+                            <Check className={cn("h-3.5 w-3.5 shrink-0", selected ? "opacity-100" : "opacity-0")} />
+                            {opt.colorKey ? (
+                              <span className={cn("h-2 w-2 rounded-full shrink-0", resolveEpicVersionColor(opt.colorKey).bar)} />
+                            ) : (
+                              <span className="h-2 w-2 rounded-full shrink-0 border border-muted-foreground/50" />
+                            )}
+                            <span className="truncate">{opt.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
 
             {loading ? (
