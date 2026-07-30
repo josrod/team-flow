@@ -332,6 +332,25 @@ export const EpicsPage = () => {
     return counts;
   }, [epics, assignments]);
 
+  const noVersionCount = useMemo(
+    () => epics.filter((e) => !assignments[String(e.id)]).length,
+    [epics, assignments],
+  );
+
+  const [versionEditRequestId, setVersionEditRequestId] = useState<string | null>(null);
+
+  const toggleVersionKey = useCallback((key: string) => {
+    setSelectedVersions((prev) =>
+      prev.includes(key) ? prev.filter((p) => p !== key) : [...prev, key],
+    );
+  }, []);
+
+  const requestVersionEdit = useCallback((id: string) => {
+    setVersionEditRequestId(id);
+    document.getElementById("epic-versions-manager")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, []);
+
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const tagSet = new Set(selectedTags.map((t) => t.toLowerCase()));
