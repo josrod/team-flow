@@ -281,7 +281,23 @@ export const AzureDevOpsSettingsPage = () => {
       status === "valid" && "border-emerald-500/60 focus-visible:ring-emerald-500/40",
     );
 
+  const handleProxyDiagnostics = async () => {
+    setProxyDiagnosing(true);
+    try {
+      const result = await runProxyDiagnostics({ serverUrl, collection, project });
+      setProxyDiagnostics(result);
+      if (result.allPassed) {
+        toast.success(t.proxyDiagAllOk);
+      } else {
+        toast.warning(t.proxyDiagIssues);
+      }
+    } finally {
+      setProxyDiagnosing(false);
+    }
+  };
+
   const handleAdvancedCheck = async () => {
+
     if (!serverUrl.trim() || !collection.trim() || !project.trim() || !pat.trim()) {
       toast.error(t.adoFillAllFields);
       return;
