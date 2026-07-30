@@ -20,6 +20,7 @@ import { useLang } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { decryptPat } from "@/services/tfsPatVault";
+import { loadSharedAdoSettings } from "@/services/adoConfig";
 import { BugDetailDialog } from "@/components/BugDetailDialog";
 import { SeverityBadge, normalizeSeverity } from "@/components/SeverityBadge";
 import { fetchTfsBugsByIterations, type TfsBug, type TfsError } from "@/services/tfs";
@@ -87,16 +88,22 @@ export const BugsPage = () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) {
-        setSettingsLoading(false);
-        return;
+      let data: Record<string, unknown> | null = null;
+      if (user) {
+        const { data: own } = await supabase
+          .from("azure_devops_settings")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        data = (own as Record<string, unknown> | null) ?? null;
       }
-      const { data } = await supabase
-        .from("azure_devops_settings")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      // Visitors without an admin session read the shared configuration so the
+      // data stays visible (read-only) inside the intranet.
+      if (!data) {
+        data = (await loadSharedAdoSettings()) as unknown as Record<string, unknown> | null;
+      }
       if (data) {
+
         const raw = data as unknown as {
           server_url: string | null;
           collection: string | null;

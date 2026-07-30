@@ -14,7 +14,7 @@ import { Tooltip as UiTooltip, TooltipTrigger, TooltipContent } from "@/componen
 import { Settings as SettingsIcon } from "lucide-react";
 import { listTfsFeatures, listTfsTasks, RODAT_AREA_PATH, RODAT_ITERATION_PATH, type TfsWorkItem } from "@/services/tfs";
 import { decryptPat } from "@/services/tfsPatVault";
-import { loadPublicAdoConfig, buildAdoBaseUrl } from "@/services/adoConfig";
+import { loadSharedAdoSettings } from "@/services/adoConfig";
 
 import { parseTfsTags } from "@/lib/tfsTags";
 import { cn } from "@/lib/utils";
@@ -66,25 +66,30 @@ export const WaitingPage = () => {
   const load = async () => {
     setLoading(true);
     setError(null);
-    // Anonymous visitors can browse the view, but Azure DevOps data needs the
-    // admin credentials. Expose the public config so item links still work.
-    if (!user) {
-      try {
-        const publicConfig = await loadPublicAdoConfig();
-        setBaseUrl(buildAdoBaseUrl(publicConfig?.serverUrl, publicConfig?.collection, publicConfig?.project));
-        setError(t.errAdoSignInRequired);
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
     try {
-
-      const { data: settings } = await supabase
-        .from("azure_devops_settings")
-        .select("server_url, collection, project, team, pat_encrypted, pat_iv, area_paths, iteration_paths")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      // Signed-in admins use their own row; everyone else uses the shared
+      // admin-configured connection so the board is visible without a login.
+      let settings: {
+        server_url: string | null;
+        collection: string | null;
+        project: string;
+        team: string | null;
+        pat_encrypted: string;
+        pat_iv: string | null;
+        area_paths?: string[] | null;
+        iteration_paths?: string[] | null;
+      } | null = null;
+      if (user) {
+        const { data } = await supabase
+          .from("azure_devops_settings")
+          .select("server_url, collection, project, team, pat_encrypted, pat_iv, area_paths, iteration_paths")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        settings = data ?? null;
+      }
+      if (!settings?.server_url || !settings?.collection || !settings?.project || !settings?.pat_encrypted) {
+        settings = await loadSharedAdoSettings();
+      }
       if (!settings?.server_url || !settings?.collection || !settings?.project || !settings?.pat_encrypted) {
         setError(t.errIncompleteAdoConfig);
         return;
@@ -96,6 +101,7 @@ export const WaitingPage = () => {
         setError(t.errIncompleteAdoConfig);
         return;
       }
+
       const conn = {
         serverUrl: settings.server_url,
         collection: settings.collection,
