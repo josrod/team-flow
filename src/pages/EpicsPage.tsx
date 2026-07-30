@@ -314,12 +314,35 @@ export const EpicsPage = () => {
     setSelectedTags((prev) => pruneUnknownTags(prev, availableTags));
   }, [availableTags, loading, epics.length]);
 
+  const versionOf = useCallback(
+    (epic: TfsEpic) => {
+      const id = assignments[String(epic.id)];
+      return id ? versionById.get(id) ?? null : null;
+    },
+    [assignments, versionById],
+  );
+
+  const versionCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    epics.forEach((e) => {
+      const id = assignments[String(e.id)];
+      if (id) counts[id] = (counts[id] ?? 0) + 1;
+    });
+    return counts;
+  }, [epics, assignments]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const tagSet = new Set(selectedTags.map((t) => t.toLowerCase()));
+    const versionSet = new Set(selectedVersions);
     return epics.filter((e) => {
       if (stateFilter !== ALL && e.state !== stateFilter) return false;
       if (tagSet.size > 0 && !e.tags.some((tg) => tagSet.has(tg.toLowerCase()))) return false;
+      if (versionSet.size > 0) {
+        const assigned = assignments[String(e.id)];
+        const key = assigned ?? NO_VERSION;
+        if (!versionSet.has(key)) return false;
+      }
       if (!q) return true;
       return (
         String(e.id).includes(q) ||
@@ -327,7 +350,7 @@ export const EpicsPage = () => {
         (e.assignedTo?.toLowerCase().includes(q) ?? false)
       );
     });
-  }, [epics, search, stateFilter, selectedTags]);
+  }, [epics, search, stateFilter, selectedTags, selectedVersions, assignments]);
 
   const grouped = useMemo(() => {
     const map = new Map<QuarterBucket, TfsEpic[]>();
