@@ -878,6 +878,13 @@ export const translations = {
     proxyDiagRun: "Ejecutar diagnóstico",
     proxyDiagRunning: "Ejecutando diagnóstico...",
     proxyDiagRanAt: "Última ejecución",
+    proxyRateLimitHeading: "Límite de peticiones",
+    proxyRateLimitHint:
+      "Número máximo de peticiones de lectura que el proxy acepta por visitante dentro de la ventana de tiempo.",
+    proxyRateLimitMaxLabel: "Peticiones por ventana (1-10000)",
+    proxyRateLimitWindowLabel: "Ventana en segundos (1-3600)",
+    proxyRateLimitApplyNote: "Los cambios se aplican en aproximadamente un minuto, sin necesidad de redesplegar.",
+
     proxyDiagSummary: "Comprobaciones correctas",
     proxyDiagAllOk: "El proxy responde correctamente y la configuración es coherente.",
     proxyDiagIssues: "Revisa las comprobaciones marcadas en rojo o ámbar.",
