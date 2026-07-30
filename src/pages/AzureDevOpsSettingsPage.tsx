@@ -549,6 +549,9 @@ export const AzureDevOpsSettingsPage = () => {
         epics_area_paths: epicsAreaPaths,
         epics_iteration_paths: epicsIterationPaths,
         epics_tags: epicsTags,
+        proxy_rate_limit_max_requests: clampRate(proxyRateLimitMax, 1, 10000, 120),
+        proxy_rate_limit_window_seconds: clampRate(proxyRateLimitWindow, 1, 3600, 60),
+
       };
 
 
