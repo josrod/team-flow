@@ -18,6 +18,8 @@ import {
   type TfsError,
 } from "@/services/tfs";
 import { sanitizeRichText } from "@/lib/sanitizeHtml";
+import { EpicVersionSelect } from "@/components/EpicVersionSelect";
+import type { EpicVersion } from "@/services/epicVersions";
 
 interface EpicDetailDrawerProps {
   epic: TfsEpic | null;
@@ -30,6 +32,10 @@ interface EpicDetailDrawerProps {
     team?: string;
     pat: string;
   } | null;
+  versions?: EpicVersion[];
+  versionId?: string | null;
+  canEditVersion?: boolean;
+  onAssignVersion?: (epicId: number | string, versionId: string | null) => Promise<void>;
 }
 
 const formatDate = (iso?: string | null): string => {
