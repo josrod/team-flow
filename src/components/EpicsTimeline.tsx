@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 interface EpicsTimelineProps {
   epics: TfsEpic[];
   onOpenEpic: (epic: TfsEpic) => void;
+  /** Optional delivery version colouring for each epic bar. */
+  versionFor?: (epic: TfsEpic) => { name: string; barClass: string } | null;
 }
 
 type GroupMode = "none" | "area" | "assignee";
@@ -38,7 +40,7 @@ const stateBarClass = (state: string): string => {
   return "bg-primary/50";
 };
 
-export const EpicsTimeline = ({ epics, onOpenEpic }: EpicsTimelineProps) => {
+export const EpicsTimeline = ({ epics, onOpenEpic, versionFor }: EpicsTimelineProps) => {
   const { t } = useLang();
   const [weeksAhead, setWeeksAhead] = useState<3 | 5 | 7>(3);
   const [groupBy, setGroupBy] = useState<GroupMode>("none");
@@ -188,6 +190,7 @@ export const EpicsTimeline = ({ epics, onOpenEpic }: EpicsTimelineProps) => {
                 <TooltipProvider delayDuration={200}>
                   {groupEpics.map((epic) => {
                     const geom = getBarGeometry(epic);
+                    const version = versionFor?.(epic) ?? null;
                     return (
                       <div
                         key={epic.id}
@@ -226,7 +229,7 @@ export const EpicsTimeline = ({ epics, onOpenEpic }: EpicsTimelineProps) => {
                                   onClick={() => onOpenEpic(epic)}
                                   className={cn(
                                     "absolute top-1/2 -translate-y-1/2 h-5 rounded-sm text-[10px] text-primary-foreground px-1.5 truncate text-left hover:ring-2 hover:ring-primary/40 transition-shadow",
-                                    stateBarClass(epic.state),
+                                    version ? version.barClass : stateBarClass(epic.state),
                                     geom.inferred && "border border-dashed border-foreground/40",
                                   )}
                                   style={{
@@ -246,6 +249,11 @@ export const EpicsTimeline = ({ epics, onOpenEpic }: EpicsTimelineProps) => {
                                   <div className="text-muted-foreground">
                                     {epic.assignedTo ?? t.epicsUnassigned}
                                   </div>
+                                  {version && (
+                                    <div className="text-muted-foreground">
+                                      {t.epicVersionAssignLabel}: {version.name}
+                                    </div>
+                                  )}
                                   {epic.areaPath && (
                                     <div className="text-muted-foreground font-mono">{epic.areaPath}</div>
                                   )}

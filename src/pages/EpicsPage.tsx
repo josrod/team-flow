@@ -34,6 +34,11 @@ import {
 } from "@/lib/quarters";
 import { uniqueTags } from "@/lib/tfsTags";
 import { parseTagsParam, pruneUnknownTags, serializeTagsParam } from "@/lib/epicsTagsParam";
+import { useAuth } from "@/context/AuthContext";
+import { useEpicVersions } from "@/hooks/use-epic-versions";
+import { EpicVersionManager } from "@/components/EpicVersionManager";
+import { EpicVersionSelect } from "@/components/EpicVersionSelect";
+import { resolveEpicVersionColor } from "@/lib/epicVersionColors";
 
 interface EpicsSettings {
   serverUrl: string;
@@ -53,6 +58,7 @@ interface EpicsSettings {
 type ViewMode = "roadmap" | "timeline" | "heatmap" | "list";
 
 const ALL = "__all__";
+const NO_VERSION = "none";
 const LOAD_EPICS_TIMEOUT_MS = 20000;
 
 const formatDate = (iso?: string | null): string => {
@@ -108,6 +114,36 @@ export const EpicsPage = () => {
     parseTagsParam(searchParams.get("tags")),
   );
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
+  const [versionPopoverOpen, setVersionPopoverOpen] = useState(false);
+
+  const { isAdmin } = useAuth();
+  const {
+    versions,
+    assignments,
+    versionById,
+    addVersion,
+    editVersion,
+    removeVersion,
+    assignVersion,
+  } = useEpicVersions();
+
+  // Version filter (?versions=id1,id2 — "none" targets epics without version).
+  const [selectedVersions, setSelectedVersions] = useState<string[]>(() =>
+    parseTagsParam(searchParams.get("versions")),
+  );
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (selectedVersions.length === 0) {
+      if (!next.has("versions")) return;
+      next.delete("versions");
+    } else {
+      const value = serializeTagsParam(selectedVersions);
+      if (next.get("versions") === value) return;
+      next.set("versions", value);
+    }
+    setSearchParams(next);
+  }, [selectedVersions, searchParams, setSearchParams]);
 
   // Sync selectedTags → URL (?tags=a,b,c). Removes the param when empty.
   useEffect(() => {
@@ -279,12 +315,35 @@ export const EpicsPage = () => {
     setSelectedTags((prev) => pruneUnknownTags(prev, availableTags));
   }, [availableTags, loading, epics.length]);
 
+  const versionOf = useCallback(
+    (epic: TfsEpic) => {
+      const id = assignments[String(epic.id)];
+      return id ? versionById.get(id) ?? null : null;
+    },
+    [assignments, versionById],
+  );
+
+  const versionCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    epics.forEach((e) => {
+      const id = assignments[String(e.id)];
+      if (id) counts[id] = (counts[id] ?? 0) + 1;
+    });
+    return counts;
+  }, [epics, assignments]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const tagSet = new Set(selectedTags.map((t) => t.toLowerCase()));
+    const versionSet = new Set(selectedVersions);
     return epics.filter((e) => {
       if (stateFilter !== ALL && e.state !== stateFilter) return false;
       if (tagSet.size > 0 && !e.tags.some((tg) => tagSet.has(tg.toLowerCase()))) return false;
+      if (versionSet.size > 0) {
+        const assigned = assignments[String(e.id)];
+        const key = assigned ?? NO_VERSION;
+        if (!versionSet.has(key)) return false;
+      }
       if (!q) return true;
       return (
         String(e.id).includes(q) ||
@@ -292,7 +351,7 @@ export const EpicsPage = () => {
         (e.assignedTo?.toLowerCase().includes(q) ?? false)
       );
     });
-  }, [epics, search, stateFilter, selectedTags]);
+  }, [epics, search, stateFilter, selectedTags, selectedVersions, assignments]);
 
   const grouped = useMemo(() => {
     const map = new Map<QuarterBucket, TfsEpic[]>();
@@ -402,6 +461,14 @@ export const EpicsPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <EpicVersionManager
+              versions={versions}
+              counts={versionCounts}
+              canEdit={isAdmin}
+              onAdd={addVersion}
+              onEdit={editVersion}
+              onRemove={removeVersion}
+            />
             <div className="flex flex-wrap gap-3">
               <div className="min-w-[160px]">
                 <label className="text-xs text-muted-foreground">{t.epicsFilterState}</label>
@@ -492,6 +559,72 @@ export const EpicsPage = () => {
                   </div>
                 )}
               </div>
+              <div className="min-w-[200px]">
+                <label className="text-xs text-muted-foreground">{t.epicsFilterVersions}</label>
+                <Popover open={versionPopoverOpen} onOpenChange={setVersionPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      className="mt-1 h-9 w-full justify-between font-normal"
+                      disabled={versions.length === 0}
+                    >
+                      <span className="truncate text-left">
+                        {selectedVersions.length === 0
+                          ? t.epicsFilterVersionsPlaceholder
+                          : `${selectedVersions.length} ${t.epicsFilterTagsSelected}`}
+                      </span>
+                      <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                    <div className="flex items-center justify-end border-b px-3 py-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setSelectedVersions([])}
+                        disabled={selectedVersions.length === 0}
+                      >
+                        {t.epicsFilterClear}
+                      </Button>
+                    </div>
+                    <div className="max-h-72 overflow-auto py-1">
+                      {[...versions.map((v) => ({ key: v.id, label: v.name, colorKey: v.colorKey })),
+                        { key: NO_VERSION, label: t.epicVersionNone, colorKey: null as string | null }].map((opt) => {
+                        const selected = selectedVersions.includes(opt.key);
+                        return (
+                          <button
+                            key={opt.key}
+                            type="button"
+                            onClick={() =>
+                              setSelectedVersions((prev) =>
+                                prev.includes(opt.key)
+                                  ? prev.filter((p) => p !== opt.key)
+                                  : [...prev, opt.key],
+                              )
+                            }
+                            className={cn(
+                              "flex w-full items-center gap-2 px-3 py-1.5 text-xs text-left hover:bg-accent",
+                              selected && "bg-accent/50",
+                            )}
+                          >
+                            <Check className={cn("h-3.5 w-3.5 shrink-0", selected ? "opacity-100" : "opacity-0")} />
+                            {opt.colorKey ? (
+                              <span className={cn("h-2 w-2 rounded-full shrink-0", resolveEpicVersionColor(opt.colorKey).bar)} />
+                            ) : (
+                              <span className="h-2 w-2 rounded-full shrink-0 border border-muted-foreground/50" />
+                            )}
+                            <span className="truncate">{opt.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
 
             {loading ? (
@@ -540,13 +673,22 @@ export const EpicsPage = () => {
                                 {bucketEpics.length === 0 ? (
                                   <p className="text-xs text-muted-foreground text-center py-4">—</p>
                                 ) : (
-                                  bucketEpics.map((epic) => (
-                                    <button
+                                  bucketEpics.map((epic) => {
+                                    const version = versionOf(epic);
+                                    const color = version ? resolveEpicVersionColor(version.colorKey) : null;
+                                    return (
+                                    <div
                                       key={epic.id}
-                                      type="button"
-                                      onClick={() => openEpic(epic)}
-                                      className="block w-full text-left rounded-md border bg-background p-2.5 hover:border-primary hover:shadow-sm transition-all"
+                                      className="relative overflow-hidden rounded-md border bg-background hover:border-primary hover:shadow-sm transition-all"
                                     >
+                                      {color && (
+                                        <span className={cn("absolute inset-y-0 left-0 w-1", color.stripe)} aria-hidden />
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => openEpic(epic)}
+                                        className={cn("block w-full text-left p-2.5", color && "pl-3.5")}
+                                      >
                                       <div className="flex items-start justify-between gap-2">
                                         <span className="text-xs font-mono text-muted-foreground">#{epic.id}</span>
                                         <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
@@ -554,6 +696,12 @@ export const EpicsPage = () => {
                                       <p className="text-sm font-medium leading-snug mt-1 line-clamp-2">{epic.title}</p>
                                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
                                         <Badge variant="outline" className="text-[10px] px-1.5 py-0">{epic.state}</Badge>
+                                        {version && color && (
+                                          <Badge variant="outline" className={cn("gap-1 text-[10px] px-1.5 py-0", color.badge)}>
+                                            <span className={cn("h-1.5 w-1.5 rounded-full", color.bar)} />
+                                            {version.name}
+                                          </Badge>
+                                        )}
                                         {epic.tags.slice(0, 3).map((tag) => (
                                           <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0">{tag}</Badge>
                                         ))}
@@ -569,8 +717,22 @@ export const EpicsPage = () => {
                                         </span>
                                         <span className="font-mono">{formatDate(epic.targetDate)}</span>
                                       </div>
-                                    </button>
-                                  ))
+                                      </button>
+                                      {isAdmin && versions.length > 0 && (
+                                        <div className={cn("px-2.5 pb-2.5", color && "pl-3.5")}>
+                                          <EpicVersionSelect
+                                            epicId={epic.id}
+                                            versions={versions}
+                                            versionId={assignments[String(epic.id)] ?? null}
+                                            canEdit
+                                            onAssign={assignVersion}
+                                            className="w-full"
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                    );
+                                  })
                                 )}
                               </div>
                             </div>
@@ -584,7 +746,15 @@ export const EpicsPage = () => {
                   {filtered.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">{t.epicsNoResults}</p>
                   ) : (
-                    <EpicsTimeline epics={filtered} onOpenEpic={openEpic} />
+                    <EpicsTimeline
+                      epics={filtered}
+                      onOpenEpic={openEpic}
+                      versionFor={(epic) => {
+                        const version = versionOf(epic);
+                        if (!version) return null;
+                        return { name: version.name, barClass: resolveEpicVersionColor(version.colorKey).bar };
+                      }}
+                    />
                   )}
                 </TabsContent>
                 <TabsContent value="heatmap" className="mt-4">
@@ -606,6 +776,7 @@ export const EpicsPage = () => {
                             <TableHead>{t.epicsColTitle}</TableHead>
                             <TableHead>{t.epicsColState}</TableHead>
                             <TableHead>{t.epicsColAssignee}</TableHead>
+                            <TableHead>{t.epicsColVersion}</TableHead>
                             <TableHead>{t.epicsColTags}</TableHead>
                             <TableHead>{t.epicsColArea}</TableHead>
                             <TableHead>{t.epicsColTargetDate}</TableHead>
@@ -638,6 +809,15 @@ export const EpicsPage = () => {
                               <TableCell className="font-medium">{epic.title}</TableCell>
                               <TableCell><Badge variant="outline">{epic.state}</Badge></TableCell>
                               <TableCell className="text-sm">{epic.assignedTo ?? <span className="text-muted-foreground">{t.epicsUnassigned}</span>}</TableCell>
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                <EpicVersionSelect
+                                  epicId={epic.id}
+                                  versions={versions}
+                                  versionId={assignments[String(epic.id)] ?? null}
+                                  canEdit={isAdmin}
+                                  onAssign={assignVersion}
+                                />
+                              </TableCell>
                               <TableCell>
                                 <div className="flex flex-wrap gap-1">
                                   {epic.tags.map((tg) => (
@@ -664,6 +844,10 @@ export const EpicsPage = () => {
       </motion.div>
 
       <EpicDetailDrawer
+        versions={versions}
+        versionId={selectedEpic ? assignments[String(selectedEpic.id)] ?? null : null}
+        canEditVersion={isAdmin}
+        onAssignVersion={assignVersion}
         epic={selectedEpic}
         open={detailOpen}
         onOpenChange={setDetailOpen}

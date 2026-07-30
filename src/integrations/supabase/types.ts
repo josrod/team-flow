@@ -142,6 +142,65 @@ export type Database = {
         }
         Relationships: []
       }
+      epic_version_assignments: {
+        Row: {
+          created_at: string
+          epic_id: string
+          id: string
+          updated_at: string
+          version_id: string
+        }
+        Insert: {
+          created_at?: string
+          epic_id: string
+          id?: string
+          updated_at?: string
+          version_id: string
+        }
+        Update: {
+          created_at?: string
+          epic_id?: string
+          id?: string
+          updated_at?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "epic_version_assignments_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "epic_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      epic_versions: {
+        Row: {
+          color_key: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          color_key?: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          color_key?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       handovers: {
         Row: {
           absence_id: string

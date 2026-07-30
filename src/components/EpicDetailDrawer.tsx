@@ -18,6 +18,8 @@ import {
   type TfsError,
 } from "@/services/tfs";
 import { sanitizeRichText } from "@/lib/sanitizeHtml";
+import { EpicVersionSelect } from "@/components/EpicVersionSelect";
+import type { EpicVersion } from "@/services/epicVersions";
 
 interface EpicDetailDrawerProps {
   epic: TfsEpic | null;
@@ -30,6 +32,10 @@ interface EpicDetailDrawerProps {
     team?: string;
     pat: string;
   } | null;
+  versions?: EpicVersion[];
+  versionId?: string | null;
+  canEditVersion?: boolean;
+  onAssignVersion?: (epicId: string, versionId: string | null) => Promise<void>;
 }
 
 const formatDate = (iso?: string | null): string => {
@@ -67,7 +73,16 @@ const truncate = (value: string | undefined, max = 120): string => {
   return `${clean.slice(0, max)}…`;
 };
 
-export const EpicDetailDrawer = ({ epic, open, onOpenChange, connection }: EpicDetailDrawerProps) => {
+export const EpicDetailDrawer = ({
+  epic,
+  open,
+  onOpenChange,
+  connection,
+  versions = [],
+  versionId = null,
+  canEditVersion = false,
+  onAssignVersion,
+}: EpicDetailDrawerProps) => {
   const { t } = useLang();
   const [detail, setDetail] = useState<TfsEpicDetail | null>(null);
   const [loading, setLoading] = useState(false);
@@ -109,6 +124,17 @@ export const EpicDetailDrawer = ({ epic, open, onOpenChange, connection }: EpicD
         <ScrollArea className="flex-1">
           <div className="px-6 py-4 space-y-5">
             {error && <TfsErrorPanel error={error} />}
+
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">{t.epicVersionAssignLabel}</div>
+              <EpicVersionSelect
+                epicId={epic.id}
+                versions={versions}
+                versionId={versionId}
+                canEdit={canEditVersion}
+                onAssign={onAssignVersion ?? (async () => {})}
+              />
+            </div>
 
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
