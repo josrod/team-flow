@@ -101,6 +101,70 @@ const buildAuthHeader = (pat: string): string => {
   return `Basic ${token}`;
 };
 
+/**
+ * Sentinel PAT used when the real token must never reach the browser. A
+ * connection carrying this value is routed through the `ado-proxy` edge
+ * function, which performs the read-only upstream request server-side using
+ * the admin-configured, encrypted token.
+ */
+export const PROXY_PAT_SENTINEL = "__ado_proxy__";
+
+/** True once any request has been routed through the proxy this session. */
+let proxyModeActive = false;
+
+/** Enables proxy-aware behaviour (called when a shared connection is loaded). */
+export const enableTfsProxyMode = (): void => {
+  proxyModeActive = true;
+};
+
+
+
+
+export const isProxyConnection = (conn: TfsConnection): boolean =>
+  conn.pat === PROXY_PAT_SENTINEL;
+
+const PROXY_AUTH_HEADER = buildAuthHeader(PROXY_PAT_SENTINEL);
+
+const proxyEndpoint = (): string => {
+  const base = String(import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/+$/, "");
+  return `${base}/functions/v1/ado-proxy`;
+};
+
+const headerValue = (headers: HeadersInit | undefined, name: string): string | undefined => {
+  if (!headers) return undefined;
+  if (headers instanceof Headers) return headers.get(name) ?? undefined;
+  if (Array.isArray(headers)) return headers.find(([k]) => k.toLowerCase() === name.toLowerCase())?.[1];
+  const entry = Object.entries(headers).find(([k]) => k.toLowerCase() === name.toLowerCase());
+  return entry?.[1];
+};
+
+/**
+ * Drop-in replacement for `fetch` in this module. Requests whose Authorization
+ * header carries the proxy sentinel are forwarded to the edge function; every
+ * other request keeps hitting TFS directly (admin flows with a typed PAT).
+ */
+const tfsFetch = async (url: string, init?: RequestInit): Promise<Response> => {
+  if (headerValue(init?.headers, "Authorization") !== PROXY_AUTH_HEADER) {
+    return fetch(url, init);
+  }
+  proxyModeActive = true;
+  const method = (init?.method ?? "GET").toUpperCase();
+  const body = typeof init?.body === "string" ? init.body : undefined;
+
+  return fetch(proxyEndpoint(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: String(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? ""),
+      Authorization: `Bearer ${String(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "")}`,
+    },
+    body: JSON.stringify({ url, method, body }),
+    signal: init?.signal ?? null,
+  });
+};
+
+
+
 const isNetworkLevelError = (err: unknown): err is TypeError => {
   if (!(err instanceof TypeError)) return false;
   const msg = err.message.toLowerCase();
@@ -112,9 +176,13 @@ const isNetworkLevelError = (err: unknown): err is TypeError => {
 };
 
 const isMixedContent = (url: string): boolean => {
+  // In proxy mode the browser only talks to the Supabase edge function, so an
+  // http:// TFS server is never a mixed-content problem.
+  if (proxyModeActive) return false;
   try {
     const target = new URL(url);
     return window.location.protocol === "https:" && target.protocol === "http:";
+
   } catch {
     return false;
   }
@@ -147,7 +215,7 @@ export const testTfsConnection = async (
   const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const response = await fetch(url, {
+    const response = await tfsFetch(url, {
       method: "GET",
       headers: {
         Authorization: buildAuthHeader(conn.pat),
@@ -332,7 +400,7 @@ const runProbe = async (
 
   try {
     const isWiql = probe.id === "work_items_read";
-    const response = await fetch(url, {
+    const response = await tfsFetch(url, {
       method: isWiql ? "POST" : "GET",
       headers: {
         Authorization: buildAuthHeader(conn.pat),
@@ -496,7 +564,7 @@ const fetchJsonList = async <T>(
   const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const response = await fetch(url, {
+    const response = await tfsFetch(url, {
       method: "GET",
       headers: {
         Authorization: buildAuthHeader(pat),
@@ -692,7 +760,7 @@ const runWiqlAndFetch = async (
   const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const wiqlRes = await fetch(wiqlUrl, {
+    const wiqlRes = await tfsFetch(wiqlUrl, {
       method: "POST",
       headers: {
         Authorization: buildAuthHeader(conn.pat),
@@ -729,7 +797,7 @@ const runWiqlAndFetch = async (
     for (const batch of batches) {
       const fieldsParam = encodeURIComponent(fields.join(","));
       const detailsUrl = `${base}/_apis/wit/workitems?ids=${batch.join(",")}&fields=${fieldsParam}&api-version=${API_VERSION}`;
-      const detailsRes = await fetch(detailsUrl, {
+      const detailsRes = await tfsFetch(detailsUrl, {
         method: "GET",
         headers: {
           Authorization: buildAuthHeader(conn.pat),
@@ -884,7 +952,7 @@ export const listTfsClassificationNodes = async (
   const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const res = await fetch(url, {
+    const res = await tfsFetch(url, {
       method: "GET",
       headers: { Authorization: buildAuthHeader(pat), Accept: "application/json" },
       signal: controller.signal,
@@ -1092,7 +1160,7 @@ export const listTfsTeamAreaPaths = async (
   const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const res = await fetch(url, {
+    const res = await tfsFetch(url, {
       method: "GET",
       headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
       signal: controller.signal,
@@ -1315,7 +1383,7 @@ export const listTfsTeamMembers = async (
   const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const res = await fetch(url, {
+    const res = await tfsFetch(url, {
       method: "GET",
       headers: { Authorization: buildAuthHeader(pat), Accept: "application/json" },
       signal: controller.signal,
@@ -1436,7 +1504,7 @@ export const fetchTfsBugsByIterations = async (
   }
 
   try {
-    const wiqlRes = await fetch(wiqlUrl, {
+    const wiqlRes = await tfsFetch(wiqlUrl, {
 
       method: "POST",
       headers: {
@@ -1487,7 +1555,7 @@ export const fetchTfsBugsByIterations = async (
     for (const batch of batches) {
       const fieldsParam = encodeURIComponent(fields.join(","));
       const detailsUrl = `${base}/_apis/wit/workitems?ids=${batch.join(",")}&fields=${fieldsParam}&api-version=${API_VERSION}`;
-      const detailsRes = await fetch(detailsUrl, {
+      const detailsRes = await tfsFetch(detailsUrl, {
         method: "GET",
         headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
         signal: controller.signal,
@@ -1572,7 +1640,7 @@ export const fetchTfsBugDetail = async (
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
-    const res = await fetch(url, {
+    const res = await tfsFetch(url, {
       method: "GET",
       headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
       signal: controller.signal,
@@ -1762,8 +1830,8 @@ export const fetchTfsEpicDetail = async (
   try {
     const headers = { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" };
     const [detailRes, updatesRes] = await Promise.all([
-      fetch(detailUrl, { method: "GET", headers, signal: controller.signal }),
-      fetch(updatesUrl, { method: "GET", headers, signal: controller.signal }),
+      tfsFetch(detailUrl, { method: "GET", headers, signal: controller.signal }),
+      tfsFetch(updatesUrl, { method: "GET", headers, signal: controller.signal }),
     ]);
 
     if (!detailRes.ok) {
@@ -1885,7 +1953,7 @@ const runEpicsWiql = async (
   if (isMixedContent(url)) {
     return { ids: [], url, error: { kind: "mixed_content", url, message: "Mixed content (HTTPS → HTTP)." } };
   }
-  const res = await fetch(url, {
+  const res = await tfsFetch(url, {
     method: "POST",
     headers: {
       Authorization: buildAuthHeader(conn.pat),
@@ -1929,7 +1997,7 @@ const runSavedQuery = async (
   if (isMixedContent(url)) {
     return { ids: [], url, error: { kind: "mixed_content", url, message: "Mixed content (HTTPS → HTTP)." } };
   }
-  const res = await fetch(url, {
+  const res = await tfsFetch(url, {
     method: "GET",
     headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
     signal,
@@ -1942,7 +2010,7 @@ const runSavedQuery = async (
   // Fallback: fetch WIQL text and execute it manually. Useful when the run-by-id
   // endpoint is not exposed (older TFS) or the query id is a path rather than a GUID.
   const fallbackUrl = `${base}/${projectSeg}/_apis/wit/queries/${encodeURI(idOrPath)}?$expand=wiql&api-version=${API_VERSION}`;
-  const fallbackRes = await fetch(fallbackUrl, {
+  const fallbackRes = await tfsFetch(fallbackUrl, {
     method: "GET",
     headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
     signal,
@@ -2026,7 +2094,7 @@ export const fetchTfsEpics = async (
       const fieldsParam = encodeURIComponent(EPIC_FIELDS.join(","));
       const detailsUrl = `${base}/_apis/wit/workitems?ids=${batch.join(",")}&fields=${fieldsParam}&api-version=${API_VERSION}`;
       fetchUrl = detailsUrl;
-      const detailsRes = await fetch(detailsUrl, {
+      const detailsRes = await tfsFetch(detailsUrl, {
         method: "GET",
         headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
         signal: controller.signal,
