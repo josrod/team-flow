@@ -112,6 +112,12 @@ export const PROXY_PAT_SENTINEL = "__ado_proxy__";
 /** True once any request has been routed through the proxy this session. */
 let proxyModeActive = false;
 
+/** Enables proxy-aware behaviour (called when a shared connection is loaded). */
+export const enableTfsProxyMode = (): void => {
+  proxyModeActive = true;
+};
+
+
 
 
 export const isProxyConnection = (conn: TfsConnection): boolean =>
