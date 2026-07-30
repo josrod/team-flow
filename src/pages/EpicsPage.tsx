@@ -58,6 +58,7 @@ interface EpicsSettings {
 type ViewMode = "roadmap" | "timeline" | "heatmap" | "list";
 
 const ALL = "__all__";
+const NO_VERSION = "none";
 const LOAD_EPICS_TIMEOUT_MS = 20000;
 
 const formatDate = (iso?: string | null): string => {
