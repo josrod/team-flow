@@ -109,6 +109,11 @@ const buildAuthHeader = (pat: string): string => {
  */
 export const PROXY_PAT_SENTINEL = "__ado_proxy__";
 
+/** True once any request has been routed through the proxy this session. */
+let proxyModeActive = false;
+
+
+
 export const isProxyConnection = (conn: TfsConnection): boolean =>
   conn.pat === PROXY_PAT_SENTINEL;
 
