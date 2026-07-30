@@ -132,6 +132,8 @@ interface ProxyRequest {
   url: string;
   method: "GET" | "POST";
   body?: string;
+  /** When true, skips the server-side cache and refreshes the entry. */
+  refresh: boolean;
 }
 
 const parseBody = (raw: unknown): ProxyRequest | null => {
@@ -144,7 +146,7 @@ const parseBody = (raw: unknown): ProxyRequest | null => {
   const body = typeof obj.body === "string" ? obj.body : undefined;
   if (body !== undefined && body.length > MAX_BODY_LENGTH) return null;
   if (method === "GET" && body !== undefined) return null;
-  return { url, method, body };
+  return { url, method, body, refresh: obj.refresh === true };
 };
 
 Deno.serve(async (req) => {
