@@ -93,13 +93,18 @@ let sharedSettingsPromise: Promise<SharedAdoSettingsRow | null> | null = null;
  */
 export const loadSharedAdoSettings = async (): Promise<SharedAdoSettingsRow | null> => {
   if (!sharedSettingsPromise) {
-    sharedSettingsPromise = supabase.functions
-      .invoke<SharedAdoSettingsRow>("ado-public-connection", { method: "POST" })
-      .then(({ data, error }) => {
+    sharedSettingsPromise = (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke<SharedAdoSettingsRow>(
+          "ado-public-connection",
+          { method: "POST" },
+        );
         if (error || !data || !data.server_url || !data.pat_encrypted) return null;
         return data;
-      })
-      .catch(() => null);
+      } catch {
+        return null;
+      }
+    })();
   }
   return sharedSettingsPromise;
 };
