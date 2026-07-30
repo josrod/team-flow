@@ -1,25 +1,52 @@
-## Goal
+# Acceso público sin login (intranet)
 
-Add a dedicated "Waiting" column right next to the "Priority" column in the Tasks view tables, so that when an accordion group is expanded you can immediately see which tasks/bugs carry the `waiting` tag — the same way priority is visible at a glance.
+Objetivo: cualquiera dentro de la intranet abre la app y ve exactamente lo mismo, sin iniciar sesión. Las modificaciones de datos siguen requiriendo login de admin, y la página de login se mantiene accesible pero oculta.
 
-## What gets built
+## Qué cambia para el usuario
 
-1. **New column header**: In `src/pages/FeaturesPage.tsx`, add `<TableHead className="w-[90px]">{t.waitingColumn}</TableHead>` immediately after the Priority header, in both table variants:
-   - the flat/ungrouped table (header block around line 1750-1766)
-   - the per-developer grouped table (header block around line 2141-2157)
+- Todas las vistas pasan a ser públicas: Inicio, Equipos, Ausencias, Handovers, Tasks, Bugs, Epics, En espera, Workload y Pulse.
+- Ya no hay redirecciones a `/auth` al entrar en esas páginas.
+- El menú lateral muestra todas las vistas a todo el mundo (salvo Settings, ver más abajo).
+- Los botones de edición (crear/editar/borrar miembros, equipos, ausencias, handovers, notas, importaciones) sólo aparecen si hay sesión de admin. Un visitante anónimo ve la información en modo lectura.
+- `/auth` sigue existiendo para que el admin entre cuando necesite editar; no se enlaza desde el menú.
 
-2. **New cell in rows**:
-   - Grouped rows render through `TaskRowWithHandover` (line ~2383): add a cell after the `PrioritySelect` cell.
-   - Flat rows render inline (around line 1793-1830): add the same cell after the priority cell.
-   - Content: if `hasWaitingTag(task.tags)` is true, show a clear waiting marker — an `Hourglass` icon plus the short "Waiting" label in an amber-toned badge (using existing semantic tokens, consistent with the group-header waiting badge). If false, render a muted `—` so the column reads cleanly like Priority does.
-   - Accessibility: the badge gets a `title`/`aria-label` with the localized "Waiting" text.
+## Base de datos
 
-3. **Reuse of existing pieces**: use the existing `WaitingBadge` component (`src/components/WaitingBadge.tsx`) for the cell content instead of duplicating markup; it is currently unused after the earlier refactor, so this brings it back in a single place.
+Hoy la lectura está limitada a usuarios autenticados. Se añade lectura anónima manteniendo la escritura sólo para admin:
 
-4. **Localization**: add a `waitingColumn` key to `src/context/LanguageContext.tsx` ("Waiting" / "En espera"). Reuse existing waiting label keys for the badge text.
+- Tablas con lectura pública: `teams`, `members`, `absences`, `handovers`, `work_topics`, `task_handover_notes`.
+  - Sustituir la política `SELECT` de `authenticated` por una política `SELECT USING (true)` para `anon` y `authenticated`.
+  - Añadir `GRANT SELECT ... TO anon` en cada una.
+- Sin cambios en las políticas de INSERT/UPDATE/DELETE: siguen exigiendo `has_role(auth.uid(), 'admin')`.
+- `user_roles`, `tfs_import_history` y `azure_devops_settings` no se abren a `anon`.
 
-## Notes
+Nota de privacidad: estos datos (nombres, roles, ausencias, notas de handover) quedarán legibles por cualquiera que alcance la URL. Es lo esperado en una intranet cerrada, pero conviene tenerlo presente si la app se publicara fuera.
 
-- No changes to filtering, WIP calculation, or the group-header waiting badge — those stay as they are.
-- Column widths for the surrounding columns are unchanged; the new column is narrow (90px) and sits between Priority and Assigned to / Handover.
-- Verification: run `tsgo` typecheck, ESLint, and the existing task-related tests (`tasks-state`, `waiting-badge`).
+## Configuración de Azure DevOps (bloqueante para Tasks/Bugs/Epics)
+
+Las vistas de Tasks, Bugs, Epics y En espera leen `azure_devops_settings` desde el navegador, y esa tabla es sólo de admin. Sin tocarlo, un visitante anónimo entraría en esas páginas y no vería datos.
+
+Solución en esta fase, sin exponer el PAT:
+
+- Crear una vista `azure_devops_public_config` (`security_invoker = off`) que exponga sólo los campos no sensibles: `server_url`, `collection`, `project`, `team`, `area_paths`, `iteration_paths`, `bugs_query_id`, `epics_*`. Nunca `pat_encrypted` ni `pat_iv`.
+- `GRANT SELECT` de esa vista a `anon` y `authenticated`.
+- Las páginas leen la vista cuando no hay sesión de admin y la tabla completa cuando sí la hay.
+
+El PAT sigue cifrado y sólo accesible vía la Edge Function existente. Cómo se gestionan los settings y quién los edita se decide más adelante, tal como indicaste.
+
+## Detalles técnicos
+
+- `src/App.tsx`: quitar `AdminRoute` de `/waiting`, `/pulse`, `/features`, `/absences`, `/workload`. Mantenerlo sólo en `/settings/azure-devops`.
+- `src/components/AdminRoute.tsx`: se conserva para Settings.
+- `src/components/AppSidebar.tsx`: mostrar todos los enlaces salvo Settings, que sigue condicionado a `isAdmin`.
+- `src/context/AuthContext.tsx`: sin cambios; `user` nulo es un estado válido en toda la app.
+- `src/context/AppContext.tsx`, `src/components/UnmatchedAssigneesPanel.tsx`, `src/components/TaskHandoverNotes.tsx`, `src/components/TfsImportDialog.tsx`, `src/pages/FeaturesPage.tsx`, `src/pages/WaitingPage.tsx`: ocultar acciones de escritura cuando `!isAdmin` en lugar de asumir sesión.
+- Nueva migración con las políticas `anon`, los `GRANT` y la vista pública de configuración.
+- Añadir un enlace discreto de "Iniciar sesión" en la cabecera cuando no hay sesión, y "Cerrar sesión" cuando la hay.
+
+## Verificación
+
+- Ejecutar `tsgo` y la suite de tests.
+- Comprobar en navegador, sin sesión, que Inicio, Tasks, Bugs, Epics, En espera, Ausencias y Workload cargan datos y no muestran botones de edición.
+- Comprobar con sesión de admin que la edición y los Settings siguen funcionando.
+- Pasar el linter de seguridad de la base de datos.
