@@ -95,6 +95,9 @@ export const AzureDevOpsSettingsPage = () => {
   const [diagnostics, setDiagnostics] = useState<TfsDiagnosticResult | null>(null);
   const [diagnosing, setDiagnosing] = useState(false);
   const [diagnosticsAt, setDiagnosticsAt] = useState<string | null>(null);
+  const [proxyDiagnostics, setProxyDiagnostics] = useState<ProxyDiagnosticsResult | null>(null);
+  const [proxyDiagnosing, setProxyDiagnosing] = useState(false);
+
   const [hasExisting, setHasExisting] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
   const [autoSavedAt, setAutoSavedAt] = useState<string | null>(null);
