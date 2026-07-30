@@ -38,6 +38,9 @@ import {
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { encryptPat, decryptPat } from "@/services/tfsPatVault";
 import { TfsPatDiagnosticsPanel } from "@/components/TfsPatDiagnosticsPanel";
+import { ProxyDiagnosticsPanel } from "@/components/ProxyDiagnosticsPanel";
+import { runProxyDiagnostics, type ProxyDiagnosticsResult } from "@/services/proxyDiagnostics";
+
 import { TfsFieldHint } from "@/components/TfsFieldHint";
 import { TfsAutocompleteInput } from "@/components/TfsAutocompleteInput";
 import { TfsMultiSelect } from "@/components/TfsMultiSelect";
