@@ -844,6 +844,10 @@ export const EpicsPage = () => {
       </motion.div>
 
       <EpicDetailDrawer
+        versions={versions}
+        versionId={selectedEpic ? assignments[String(selectedEpic.id)] ?? null : null}
+        canEditVersion={isAdmin}
+        onAssignVersion={assignVersion}
         epic={selectedEpic}
         open={detailOpen}
         onOpenChange={setDetailOpen}

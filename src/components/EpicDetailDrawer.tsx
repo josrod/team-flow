@@ -35,7 +35,7 @@ interface EpicDetailDrawerProps {
   versions?: EpicVersion[];
   versionId?: string | null;
   canEditVersion?: boolean;
-  onAssignVersion?: (epicId: number | string, versionId: string | null) => Promise<void>;
+  onAssignVersion?: (epicId: string, versionId: string | null) => Promise<void>;
 }
 
 const formatDate = (iso?: string | null): string => {
