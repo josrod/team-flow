@@ -15,7 +15,9 @@ import {
   EyeOff,
   RefreshCw,
   AlertTriangle,
+  Radio,
   ShieldCheck,
+
 } from "lucide-react";
 import { useLang } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +38,9 @@ import {
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { encryptPat, decryptPat } from "@/services/tfsPatVault";
 import { TfsPatDiagnosticsPanel } from "@/components/TfsPatDiagnosticsPanel";
+import { ProxyDiagnosticsPanel } from "@/components/ProxyDiagnosticsPanel";
+import { runProxyDiagnostics, type ProxyDiagnosticsResult } from "@/services/proxyDiagnostics";
+
 import { TfsFieldHint } from "@/components/TfsFieldHint";
 import { TfsAutocompleteInput } from "@/components/TfsAutocompleteInput";
 import { TfsMultiSelect } from "@/components/TfsMultiSelect";
@@ -90,6 +95,9 @@ export const AzureDevOpsSettingsPage = () => {
   const [diagnostics, setDiagnostics] = useState<TfsDiagnosticResult | null>(null);
   const [diagnosing, setDiagnosing] = useState(false);
   const [diagnosticsAt, setDiagnosticsAt] = useState<string | null>(null);
+  const [proxyDiagnostics, setProxyDiagnostics] = useState<ProxyDiagnosticsResult | null>(null);
+  const [proxyDiagnosing, setProxyDiagnosing] = useState(false);
+
   const [hasExisting, setHasExisting] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
   const [autoSavedAt, setAutoSavedAt] = useState<string | null>(null);
@@ -273,7 +281,23 @@ export const AzureDevOpsSettingsPage = () => {
       status === "valid" && "border-emerald-500/60 focus-visible:ring-emerald-500/40",
     );
 
+  const handleProxyDiagnostics = async () => {
+    setProxyDiagnosing(true);
+    try {
+      const result = await runProxyDiagnostics({ serverUrl, collection, project });
+      setProxyDiagnostics(result);
+      if (result.allPassed) {
+        toast.success(t.proxyDiagAllOk);
+      } else {
+        toast.warning(t.proxyDiagIssues);
+      }
+    } finally {
+      setProxyDiagnosing(false);
+    }
+  };
+
   const handleAdvancedCheck = async () => {
+
     if (!serverUrl.trim() || !collection.trim() || !project.trim() || !pat.trim()) {
       toast.error(t.adoFillAllFields);
       return;
@@ -875,6 +899,48 @@ export const AzureDevOpsSettingsPage = () => {
           </CardContent>
         </Card>
       </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.04 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-display flex items-center gap-2">
+              <Radio className="h-5 w-5" />
+              {t.proxyDiagTitle}
+            </CardTitle>
+            <CardDescription>{t.proxyDiagDesc}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button
+              onClick={handleProxyDiagnostics}
+              disabled={proxyDiagnosing}
+              variant="outline"
+              className="w-full"
+            >
+              {proxyDiagnosing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Radio className="h-4 w-4 mr-2" />
+              )}
+              {proxyDiagnosing ? t.proxyDiagRunning : t.proxyDiagRun}
+            </Button>
+
+            {proxyDiagnostics && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  {t.proxyDiagRanAt}: {new Date(proxyDiagnostics.ranAt).toLocaleString(lang === "es" ? "es-ES" : "en-GB")}
+                </p>
+                <ProxyDiagnosticsPanel result={proxyDiagnostics} />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+
 
       <motion.div
         initial={{ opacity: 0, y: 16 }}
