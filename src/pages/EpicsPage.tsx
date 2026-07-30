@@ -113,6 +113,36 @@ export const EpicsPage = () => {
     parseTagsParam(searchParams.get("tags")),
   );
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
+  const [versionPopoverOpen, setVersionPopoverOpen] = useState(false);
+
+  const { isAdmin } = useAuth();
+  const {
+    versions,
+    assignments,
+    versionById,
+    addVersion,
+    editVersion,
+    removeVersion,
+    assignVersion,
+  } = useEpicVersions();
+
+  // Version filter (?versions=id1,id2 — "none" targets epics without version).
+  const [selectedVersions, setSelectedVersions] = useState<string[]>(() =>
+    parseTagsParam(searchParams.get("versions")),
+  );
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (selectedVersions.length === 0) {
+      if (!next.has("versions")) return;
+      next.delete("versions");
+    } else {
+      const value = serializeTagsParam(selectedVersions);
+      if (next.get("versions") === value) return;
+      next.set("versions", value);
+    }
+    setSearchParams(next);
+  }, [selectedVersions, searchParams, setSearchParams]);
 
   // Sync selectedTags → URL (?tags=a,b,c). Removes the param when empty.
   useEffect(() => {
