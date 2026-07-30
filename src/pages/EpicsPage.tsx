@@ -37,6 +37,7 @@ import { parseTagsParam, pruneUnknownTags, serializeTagsParam } from "@/lib/epic
 import { useAuth } from "@/context/AuthContext";
 import { useEpicVersions } from "@/hooks/use-epic-versions";
 import { EpicVersionManager } from "@/components/EpicVersionManager";
+import { EpicVersionLegend } from "@/components/EpicVersionLegend";
 import { EpicVersionSelect } from "@/components/EpicVersionSelect";
 import { resolveEpicVersionColor } from "@/lib/epicVersionColors";
 
