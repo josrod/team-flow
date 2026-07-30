@@ -49,6 +49,14 @@ import { evaluateSaveGuard, validateConnectionFields, validateServerUrl } from "
 import { mapBugsQueryIdError, describeSupabaseError } from "@/lib/supabaseErrorMapping";
 import { cn } from "@/lib/utils";
 
+/** Parses a numeric text field and keeps it inside the allowed range. */
+const clampRate = (value: string, min: number, max: number, fallback: number): number => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
+};
+
+
 export const AzureDevOpsSettingsPage = () => {
   const { t, lang } = useLang();
 
