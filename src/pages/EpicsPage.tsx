@@ -746,7 +746,15 @@ export const EpicsPage = () => {
                   {filtered.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">{t.epicsNoResults}</p>
                   ) : (
-                    <EpicsTimeline epics={filtered} onOpenEpic={openEpic} />
+                    <EpicsTimeline
+                      epics={filtered}
+                      onOpenEpic={openEpic}
+                      versionFor={(epic) => {
+                        const version = versionOf(epic);
+                        if (!version) return null;
+                        return { name: version.name, barClass: resolveEpicVersionColor(version.colorKey).bar };
+                      }}
+                    />
                   )}
                 </TabsContent>
                 <TabsContent value="heatmap" className="mt-4">
