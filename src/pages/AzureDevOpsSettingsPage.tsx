@@ -279,7 +279,7 @@ export const AzureDevOpsSettingsPage = () => {
         window.clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, epicsQueryId, epicsProject, epicsTeam, epicsAreaPaths, epicsIterationPaths, epicsTags, hasExisting]);
+  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, epicsQueryId, epicsProject, epicsTeam, epicsAreaPaths, epicsIterationPaths, epicsTags, proxyRateLimitMax, proxyRateLimitWindow, hasExisting]);
 
   const resetStatus = () => {
     setConnectionStatus("idle");
