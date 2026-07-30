@@ -62,10 +62,22 @@ export const WaitingPage = () => {
   const [openDevelopers, setOpenDevelopers] = useState<string[]>([]);
 
   const load = async () => {
-    if (!user) return;
     setLoading(true);
     setError(null);
+    // Anonymous visitors can browse the view, but Azure DevOps data needs the
+    // admin credentials. Expose the public config so item links still work.
+    if (!user) {
+      try {
+        const publicConfig = await loadPublicAdoConfig();
+        setBaseUrl(buildAdoBaseUrl(publicConfig?.serverUrl, publicConfig?.collection, publicConfig?.project));
+        setError(t.errAdoSignInRequired);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
     try {
+
       const { data: settings } = await supabase
         .from("azure_devops_settings")
         .select("server_url, collection, project, team, pat_encrypted, pat_iv, area_paths, iteration_paths")
