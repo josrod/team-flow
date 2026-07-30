@@ -461,6 +461,14 @@ export const EpicsPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <EpicVersionManager
+              versions={versions}
+              counts={versionCounts}
+              canEdit={isAdmin}
+              onAdd={addVersion}
+              onEdit={editVersion}
+              onRemove={removeVersion}
+            />
             <div className="flex flex-wrap gap-3">
               <div className="min-w-[160px]">
                 <label className="text-xs text-muted-foreground">{t.epicsFilterState}</label>
