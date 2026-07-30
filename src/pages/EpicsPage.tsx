@@ -11,6 +11,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 import { useLang } from "@/context/LanguageContext";
@@ -127,6 +130,34 @@ export const EpicsPage = () => {
     removeVersion,
     assignVersion,
   } = useEpicVersions();
+
+  // Bulk version assignment from the list tab.
+  const [selectedEpicIds, setSelectedEpicIds] = useState<string[]>([]);
+  const [bulkVersionId, setBulkVersionId] = useState<string>(NO_VERSION);
+  const [bulkSaving, setBulkSaving] = useState(false);
+
+  const toggleEpicSelection = useCallback((epicId: string) => {
+    setSelectedEpicIds((prev) =>
+      prev.includes(epicId) ? prev.filter((id) => id !== epicId) : [...prev, epicId],
+    );
+  }, []);
+
+  const applyBulkVersion = useCallback(async () => {
+    if (selectedEpicIds.length === 0) return;
+    setBulkSaving(true);
+    try {
+      const versionId = bulkVersionId === NO_VERSION ? null : bulkVersionId;
+      for (const epicId of selectedEpicIds) {
+        await assignVersion(epicId, versionId);
+      }
+      toast.success(t.epicsBulkApplied.replace("{count}", String(selectedEpicIds.length)));
+      setSelectedEpicIds([]);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBulkSaving(false);
+    }
+  }, [assignVersion, bulkVersionId, selectedEpicIds, t.epicsBulkApplied]);
 
   // Version filter (?versions=id1,id2 — "none" targets epics without version).
   const [selectedVersions, setSelectedVersions] = useState<string[]>(() =>
@@ -802,10 +833,58 @@ export const EpicsPage = () => {
                   {filtered.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">{t.epicsNoResults}</p>
                   ) : (
-                    <div className="rounded-md border">
+                    <div className="space-y-3">
+                      {isAdmin && selectedEpicIds.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 px-3 py-2">
+                          <span className="text-xs font-medium">
+                            {t.epicsBulkSelected.replace("{count}", String(selectedEpicIds.length))}
+                          </span>
+                          <Select value={bulkVersionId} onValueChange={setBulkVersionId}>
+                            <SelectTrigger className="h-8 w-[180px] text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={NO_VERSION}>{t.epicVersionNone}</SelectItem>
+                              {versions.map((v) => (
+                                <SelectItem key={v.id} value={v.id}>
+                                  {v.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button size="sm" className="h-8" onClick={applyBulkVersion} disabled={bulkSaving}>
+                            {bulkSaving && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+                            {t.epicsBulkAssign}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8"
+                            onClick={() => setSelectedEpicIds([])}
+                            disabled={bulkSaving}
+                          >
+                            {t.epicsBulkClear}
+                          </Button>
+                        </div>
+                      )}
+                      <div className="rounded-md border">
                       <Table>
                         <TableHeader>
                           <TableRow>
+                            {isAdmin && (
+                              <TableHead className="w-10">
+                                <Checkbox
+                                  aria-label={t.epicsBulkSelectAll}
+                                  checked={
+                                    filtered.length > 0 &&
+                                    filtered.every((e) => selectedEpicIds.includes(String(e.id)))
+                                  }
+                                  onCheckedChange={(checked) =>
+                                    setSelectedEpicIds(checked === true ? filtered.map((e) => String(e.id)) : [])
+                                  }
+                                />
+                              </TableHead>
+                            )}
                             <TableHead className="w-20">{t.epicsColId}</TableHead>
                             <TableHead>{t.epicsColTitle}</TableHead>
                             <TableHead>{t.epicsColState}</TableHead>
@@ -824,6 +903,15 @@ export const EpicsPage = () => {
                               className="hover:bg-muted/50 cursor-pointer"
                               onClick={() => openEpic(epic)}
                             >
+                              {isAdmin && (
+                                <TableCell onClick={(e) => e.stopPropagation()}>
+                                  <Checkbox
+                                    aria-label={`${t.epicsBulkSelectRow} #${epic.id}`}
+                                    checked={selectedEpicIds.includes(String(epic.id))}
+                                    onCheckedChange={() => toggleEpicSelection(String(epic.id))}
+                                  />
+                                </TableCell>
+                              )}
                               <TableCell className="font-mono text-xs">
                                 <a
                                   href={epic.htmlUrl}
@@ -868,6 +956,7 @@ export const EpicsPage = () => {
                           ))}
                         </TableBody>
                       </Table>
+                      </div>
                     </div>
                   )}
                 </TabsContent>
