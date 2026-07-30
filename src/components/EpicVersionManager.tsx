@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,9 @@ interface EpicVersionManagerProps {
   onAdd: (name: string, colorKey: string) => Promise<void>;
   onEdit: (id: string, patch: { name?: string; colorKey?: string }) => Promise<void>;
   onRemove: (id: string) => Promise<void>;
+  /** When set, the manager starts inline editing of that version. */
+  editRequestId?: string | null;
+  onEditRequestHandled?: () => void;
 }
 
 const ColorPicker = ({
@@ -65,6 +68,8 @@ export const EpicVersionManager = ({
   onAdd,
   onEdit,
   onRemove,
+  editRequestId,
+  onEditRequestHandled,
 }: EpicVersionManagerProps) => {
   const { t } = useLang();
   const [newName, setNewName] = useState("");
@@ -72,6 +77,17 @@ export const EpicVersionManager = ({
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+
+  useEffect(() => {
+    if (!editRequestId || !canEdit) return;
+    const target = versions.find((v) => v.id === editRequestId);
+    if (target) {
+      setEditingId(target.id);
+      setEditName(target.name);
+    }
+    onEditRequestHandled?.();
+  }, [editRequestId, canEdit, versions, onEditRequestHandled]);
+
 
   const handleAdd = async () => {
     const name = newName.trim();
