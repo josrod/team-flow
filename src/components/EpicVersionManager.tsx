@@ -68,6 +68,8 @@ export const EpicVersionManager = ({
   onAdd,
   onEdit,
   onRemove,
+  editRequestId,
+  onEditRequestHandled,
 }: EpicVersionManagerProps) => {
   const { t } = useLang();
   const [newName, setNewName] = useState("");
@@ -75,6 +77,17 @@ export const EpicVersionManager = ({
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+
+  useEffect(() => {
+    if (!editRequestId || !canEdit) return;
+    const target = versions.find((v) => v.id === editRequestId);
+    if (target) {
+      setEditingId(target.id);
+      setEditName(target.name);
+    }
+    onEditRequestHandled?.();
+  }, [editRequestId, canEdit, versions, onEditRequestHandled]);
+
 
   const handleAdd = async () => {
     const name = newName.trim();
