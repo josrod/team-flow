@@ -610,12 +610,20 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
     },
     options: { forceAreaRefresh?: boolean } = {},
   ) => {
-    if (!user) return;
     setLoading(true);
     setTfsError(null);
     try {
-      let settings = presetSettings;
-      if (!settings) {
+      let settings: {
+        server_url: string | null;
+        collection: string | null;
+        project: string;
+        team: string | null;
+        pat_encrypted: string;
+        pat_iv: string | null;
+        area_paths?: string[] | null;
+        iteration_paths?: string[] | null;
+      } | undefined = presetSettings;
+      if (!settings && user) {
         const { data } = await supabase
           .from("azure_devops_settings")
           .select("server_url, collection, project, team, pat_encrypted, pat_iv, area_paths, iteration_paths")
@@ -623,6 +631,10 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
           .maybeSingle();
         settings = data ?? undefined;
       }
+      if (!settings) {
+        settings = (await loadSharedAdoSettings()) ?? undefined;
+      }
+
       if (!settings?.server_url || !settings?.collection || !settings?.project || !settings?.pat_encrypted) {
         setTfsError(t.errIncompleteAdoConfig);
         setSource("local");
