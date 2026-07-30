@@ -246,6 +246,61 @@ const cachedResponse = (entry: CachedResponse, state: "HIT" | "MISS" | "COALESCE
     },
   });
 
+type SettingsResult = { settings: CachedSettings } | { error: Response };
+
+/**
+ * Resolves the shared connection (server URL, decrypted PAT and the
+ * admin-configured rate limit), cached briefly so changes made in Settings take
+ * effect within one TTL without redeploying the function.
+ */
+const resolveSettings = async (requestId: string, client: string): Promise<SettingsResult> => {
+  const cached = settingsCache && settingsCache.expiresAt > Date.now() ? settingsCache : null;
+  if (cached) return { settings: cached };
+
+  const admin = createClient(SUPABASE_URL!, SERVICE_ROLE_KEY!);
+  const { data, error } = await admin
+    .from("azure_devops_settings")
+    .select(
+      "server_url, pat_encrypted, pat_iv, proxy_rate_limit_max_requests, proxy_rate_limit_window_seconds, updated_at",
+    )
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    log("error", "settings_read_failed", { requestId, client, reason: error.message });
+    return { error: jsonResponse({ error: "Could not read the Azure DevOps configuration" }, 500) };
+  }
+  if (!data?.server_url || !data?.pat_encrypted) {
+    log("warn", "settings_missing", { requestId, client });
+    return { error: jsonResponse({ error: "No Azure DevOps configuration available" }, 404) };
+  }
+  let pat: string;
+  try {
+    // Legacy rows saved before the vault landed hold plaintext with a null iv.
+    pat = data.pat_iv ? await decryptPat(data.pat_encrypted, data.pat_iv) : data.pat_encrypted;
+  } catch {
+    log("error", "pat_decrypt_failed", { requestId, client });
+    return { error: jsonResponse({ error: "Could not decrypt the stored credentials" }, 500) };
+  }
+
+  const rateLimit: RateLimitConfig = {
+    maxRequests: clampInt(data.proxy_rate_limit_max_requests, 1, 10_000, DEFAULT_RATE_LIMIT.maxRequests),
+    windowMs:
+      clampInt(data.proxy_rate_limit_window_seconds, 1, 3600, DEFAULT_RATE_LIMIT.windowMs / 1000) * 1000,
+  };
+  activeRateLimit = rateLimit;
+
+  const settings: CachedSettings = {
+    serverUrl: data.server_url,
+    pat,
+    rateLimit,
+    expiresAt: Date.now() + SETTINGS_TTL_MS,
+  };
+  settingsCache = settings;
+  return { settings };
+};
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
