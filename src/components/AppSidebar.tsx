@@ -75,15 +75,16 @@ export function AppSidebar() {
       url: `/team/${team.id}`,
       icon: getIcon(team.icon),
     })),
-    { title: t.absences, url: "/absences", icon: CalendarDays, adminOnly: true },
+    { title: t.absences, url: "/absences", icon: CalendarDays },
     { title: t.handovers, url: "/handovers", icon: ArrowRightLeft },
-    { title: t.features, url: "/features", icon: Layers, adminOnly: true },
+    { title: t.features, url: "/features", icon: Layers },
     { title: t.tasks, url: "/tasks", icon: ListChecks },
     { title: t.bugs, url: "/bugs", icon: Bug },
     { title: t.epics, url: "/epics", icon: Target },
-    { title: t.waitingViewTitle, url: "/waiting", icon: Hourglass, adminOnly: true },
-    { title: t.workload, url: "/workload", icon: CalendarDays, adminOnly: true },
+    { title: t.waitingViewTitle, url: "/waiting", icon: Hourglass },
+    { title: t.workload, url: "/workload", icon: CalendarDays },
     { title: "Azure DevOps", url: "/settings/azure-devops", icon: Settings, adminOnly: true },
+
   ];
   const visibleItems = navItems.filter((i) => !i.adminOnly || isAdmin);
 

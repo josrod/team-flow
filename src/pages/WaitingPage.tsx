@@ -14,6 +14,8 @@ import { Tooltip as UiTooltip, TooltipTrigger, TooltipContent } from "@/componen
 import { Settings as SettingsIcon } from "lucide-react";
 import { listTfsFeatures, listTfsTasks, RODAT_AREA_PATH, RODAT_ITERATION_PATH, type TfsWorkItem } from "@/services/tfs";
 import { decryptPat } from "@/services/tfsPatVault";
+import { loadPublicAdoConfig, buildAdoBaseUrl } from "@/services/adoConfig";
+
 import { parseTfsTags } from "@/lib/tfsTags";
 import { cn } from "@/lib/utils";
 import { isBugType, normalizeState } from "@/lib/tasksState";
@@ -62,10 +64,22 @@ export const WaitingPage = () => {
   const [openDevelopers, setOpenDevelopers] = useState<string[]>([]);
 
   const load = async () => {
-    if (!user) return;
     setLoading(true);
     setError(null);
+    // Anonymous visitors can browse the view, but Azure DevOps data needs the
+    // admin credentials. Expose the public config so item links still work.
+    if (!user) {
+      try {
+        const publicConfig = await loadPublicAdoConfig();
+        setBaseUrl(buildAdoBaseUrl(publicConfig?.serverUrl, publicConfig?.collection, publicConfig?.project));
+        setError(t.errAdoSignInRequired);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
     try {
+
       const { data: settings } = await supabase
         .from("azure_devops_settings")
         .select("server_url, collection, project, team, pat_encrypted, pat_iv, area_paths, iteration_paths")

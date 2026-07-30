@@ -40,21 +40,21 @@ const App = () => (
                 <Routes>
                   <Route path="/auth" element={<AuthPage />} />
                   <Route path="/reset-password" element={<ResetPasswordPage />} />
-                  {/* Public pages (anyone with the link, no login required) */}
+                  {/* Public pages (anyone on the intranet, no login required) */}
                   <Route path="/" element={<AppLayout><Index /></AppLayout>} />
                   <Route path="/team/:teamId" element={<AppLayout><TeamPage /></AppLayout>} />
                   <Route path="/handovers" element={<AppLayout><HandoversPage /></AppLayout>} />
                   <Route path="/tasks" element={<AppLayout><TasksPage /></AppLayout>} />
                   <Route path="/bugs" element={<AppLayout><BugsPage /></AppLayout>} />
-                  <Route path="/waiting" element={<AdminRoute><AppLayout><WaitingPage /></AppLayout></AdminRoute>} />
+                  <Route path="/waiting" element={<AppLayout><WaitingPage /></AppLayout>} />
                   <Route path="/epics" element={<AppLayout><EpicsPage /></AppLayout>} />
-                  {/* Pulse is admin-only */}
-                  <Route path="/pulse" element={<AdminRoute><AppLayout><TeamPulseDashboard /></AppLayout></AdminRoute>} />
+                  <Route path="/pulse" element={<AppLayout><TeamPulseDashboard /></AppLayout>} />
+                  <Route path="/features" element={<AppLayout><FeaturesPage view="features" /></AppLayout>} />
+                  <Route path="/absences" element={<AppLayout><AbsencesPage /></AppLayout>} />
+                  <Route path="/workload" element={<AppLayout><FeaturesPage view="workload" /></AppLayout>} />
                   {/* Admin-only pages */}
-                  <Route path="/features" element={<AdminRoute><AppLayout><FeaturesPage view="features" /></AppLayout></AdminRoute>} />
-                  <Route path="/absences" element={<AdminRoute><AppLayout><AbsencesPage /></AppLayout></AdminRoute>} />
-                  <Route path="/workload" element={<AdminRoute><AppLayout><FeaturesPage view="workload" /></AppLayout></AdminRoute>} />
                   <Route path="/settings/azure-devops" element={<AdminRoute><AppLayout><AzureDevOpsSettingsPage /></AppLayout></AdminRoute>} />
+
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </AppProvider>

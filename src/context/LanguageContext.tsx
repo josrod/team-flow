@@ -357,6 +357,8 @@ export const translations = {
     errTeamAreasUpdate: "No se pudo actualizar la lista de áreas del equipo. Se está usando la última versión en caché.",
     errPeopleUpdate: "No se pudo actualizar la lista de personas. Se está mostrando el último listado en caché.",
     errIncompleteAdoConfig: "Configuración de Azure DevOps incompleta. Mostrando datos locales.",
+    errAdoSignInRequired: "Los datos de Azure DevOps requieren iniciar sesión como administrador. Los enlaces a los elementos siguen disponibles.",
+
     hideHandover: "Ocultar handover",
     addHandover: "Añadir handover",
     tasksSubtitle: "Trabajo asignado por persona, abierto y en progreso.",
@@ -1255,6 +1257,8 @@ export const translations = {
     errTeamAreasUpdate: "Failed to update team areas list. Using latest cached version.",
     errPeopleUpdate: "Failed to update people list. Showing latest cached list.",
     errIncompleteAdoConfig: "Incomplete Azure DevOps configuration. Showing local data.",
+    errAdoSignInRequired: "Azure DevOps data requires signing in as an administrator. Item links remain available.",
+
     hideHandover: "Hide handover",
     addHandover: "Add handover",
     tasksSubtitle: "Assigned work per person, open and in progress.",
