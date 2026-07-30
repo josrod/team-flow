@@ -63,8 +63,9 @@ export const buildAdoBaseUrl = (
 /**
  * Shape of the shared Azure DevOps settings, mirroring the database row so the
  * pages can reuse the same code path they already use for the admin's own row.
- * `pat_encrypted` carries the already-decrypted token and `pat_iv` is null, so
- * `decryptPat` returns it unchanged (legacy plaintext path).
+ * `pat_encrypted` carries the proxy sentinel (never a real token) and `pat_iv`
+ * is null, so `decryptPat` returns it unchanged and every upstream request is
+ * routed through the `ado-proxy` edge function.
  */
 export interface SharedAdoSettingsRow {
   server_url: string;
@@ -87,7 +88,7 @@ export interface SharedAdoSettingsRow {
 let sharedSettingsPromise: Promise<SharedAdoSettingsRow | null> | null = null;
 
 /**
- * Loads the admin-configured Azure DevOps connection through the
+ * Loads the admin-configured Azure DevOps connection metadata through the
  * `ado-public-connection` edge function so visitors without a session can see
  * the same read-only data. Cached for the lifetime of the page.
  */
@@ -100,6 +101,7 @@ export const loadSharedAdoSettings = async (): Promise<SharedAdoSettingsRow | nu
           { method: "POST" },
         );
         if (error || !data || !data.server_url || !data.pat_encrypted) return null;
+        enableTfsProxyMode();
         return data;
       } catch {
         return null;
@@ -108,4 +110,5 @@ export const loadSharedAdoSettings = async (): Promise<SharedAdoSettingsRow | nu
   }
   return sharedSettingsPromise;
 };
+
 
