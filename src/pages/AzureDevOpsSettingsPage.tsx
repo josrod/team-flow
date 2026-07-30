@@ -49,6 +49,14 @@ import { evaluateSaveGuard, validateConnectionFields, validateServerUrl } from "
 import { mapBugsQueryIdError, describeSupabaseError } from "@/lib/supabaseErrorMapping";
 import { cn } from "@/lib/utils";
 
+/** Parses a numeric text field and keeps it inside the allowed range. */
+const clampRate = (value: string, min: number, max: number, fallback: number): number => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
+};
+
+
 export const AzureDevOpsSettingsPage = () => {
   const { t, lang } = useLang();
 
@@ -97,6 +105,10 @@ export const AzureDevOpsSettingsPage = () => {
   const [diagnosticsAt, setDiagnosticsAt] = useState<string | null>(null);
   const [proxyDiagnostics, setProxyDiagnostics] = useState<ProxyDiagnosticsResult | null>(null);
   const [proxyDiagnosing, setProxyDiagnosing] = useState(false);
+  // Admin-configurable rate limit applied by the `ado-proxy` edge function.
+  const [proxyRateLimitMax, setProxyRateLimitMax] = useState("120");
+  const [proxyRateLimitWindow, setProxyRateLimitWindow] = useState("60");
+
 
   const [hasExisting, setHasExisting] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
@@ -154,6 +166,13 @@ export const AzureDevOpsSettingsPage = () => {
         if (Array.isArray(rawEpicIters)) setEpicsIterationPaths(rawEpicIters);
         const rawEpicTags = (data as { epics_tags?: string[] | null }).epics_tags;
         if (Array.isArray(rawEpicTags)) setEpicsTags(rawEpicTags);
+        const rawRateMax = (data as { proxy_rate_limit_max_requests?: number | null })
+          .proxy_rate_limit_max_requests;
+        const rawRateWindow = (data as { proxy_rate_limit_window_seconds?: number | null })
+          .proxy_rate_limit_window_seconds;
+        if (typeof rawRateMax === "number") setProxyRateLimitMax(String(rawRateMax));
+        if (typeof rawRateWindow === "number") setProxyRateLimitWindow(String(rawRateWindow));
+
 
         setLastSynced(data.last_synced_at);
         setHasExisting(true);
@@ -245,6 +264,9 @@ export const AzureDevOpsSettingsPage = () => {
           epics_area_paths: epicsAreaPaths,
           epics_iteration_paths: epicsIterationPaths,
           epics_tags: epicsTags,
+          proxy_rate_limit_max_requests: clampRate(proxyRateLimitMax, 1, 10000, 120),
+          proxy_rate_limit_window_seconds: clampRate(proxyRateLimitWindow, 1, 3600, 60),
+
         })
         .eq("user_id", user.id);
 
@@ -257,7 +279,7 @@ export const AzureDevOpsSettingsPage = () => {
         window.clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, epicsQueryId, epicsProject, epicsTeam, epicsAreaPaths, epicsIterationPaths, epicsTags, hasExisting]);
+  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, epicsQueryId, epicsProject, epicsTeam, epicsAreaPaths, epicsIterationPaths, epicsTags, proxyRateLimitMax, proxyRateLimitWindow, hasExisting]);
 
   const resetStatus = () => {
     setConnectionStatus("idle");
@@ -527,6 +549,9 @@ export const AzureDevOpsSettingsPage = () => {
         epics_area_paths: epicsAreaPaths,
         epics_iteration_paths: epicsIterationPaths,
         epics_tags: epicsTags,
+        proxy_rate_limit_max_requests: clampRate(proxyRateLimitMax, 1, 10000, 120),
+        proxy_rate_limit_window_seconds: clampRate(proxyRateLimitWindow, 1, 3600, 60),
+
       };
 
 
@@ -936,6 +961,45 @@ export const AzureDevOpsSettingsPage = () => {
                 <ProxyDiagnosticsPanel result={proxyDiagnostics} />
               </div>
             )}
+
+            <Separator />
+
+            <div className="space-y-3">
+              <div>
+                <h4 className="text-sm font-medium">{t.proxyRateLimitHeading}</h4>
+                <p className="text-xs text-muted-foreground">{t.proxyRateLimitHint}</p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="proxy-rate-max">{t.proxyRateLimitMaxLabel}</Label>
+                  <Input
+                    id="proxy-rate-max"
+                    type="number"
+                    min={1}
+                    max={10000}
+                    value={proxyRateLimitMax}
+                    onChange={(e) => setProxyRateLimitMax(e.target.value)}
+                    onBlur={() => setProxyRateLimitMax(String(clampRate(proxyRateLimitMax, 1, 10000, 120)))}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="proxy-rate-window">{t.proxyRateLimitWindowLabel}</Label>
+                  <Input
+                    id="proxy-rate-window"
+                    type="number"
+                    min={1}
+                    max={3600}
+                    value={proxyRateLimitWindow}
+                    onChange={(e) => setProxyRateLimitWindow(e.target.value)}
+                    onBlur={() => setProxyRateLimitWindow(String(clampRate(proxyRateLimitWindow, 1, 3600, 60)))}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">{t.proxyRateLimitApplyNote}</p>
+            </div>
+
           </CardContent>
         </Card>
       </motion.div>

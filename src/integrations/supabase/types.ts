@@ -74,6 +74,8 @@ export type Database = {
           pat_encrypted: string
           pat_iv: string | null
           project: string
+          proxy_rate_limit_max_requests: number
+          proxy_rate_limit_window_seconds: number
           server_url: string | null
           sync_interval_minutes: number
           team: string | null
@@ -101,6 +103,8 @@ export type Database = {
           pat_encrypted: string
           pat_iv?: string | null
           project: string
+          proxy_rate_limit_max_requests?: number
+          proxy_rate_limit_window_seconds?: number
           server_url?: string | null
           sync_interval_minutes?: number
           team?: string | null
@@ -128,6 +132,8 @@ export type Database = {
           pat_encrypted?: string
           pat_iv?: string | null
           project?: string
+          proxy_rate_limit_max_requests?: number
+          proxy_rate_limit_window_seconds?: number
           server_url?: string | null
           sync_interval_minutes?: number
           team?: string | null
@@ -420,6 +426,8 @@ export type Database = {
           iteration_paths: string[]
           organization: string
           project: string
+          proxy_rate_limit_max_requests: number
+          proxy_rate_limit_window_seconds: number
           server_url: string
           team: string
           updated_at: string
