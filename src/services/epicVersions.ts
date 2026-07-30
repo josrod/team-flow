@@ -62,7 +62,7 @@ export const updateEpicVersion = async (
   id: string,
   patch: { name?: string; colorKey?: string; sortOrder?: number },
 ): Promise<void> => {
-  const payload: Record<string, unknown> = {};
+  const payload: { name?: string; color_key?: string; sort_order?: number } = {};
   if (patch.name !== undefined) payload.name = patch.name;
   if (patch.colorKey !== undefined) payload.color_key = patch.colorKey;
   if (patch.sortOrder !== undefined) payload.sort_order = patch.sortOrder;
