@@ -69,12 +69,78 @@ let settingsCache: CachedSettings | null = null;
 /** Read-only POST endpoints of the Azure DevOps REST API. */
 const READ_ONLY_POST_PATTERNS = [/\/wiql(\/|\?|$)/i, /\/workitemsbatch(\/|\?|$)/i];
 
+/**
+ * Ad-hoc, best-effort rate limit. It is in-memory and therefore per edge
+ * runtime instance: it curbs obvious abuse and runaway clients, but it is not a
+ * distributed guarantee.
+ */
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 120;
+const RATE_LIMIT_MAX_CLIENTS = 1000;
+
+const requestTimestamps = new Map<string, number[]>();
+
+const clientKey = (req: Request): string =>
+  req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+  req.headers.get("cf-connecting-ip")?.trim() ||
+  "unknown";
+
+interface RateLimitResult {
+  allowed: boolean;
+  count: number;
+  retryAfterSeconds: number;
+}
+
+const checkRateLimit = (key: string): RateLimitResult => {
+  const now = Date.now();
+  const cutoff = now - RATE_LIMIT_WINDOW_MS;
+  const hits = (requestTimestamps.get(key) ?? []).filter((t) => t > cutoff);
+  if (hits.length >= RATE_LIMIT_MAX_REQUESTS) {
+    requestTimestamps.set(key, hits);
+    const retryAfterSeconds = Math.max(1, Math.ceil((hits[0] + RATE_LIMIT_WINDOW_MS - now) / 1000));
+    return { allowed: false, count: hits.length, retryAfterSeconds };
+  }
+  hits.push(now);
+  if (requestTimestamps.size >= RATE_LIMIT_MAX_CLIENTS && !requestTimestamps.has(key)) {
+    const oldest = requestTimestamps.keys().next().value;
+    if (oldest !== undefined) requestTimestamps.delete(oldest);
+  }
+  requestTimestamps.set(key, hits);
+  return { allowed: true, count: hits.length, retryAfterSeconds: 0 };
+};
+
+/** Redacts query strings so logs never leak tokens or WIQL payload details. */
+const safeUrl = (raw: string): string => {
+  try {
+    const u = new URL(raw);
+    return `${u.origin}${u.pathname}`;
+  } catch {
+    return "invalid-url";
+  }
+};
+
+type LogLevel = "info" | "warn" | "error";
+
+/** Single-line JSON logs so they can be filtered and aggregated downstream. */
+const log = (level: LogLevel, event: string, fields: Record<string, unknown> = {}): void => {
+  const payload = JSON.stringify({
+    ts: new Date().toISOString(),
+    fn: "ado-proxy",
+    level,
+    event,
+    ...fields,
+  });
+  if (level === "error") console.error(payload);
+  else if (level === "warn") console.warn(payload);
+  else console.info(payload);
+};
 
 const jsonResponse = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+
 
 const fromBase64 = (input: string): Uint8Array => {
   const binary = atob(input);
@@ -165,31 +231,70 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+  const requestId = crypto.randomUUID();
+  const client = clientKey(req);
+  const startedAt = Date.now();
+
   if (req.method !== "POST") {
+    log("warn", "method_not_allowed", { requestId, client, method: req.method });
     return jsonResponse({ error: "Method not allowed" }, 405);
   }
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+    log("error", "server_misconfigured", { requestId, client });
     return jsonResponse({ error: "Server misconfigured" }, 500);
+  }
+
+  const limit = checkRateLimit(client);
+  if (!limit.allowed) {
+    log("warn", "rate_limited", {
+      requestId,
+      client,
+      count: limit.count,
+      windowMs: RATE_LIMIT_WINDOW_MS,
+      retryAfterSeconds: limit.retryAfterSeconds,
+    });
+    return new Response(JSON.stringify({ error: "Too many requests" }), {
+      status: 429,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+        "Retry-After": String(limit.retryAfterSeconds),
+      },
+    });
   }
 
   let payload: unknown;
   try {
     payload = await req.json();
   } catch {
+    log("warn", "invalid_json", { requestId, client });
     return jsonResponse({ error: "Invalid JSON body" }, 400);
   }
   const parsed = parseBody(payload);
   if (!parsed) {
+    log("warn", "invalid_payload", { requestId, client });
     return jsonResponse({ error: "Invalid request payload" }, 400);
   }
   if (parsed.method === "POST" && !READ_ONLY_POST_PATTERNS.some((re) => re.test(parsed.url))) {
+    log("warn", "write_attempt_blocked", { requestId, client, target: safeUrl(parsed.url) });
     return jsonResponse({ error: "Only read-only requests are allowed" }, 403);
   }
 
+  const target = safeUrl(parsed.url);
   const key = cacheKey(parsed.method, parsed.url, parsed.body);
   if (!parsed.refresh) {
     const cached = readCache(key);
-    if (cached) return cachedResponse(cached, "HIT");
+    if (cached) {
+      log("info", "cache_hit", {
+        requestId,
+        client,
+        target,
+        method: parsed.method,
+        status: cached.status,
+        durationMs: Date.now() - startedAt,
+      });
+      return cachedResponse(cached, "HIT");
+    }
   }
 
   // Resolve the connection (server URL + decrypted PAT), cached briefly too.
@@ -204,9 +309,11 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (error) {
+      log("error", "settings_read_failed", { requestId, client, reason: error.message });
       return jsonResponse({ error: "Could not read the Azure DevOps configuration" }, 500);
     }
     if (!data?.server_url || !data?.pat_encrypted) {
+      log("warn", "settings_missing", { requestId, client });
       return jsonResponse({ error: "No Azure DevOps configuration available" }, 404);
     }
     let pat: string;
@@ -214,6 +321,7 @@ Deno.serve(async (req) => {
       // Legacy rows saved before the vault landed hold plaintext with a null iv.
       pat = data.pat_iv ? await decryptPat(data.pat_encrypted, data.pat_iv) : data.pat_encrypted;
     } catch {
+      log("error", "pat_decrypt_failed", { requestId, client });
       return jsonResponse({ error: "Could not decrypt the stored credentials" }, 500);
     }
     settings = { serverUrl: data.server_url, pat, expiresAt: Date.now() + SETTINGS_TTL_MS };
@@ -221,14 +329,25 @@ Deno.serve(async (req) => {
   }
 
   if (!isAllowedTarget(parsed.url, settings.serverUrl)) {
+    log("warn", "target_not_allowed", { requestId, client, target });
     return jsonResponse({ error: "Target URL is not allowed" }, 403);
   }
 
   const existing = !parsed.refresh ? inFlight.get(key) : undefined;
   if (existing) {
     try {
-      return cachedResponse(await existing, "COALESCED");
+      const entry = await existing;
+      log("info", "cache_coalesced", {
+        requestId,
+        client,
+        target,
+        method: parsed.method,
+        status: entry.status,
+        durationMs: Date.now() - startedAt,
+      });
+      return cachedResponse(entry, "COALESCED");
     } catch {
+      log("error", "coalesced_upstream_failed", { requestId, client, target });
       return jsonResponse({ error: "Could not reach the Azure DevOps server" }, 502);
     }
   }
@@ -267,12 +386,32 @@ Deno.serve(async (req) => {
   inFlight.set(key, task);
 
   try {
-    return cachedResponse(await task, "MISS");
+    const entry = await task;
+    log(entry.status >= 400 ? "warn" : "info", "upstream_response", {
+      requestId,
+      client,
+      target,
+      method: parsed.method,
+      status: entry.status,
+      bytes: entry.text.length,
+      cached: entry.status < 400,
+      durationMs: Date.now() - startedAt,
+    });
+    return cachedResponse(entry, "MISS");
   } catch (err) {
     const aborted = err instanceof DOMException && err.name === "AbortError";
+    log("error", aborted ? "upstream_timeout" : "upstream_unreachable", {
+      requestId,
+      client,
+      target,
+      method: parsed.method,
+      durationMs: Date.now() - startedAt,
+      reason: err instanceof Error ? err.message : "unknown",
+    });
     return jsonResponse(
       { error: aborted ? "Upstream request timed out" : "Could not reach the Azure DevOps server" },
       aborted ? 504 : 502,
     );
   }
 });
+
