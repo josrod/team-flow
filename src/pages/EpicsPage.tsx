@@ -673,13 +673,22 @@ export const EpicsPage = () => {
                                 {bucketEpics.length === 0 ? (
                                   <p className="text-xs text-muted-foreground text-center py-4">—</p>
                                 ) : (
-                                  bucketEpics.map((epic) => (
-                                    <button
+                                  bucketEpics.map((epic) => {
+                                    const version = versionOf(epic);
+                                    const color = version ? resolveEpicVersionColor(version.colorKey) : null;
+                                    return (
+                                    <div
                                       key={epic.id}
-                                      type="button"
-                                      onClick={() => openEpic(epic)}
-                                      className="block w-full text-left rounded-md border bg-background p-2.5 hover:border-primary hover:shadow-sm transition-all"
+                                      className="relative overflow-hidden rounded-md border bg-background hover:border-primary hover:shadow-sm transition-all"
                                     >
+                                      {color && (
+                                        <span className={cn("absolute inset-y-0 left-0 w-1", color.stripe)} aria-hidden />
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => openEpic(epic)}
+                                        className={cn("block w-full text-left p-2.5", color && "pl-3.5")}
+                                      >
                                       <div className="flex items-start justify-between gap-2">
                                         <span className="text-xs font-mono text-muted-foreground">#{epic.id}</span>
                                         <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
@@ -687,6 +696,12 @@ export const EpicsPage = () => {
                                       <p className="text-sm font-medium leading-snug mt-1 line-clamp-2">{epic.title}</p>
                                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
                                         <Badge variant="outline" className="text-[10px] px-1.5 py-0">{epic.state}</Badge>
+                                        {version && color && (
+                                          <Badge variant="outline" className={cn("gap-1 text-[10px] px-1.5 py-0", color.badge)}>
+                                            <span className={cn("h-1.5 w-1.5 rounded-full", color.bar)} />
+                                            {version.name}
+                                          </Badge>
+                                        )}
                                         {epic.tags.slice(0, 3).map((tag) => (
                                           <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0">{tag}</Badge>
                                         ))}
@@ -702,8 +717,22 @@ export const EpicsPage = () => {
                                         </span>
                                         <span className="font-mono">{formatDate(epic.targetDate)}</span>
                                       </div>
-                                    </button>
-                                  ))
+                                      </button>
+                                      {isAdmin && versions.length > 0 && (
+                                        <div className={cn("px-2.5 pb-2.5", color && "pl-3.5")}>
+                                          <EpicVersionSelect
+                                            epicId={epic.id}
+                                            versions={versions}
+                                            versionId={assignments[String(epic.id)] ?? null}
+                                            canEdit
+                                            onAssign={assignVersion}
+                                            className="w-full"
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                    );
+                                  })
                                 )}
                               </div>
                             </div>
