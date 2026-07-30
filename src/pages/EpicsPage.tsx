@@ -480,13 +480,27 @@ export const EpicsPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <EpicVersionManager
+            <div id="epic-versions-manager">
+              <EpicVersionManager
+                versions={versions}
+                counts={versionCounts}
+                canEdit={isAdmin}
+                onAdd={addVersion}
+                onEdit={editVersion}
+                onRemove={removeVersion}
+                editRequestId={versionEditRequestId}
+                onEditRequestHandled={() => setVersionEditRequestId(null)}
+              />
+            </div>
+            <EpicVersionLegend
               versions={versions}
               counts={versionCounts}
+              noVersionCount={noVersionCount}
               canEdit={isAdmin}
-              onAdd={addVersion}
-              onEdit={editVersion}
-              onRemove={removeVersion}
+              selected={selectedVersions}
+              noVersionKey={NO_VERSION}
+              onToggle={toggleVersionKey}
+              onEditVersion={requestVersionEdit}
             />
             <div className="flex flex-wrap gap-3">
               <div className="min-w-[160px]">
