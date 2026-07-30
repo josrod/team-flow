@@ -401,7 +401,63 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      azure_devops_public_config: {
+        Row: {
+          area_paths: string[] | null
+          bugs_query_id: string | null
+          collection: string | null
+          epics_area_paths: string[] | null
+          epics_iteration_paths: string[] | null
+          epics_project: string | null
+          epics_query_id: string | null
+          epics_tags: string[] | null
+          epics_team: string | null
+          id: string | null
+          iteration_paths: string[] | null
+          organization: string | null
+          project: string | null
+          server_url: string | null
+          team: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          area_paths?: string[] | null
+          bugs_query_id?: string | null
+          collection?: string | null
+          epics_area_paths?: string[] | null
+          epics_iteration_paths?: string[] | null
+          epics_project?: string | null
+          epics_query_id?: string | null
+          epics_tags?: string[] | null
+          epics_team?: string | null
+          id?: string | null
+          iteration_paths?: string[] | null
+          organization?: string | null
+          project?: string | null
+          server_url?: string | null
+          team?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          area_paths?: string[] | null
+          bugs_query_id?: string | null
+          collection?: string | null
+          epics_area_paths?: string[] | null
+          epics_iteration_paths?: string[] | null
+          epics_project?: string | null
+          epics_query_id?: string | null
+          epics_tags?: string[] | null
+          epics_team?: string | null
+          id?: string | null
+          iteration_paths?: string[] | null
+          organization?: string | null
+          project?: string | null
+          server_url?: string | null
+          team?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
