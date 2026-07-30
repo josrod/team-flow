@@ -59,3 +59,48 @@ export const buildAdoBaseUrl = (
   const cleanProject = project.replace(/^\/+|\/+$/g, "");
   return `${cleanServer}/${cleanCollection}/${encodeURIComponent(cleanProject)}`;
 };
+
+/**
+ * Shape of the shared Azure DevOps settings, mirroring the database row so the
+ * pages can reuse the same code path they already use for the admin's own row.
+ * `pat_encrypted` carries the already-decrypted token and `pat_iv` is null, so
+ * `decryptPat` returns it unchanged (legacy plaintext path).
+ */
+export interface SharedAdoSettingsRow {
+  server_url: string;
+  collection: string;
+  project: string;
+  team: string | null;
+  pat_encrypted: string;
+  pat_iv: null;
+  area_paths: string[];
+  iteration_paths: string[];
+  bugs_query_id: string | null;
+  epics_query_id: string | null;
+  epics_tags: string[];
+  epics_project: string | null;
+  epics_team: string | null;
+  epics_area_paths: string[];
+  epics_iteration_paths: string[];
+}
+
+let sharedSettingsPromise: Promise<SharedAdoSettingsRow | null> | null = null;
+
+/**
+ * Loads the admin-configured Azure DevOps connection through the
+ * `ado-public-connection` edge function so visitors without a session can see
+ * the same read-only data. Cached for the lifetime of the page.
+ */
+export const loadSharedAdoSettings = async (): Promise<SharedAdoSettingsRow | null> => {
+  if (!sharedSettingsPromise) {
+    sharedSettingsPromise = supabase.functions
+      .invoke<SharedAdoSettingsRow>("ado-public-connection", { method: "POST" })
+      .then(({ data, error }) => {
+        if (error || !data || !data.server_url || !data.pat_encrypted) return null;
+        return data;
+      })
+      .catch(() => null);
+  }
+  return sharedSettingsPromise;
+};
+
