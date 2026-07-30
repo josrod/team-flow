@@ -372,36 +372,11 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Resolve the connection (server URL + decrypted PAT), cached briefly too.
-  let settings = settingsCache && settingsCache.expiresAt > Date.now() ? settingsCache : null;
-  if (!settings) {
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-    const { data, error } = await admin
-      .from("azure_devops_settings")
-      .select("server_url, pat_encrypted, pat_iv, updated_at")
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+  // Resolve the connection (server URL, decrypted PAT and rate limit config).
+  const resolved = await resolveSettings(requestId, client);
+  if ("error" in resolved) return resolved.error;
+  const settings = resolved.settings;
 
-    if (error) {
-      log("error", "settings_read_failed", { requestId, client, reason: error.message });
-      return jsonResponse({ error: "Could not read the Azure DevOps configuration" }, 500);
-    }
-    if (!data?.server_url || !data?.pat_encrypted) {
-      log("warn", "settings_missing", { requestId, client });
-      return jsonResponse({ error: "No Azure DevOps configuration available" }, 404);
-    }
-    let pat: string;
-    try {
-      // Legacy rows saved before the vault landed hold plaintext with a null iv.
-      pat = data.pat_iv ? await decryptPat(data.pat_encrypted, data.pat_iv) : data.pat_encrypted;
-    } catch {
-      log("error", "pat_decrypt_failed", { requestId, client });
-      return jsonResponse({ error: "Could not decrypt the stored credentials" }, 500);
-    }
-    settings = { serverUrl: data.server_url, pat, expiresAt: Date.now() + SETTINGS_TTL_MS };
-    settingsCache = settings;
-  }
 
   if (!isAllowedTarget(parsed.url, settings.serverUrl)) {
     log("warn", "target_not_allowed", { requestId, client, target });
