@@ -34,6 +34,11 @@ import {
 } from "@/lib/quarters";
 import { uniqueTags } from "@/lib/tfsTags";
 import { parseTagsParam, pruneUnknownTags, serializeTagsParam } from "@/lib/epicsTagsParam";
+import { useAuth } from "@/context/AuthContext";
+import { useEpicVersions } from "@/hooks/use-epic-versions";
+import { EpicVersionManager } from "@/components/EpicVersionManager";
+import { EpicVersionSelect } from "@/components/EpicVersionSelect";
+import { resolveEpicVersionColor } from "@/lib/epicVersionColors";
 
 interface EpicsSettings {
   serverUrl: string;
