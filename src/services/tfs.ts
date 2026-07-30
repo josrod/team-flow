@@ -163,9 +163,13 @@ const isNetworkLevelError = (err: unknown): err is TypeError => {
 };
 
 const isMixedContent = (url: string): boolean => {
+  // In proxy mode the browser only talks to the Supabase edge function, so an
+  // http:// TFS server is never a mixed-content problem.
+  if (proxyModeActive) return false;
   try {
     const target = new URL(url);
     return window.location.protocol === "https:" && target.protocol === "http:";
+
   } catch {
     return false;
   }
