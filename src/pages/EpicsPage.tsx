@@ -20,6 +20,7 @@ import { EpicDetailDrawer } from "@/components/EpicDetailDrawer";
 import { EpicsTimeline } from "@/components/EpicsTimeline";
 import { EpicsHeatmap } from "@/components/EpicsHeatmap";
 import { decryptPat } from "@/services/tfsPatVault";
+import { loadSharedAdoSettings } from "@/services/adoConfig";
 import { fetchTfsEpics, type TfsEpic, type TfsError } from "@/services/tfs";
 import {
   bucketForDate,
