@@ -198,7 +198,7 @@ export const testTfsConnection = async (
   const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const response = await fetch(url, {
+    const response = await tfsFetch(url, {
       method: "GET",
       headers: {
         Authorization: buildAuthHeader(conn.pat),
@@ -383,7 +383,7 @@ const runProbe = async (
 
   try {
     const isWiql = probe.id === "work_items_read";
-    const response = await fetch(url, {
+    const response = await tfsFetch(url, {
       method: isWiql ? "POST" : "GET",
       headers: {
         Authorization: buildAuthHeader(conn.pat),
@@ -547,7 +547,7 @@ const fetchJsonList = async <T>(
   const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const response = await fetch(url, {
+    const response = await tfsFetch(url, {
       method: "GET",
       headers: {
         Authorization: buildAuthHeader(pat),
@@ -743,7 +743,7 @@ const runWiqlAndFetch = async (
   const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const wiqlRes = await fetch(wiqlUrl, {
+    const wiqlRes = await tfsFetch(wiqlUrl, {
       method: "POST",
       headers: {
         Authorization: buildAuthHeader(conn.pat),
@@ -780,7 +780,7 @@ const runWiqlAndFetch = async (
     for (const batch of batches) {
       const fieldsParam = encodeURIComponent(fields.join(","));
       const detailsUrl = `${base}/_apis/wit/workitems?ids=${batch.join(",")}&fields=${fieldsParam}&api-version=${API_VERSION}`;
-      const detailsRes = await fetch(detailsUrl, {
+      const detailsRes = await tfsFetch(detailsUrl, {
         method: "GET",
         headers: {
           Authorization: buildAuthHeader(conn.pat),
@@ -935,7 +935,7 @@ export const listTfsClassificationNodes = async (
   const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const res = await fetch(url, {
+    const res = await tfsFetch(url, {
       method: "GET",
       headers: { Authorization: buildAuthHeader(pat), Accept: "application/json" },
       signal: controller.signal,
@@ -1143,7 +1143,7 @@ export const listTfsTeamAreaPaths = async (
   const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const res = await fetch(url, {
+    const res = await tfsFetch(url, {
       method: "GET",
       headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
       signal: controller.signal,
@@ -1366,7 +1366,7 @@ export const listTfsTeamMembers = async (
   const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const res = await fetch(url, {
+    const res = await tfsFetch(url, {
       method: "GET",
       headers: { Authorization: buildAuthHeader(pat), Accept: "application/json" },
       signal: controller.signal,
@@ -1487,7 +1487,7 @@ export const fetchTfsBugsByIterations = async (
   }
 
   try {
-    const wiqlRes = await fetch(wiqlUrl, {
+    const wiqlRes = await tfsFetch(wiqlUrl, {
 
       method: "POST",
       headers: {
@@ -1538,7 +1538,7 @@ export const fetchTfsBugsByIterations = async (
     for (const batch of batches) {
       const fieldsParam = encodeURIComponent(fields.join(","));
       const detailsUrl = `${base}/_apis/wit/workitems?ids=${batch.join(",")}&fields=${fieldsParam}&api-version=${API_VERSION}`;
-      const detailsRes = await fetch(detailsUrl, {
+      const detailsRes = await tfsFetch(detailsUrl, {
         method: "GET",
         headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
         signal: controller.signal,
@@ -1623,7 +1623,7 @@ export const fetchTfsBugDetail = async (
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
-    const res = await fetch(url, {
+    const res = await tfsFetch(url, {
       method: "GET",
       headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
       signal: controller.signal,
@@ -1813,8 +1813,8 @@ export const fetchTfsEpicDetail = async (
   try {
     const headers = { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" };
     const [detailRes, updatesRes] = await Promise.all([
-      fetch(detailUrl, { method: "GET", headers, signal: controller.signal }),
-      fetch(updatesUrl, { method: "GET", headers, signal: controller.signal }),
+      tfsFetch(detailUrl, { method: "GET", headers, signal: controller.signal }),
+      tfsFetch(updatesUrl, { method: "GET", headers, signal: controller.signal }),
     ]);
 
     if (!detailRes.ok) {
@@ -1936,7 +1936,7 @@ const runEpicsWiql = async (
   if (isMixedContent(url)) {
     return { ids: [], url, error: { kind: "mixed_content", url, message: "Mixed content (HTTPS → HTTP)." } };
   }
-  const res = await fetch(url, {
+  const res = await tfsFetch(url, {
     method: "POST",
     headers: {
       Authorization: buildAuthHeader(conn.pat),
@@ -1980,7 +1980,7 @@ const runSavedQuery = async (
   if (isMixedContent(url)) {
     return { ids: [], url, error: { kind: "mixed_content", url, message: "Mixed content (HTTPS → HTTP)." } };
   }
-  const res = await fetch(url, {
+  const res = await tfsFetch(url, {
     method: "GET",
     headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
     signal,
@@ -1993,7 +1993,7 @@ const runSavedQuery = async (
   // Fallback: fetch WIQL text and execute it manually. Useful when the run-by-id
   // endpoint is not exposed (older TFS) or the query id is a path rather than a GUID.
   const fallbackUrl = `${base}/${projectSeg}/_apis/wit/queries/${encodeURI(idOrPath)}?$expand=wiql&api-version=${API_VERSION}`;
-  const fallbackRes = await fetch(fallbackUrl, {
+  const fallbackRes = await tfsFetch(fallbackUrl, {
     method: "GET",
     headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
     signal,
@@ -2077,7 +2077,7 @@ export const fetchTfsEpics = async (
       const fieldsParam = encodeURIComponent(EPIC_FIELDS.join(","));
       const detailsUrl = `${base}/_apis/wit/workitems?ids=${batch.join(",")}&fields=${fieldsParam}&api-version=${API_VERSION}`;
       fetchUrl = detailsUrl;
-      const detailsRes = await fetch(detailsUrl, {
+      const detailsRes = await tfsFetch(detailsUrl, {
         method: "GET",
         headers: { Authorization: buildAuthHeader(conn.pat), Accept: "application/json" },
         signal: controller.signal,
