@@ -69,12 +69,78 @@ let settingsCache: CachedSettings | null = null;
 /** Read-only POST endpoints of the Azure DevOps REST API. */
 const READ_ONLY_POST_PATTERNS = [/\/wiql(\/|\?|$)/i, /\/workitemsbatch(\/|\?|$)/i];
 
+/**
+ * Ad-hoc, best-effort rate limit. It is in-memory and therefore per edge
+ * runtime instance: it curbs obvious abuse and runaway clients, but it is not a
+ * distributed guarantee.
+ */
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 120;
+const RATE_LIMIT_MAX_CLIENTS = 1000;
+
+const requestTimestamps = new Map<string, number[]>();
+
+const clientKey = (req: Request): string =>
+  req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+  req.headers.get("cf-connecting-ip")?.trim() ||
+  "unknown";
+
+interface RateLimitResult {
+  allowed: boolean;
+  count: number;
+  retryAfterSeconds: number;
+}
+
+const checkRateLimit = (key: string): RateLimitResult => {
+  const now = Date.now();
+  const cutoff = now - RATE_LIMIT_WINDOW_MS;
+  const hits = (requestTimestamps.get(key) ?? []).filter((t) => t > cutoff);
+  if (hits.length >= RATE_LIMIT_MAX_REQUESTS) {
+    requestTimestamps.set(key, hits);
+    const retryAfterSeconds = Math.max(1, Math.ceil((hits[0] + RATE_LIMIT_WINDOW_MS - now) / 1000));
+    return { allowed: false, count: hits.length, retryAfterSeconds };
+  }
+  hits.push(now);
+  if (requestTimestamps.size >= RATE_LIMIT_MAX_CLIENTS && !requestTimestamps.has(key)) {
+    const oldest = requestTimestamps.keys().next().value;
+    if (oldest !== undefined) requestTimestamps.delete(oldest);
+  }
+  requestTimestamps.set(key, hits);
+  return { allowed: true, count: hits.length, retryAfterSeconds: 0 };
+};
+
+/** Redacts query strings so logs never leak tokens or WIQL payload details. */
+const safeUrl = (raw: string): string => {
+  try {
+    const u = new URL(raw);
+    return `${u.origin}${u.pathname}`;
+  } catch {
+    return "invalid-url";
+  }
+};
+
+type LogLevel = "info" | "warn" | "error";
+
+/** Single-line JSON logs so they can be filtered and aggregated downstream. */
+const log = (level: LogLevel, event: string, fields: Record<string, unknown> = {}): void => {
+  const payload = JSON.stringify({
+    ts: new Date().toISOString(),
+    fn: "ado-proxy",
+    level,
+    event,
+    ...fields,
+  });
+  if (level === "error") console.error(payload);
+  else if (level === "warn") console.warn(payload);
+  else console.info(payload);
+};
 
 const jsonResponse = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+
 
 const fromBase64 = (input: string): Uint8Array => {
   const binary = atob(input);
