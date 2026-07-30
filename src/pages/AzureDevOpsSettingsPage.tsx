@@ -97,6 +97,10 @@ export const AzureDevOpsSettingsPage = () => {
   const [diagnosticsAt, setDiagnosticsAt] = useState<string | null>(null);
   const [proxyDiagnostics, setProxyDiagnostics] = useState<ProxyDiagnosticsResult | null>(null);
   const [proxyDiagnosing, setProxyDiagnosing] = useState(false);
+  // Admin-configurable rate limit applied by the `ado-proxy` edge function.
+  const [proxyRateLimitMax, setProxyRateLimitMax] = useState("120");
+  const [proxyRateLimitWindow, setProxyRateLimitWindow] = useState("60");
+
 
   const [hasExisting, setHasExisting] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
