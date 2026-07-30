@@ -319,15 +319,20 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Server misconfigured" }, 500);
   }
 
-  const limit = checkRateLimit(client);
+  // Uses the last known admin configuration; it is refreshed whenever the
+  // settings row is resolved below, so changes apply without a redeploy.
+  const rateLimitConfig = activeRateLimit;
+  const limit = checkRateLimit(client, rateLimitConfig);
   if (!limit.allowed) {
     log("warn", "rate_limited", {
       requestId,
       client,
       count: limit.count,
-      windowMs: RATE_LIMIT_WINDOW_MS,
+      maxRequests: rateLimitConfig.maxRequests,
+      windowMs: rateLimitConfig.windowMs,
       retryAfterSeconds: limit.retryAfterSeconds,
     });
+
     return new Response(JSON.stringify({ error: "Too many requests" }), {
       status: 429,
       headers: {
