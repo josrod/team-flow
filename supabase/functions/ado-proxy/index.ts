@@ -20,8 +20,55 @@ const MAX_URL_LENGTH = 8192;
 const MAX_BODY_LENGTH = 32768;
 const UPSTREAM_TIMEOUT_MS = 20_000;
 
+/** Server-side read cache: successful upstream reads are reused for a short TTL. */
+const CACHE_TTL_MS = 60_000;
+const SETTINGS_TTL_MS = 60_000;
+const MAX_CACHE_ENTRIES = 200;
+
+interface CachedResponse {
+  expiresAt: number;
+  status: number;
+  contentType: string;
+  text: string;
+}
+
+const responseCache = new Map<string, CachedResponse>();
+/** De-duplicates concurrent identical reads into a single upstream call. */
+const inFlight = new Map<string, Promise<CachedResponse>>();
+
+const cacheKey = (method: string, url: string, body: string | undefined): string =>
+  `${method} ${url} ${body ?? ""}`;
+
+const readCache = (key: string): CachedResponse | null => {
+  const hit = responseCache.get(key);
+  if (!hit) return null;
+  if (hit.expiresAt <= Date.now()) {
+    responseCache.delete(key);
+    return null;
+  }
+  return hit;
+};
+
+const writeCache = (key: string, entry: CachedResponse): void => {
+  if (responseCache.size >= MAX_CACHE_ENTRIES) {
+    // Evict the oldest inserted entry (Map preserves insertion order).
+    const oldest = responseCache.keys().next().value;
+    if (oldest !== undefined) responseCache.delete(oldest);
+  }
+  responseCache.set(key, entry);
+};
+
+interface CachedSettings {
+  expiresAt: number;
+  serverUrl: string;
+  pat: string;
+}
+
+let settingsCache: CachedSettings | null = null;
+
 /** Read-only POST endpoints of the Azure DevOps REST API. */
 const READ_ONLY_POST_PATTERNS = [/\/wiql(\/|\?|$)/i, /\/workitemsbatch(\/|\?|$)/i];
+
 
 const jsonResponse = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), {
