@@ -149,6 +149,18 @@ const parseBody = (raw: unknown): ProxyRequest | null => {
   return { url, method, body, refresh: obj.refresh === true };
 };
 
+/** Serializes a cached (or freshly fetched) upstream response back to the client. */
+const cachedResponse = (entry: CachedResponse, state: "HIT" | "MISS" | "COALESCED"): Response =>
+  new Response(entry.text, {
+    status: entry.status,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": entry.contentType,
+      "X-Proxy-Cache": state,
+    },
+  });
+
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
