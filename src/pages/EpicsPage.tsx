@@ -956,6 +956,7 @@ export const EpicsPage = () => {
                           ))}
                         </TableBody>
                       </Table>
+                      </div>
                     </div>
                   )}
                 </TabsContent>
