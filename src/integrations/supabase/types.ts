@@ -401,65 +401,30 @@ export type Database = {
       }
     }
     Views: {
-      azure_devops_public_config: {
-        Row: {
-          area_paths: string[] | null
-          bugs_query_id: string | null
-          collection: string | null
-          epics_area_paths: string[] | null
-          epics_iteration_paths: string[] | null
-          epics_project: string | null
-          epics_query_id: string | null
-          epics_tags: string[] | null
-          epics_team: string | null
-          id: string | null
-          iteration_paths: string[] | null
-          organization: string | null
-          project: string | null
-          server_url: string | null
-          team: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          area_paths?: string[] | null
-          bugs_query_id?: string | null
-          collection?: string | null
-          epics_area_paths?: string[] | null
-          epics_iteration_paths?: string[] | null
-          epics_project?: string | null
-          epics_query_id?: string | null
-          epics_tags?: string[] | null
-          epics_team?: string | null
-          id?: string | null
-          iteration_paths?: string[] | null
-          organization?: string | null
-          project?: string | null
-          server_url?: string | null
-          team?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          area_paths?: string[] | null
-          bugs_query_id?: string | null
-          collection?: string | null
-          epics_area_paths?: string[] | null
-          epics_iteration_paths?: string[] | null
-          epics_project?: string | null
-          epics_query_id?: string | null
-          epics_tags?: string[] | null
-          epics_team?: string | null
-          id?: string | null
-          iteration_paths?: string[] | null
-          organization?: string | null
-          project?: string | null
-          server_url?: string | null
-          team?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
+      get_public_ado_config: {
+        Args: never
+        Returns: {
+          area_paths: string[]
+          bugs_query_id: string
+          collection: string
+          epics_area_paths: string[]
+          epics_iteration_paths: string[]
+          epics_project: string
+          epics_query_id: string
+          epics_tags: string[]
+          epics_team: string
+          id: string
+          iteration_paths: string[]
+          organization: string
+          project: string
+          server_url: string
+          team: string
+          updated_at: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
