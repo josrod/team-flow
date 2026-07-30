@@ -14,6 +14,8 @@ import { Tooltip as UiTooltip, TooltipTrigger, TooltipContent } from "@/componen
 import { Settings as SettingsIcon } from "lucide-react";
 import { listTfsFeatures, listTfsTasks, RODAT_AREA_PATH, RODAT_ITERATION_PATH, type TfsWorkItem } from "@/services/tfs";
 import { decryptPat } from "@/services/tfsPatVault";
+import { loadPublicAdoConfig, buildAdoBaseUrl } from "@/services/adoConfig";
+
 import { parseTfsTags } from "@/lib/tfsTags";
 import { cn } from "@/lib/utils";
 import { isBugType, normalizeState } from "@/lib/tasksState";
