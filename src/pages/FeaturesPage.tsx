@@ -509,18 +509,27 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
   // Detect TFS settings on mount
   useEffect(() => {
     const detect = async () => {
-      if (!user) return;
-      const { data } = await supabase
-        .from("azure_devops_settings")
-        .select("server_url, collection, project, team, pat_encrypted, pat_iv, area_paths, iteration_paths")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      // Signed-in admins use their own row; everyone else uses the shared
+      // admin-configured connection so the data is visible without a login.
+      let data: SharedAdoSettingsRow | null = null;
+      if (user) {
+        const { data: own } = await supabase
+          .from("azure_devops_settings")
+          .select("server_url, collection, project, team, pat_encrypted, pat_iv, area_paths, iteration_paths")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        data = (own as unknown as SharedAdoSettingsRow | null) ?? null;
+      }
+      if (!data?.server_url || !data?.collection || !data?.project || !data?.pat_encrypted) {
+        data = await loadSharedAdoSettings();
+      }
       if (data?.server_url && data?.collection && data?.project && data?.pat_encrypted) {
         setTfsConnConfigured(true);
         setSource("tfs");
         await loadFromTfs(data);
       }
     };
+
     detect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
