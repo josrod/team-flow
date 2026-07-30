@@ -58,10 +58,16 @@ const writeCache = (key: string, entry: CachedResponse): void => {
   responseCache.set(key, entry);
 };
 
+interface RateLimitConfig {
+  maxRequests: number;
+  windowMs: number;
+}
+
 interface CachedSettings {
   expiresAt: number;
   serverUrl: string;
   pat: string;
+  rateLimit: RateLimitConfig;
 }
 
 let settingsCache: CachedSettings | null = null;
@@ -73,10 +79,23 @@ const READ_ONLY_POST_PATTERNS = [/\/wiql(\/|\?|$)/i, /\/workitemsbatch(\/|\?|$)/
  * Ad-hoc, best-effort rate limit. It is in-memory and therefore per edge
  * runtime instance: it curbs obvious abuse and runaway clients, but it is not a
  * distributed guarantee.
+ *
+ * The window and the request budget are admin-configurable in the Azure DevOps
+ * settings and picked up automatically (no redeploy) as soon as the cached
+ * settings expire. The constants below are only the fallback used before any
+ * configuration has been read.
  */
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX_REQUESTS = 120;
+const DEFAULT_RATE_LIMIT: RateLimitConfig = { maxRequests: 120, windowMs: 60_000 };
 const RATE_LIMIT_MAX_CLIENTS = 1000;
+
+/** Last known admin configuration, used before the settings row is resolved. */
+let activeRateLimit: RateLimitConfig = { ...DEFAULT_RATE_LIMIT };
+
+const clampInt = (value: unknown, min: number, max: number, fallback: number): number => {
+  const n = typeof value === "number" ? Math.trunc(value) : Number.NaN;
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+};
 
 const requestTimestamps = new Map<string, number[]>();
 
@@ -91,13 +110,13 @@ interface RateLimitResult {
   retryAfterSeconds: number;
 }
 
-const checkRateLimit = (key: string): RateLimitResult => {
+const checkRateLimit = (key: string, config: RateLimitConfig): RateLimitResult => {
   const now = Date.now();
-  const cutoff = now - RATE_LIMIT_WINDOW_MS;
+  const cutoff = now - config.windowMs;
   const hits = (requestTimestamps.get(key) ?? []).filter((t) => t > cutoff);
-  if (hits.length >= RATE_LIMIT_MAX_REQUESTS) {
+  if (hits.length >= config.maxRequests) {
     requestTimestamps.set(key, hits);
-    const retryAfterSeconds = Math.max(1, Math.ceil((hits[0] + RATE_LIMIT_WINDOW_MS - now) / 1000));
+    const retryAfterSeconds = Math.max(1, Math.ceil((hits[0] + config.windowMs - now) / 1000));
     return { allowed: false, count: hits.length, retryAfterSeconds };
   }
   hits.push(now);
@@ -108,6 +127,7 @@ const checkRateLimit = (key: string): RateLimitResult => {
   requestTimestamps.set(key, hits);
   return { allowed: true, count: hits.length, retryAfterSeconds: 0 };
 };
+
 
 /** Redacts query strings so logs never leak tokens or WIQL payload details. */
 const safeUrl = (raw: string): string => {
