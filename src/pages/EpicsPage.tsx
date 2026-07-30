@@ -768,6 +768,7 @@ export const EpicsPage = () => {
                             <TableHead>{t.epicsColTitle}</TableHead>
                             <TableHead>{t.epicsColState}</TableHead>
                             <TableHead>{t.epicsColAssignee}</TableHead>
+                            <TableHead>{t.epicsColVersion}</TableHead>
                             <TableHead>{t.epicsColTags}</TableHead>
                             <TableHead>{t.epicsColArea}</TableHead>
                             <TableHead>{t.epicsColTargetDate}</TableHead>
