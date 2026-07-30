@@ -4,6 +4,7 @@
 // the `get_public_ado_config` database function, which never exposes the PAT.
 
 import { supabase } from "@/integrations/supabase/client";
+import { enableTfsProxyMode } from "@/services/tfs";
 
 export interface PublicAdoConfig {
   serverUrl: string | null;
