@@ -141,8 +141,10 @@ const tfsFetch = async (url: string, init?: RequestInit): Promise<Response> => {
   if (headerValue(init?.headers, "Authorization") !== PROXY_AUTH_HEADER) {
     return fetch(url, init);
   }
+  proxyModeActive = true;
   const method = (init?.method ?? "GET").toUpperCase();
   const body = typeof init?.body === "string" ? init.body : undefined;
+
   return fetch(proxyEndpoint(), {
     method: "POST",
     headers: {
