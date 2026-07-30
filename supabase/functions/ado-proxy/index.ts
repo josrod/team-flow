@@ -174,60 +174,93 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Only read-only requests are allowed" }, 403);
   }
 
-  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-  const { data, error } = await admin
-    .from("azure_devops_settings")
-    .select("server_url, pat_encrypted, pat_iv, updated_at")
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const key = cacheKey(parsed.method, parsed.url, parsed.body);
+  if (!parsed.refresh) {
+    const cached = readCache(key);
+    if (cached) return cachedResponse(cached, "HIT");
+  }
 
-  if (error) {
-    return jsonResponse({ error: "Could not read the Azure DevOps configuration" }, 500);
+  // Resolve the connection (server URL + decrypted PAT), cached briefly too.
+  let settings = settingsCache && settingsCache.expiresAt > Date.now() ? settingsCache : null;
+  if (!settings) {
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const { data, error } = await admin
+      .from("azure_devops_settings")
+      .select("server_url, pat_encrypted, pat_iv, updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      return jsonResponse({ error: "Could not read the Azure DevOps configuration" }, 500);
+    }
+    if (!data?.server_url || !data?.pat_encrypted) {
+      return jsonResponse({ error: "No Azure DevOps configuration available" }, 404);
+    }
+    let pat: string;
+    try {
+      // Legacy rows saved before the vault landed hold plaintext with a null iv.
+      pat = data.pat_iv ? await decryptPat(data.pat_encrypted, data.pat_iv) : data.pat_encrypted;
+    } catch {
+      return jsonResponse({ error: "Could not decrypt the stored credentials" }, 500);
+    }
+    settings = { serverUrl: data.server_url, pat, expiresAt: Date.now() + SETTINGS_TTL_MS };
+    settingsCache = settings;
   }
-  if (!data?.server_url || !data?.pat_encrypted) {
-    return jsonResponse({ error: "No Azure DevOps configuration available" }, 404);
-  }
-  if (!isAllowedTarget(parsed.url, data.server_url)) {
+
+  if (!isAllowedTarget(parsed.url, settings.serverUrl)) {
     return jsonResponse({ error: "Target URL is not allowed" }, 403);
   }
 
-  let pat: string;
-  try {
-    // Legacy rows saved before the vault landed hold plaintext with a null iv.
-    pat = data.pat_iv ? await decryptPat(data.pat_encrypted, data.pat_iv) : data.pat_encrypted;
-  } catch {
-    return jsonResponse({ error: "Could not decrypt the stored credentials" }, 500);
+  const existing = !parsed.refresh ? inFlight.get(key) : undefined;
+  if (existing) {
+    try {
+      return cachedResponse(await existing, "COALESCED");
+    } catch {
+      return jsonResponse({ error: "Could not reach the Azure DevOps server" }, 502);
+    }
   }
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+  const pat = settings.pat;
+  const task = (async (): Promise<CachedResponse> => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+    try {
+      const upstream = await fetch(parsed.url, {
+        method: parsed.method,
+        headers: {
+          Authorization: `Basic ${btoa(`:${pat.trim()}`)}`,
+          Accept: "application/json",
+          ...(parsed.method === "POST" ? { "Content-Type": "application/json" } : {}),
+        },
+        body: parsed.method === "POST" ? parsed.body ?? "{}" : undefined,
+        signal: controller.signal,
+      });
+      const text = await upstream.text();
+      const entry: CachedResponse = {
+        status: upstream.status,
+        contentType: upstream.headers.get("Content-Type") ?? "application/json",
+        text,
+        expiresAt: Date.now() + CACHE_TTL_MS,
+      };
+      // Only successful reads are cached; errors must be retried immediately.
+      if (upstream.ok) writeCache(key, entry);
+      else if (upstream.status === 401 || upstream.status === 403) settingsCache = null;
+      return entry;
+    } finally {
+      clearTimeout(timer);
+      inFlight.delete(key);
+    }
+  })();
+  inFlight.set(key, task);
+
   try {
-    const upstream = await fetch(parsed.url, {
-      method: parsed.method,
-      headers: {
-        Authorization: `Basic ${btoa(`:${pat.trim()}`)}`,
-        Accept: "application/json",
-        ...(parsed.method === "POST" ? { "Content-Type": "application/json" } : {}),
-      },
-      body: parsed.method === "POST" ? parsed.body ?? "{}" : undefined,
-      signal: controller.signal,
-    });
-    const text = await upstream.text();
-    return new Response(text, {
-      status: upstream.status,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": upstream.headers.get("Content-Type") ?? "application/json",
-      },
-    });
+    return cachedResponse(await task, "MISS");
   } catch (err) {
     const aborted = err instanceof DOMException && err.name === "AbortError";
     return jsonResponse(
       { error: aborted ? "Upstream request timed out" : "Could not reach the Azure DevOps server" },
       aborted ? 504 : 502,
     );
-  } finally {
-    clearTimeout(timer);
   }
 });
