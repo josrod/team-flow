@@ -131,6 +131,34 @@ export const EpicsPage = () => {
     assignVersion,
   } = useEpicVersions();
 
+  // Bulk version assignment from the list tab.
+  const [selectedEpicIds, setSelectedEpicIds] = useState<string[]>([]);
+  const [bulkVersionId, setBulkVersionId] = useState<string>(NO_VERSION);
+  const [bulkSaving, setBulkSaving] = useState(false);
+
+  const toggleEpicSelection = useCallback((epicId: string) => {
+    setSelectedEpicIds((prev) =>
+      prev.includes(epicId) ? prev.filter((id) => id !== epicId) : [...prev, epicId],
+    );
+  }, []);
+
+  const applyBulkVersion = useCallback(async () => {
+    if (selectedEpicIds.length === 0) return;
+    setBulkSaving(true);
+    try {
+      const versionId = bulkVersionId === NO_VERSION ? null : bulkVersionId;
+      for (const epicId of selectedEpicIds) {
+        await assignVersion(epicId, versionId);
+      }
+      toast.success(t.epicsBulkApplied.replace("{count}", String(selectedEpicIds.length)));
+      setSelectedEpicIds([]);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBulkSaving(false);
+    }
+  }, [assignVersion, bulkVersionId, selectedEpicIds, t.epicsBulkApplied]);
+
   // Version filter (?versions=id1,id2 — "none" targets epics without version).
   const [selectedVersions, setSelectedVersions] = useState<string[]>(() =>
     parseTagsParam(searchParams.get("versions")),
