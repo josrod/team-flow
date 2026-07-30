@@ -76,21 +76,14 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "No Azure DevOps configuration available" }, 404);
   }
 
-  let pat: string;
-  try {
-    // Legacy rows saved before the vault landed hold plaintext with a null iv.
-    pat = data.pat_iv ? await decryptPat(data.pat_encrypted, data.pat_iv) : data.pat_encrypted;
-  } catch {
-    return jsonResponse({ error: "Could not decrypt the stored credentials" }, 500);
-  }
-
   return jsonResponse({
     server_url: data.server_url,
     collection: data.collection,
     project: data.project,
     team: data.team,
-    // Plaintext token: the client treats it as a legacy (unencrypted) value.
-    pat_encrypted: pat,
+    // The token never leaves the server: the client receives a sentinel and
+    // routes every read-only request through the `ado-proxy` function.
+    pat_encrypted: "__ado_proxy__",
     pat_iv: null,
     area_paths: data.area_paths ?? [],
     iteration_paths: data.iteration_paths ?? [],
@@ -103,3 +96,4 @@ Deno.serve(async (req) => {
     epics_iteration_paths: data.epics_iteration_paths ?? [],
   });
 });
+
