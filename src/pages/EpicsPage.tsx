@@ -800,6 +800,15 @@ export const EpicsPage = () => {
                               <TableCell className="font-medium">{epic.title}</TableCell>
                               <TableCell><Badge variant="outline">{epic.state}</Badge></TableCell>
                               <TableCell className="text-sm">{epic.assignedTo ?? <span className="text-muted-foreground">{t.epicsUnassigned}</span>}</TableCell>
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                <EpicVersionSelect
+                                  epicId={epic.id}
+                                  versions={versions}
+                                  versionId={assignments[String(epic.id)] ?? null}
+                                  canEdit={isAdmin}
+                                  onAssign={assignVersion}
+                                />
+                              </TableCell>
                               <TableCell>
                                 <div className="flex flex-wrap gap-1">
                                   {epic.tags.map((tg) => (
