@@ -961,6 +961,45 @@ export const AzureDevOpsSettingsPage = () => {
                 <ProxyDiagnosticsPanel result={proxyDiagnostics} />
               </div>
             )}
+
+            <Separator />
+
+            <div className="space-y-3">
+              <div>
+                <h4 className="text-sm font-medium">{t.proxyRateLimitHeading}</h4>
+                <p className="text-xs text-muted-foreground">{t.proxyRateLimitHint}</p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="proxy-rate-max">{t.proxyRateLimitMaxLabel}</Label>
+                  <Input
+                    id="proxy-rate-max"
+                    type="number"
+                    min={1}
+                    max={10000}
+                    value={proxyRateLimitMax}
+                    onChange={(e) => setProxyRateLimitMax(e.target.value)}
+                    onBlur={() => setProxyRateLimitMax(String(clampRate(proxyRateLimitMax, 1, 10000, 120)))}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="proxy-rate-window">{t.proxyRateLimitWindowLabel}</Label>
+                  <Input
+                    id="proxy-rate-window"
+                    type="number"
+                    min={1}
+                    max={3600}
+                    value={proxyRateLimitWindow}
+                    onChange={(e) => setProxyRateLimitWindow(e.target.value)}
+                    onBlur={() => setProxyRateLimitWindow(String(clampRate(proxyRateLimitWindow, 1, 3600, 60)))}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">{t.proxyRateLimitApplyNote}</p>
+            </div>
+
           </CardContent>
         </Card>
       </motion.div>
