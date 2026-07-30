@@ -158,6 +158,13 @@ export const AzureDevOpsSettingsPage = () => {
         if (Array.isArray(rawEpicIters)) setEpicsIterationPaths(rawEpicIters);
         const rawEpicTags = (data as { epics_tags?: string[] | null }).epics_tags;
         if (Array.isArray(rawEpicTags)) setEpicsTags(rawEpicTags);
+        const rawRateMax = (data as { proxy_rate_limit_max_requests?: number | null })
+          .proxy_rate_limit_max_requests;
+        const rawRateWindow = (data as { proxy_rate_limit_window_seconds?: number | null })
+          .proxy_rate_limit_window_seconds;
+        if (typeof rawRateMax === "number") setProxyRateLimitMax(String(rawRateMax));
+        if (typeof rawRateWindow === "number") setProxyRateLimitWindow(String(rawRateWindow));
+
 
         setLastSynced(data.last_synced_at);
         setHasExisting(true);
