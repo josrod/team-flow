@@ -159,8 +159,12 @@ export const EpicVersionManager = ({
             }
             return (
               <div key={version.id} className="flex items-center gap-1">
-                <Badge variant="outline" className={cn("gap-1.5 text-[11px]", color.badge)}>
-                  <span className={cn("h-2 w-2 rounded-full", color.bar)} />
+                <Badge
+                  variant="outline"
+                  className={cn("gap-1.5 text-[11px]", color.badge)}
+                  title={epicVersionAccessibleLabel(version.name, version.colorKey)}
+                >
+                  <span aria-hidden className="leading-none">{color.symbol}</span>
                   {version.name}
                   <span className="opacity-70">· {count}</span>
                 </Badge>
