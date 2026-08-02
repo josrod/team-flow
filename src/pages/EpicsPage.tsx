@@ -678,9 +678,19 @@ export const EpicsPage = () => {
                           >
                             <Check className={cn("h-3.5 w-3.5 shrink-0", selected ? "opacity-100" : "opacity-0")} />
                             {opt.colorKey ? (
-                              <span className={cn("h-2 w-2 rounded-full shrink-0", resolveEpicVersionColor(opt.colorKey).bar)} />
+                              <span
+                                className={cn(
+                                  "inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm text-[9px] leading-none text-primary-foreground",
+                                  resolveEpicVersionColor(opt.colorKey).bar,
+                                )}
+                                aria-hidden
+                              >
+                                {resolveEpicVersionColor(opt.colorKey).symbol}
+                              </span>
                             ) : (
-                              <span className="h-2 w-2 rounded-full shrink-0 border border-muted-foreground/50" />
+                              <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-muted-foreground/50 text-[9px] leading-none text-muted-foreground" aria-hidden>
+                                –
+                              </span>
                             )}
                             <span className="truncate">{opt.label}</span>
                           </button>
