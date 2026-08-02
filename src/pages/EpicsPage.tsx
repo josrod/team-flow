@@ -42,7 +42,7 @@ import { useEpicVersions } from "@/hooks/use-epic-versions";
 import { EpicVersionManager } from "@/components/EpicVersionManager";
 import { EpicVersionLegend } from "@/components/EpicVersionLegend";
 import { EpicVersionSelect } from "@/components/EpicVersionSelect";
-import { resolveEpicVersionColor } from "@/lib/epicVersionColors";
+import { epicVersionAccessibleLabel, resolveEpicVersionColor } from "@/lib/epicVersionColors";
 
 interface EpicsSettings {
   serverUrl: string;
