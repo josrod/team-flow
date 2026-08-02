@@ -772,9 +772,12 @@ export const EpicsPage = () => {
                                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
                                         <Badge variant="outline" className="text-[10px] px-1.5 py-0">{epic.state}</Badge>
                                         {version && color && (
-                                          <Badge variant="outline" className={cn("gap-1 text-[10px] px-1.5 py-0", color.badge)}>
-                                            <span className={cn("h-1.5 w-1.5 rounded-full", color.bar)} />
-                                            {version.name}
+                                          <Badge
+                                            variant="outline"
+                                            className={cn("gap-1 text-[10px] px-1.5 py-0", color.badge)}
+                                            title={epicVersionAccessibleLabel(version.name, version.colorKey)}
+                                          >
+                                            <span aria-hidden className="leading-none">{color.symbol}</span>
                                           </Badge>
                                         )}
                                         {epic.tags.slice(0, 3).map((tag) => (
