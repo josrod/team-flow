@@ -18,7 +18,13 @@ interface EpicsTimelineProps {
   epics: TfsEpic[];
   onOpenEpic: (epic: TfsEpic) => void;
   /** Optional delivery version colouring for each epic bar. */
-  versionFor?: (epic: TfsEpic) => { name: string; barClass: string } | null;
+  versionFor?: (epic: TfsEpic) => {
+    name: string;
+    barClass: string;
+    /** Non-colour marker so colour-blind users can identify the version. */
+    symbol: string;
+    colorName: string;
+  } | null;
 }
 
 type GroupMode = "none" | "area" | "assignee";
