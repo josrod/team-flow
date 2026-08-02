@@ -469,29 +469,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_public_ado_config: {
-        Args: never
-        Returns: {
-          area_paths: string[]
-          bugs_query_id: string
-          collection: string
-          epics_area_paths: string[]
-          epics_iteration_paths: string[]
-          epics_project: string
-          epics_query_id: string
-          epics_tags: string[]
-          epics_team: string
-          id: string
-          iteration_paths: string[]
-          organization: string
-          project: string
-          proxy_rate_limit_max_requests: number
-          proxy_rate_limit_window_seconds: number
-          server_url: string
-          team: string
-          updated_at: string
-        }[]
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
