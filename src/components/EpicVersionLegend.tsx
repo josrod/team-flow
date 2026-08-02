@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/context/LanguageContext";
-import { resolveEpicVersionColor } from "@/lib/epicVersionColors";
+import { epicVersionAccessibleLabel, resolveEpicVersionColor } from "@/lib/epicVersionColors";
 import type { EpicVersion } from "@/services/epicVersions";
 
 interface EpicVersionLegendProps {
