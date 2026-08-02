@@ -42,8 +42,12 @@ export const EpicVersionSelect = ({
     if (!current) return <span className="text-xs text-muted-foreground">—</span>;
     const color = resolveEpicVersionColor(current.colorKey);
     return (
-      <Badge variant="outline" className={cn("gap-1.5 text-[10px]", color.badge, className)}>
-        <span className={cn("h-2 w-2 rounded-full", color.bar)} />
+      <Badge
+        variant="outline"
+        className={cn("gap-1.5 text-[10px]", color.badge, className)}
+        title={epicVersionAccessibleLabel(current.name, current.colorKey)}
+      >
+        <span aria-hidden className="leading-none">{color.symbol}</span>
         {current.name}
       </Badge>
     );
