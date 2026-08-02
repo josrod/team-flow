@@ -83,8 +83,17 @@ export const EpicVersionSelect = ({
           return (
             <SelectItem key={v.id} value={v.id} className="text-xs">
               <span className="flex items-center gap-2">
-                <span className={cn("h-2 w-2 rounded-full", color.bar)} />
+                <span
+                  className={cn(
+                    "inline-flex h-4 w-4 items-center justify-center rounded-sm text-[9px] leading-none text-primary-foreground",
+                    color.bar,
+                  )}
+                  aria-hidden
+                >
+                  {color.symbol}
+                </span>
                 {v.name}
+                <span className="text-[10px] text-muted-foreground">{color.colorName}</span>
               </span>
             </SelectItem>
           );
