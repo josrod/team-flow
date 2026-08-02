@@ -1,7 +1,6 @@
 // Shared helper to resolve the Azure DevOps connection configuration for any
-// visitor. Signed-in admins read the full settings row (including the
-// encrypted PAT); anonymous visitors get only the non-sensitive fields through
-// the `get_public_ado_config` database function, which never exposes the PAT.
+// signed-in visitor. The non-sensitive fields come from the
+// `ado-public-connection` edge function, which never returns the real PAT.
 
 import { supabase } from "@/integrations/supabase/client";
 import { enableTfsProxyMode } from "@/services/tfs";
@@ -25,11 +24,9 @@ export interface PublicAdoConfig {
 const asArray = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((v): v is string => typeof v === "string" && v.trim().length > 0) : [];
 
-/** Non-sensitive Azure DevOps config, readable without signing in. */
+/** Non-sensitive Azure DevOps config, resolved through the secure edge function. */
 export const loadPublicAdoConfig = async (): Promise<PublicAdoConfig | null> => {
-  const { data, error } = await supabase.rpc("get_public_ado_config");
-  if (error) return null;
-  const row = Array.isArray(data) ? data[0] : data;
+  const row = await loadSharedAdoSettings();
   if (!row) return null;
   return {
     serverUrl: row.server_url ?? null,
@@ -47,6 +44,7 @@ export const loadPublicAdoConfig = async (): Promise<PublicAdoConfig | null> => 
     epicsIterationPaths: asArray(row.epics_iteration_paths),
   };
 };
+
 
 /** Builds the "open in Azure DevOps" base URL from a config, when complete. */
 export const buildAdoBaseUrl = (

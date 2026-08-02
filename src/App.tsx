@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { AdminRoute } from "@/components/AdminRoute";
+import { AuthedRoute } from "@/components/AuthedRoute";
 import { AppLayout } from "@/components/AppLayout";
 import { TeamPulseDashboard } from "@/components/TeamPulseDashboard";
 import Index from "./pages/Index";
@@ -40,18 +41,18 @@ const App = () => (
                 <Routes>
                   <Route path="/auth" element={<AuthPage />} />
                   <Route path="/reset-password" element={<ResetPasswordPage />} />
-                  {/* Public pages (anyone on the intranet, no login required) */}
-                  <Route path="/" element={<AppLayout><Index /></AppLayout>} />
-                  <Route path="/team/:teamId" element={<AppLayout><TeamPage /></AppLayout>} />
-                  <Route path="/handovers" element={<AppLayout><HandoversPage /></AppLayout>} />
-                  <Route path="/tasks" element={<AppLayout><TasksPage /></AppLayout>} />
-                  <Route path="/bugs" element={<AppLayout><BugsPage /></AppLayout>} />
-                  <Route path="/waiting" element={<AppLayout><WaitingPage /></AppLayout>} />
-                  <Route path="/epics" element={<AppLayout><EpicsPage /></AppLayout>} />
-                  <Route path="/pulse" element={<AppLayout><TeamPulseDashboard /></AppLayout>} />
-                  <Route path="/features" element={<AppLayout><FeaturesPage view="features" /></AppLayout>} />
-                  <Route path="/absences" element={<AppLayout><AbsencesPage /></AppLayout>} />
-                  <Route path="/workload" element={<AppLayout><FeaturesPage view="workload" /></AppLayout>} />
+                  {/* Signed-in pages (team data requires a session) */}
+                  <Route path="/" element={<AuthedRoute><AppLayout><Index /></AppLayout></AuthedRoute>} />
+                  <Route path="/team/:teamId" element={<AuthedRoute><AppLayout><TeamPage /></AppLayout></AuthedRoute>} />
+                  <Route path="/handovers" element={<AuthedRoute><AppLayout><HandoversPage /></AppLayout></AuthedRoute>} />
+                  <Route path="/tasks" element={<AuthedRoute><AppLayout><TasksPage /></AppLayout></AuthedRoute>} />
+                  <Route path="/bugs" element={<AuthedRoute><AppLayout><BugsPage /></AppLayout></AuthedRoute>} />
+                  <Route path="/waiting" element={<AuthedRoute><AppLayout><WaitingPage /></AppLayout></AuthedRoute>} />
+                  <Route path="/epics" element={<AuthedRoute><AppLayout><EpicsPage /></AppLayout></AuthedRoute>} />
+                  <Route path="/pulse" element={<AuthedRoute><AppLayout><TeamPulseDashboard /></AppLayout></AuthedRoute>} />
+                  <Route path="/features" element={<AuthedRoute><AppLayout><FeaturesPage view="features" /></AppLayout></AuthedRoute>} />
+                  <Route path="/absences" element={<AuthedRoute><AppLayout><AbsencesPage /></AppLayout></AuthedRoute>} />
+                  <Route path="/workload" element={<AuthedRoute><AppLayout><FeaturesPage view="workload" /></AppLayout></AuthedRoute>} />
                   {/* Admin-only pages */}
                   <Route path="/settings/azure-devops" element={<AdminRoute><AppLayout><AzureDevOpsSettingsPage /></AppLayout></AdminRoute>} />
 
