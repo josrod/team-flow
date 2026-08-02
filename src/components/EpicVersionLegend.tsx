@@ -108,7 +108,12 @@ export const EpicVersionLegend = ({
               selected.includes(noVersionKey) ? "border-primary bg-accent/40" : "border-transparent",
             )}
           >
-            <span className="h-3 w-3 rounded-sm border border-muted-foreground/50" aria-hidden />
+            <span
+              className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-muted-foreground/60 text-[9px] leading-none text-muted-foreground"
+              aria-hidden
+            >
+              –
+            </span>
             <span className="font-medium">{t.epicVersionNone}</span>
             <Badge variant="outline" className="px-1 py-0 text-[10px]">
               {noVersionCount}
