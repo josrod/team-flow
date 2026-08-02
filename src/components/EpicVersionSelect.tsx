@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/context/LanguageContext";
-import { resolveEpicVersionColor } from "@/lib/epicVersionColors";
+import { epicVersionAccessibleLabel, resolveEpicVersionColor } from "@/lib/epicVersionColors";
 import type { EpicVersion } from "@/services/epicVersions";
 
 const NONE = "__none__";
