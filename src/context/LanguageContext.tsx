@@ -1799,7 +1799,7 @@ export const translations = {
     epicVersionSaved: "Version updated",
     epicVersionErrorSaving: "Could not save the version",
     epicVersionLegendTitle: "Colour legend",
-    epicVersionLegendHint: "Each colour marks a delivery version. Click to filter.",
+    epicVersionLegendHint: "Each colour and symbol marks a delivery version. Click to filter.",
     epicVersionLegendEdit: "Edit version",
     epicsFilterVersions: "Versions",
     epicsFilterVersionsPlaceholder: "All versions",
