@@ -831,7 +831,13 @@ export const EpicsPage = () => {
                       versionFor={(epic) => {
                         const version = versionOf(epic);
                         if (!version) return null;
-                        return { name: version.name, barClass: resolveEpicVersionColor(version.colorKey).bar };
+                        const color = resolveEpicVersionColor(version.colorKey);
+                        return {
+                          name: version.name,
+                          barClass: color.bar,
+                          symbol: color.symbol,
+                          colorName: color.colorName,
+                        };
                       }}
                     />
                   )}
