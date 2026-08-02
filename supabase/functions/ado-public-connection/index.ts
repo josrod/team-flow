@@ -25,9 +25,14 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  // Internal infrastructure details are only for signed-in team members.
+  const auth = await requireUser(req);
+  if ("error" in auth) return auth.error;
+
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
     return jsonResponse({ error: "Server misconfigured" }, 500);
   }
+
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
   const { data, error } = await admin
