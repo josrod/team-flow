@@ -778,6 +778,7 @@ export const EpicsPage = () => {
                                             title={epicVersionAccessibleLabel(version.name, version.colorKey)}
                                           >
                                             <span aria-hidden className="leading-none">{color.symbol}</span>
+                                            {version.name}
                                           </Badge>
                                         )}
                                         {epic.tags.slice(0, 3).map((tag) => (
