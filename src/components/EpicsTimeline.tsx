@@ -243,9 +243,15 @@ export const EpicsTimeline = ({ epics, onOpenEpic, versionFor }: EpicsTimelinePr
                                     width: `${geom.widthPct}%`,
                                     minWidth: 24,
                                   }}
+                                  aria-label={
+                                    version
+                                      ? `#${epic.id} ${epic.title} · ${t.epicVersionAssignLabel}: ${version.name} (${version.colorName} ${version.symbol})`
+                                      : `#${epic.id} ${epic.title}`
+                                  }
                                 >
-                                  <span className="text-primary-foreground/95">
-                                    #{epic.id}
+                                  <span className="text-primary-foreground">
+                                    {version ? `${version.symbol} ` : ""}#{epic.id}
+                                    {version ? ` · ${version.name}` : ""}
                                   </span>
                                 </button>
                               </TooltipTrigger>
