@@ -263,7 +263,7 @@ export const EpicsTimeline = ({ epics, onOpenEpic, versionFor }: EpicsTimelinePr
                                   </div>
                                   {version && (
                                     <div className="text-muted-foreground">
-                                      {t.epicVersionAssignLabel}: {version.name}
+                                      {t.epicVersionAssignLabel}: {version.symbol} {version.name} ({version.colorName})
                                     </div>
                                   )}
                                   {epic.areaPath && (
