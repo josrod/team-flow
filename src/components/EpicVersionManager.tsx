@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useLang } from "@/context/LanguageContext";
 import {
   EPIC_VERSION_COLORS,
+  epicVersionAccessibleLabel,
   nextEpicVersionColorKey,
   resolveEpicVersionColor,
 } from "@/lib/epicVersionColors";
