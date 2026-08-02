@@ -59,10 +59,20 @@ export const EpicVersionLegend = ({
                   type="button"
                   onClick={() => onToggle(version.id)}
                   aria-pressed={isSelected}
+                  aria-label={epicVersionAccessibleLabel(version.name, version.colorKey)}
                   className="flex items-center gap-1.5 text-xs hover:text-primary"
                 >
-                  <span className={cn("h-3 w-3 rounded-sm", color.bar)} aria-hidden />
+                  <span
+                    className={cn(
+                      "inline-flex h-4 w-4 items-center justify-center rounded-sm text-[9px] leading-none text-primary-foreground",
+                      color.bar,
+                    )}
+                    aria-hidden
+                  >
+                    {color.symbol}
+                  </span>
                   <span className="font-medium">{version.name}</span>
+                  <span className="text-[10px] text-muted-foreground">{color.colorName}</span>
                   <Badge variant="outline" className={cn("px-1 py-0 text-[10px]", color.badge)}>
                     {counts[version.id] ?? 0}
                   </Badge>
