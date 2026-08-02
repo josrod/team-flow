@@ -850,7 +850,7 @@ export const translations = {
     epicVersionSaved: "Versión actualizada",
     epicVersionErrorSaving: "No se pudo guardar la versión",
     epicVersionLegendTitle: "Leyenda de colores",
-    epicVersionLegendHint: "Cada color indica la versión de entrega. Haz clic para filtrar.",
+    epicVersionLegendHint: "Cada color y símbolo indica una versión de entrega. Haz clic para filtrar.",
     epicVersionLegendEdit: "Editar versión",
     epicsFilterVersions: "Versiones",
     epicsFilterVersionsPlaceholder: "Todas las versiones",
