@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/context/LanguageContext";
-import { resolveEpicVersionColor } from "@/lib/epicVersionColors";
+import { epicVersionAccessibleLabel, resolveEpicVersionColor } from "@/lib/epicVersionColors";
 import type { EpicVersion } from "@/services/epicVersions";
 
 const NONE = "__none__";
@@ -42,8 +42,12 @@ export const EpicVersionSelect = ({
     if (!current) return <span className="text-xs text-muted-foreground">—</span>;
     const color = resolveEpicVersionColor(current.colorKey);
     return (
-      <Badge variant="outline" className={cn("gap-1.5 text-[10px]", color.badge, className)}>
-        <span className={cn("h-2 w-2 rounded-full", color.bar)} />
+      <Badge
+        variant="outline"
+        className={cn("gap-1.5 text-[10px]", color.badge, className)}
+        title={epicVersionAccessibleLabel(current.name, current.colorKey)}
+      >
+        <span aria-hidden className="leading-none">{color.symbol}</span>
         {current.name}
       </Badge>
     );
@@ -79,8 +83,17 @@ export const EpicVersionSelect = ({
           return (
             <SelectItem key={v.id} value={v.id} className="text-xs">
               <span className="flex items-center gap-2">
-                <span className={cn("h-2 w-2 rounded-full", color.bar)} />
+                <span
+                  className={cn(
+                    "inline-flex h-4 w-4 items-center justify-center rounded-sm text-[9px] leading-none text-primary-foreground",
+                    color.bar,
+                  )}
+                  aria-hidden
+                >
+                  {color.symbol}
+                </span>
                 {v.name}
+                <span className="text-[10px] text-muted-foreground">{color.colorName}</span>
               </span>
             </SelectItem>
           );

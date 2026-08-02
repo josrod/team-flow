@@ -18,7 +18,13 @@ interface EpicsTimelineProps {
   epics: TfsEpic[];
   onOpenEpic: (epic: TfsEpic) => void;
   /** Optional delivery version colouring for each epic bar. */
-  versionFor?: (epic: TfsEpic) => { name: string; barClass: string } | null;
+  versionFor?: (epic: TfsEpic) => {
+    name: string;
+    barClass: string;
+    /** Non-colour marker so colour-blind users can identify the version. */
+    symbol: string;
+    colorName: string;
+  } | null;
 }
 
 type GroupMode = "none" | "area" | "assignee";
@@ -237,9 +243,15 @@ export const EpicsTimeline = ({ epics, onOpenEpic, versionFor }: EpicsTimelinePr
                                     width: `${geom.widthPct}%`,
                                     minWidth: 24,
                                   }}
+                                  aria-label={
+                                    version
+                                      ? `#${epic.id} ${epic.title} · ${t.epicVersionAssignLabel}: ${version.name} (${version.colorName} ${version.symbol})`
+                                      : `#${epic.id} ${epic.title}`
+                                  }
                                 >
-                                  <span className="text-primary-foreground/95">
-                                    #{epic.id}
+                                  <span className="text-primary-foreground">
+                                    {version ? `${version.symbol} ` : ""}#{epic.id}
+                                    {version ? ` · ${version.name}` : ""}
                                   </span>
                                 </button>
                               </TooltipTrigger>
@@ -251,7 +263,7 @@ export const EpicsTimeline = ({ epics, onOpenEpic, versionFor }: EpicsTimelinePr
                                   </div>
                                   {version && (
                                     <div className="text-muted-foreground">
-                                      {t.epicVersionAssignLabel}: {version.name}
+                                      {t.epicVersionAssignLabel}: {version.symbol} {version.name} ({version.colorName})
                                     </div>
                                   )}
                                   {epic.areaPath && (

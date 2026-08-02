@@ -42,7 +42,7 @@ import { useEpicVersions } from "@/hooks/use-epic-versions";
 import { EpicVersionManager } from "@/components/EpicVersionManager";
 import { EpicVersionLegend } from "@/components/EpicVersionLegend";
 import { EpicVersionSelect } from "@/components/EpicVersionSelect";
-import { resolveEpicVersionColor } from "@/lib/epicVersionColors";
+import { epicVersionAccessibleLabel, resolveEpicVersionColor } from "@/lib/epicVersionColors";
 
 interface EpicsSettings {
   serverUrl: string;
@@ -678,9 +678,19 @@ export const EpicsPage = () => {
                           >
                             <Check className={cn("h-3.5 w-3.5 shrink-0", selected ? "opacity-100" : "opacity-0")} />
                             {opt.colorKey ? (
-                              <span className={cn("h-2 w-2 rounded-full shrink-0", resolveEpicVersionColor(opt.colorKey).bar)} />
+                              <span
+                                className={cn(
+                                  "inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm text-[9px] leading-none text-primary-foreground",
+                                  resolveEpicVersionColor(opt.colorKey).bar,
+                                )}
+                                aria-hidden
+                              >
+                                {resolveEpicVersionColor(opt.colorKey).symbol}
+                              </span>
                             ) : (
-                              <span className="h-2 w-2 rounded-full shrink-0 border border-muted-foreground/50" />
+                              <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-muted-foreground/50 text-[9px] leading-none text-muted-foreground" aria-hidden>
+                                –
+                              </span>
                             )}
                             <span className="truncate">{opt.label}</span>
                           </button>
@@ -762,8 +772,12 @@ export const EpicsPage = () => {
                                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
                                         <Badge variant="outline" className="text-[10px] px-1.5 py-0">{epic.state}</Badge>
                                         {version && color && (
-                                          <Badge variant="outline" className={cn("gap-1 text-[10px] px-1.5 py-0", color.badge)}>
-                                            <span className={cn("h-1.5 w-1.5 rounded-full", color.bar)} />
+                                          <Badge
+                                            variant="outline"
+                                            className={cn("gap-1 text-[10px] px-1.5 py-0", color.badge)}
+                                            title={epicVersionAccessibleLabel(version.name, version.colorKey)}
+                                          >
+                                            <span aria-hidden className="leading-none">{color.symbol}</span>
                                             {version.name}
                                           </Badge>
                                         )}
@@ -817,7 +831,13 @@ export const EpicsPage = () => {
                       versionFor={(epic) => {
                         const version = versionOf(epic);
                         if (!version) return null;
-                        return { name: version.name, barClass: resolveEpicVersionColor(version.colorKey).bar };
+                        const color = resolveEpicVersionColor(version.colorKey);
+                        return {
+                          name: version.name,
+                          barClass: color.bar,
+                          symbol: color.symbol,
+                          colorName: color.colorName,
+                        };
                       }}
                     />
                   )}

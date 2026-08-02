@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useLang } from "@/context/LanguageContext";
 import {
   EPIC_VERSION_COLORS,
+  epicVersionAccessibleLabel,
   nextEpicVersionColorKey,
   resolveEpicVersionColor,
 } from "@/lib/epicVersionColors";
@@ -37,27 +38,38 @@ const ColorPicker = ({
 }) => (
   <Popover>
     <PopoverTrigger asChild>
-      <Button type="button" variant="outline" size="icon" className="h-8 w-8" aria-label={label}>
-        <span className={cn("h-4 w-4 rounded-full", resolveEpicVersionColor(value).bar)} />
-      </Button>
-    </PopoverTrigger>
-    <PopoverContent className="w-auto p-2" align="start">
-      <div className="grid grid-cols-5 gap-1.5">
-        {EPIC_VERSION_COLORS.map((c) => (
-          <button
-            key={c.key}
-            type="button"
-            aria-label={c.key}
-            onClick={() => onChange(c.key)}
-            className={cn(
-              "h-6 w-6 rounded-full ring-offset-2 ring-offset-background transition-shadow",
-              c.bar,
-              value === c.key && "ring-2 ring-foreground",
-            )}
-          />
-        ))}
-      </div>
-    </PopoverContent>
+    <Button type="button" variant="outline" size="icon" className="h-8 w-8" aria-label={label}>
+      <span
+        className={cn(
+          "inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] leading-none text-primary-foreground",
+          resolveEpicVersionColor(value).bar,
+        )}
+        aria-hidden
+      >
+        {resolveEpicVersionColor(value).symbol}
+      </span>
+    </Button>
+  </PopoverTrigger>
+  <PopoverContent className="w-auto p-2" align="start">
+    <div className="grid grid-cols-5 gap-1.5">
+      {EPIC_VERSION_COLORS.map((c) => (
+        <button
+          key={c.key}
+          type="button"
+          aria-label={`${c.colorName} ${c.symbol}`}
+          title={`${c.colorName} ${c.symbol}`}
+          onClick={() => onChange(c.key)}
+          className={cn(
+            "inline-flex h-7 w-7 items-center justify-center rounded-full text-[11px] leading-none text-primary-foreground ring-offset-2 ring-offset-background transition-shadow",
+            c.bar,
+            value === c.key && "ring-2 ring-foreground",
+          )}
+        >
+          <span aria-hidden>{c.symbol}</span>
+        </button>
+      ))}
+    </div>
+  </PopoverContent>
   </Popover>
 );
 
@@ -159,8 +171,12 @@ export const EpicVersionManager = ({
             }
             return (
               <div key={version.id} className="flex items-center gap-1">
-                <Badge variant="outline" className={cn("gap-1.5 text-[11px]", color.badge)}>
-                  <span className={cn("h-2 w-2 rounded-full", color.bar)} />
+                <Badge
+                  variant="outline"
+                  className={cn("gap-1.5 text-[11px]", color.badge)}
+                  title={epicVersionAccessibleLabel(version.name, version.colorKey)}
+                >
+                  <span aria-hidden className="leading-none">{color.symbol}</span>
                   {version.name}
                   <span className="opacity-70">· {count}</span>
                 </Badge>
