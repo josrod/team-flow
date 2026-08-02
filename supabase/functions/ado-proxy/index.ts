@@ -315,10 +315,19 @@ Deno.serve(async (req) => {
     log("warn", "method_not_allowed", { requestId, client, method: req.method });
     return jsonResponse({ error: "Method not allowed" }, 405);
   }
+
+  // Read-only access to the internal server is restricted to signed-in users.
+  const auth = await requireUser(req);
+  if ("error" in auth) {
+    log("warn", "unauthorized", { requestId, client });
+    return auth.error;
+  }
+
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
     log("error", "server_misconfigured", { requestId, client });
     return jsonResponse({ error: "Server misconfigured" }, 500);
   }
+
 
   // Uses the last known admin configuration; it is refreshed whenever the
   // settings row is resolved below, so changes apply without a redeploy.
