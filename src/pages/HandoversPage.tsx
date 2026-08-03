@@ -312,6 +312,7 @@ export default function HandoversPage() {
           <Button size="sm" variant="outline" className="rounded-xl" onClick={handleExportCsv}>
             <Download className="h-4 w-4 mr-1" /> {t.exportCsv}
           </Button>
+          {isAdmin && (
           <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
               <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> {t.createHandover}</Button>
@@ -321,6 +322,8 @@ export default function HandoversPage() {
               {renderFormFields(false)}
             </DialogContent>
           </Dialog>
+          )}
+
         </div>
       </div>
 
