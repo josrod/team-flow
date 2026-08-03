@@ -429,9 +429,11 @@ export default function TeamPage() {
                     ) : (
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         {selectedMember.role}
-                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => { setEditRoleValue(selectedMember.role); setEditingRole(true); }}>
-                          <Pencil className="h-2.5 w-2.5" />
-                        </Button>
+                        {isAdmin && (
+                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => { setEditRoleValue(selectedMember.role); setEditingRole(true); }}>
+                            <Pencil className="h-2.5 w-2.5" />
+                          </Button>
+                        )}
                       </p>
                     )}
                   </div>
@@ -613,9 +615,11 @@ export default function TeamPage() {
               <div className="mt-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-display font-semibold text-sm">{t.workTopics}</h3>
-                  <Button variant="outline" size="sm" onClick={openNewTopic} className="rounded-lg">
-                    <Plus className="h-3 w-3 mr-1" /> {t.addTopic}
-                  </Button>
+                  {isAdmin && (
+                    <Button variant="outline" size="sm" onClick={openNewTopic} className="rounded-lg">
+                      <Plus className="h-3 w-3 mr-1" /> {t.addTopic}
+                    </Button>
+                  )}
                 </div>
 
                 {topicFormOpen && (
@@ -688,12 +692,16 @@ export default function TeamPage() {
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             <TopicStatusBadge status={tp.status} />
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditTopic(tp)}>
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteWorkTopic(tp.id)}>
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                            {isAdmin && (
+                              <>
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditTopic(tp)}>
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteWorkTopic(tp.id)}>
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">{tp.description}</p>
@@ -719,11 +727,13 @@ export default function TeamPage() {
                 )}
               </div>
 
-              <div className="mt-6 flex gap-2">
-                <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => { deleteMember(selectedMember.id); setSelectedMember(null); }}>
-                  <Trash2 className="h-4 w-4 mr-1" /> {t.deleteMember}
-                </Button>
-              </div>
+              {isAdmin && (
+                <div className="mt-6 flex gap-2">
+                  <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => { deleteMember(selectedMember.id); setSelectedMember(null); }}>
+                    <Trash2 className="h-4 w-4 mr-1" /> {t.deleteMember}
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </SheetContent>
