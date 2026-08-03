@@ -391,9 +391,11 @@ export default function TeamPage() {
                       <SheetTitle className="flex items-center gap-2 font-display">
                         {selectedMember.name}
                         <StatusBadge status={getMemberStatus(selectedMember.id)} />
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditNameValue(selectedMember.name); setEditingName(true); }}>
-                          <Pencil className="h-3 w-3" />
-                        </Button>
+                        {isAdmin && (
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditNameValue(selectedMember.name); setEditingName(true); }}>
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        )}
                       </SheetTitle>
                     )}
                     {editingRole ? (
