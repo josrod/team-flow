@@ -362,6 +362,7 @@ export default function HandoversPage() {
                   topics={topics}
                   onEdit={openEdit}
                   onDelete={deleteHandover}
+                  canEdit={isAdmin}
                 />
               </motion.div>
             );
