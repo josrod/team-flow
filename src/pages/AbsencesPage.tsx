@@ -1,4 +1,6 @@
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
+
 import { useLang } from "@/context/LanguageContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,6 +24,8 @@ import { motion } from "framer-motion";
 
 export default function AbsencesPage() {
   const { teams, members, absences, addAbsence, updateAbsence, deleteAbsence } = useApp();
+  const { isAdmin } = useAuth();
+
   const { t, lang } = useLang();
   const dateLoc = lang === "es" ? es : enUS;
 
