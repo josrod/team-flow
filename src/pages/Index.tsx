@@ -338,6 +338,8 @@ const Index = () => {
             </Card>
           )}
         </motion.div>
+        )}
+
       </div>
 
       {/* Reassigned Tasks Widget */}
