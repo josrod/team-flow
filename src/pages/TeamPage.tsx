@@ -9,7 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 import { useLang } from "@/context/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -44,6 +44,8 @@ const itemAnim = {
 export default function TeamPage() {
   const { teamId } = useParams<{ teamId: string }>();
   const { teams, members, workTopics, getMemberStatus, addMember, updateMember, deleteMember, addWorkTopic, updateWorkTopic, deleteWorkTopic } = useApp();
+  const { isAdmin } = useAuth();
+
   const { t } = useLang();
 
   const team = teams.find((tm) => tm.id === teamId);
