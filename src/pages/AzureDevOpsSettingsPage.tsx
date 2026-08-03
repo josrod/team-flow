@@ -38,8 +38,6 @@ import {
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { encryptPat, decryptPat } from "@/services/tfsPatVault";
 import { TfsPatDiagnosticsPanel } from "@/components/TfsPatDiagnosticsPanel";
-import { ProxyDiagnosticsPanel } from "@/components/ProxyDiagnosticsPanel";
-import { runProxyDiagnostics, type ProxyDiagnosticsResult } from "@/services/proxyDiagnostics";
 
 import { TfsFieldHint } from "@/components/TfsFieldHint";
 import { TfsAutocompleteInput } from "@/components/TfsAutocompleteInput";
@@ -103,11 +101,6 @@ export const AzureDevOpsSettingsPage = () => {
   const [diagnostics, setDiagnostics] = useState<TfsDiagnosticResult | null>(null);
   const [diagnosing, setDiagnosing] = useState(false);
   const [diagnosticsAt, setDiagnosticsAt] = useState<string | null>(null);
-  const [proxyDiagnostics, setProxyDiagnostics] = useState<ProxyDiagnosticsResult | null>(null);
-  const [proxyDiagnosing, setProxyDiagnosing] = useState(false);
-  // Admin-configurable rate limit applied by the `ado-proxy` edge function.
-  const [proxyRateLimitMax, setProxyRateLimitMax] = useState("120");
-  const [proxyRateLimitWindow, setProxyRateLimitWindow] = useState("60");
 
 
   const [hasExisting, setHasExisting] = useState(false);
@@ -303,20 +296,6 @@ export const AzureDevOpsSettingsPage = () => {
       status === "valid" && "border-emerald-500/60 focus-visible:ring-emerald-500/40",
     );
 
-  const handleProxyDiagnostics = async () => {
-    setProxyDiagnosing(true);
-    try {
-      const result = await runProxyDiagnostics({ serverUrl, collection, project });
-      setProxyDiagnostics(result);
-      if (result.allPassed) {
-        toast.success(t.proxyDiagAllOk);
-      } else {
-        toast.warning(t.proxyDiagIssues);
-      }
-    } finally {
-      setProxyDiagnosing(false);
-    }
-  };
 
   const handleAdvancedCheck = async () => {
 
@@ -925,84 +904,6 @@ export const AzureDevOpsSettingsPage = () => {
         </Card>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.04 }}
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-display flex items-center gap-2">
-              <Radio className="h-5 w-5" />
-              {t.proxyDiagTitle}
-            </CardTitle>
-            <CardDescription>{t.proxyDiagDesc}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button
-              onClick={handleProxyDiagnostics}
-              disabled={proxyDiagnosing}
-              variant="outline"
-              className="w-full"
-            >
-              {proxyDiagnosing ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Radio className="h-4 w-4 mr-2" />
-              )}
-              {proxyDiagnosing ? t.proxyDiagRunning : t.proxyDiagRun}
-            </Button>
-
-            {proxyDiagnostics && (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  {t.proxyDiagRanAt}: {new Date(proxyDiagnostics.ranAt).toLocaleString(lang === "es" ? "es-ES" : "en-GB")}
-                </p>
-                <ProxyDiagnosticsPanel result={proxyDiagnostics} />
-              </div>
-            )}
-
-            <Separator />
-
-            <div className="space-y-3">
-              <div>
-                <h4 className="text-sm font-medium">{t.proxyRateLimitHeading}</h4>
-                <p className="text-xs text-muted-foreground">{t.proxyRateLimitHint}</p>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <Label htmlFor="proxy-rate-max">{t.proxyRateLimitMaxLabel}</Label>
-                  <Input
-                    id="proxy-rate-max"
-                    type="number"
-                    min={1}
-                    max={10000}
-                    value={proxyRateLimitMax}
-                    onChange={(e) => setProxyRateLimitMax(e.target.value)}
-                    onBlur={() => setProxyRateLimitMax(String(clampRate(proxyRateLimitMax, 1, 10000, 120)))}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="proxy-rate-window">{t.proxyRateLimitWindowLabel}</Label>
-                  <Input
-                    id="proxy-rate-window"
-                    type="number"
-                    min={1}
-                    max={3600}
-                    value={proxyRateLimitWindow}
-                    onChange={(e) => setProxyRateLimitWindow(e.target.value)}
-                    onBlur={() => setProxyRateLimitWindow(String(clampRate(proxyRateLimitWindow, 1, 3600, 60)))}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">{t.proxyRateLimitApplyNote}</p>
-            </div>
-
-          </CardContent>
-        </Card>
-      </motion.div>
 
 
 
