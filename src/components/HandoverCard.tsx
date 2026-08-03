@@ -28,6 +28,8 @@ interface HandoverCardProps {
   topics: WorkTopic[];
   onEdit: (h: Handover) => void;
   onDelete: (id: string) => void;
+  canEdit?: boolean;
+
 }
 
 export function HandoverCard({
