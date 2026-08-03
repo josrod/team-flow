@@ -212,23 +212,28 @@ const Index = () => {
                   ) : (
                     <div className="flex items-center gap-2 flex-1 cursor-pointer" onClick={() => navigate(`/team/${team.id}`)}>
                       <CardTitle className="text-xl font-display">{team.name}</CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => { e.stopPropagation(); setEditingTeamId(team.id); setEditName(team.name); setEditIcon(team.icon || "users"); }}
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                        onClick={(e) => { e.stopPropagation(); if (window.confirm(t.confirmDeleteTeam.replace("{name}", team.name))) deleteTeam(team.id); }}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                      {isAdmin && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => { e.stopPropagation(); setEditingTeamId(team.id); setEditName(team.name); setEditIcon(team.icon || "users"); }}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                            onClick={(e) => { e.stopPropagation(); if (window.confirm(t.confirmDeleteTeam.replace("{name}", team.name))) deleteTeam(team.id); }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </>
+                      )}
                     </div>
+
                   )}
                 </CardHeader>
                 <CardContent className="cursor-pointer" onClick={() => navigate(`/team/${team.id}`)}>
