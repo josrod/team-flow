@@ -1,4 +1,6 @@
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
+
 import { useLang } from "@/context/LanguageContext";
 import { AnalyticsPanel } from "@/components/AnalyticsPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,7 +41,9 @@ const getTeamIcon = (iconKey?: string): LucideIcon => {
 
 const Index = () => {
   const { teams, members, workTopics, absences, handovers, getMemberStatus, updateTeamName, updateWorkTopic, addTeam, deleteTeam } = useApp();
+  const { isAdmin } = useAuth();
   const { t } = useLang();
+
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
