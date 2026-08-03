@@ -257,6 +257,8 @@ export default function AbsencesPage() {
               </div>
             </DialogContent>
           </Dialog>
+          )}
+
         </div>
       </div>
 
