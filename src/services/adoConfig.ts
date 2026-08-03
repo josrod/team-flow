@@ -1,9 +1,10 @@
 // Shared helper to resolve the Azure DevOps connection configuration for any
-// signed-in visitor. The non-sensitive fields come from the
-// `ado-public-connection` edge function, which never returns the real PAT.
+// visitor. The `ado-public-connection` edge function returns the admin-saved
+// configuration (including the decrypted token) so the browser — the only
+// place that can reach the intranet TFS server — performs the requests.
 
 import { supabase } from "@/integrations/supabase/client";
-import { enableTfsProxyMode } from "@/services/tfs";
+
 
 export interface PublicAdoConfig {
   serverUrl: string | null;
