@@ -40,6 +40,8 @@ export function HandoverCard({
   topics,
   onEdit,
   onDelete,
+  canEdit = false,
+
 }: HandoverCardProps) {
   const { t } = useLang();
   const [detailOpen, setDetailOpen] = useState(false);
