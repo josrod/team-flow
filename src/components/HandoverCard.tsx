@@ -90,6 +90,7 @@ export function HandoverCard({
               <p className="text-[10px] text-muted-foreground truncate">{toMember?.role}</p>
             </div>
           </div>
+          {canEdit && (
           <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
             <Button
               variant="ghost"
@@ -126,6 +127,8 @@ export function HandoverCard({
               </AlertDialogContent>
             </AlertDialog>
           </div>
+          )}
+
         </div>
 
         {/* Absence info row */}
