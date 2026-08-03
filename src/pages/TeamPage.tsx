@@ -580,6 +580,7 @@ export default function TeamPage() {
                         setPendingTeamId(newTeamId);
                       }
                     }}
+                    disabled={!isAdmin}
                   >
                     <SelectTrigger className="h-8 text-sm mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
