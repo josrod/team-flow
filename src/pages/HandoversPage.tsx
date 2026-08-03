@@ -1,4 +1,6 @@
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
+
 import { useLang } from "@/context/LanguageContext";
 import { HandoverCard } from "@/components/HandoverCard";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,6 +35,8 @@ const item = {
 
 export default function HandoversPage() {
   const { teams, members, absences, workTopics, handovers, addHandover, updateHandover, deleteHandover } = useApp();
+  const { isAdmin } = useAuth();
+
   const { t } = useLang();
   const [selectedTeam, setSelectedTeam] = useState("all");
   const [addOpen, setAddOpen] = useState(false);
@@ -312,6 +316,7 @@ export default function HandoversPage() {
           <Button size="sm" variant="outline" className="rounded-xl" onClick={handleExportCsv}>
             <Download className="h-4 w-4 mr-1" /> {t.exportCsv}
           </Button>
+          {isAdmin && (
           <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
               <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> {t.createHandover}</Button>
@@ -321,6 +326,8 @@ export default function HandoversPage() {
               {renderFormFields(false)}
             </DialogContent>
           </Dialog>
+          )}
+
         </div>
       </div>
 
@@ -355,6 +362,7 @@ export default function HandoversPage() {
                   topics={topics}
                   onEdit={openEdit}
                   onDelete={deleteHandover}
+                  canEdit={isAdmin}
                 />
               </motion.div>
             );

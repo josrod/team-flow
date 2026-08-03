@@ -28,6 +28,8 @@ interface HandoverCardProps {
   topics: WorkTopic[];
   onEdit: (h: Handover) => void;
   onDelete: (id: string) => void;
+  canEdit?: boolean;
+
 }
 
 export function HandoverCard({
@@ -38,6 +40,8 @@ export function HandoverCard({
   topics,
   onEdit,
   onDelete,
+  canEdit = false,
+
 }: HandoverCardProps) {
   const { t } = useLang();
   const [detailOpen, setDetailOpen] = useState(false);
@@ -90,6 +94,7 @@ export function HandoverCard({
               <p className="text-[10px] text-muted-foreground truncate">{toMember?.role}</p>
             </div>
           </div>
+          {canEdit && (
           <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
             <Button
               variant="ghost"
@@ -126,6 +131,8 @@ export function HandoverCard({
               </AlertDialogContent>
             </AlertDialog>
           </div>
+          )}
+
         </div>
 
         {/* Absence info row */}
@@ -189,8 +196,8 @@ export function HandoverCard({
       toMember={toMember}
       absence={absence}
       topics={topics}
-      onEdit={onEdit}
-      onDelete={onDelete}
+      onEdit={canEdit ? onEdit : undefined}
+      onDelete={canEdit ? onDelete : undefined}
     />
     </>
   );

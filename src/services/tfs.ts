@@ -102,66 +102,12 @@ const buildAuthHeader = (pat: string): string => {
 };
 
 /**
- * Sentinel PAT used when the real token must never reach the browser. A
- * connection carrying this value is routed through the `ado-proxy` edge
- * function, which performs the read-only upstream request server-side using
- * the admin-configured, encrypted token.
+ * Every upstream request goes straight from the browser to TFS: the server is
+ * only reachable from the corporate network, so no cloud proxy can reach it.
  */
-export const PROXY_PAT_SENTINEL = "__ado_proxy__";
-
-/** True once any request has been routed through the proxy this session. */
-let proxyModeActive = false;
-
-/** Enables proxy-aware behaviour (called when a shared connection is loaded). */
-export const enableTfsProxyMode = (): void => {
-  proxyModeActive = true;
-};
+const tfsFetch = (url: string, init?: RequestInit): Promise<Response> => fetch(url, init);
 
 
-
-
-export const isProxyConnection = (conn: TfsConnection): boolean =>
-  conn.pat === PROXY_PAT_SENTINEL;
-
-const PROXY_AUTH_HEADER = buildAuthHeader(PROXY_PAT_SENTINEL);
-
-const proxyEndpoint = (): string => {
-  const base = String(import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/+$/, "");
-  return `${base}/functions/v1/ado-proxy`;
-};
-
-const headerValue = (headers: HeadersInit | undefined, name: string): string | undefined => {
-  if (!headers) return undefined;
-  if (headers instanceof Headers) return headers.get(name) ?? undefined;
-  if (Array.isArray(headers)) return headers.find(([k]) => k.toLowerCase() === name.toLowerCase())?.[1];
-  const entry = Object.entries(headers).find(([k]) => k.toLowerCase() === name.toLowerCase());
-  return entry?.[1];
-};
-
-/**
- * Drop-in replacement for `fetch` in this module. Requests whose Authorization
- * header carries the proxy sentinel are forwarded to the edge function; every
- * other request keeps hitting TFS directly (admin flows with a typed PAT).
- */
-const tfsFetch = async (url: string, init?: RequestInit): Promise<Response> => {
-  if (headerValue(init?.headers, "Authorization") !== PROXY_AUTH_HEADER) {
-    return fetch(url, init);
-  }
-  proxyModeActive = true;
-  const method = (init?.method ?? "GET").toUpperCase();
-  const body = typeof init?.body === "string" ? init.body : undefined;
-
-  return fetch(proxyEndpoint(), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: String(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? ""),
-      Authorization: `Bearer ${String(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "")}`,
-    },
-    body: JSON.stringify({ url, method, body }),
-    signal: init?.signal ?? null,
-  });
-};
 
 
 
@@ -176,10 +122,8 @@ const isNetworkLevelError = (err: unknown): err is TypeError => {
 };
 
 const isMixedContent = (url: string): boolean => {
-  // In proxy mode the browser only talks to the Supabase edge function, so an
-  // http:// TFS server is never a mixed-content problem.
-  if (proxyModeActive) return false;
   try {
+
     const target = new URL(url);
     return window.location.protocol === "https:" && target.protocol === "http:";
 

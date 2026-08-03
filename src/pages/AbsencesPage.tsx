@@ -1,4 +1,6 @@
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
+
 import { useLang } from "@/context/LanguageContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,6 +24,8 @@ import { motion } from "framer-motion";
 
 export default function AbsencesPage() {
   const { teams, members, absences, addAbsence, updateAbsence, deleteAbsence } = useApp();
+  const { isAdmin } = useAuth();
+
   const { t, lang } = useLang();
   const dateLoc = lang === "es" ? es : enUS;
 
@@ -185,10 +189,14 @@ export default function AbsencesPage() {
           <Button size="sm" variant="outline" className="rounded-xl" onClick={handleExportCsv}>
             <Download className="h-4 w-4 mr-1" /> {t.exportCsv}
           </Button>
+          {isAdmin && (
           <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setImportOpen(true)}>
             <Upload className="h-4 w-4 mr-1" /> {t.importAbsences}
           </Button>
+          )}
+          {isAdmin && (
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
+
             <DialogTrigger asChild>
               <Button size="sm" className="rounded-xl shadow-sm"><Plus className="h-4 w-4 mr-1" /> {t.newAbsence}</Button>
             </DialogTrigger>
@@ -249,6 +257,8 @@ export default function AbsencesPage() {
               </div>
             </DialogContent>
           </Dialog>
+          )}
+
         </div>
       </div>
 
@@ -529,28 +539,33 @@ export default function AbsencesPage() {
                             >
                               <FileText className="h-3.5 w-3.5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => openEdit(a)}>
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
-                                  <Trash2 className="h-3.5 w-3.5" />
+                            {isAdmin && (
+                              <>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => openEdit(a)}>
+                                  <Pencil className="h-3.5 w-3.5" />
                                 </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>{t.deleteAbsenceTitle}</AlertDialogTitle>
-                                  <AlertDialogDescription>{t.deleteAbsenceDesc}</AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => deleteAbsence(a.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                    {t.confirmDelete}
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>{t.deleteAbsenceTitle}</AlertDialogTitle>
+                                      <AlertDialogDescription>{t.deleteAbsenceDesc}</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => deleteAbsence(a.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                        {t.confirmDelete}
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </>
+                            )}
+
                           </div>
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">

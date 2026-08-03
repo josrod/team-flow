@@ -10,6 +10,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 import { useLang } from "@/context/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -44,6 +45,8 @@ const itemAnim = {
 export default function TeamPage() {
   const { teamId } = useParams<{ teamId: string }>();
   const { teams, members, workTopics, getMemberStatus, addMember, updateMember, deleteMember, addWorkTopic, updateWorkTopic, deleteWorkTopic } = useApp();
+  const { isAdmin } = useAuth();
+
   const { t } = useLang();
 
   const team = teams.find((tm) => tm.id === teamId);
@@ -208,6 +211,7 @@ export default function TeamPage() {
           <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight">{team.name}</h1>
           <p className="text-muted-foreground mt-1">{teamMembers.length} {t.members.toLowerCase()}</p>
         </div>
+        {isAdmin && (
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="rounded-xl shadow-sm" onClick={() => setBulkEditOpen(true)}>
             <Settings2 className="h-4 w-4 mr-1" /> {t.bulkEditBtn}
@@ -238,6 +242,8 @@ export default function TeamPage() {
             </DialogContent>
           </Dialog>
         </div>
+        )}
+
       </div>
 
       <Dialog open={bulkEditOpen} onOpenChange={setBulkEditOpen}>
@@ -385,9 +391,11 @@ export default function TeamPage() {
                       <SheetTitle className="flex items-center gap-2 font-display">
                         {selectedMember.name}
                         <StatusBadge status={getMemberStatus(selectedMember.id)} />
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditNameValue(selectedMember.name); setEditingName(true); }}>
-                          <Pencil className="h-3 w-3" />
-                        </Button>
+                        {isAdmin && (
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditNameValue(selectedMember.name); setEditingName(true); }}>
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        )}
                       </SheetTitle>
                     )}
                     {editingRole ? (
@@ -421,9 +429,11 @@ export default function TeamPage() {
                     ) : (
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         {selectedMember.role}
-                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => { setEditRoleValue(selectedMember.role); setEditingRole(true); }}>
-                          <Pencil className="h-2.5 w-2.5" />
-                        </Button>
+                        {isAdmin && (
+                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => { setEditRoleValue(selectedMember.role); setEditingRole(true); }}>
+                            <Pencil className="h-2.5 w-2.5" />
+                          </Button>
+                        )}
                       </p>
                     )}
                   </div>
@@ -437,6 +447,7 @@ export default function TeamPage() {
                   placeholder={t.loginNamePlaceholder}
                   maxLength={50}
                   className="h-8 text-sm mt-1 font-mono"
+                  disabled={!isAdmin}
                   onChange={(e) => {
                     const value = e.target.value;
                     const updated = {
@@ -452,7 +463,7 @@ export default function TeamPage() {
               <div className="grid grid-cols-2 gap-4 mt-6 relative">
                 <div className="col-span-2 flex items-center justify-between">
                   <h3 className="text-sm font-semibold">{t.capacityConfig}</h3>
-                  {((selectedMember.maxCapacity !== undefined && selectedMember.maxCapacity !== 40 && selectedMember.maxCapacity !== 0) || 
+                  {isAdmin && ((selectedMember.maxCapacity !== undefined && selectedMember.maxCapacity !== 40 && selectedMember.maxCapacity !== 0) || 
                     (selectedMember.baseCapacity !== undefined && selectedMember.baseCapacity !== Math.round((selectedMember.maxCapacity ?? 40) * 0.8) && selectedMember.baseCapacity !== 0)) && (
                     <Button 
                       variant="ghost" 
@@ -490,6 +501,7 @@ export default function TeamPage() {
                       setSelectedMember(updated);
                     }}
                     className="h-8 text-sm mt-1"
+                    disabled={!isAdmin}
                   />
                 </div>
                 <div>
@@ -518,6 +530,7 @@ export default function TeamPage() {
                       setSelectedMember(updated);
                     }}
                     className="h-8 text-sm mt-1"
+                    disabled={!isAdmin}
                   />
                 </div>
               </div>
@@ -567,6 +580,7 @@ export default function TeamPage() {
                         setPendingTeamId(newTeamId);
                       }
                     }}
+                    disabled={!isAdmin}
                   >
                     <SelectTrigger className="h-8 text-sm mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -605,9 +619,11 @@ export default function TeamPage() {
               <div className="mt-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-display font-semibold text-sm">{t.workTopics}</h3>
-                  <Button variant="outline" size="sm" onClick={openNewTopic} className="rounded-lg">
-                    <Plus className="h-3 w-3 mr-1" /> {t.addTopic}
-                  </Button>
+                  {isAdmin && (
+                    <Button variant="outline" size="sm" onClick={openNewTopic} className="rounded-lg">
+                      <Plus className="h-3 w-3 mr-1" /> {t.addTopic}
+                    </Button>
+                  )}
                 </div>
 
                 {topicFormOpen && (
@@ -680,12 +696,16 @@ export default function TeamPage() {
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             <TopicStatusBadge status={tp.status} />
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditTopic(tp)}>
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteWorkTopic(tp.id)}>
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                            {isAdmin && (
+                              <>
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditTopic(tp)}>
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteWorkTopic(tp.id)}>
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">{tp.description}</p>
@@ -711,11 +731,13 @@ export default function TeamPage() {
                 )}
               </div>
 
-              <div className="mt-6 flex gap-2">
-                <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => { deleteMember(selectedMember.id); setSelectedMember(null); }}>
-                  <Trash2 className="h-4 w-4 mr-1" /> {t.deleteMember}
-                </Button>
-              </div>
+              {isAdmin && (
+                <div className="mt-6 flex gap-2">
+                  <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => { deleteMember(selectedMember.id); setSelectedMember(null); }}>
+                    <Trash2 className="h-4 w-4 mr-1" /> {t.deleteMember}
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </SheetContent>
