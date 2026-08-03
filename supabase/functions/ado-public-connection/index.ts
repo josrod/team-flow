@@ -1,17 +1,17 @@
-// Edge function: exposes the admin-configured Azure DevOps connection metadata
-// (server, collection, project, scopes and query ids) to any visitor of the
-// intranet app, so read-only data can be displayed without a login.
+// Edge function: exposes the admin-configured Azure DevOps connection so any
+// visitor of the intranet app can read data without signing in.
 //
-// The personal access token is never returned: the client gets a sentinel and
-// performs every read-only request through the `ado-proxy` function, which
-// holds the decrypted token server-side.
+// The TFS server only exists inside the corporate network, so the cloud can
+// never reach it: every upstream request has to be made by the visitor's own
+// browser. That means the admin token is decrypted here and returned to the
+// client (accepted trade-off — use a read-only, short-lived token).
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { requireUser } from "../_shared/requireUser.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const ENC_KEY_RAW = Deno.env.get("ADO_PAT_ENC_KEY");
 
 const jsonResponse = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), {
@@ -19,20 +19,43 @@ const jsonResponse = (body: unknown, status = 200): Response =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+const fromBase64 = (input: string): Uint8Array => {
+  const binary = atob(input);
+  const out = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+  return out;
+};
+
+const importKey = async (): Promise<CryptoKey> => {
+  if (!ENC_KEY_RAW || ENC_KEY_RAW.length < 32) {
+    throw new Error("ADO_PAT_ENC_KEY is not configured or is too short");
+  }
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ENC_KEY_RAW));
+  return crypto.subtle.importKey("raw", digest, { name: "AES-GCM", length: 256 }, false, [
+    "decrypt",
+  ]);
+};
+
+/** Decrypts a stored PAT. Legacy rows without an iv still hold plaintext. */
+const decryptPat = async (ciphertext: string, iv: string | null): Promise<string> => {
+  if (!iv) return ciphertext;
+  const key = await importKey();
+  const plainBuf = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: fromBase64(iv) },
+    key,
+    fromBase64(ciphertext),
+  );
+  return new TextDecoder().decode(plainBuf);
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Internal infrastructure details are only for signed-in team members.
-  const auth = await requireUser(req);
-  if ("error" in auth) return auth.error;
-
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
     return jsonResponse({ error: "Server misconfigured" }, 500);
   }
-
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
   const { data, error } = await admin
@@ -51,14 +74,19 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "No Azure DevOps configuration available" }, 404);
   }
 
+  let pat: string;
+  try {
+    pat = await decryptPat(data.pat_encrypted, data.pat_iv);
+  } catch {
+    return jsonResponse({ error: "Could not decrypt the stored access token" }, 500);
+  }
+
   return jsonResponse({
     server_url: data.server_url,
     collection: data.collection,
     project: data.project,
     team: data.team,
-    // The token never leaves the server: the client receives a sentinel and
-    // routes every read-only request through the `ado-proxy` function.
-    pat_encrypted: "__ado_proxy__",
+    pat_encrypted: pat,
     pat_iv: null,
     area_paths: data.area_paths ?? [],
     iteration_paths: data.iteration_paths ?? [],
@@ -71,4 +99,3 @@ Deno.serve(async (req) => {
     epics_iteration_paths: data.epics_iteration_paths ?? [],
   });
 });
-
