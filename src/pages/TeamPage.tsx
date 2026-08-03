@@ -447,6 +447,7 @@ export default function TeamPage() {
                   placeholder={t.loginNamePlaceholder}
                   maxLength={50}
                   className="h-8 text-sm mt-1 font-mono"
+                  disabled={!isAdmin}
                   onChange={(e) => {
                     const value = e.target.value;
                     const updated = {
@@ -462,7 +463,7 @@ export default function TeamPage() {
               <div className="grid grid-cols-2 gap-4 mt-6 relative">
                 <div className="col-span-2 flex items-center justify-between">
                   <h3 className="text-sm font-semibold">{t.capacityConfig}</h3>
-                  {((selectedMember.maxCapacity !== undefined && selectedMember.maxCapacity !== 40 && selectedMember.maxCapacity !== 0) || 
+                  {isAdmin && ((selectedMember.maxCapacity !== undefined && selectedMember.maxCapacity !== 40 && selectedMember.maxCapacity !== 0) || 
                     (selectedMember.baseCapacity !== undefined && selectedMember.baseCapacity !== Math.round((selectedMember.maxCapacity ?? 40) * 0.8) && selectedMember.baseCapacity !== 0)) && (
                     <Button 
                       variant="ghost" 
@@ -500,6 +501,7 @@ export default function TeamPage() {
                       setSelectedMember(updated);
                     }}
                     className="h-8 text-sm mt-1"
+                    disabled={!isAdmin}
                   />
                 </div>
                 <div>
@@ -528,6 +530,7 @@ export default function TeamPage() {
                       setSelectedMember(updated);
                     }}
                     className="h-8 text-sm mt-1"
+                    disabled={!isAdmin}
                   />
                 </div>
               </div>
