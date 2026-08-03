@@ -159,12 +159,6 @@ export const AzureDevOpsSettingsPage = () => {
         if (Array.isArray(rawEpicIters)) setEpicsIterationPaths(rawEpicIters);
         const rawEpicTags = (data as { epics_tags?: string[] | null }).epics_tags;
         if (Array.isArray(rawEpicTags)) setEpicsTags(rawEpicTags);
-        const rawRateMax = (data as { proxy_rate_limit_max_requests?: number | null })
-          .proxy_rate_limit_max_requests;
-        const rawRateWindow = (data as { proxy_rate_limit_window_seconds?: number | null })
-          .proxy_rate_limit_window_seconds;
-        if (typeof rawRateMax === "number") setProxyRateLimitMax(String(rawRateMax));
-        if (typeof rawRateWindow === "number") setProxyRateLimitWindow(String(rawRateWindow));
 
 
         setLastSynced(data.last_synced_at);
@@ -257,8 +251,6 @@ export const AzureDevOpsSettingsPage = () => {
           epics_area_paths: epicsAreaPaths,
           epics_iteration_paths: epicsIterationPaths,
           epics_tags: epicsTags,
-          proxy_rate_limit_max_requests: clampRate(proxyRateLimitMax, 1, 10000, 120),
-          proxy_rate_limit_window_seconds: clampRate(proxyRateLimitWindow, 1, 3600, 60),
 
         })
         .eq("user_id", user.id);
@@ -272,7 +264,7 @@ export const AzureDevOpsSettingsPage = () => {
         window.clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, epicsQueryId, epicsProject, epicsTeam, epicsAreaPaths, epicsIterationPaths, epicsTags, proxyRateLimitMax, proxyRateLimitWindow, hasExisting]);
+  }, [serverUrl, collection, organization, project, team, autoSync, syncInterval, areaPaths, iterationPaths, bugsQueryId, epicsQueryId, epicsProject, epicsTeam, epicsAreaPaths, epicsIterationPaths, epicsTags, hasExisting]);
 
   const resetStatus = () => {
     setConnectionStatus("idle");
@@ -528,8 +520,6 @@ export const AzureDevOpsSettingsPage = () => {
         epics_area_paths: epicsAreaPaths,
         epics_iteration_paths: epicsIterationPaths,
         epics_tags: epicsTags,
-        proxy_rate_limit_max_requests: clampRate(proxyRateLimitMax, 1, 10000, 120),
-        proxy_rate_limit_window_seconds: clampRate(proxyRateLimitWindow, 1, 3600, 60),
 
       };
 
