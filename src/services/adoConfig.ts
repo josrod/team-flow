@@ -109,12 +109,4 @@ export const loadSharedAdoSettings = async (): Promise<SharedAdoSettingsRow | nu
   return sharedSettingsPromise;
 };
 
-      } catch {
-        return null;
-      }
-    })();
-  }
-  return sharedSettingsPromise;
-};
-
 
