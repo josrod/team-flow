@@ -260,8 +260,10 @@ const Index = () => {
           );
         })}
 
-        {/* Add new team card */}
+        {/* Add new team card (admins only) */}
+        {isAdmin && (
         <motion.div variants={item}>
+
           {showNewTeam ? (
             <Card className="overflow-hidden">
               <div className="h-1 bg-gradient-to-r from-primary/40 to-primary/10" />
