@@ -208,6 +208,7 @@ export default function TeamPage() {
           <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight">{team.name}</h1>
           <p className="text-muted-foreground mt-1">{teamMembers.length} {t.members.toLowerCase()}</p>
         </div>
+        {isAdmin && (
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="rounded-xl shadow-sm" onClick={() => setBulkEditOpen(true)}>
             <Settings2 className="h-4 w-4 mr-1" /> {t.bulkEditBtn}
@@ -238,6 +239,8 @@ export default function TeamPage() {
             </DialogContent>
           </Dialog>
         </div>
+        )}
+
       </div>
 
       <Dialog open={bulkEditOpen} onOpenChange={setBulkEditOpen}>
