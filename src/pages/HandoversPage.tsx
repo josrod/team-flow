@@ -1,4 +1,6 @@
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
+
 import { useLang } from "@/context/LanguageContext";
 import { HandoverCard } from "@/components/HandoverCard";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,6 +35,8 @@ const item = {
 
 export default function HandoversPage() {
   const { teams, members, absences, workTopics, handovers, addHandover, updateHandover, deleteHandover } = useApp();
+  const { isAdmin } = useAuth();
+
   const { t } = useLang();
   const [selectedTeam, setSelectedTeam] = useState("all");
   const [addOpen, setAddOpen] = useState(false);
