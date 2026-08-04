@@ -286,7 +286,7 @@ export const EpicsPage = () => {
     return settings.epicsAreaPaths.length > 0 ? settings.epicsAreaPaths : settings.areaPaths;
   }, [settings]);
 
-  const loadEpics = useCallback(async () => {
+  const loadEpics = useCallback(async (opts: { forceRefresh?: boolean } = {}) => {
     if (!settings) return;
     loadControllerRef.current?.abort();
     if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
@@ -309,6 +309,7 @@ export const EpicsPage = () => {
         areaPaths: effectiveAreaPaths,
       },
       controller.signal,
+      { forceRefresh: opts.forceRefresh },
     );
     if (loadTimeoutRef.current) {
       clearTimeout(loadTimeoutRef.current);
@@ -479,7 +480,7 @@ export const EpicsPage = () => {
               className="pl-9 w-64"
             />
           </div>
-          <Button onClick={loadEpics} disabled={loading} variant="outline">
+          <Button onClick={() => void loadEpics({ forceRefresh: true })} disabled={loading} variant="outline">
             {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             {t.epicsRefresh}
           </Button>

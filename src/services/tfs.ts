@@ -3,6 +3,8 @@
 // network (or VPN) where the TFS server is reachable, and TFS must allow
 // CORS from the app origin.
 
+import { buildTfsCacheKey, withTfsCache } from "@/services/tfsResultCache";
+
 export interface TfsConnection {
   serverUrl: string;
   collection: string;
@@ -992,7 +994,7 @@ export const listTfsClassificationNodes = async (
  * When `teamAreaPaths` is empty/undefined, no area-path filter is applied
  * (used as a safe fallback when the team has no area mapping).
  */
-export const listTfsFeatures = async (
+const listTfsFeaturesUncached = async (
   conn: TfsConnection,
   teamAreaPaths?: string[],
   configuredAreaPaths?: string[],
@@ -1041,7 +1043,7 @@ ORDER BY [System.ChangedDate] DESC`;
  * List Tasks (and User Stories / Bugs) currently assigned in the project.
  * Hard-scoped to area `SDES\\Rodat` and iterations under `SDES\\Rodat\\4.4`.
  */
-export const listTfsTasks = async (
+const listTfsTasksUncached = async (
   conn: TfsConnection,
   configuredAreaPaths?: string[],
   configuredIterationPaths?: string[],
@@ -1463,7 +1465,7 @@ const escapeWiqlString = (value: string): string => value.replace(/'/g, "''");
 /**
  * Fetch all bugs whose iteration path is under any of the configured iteration paths.
  */
-export const fetchTfsBugsByIterations = async (
+const fetchTfsBugsByIterationsUncached = async (
   conn: TfsConnection,
   iterationPaths: string[],
   externalSignal?: AbortSignal,
@@ -2037,7 +2039,7 @@ export interface FetchEpicsOptions {
   areaPaths?: string[];
 }
 
-export const fetchTfsEpics = async (
+const fetchTfsEpicsUncached = async (
   conn: TfsConnection,
   options: FetchEpicsOptions,
   externalSignal?: AbortSignal,
@@ -2147,3 +2149,79 @@ export const fetchTfsEpics = async (
   }
 };
 
+
+// ---------------------------------------------------------------------------
+// Cached query entry points.
+// The browser queries TFS directly, so identical queries are served from a
+// long-lived TTL cache (see tfsResultCache) to reduce load on the TFS server.
+// Pass `{ forceRefresh: true }` from explicit "Refresh" actions.
+// ---------------------------------------------------------------------------
+
+/** Cache identity for a connection (never includes the PAT). */
+const buildConnCacheKey = (conn: TfsConnection): string =>
+  [
+    conn.serverUrl.trim().replace(/\/+$/, "").toLowerCase(),
+    conn.collection.trim().toLowerCase(),
+    conn.project.trim().toLowerCase(),
+    (conn.team ?? "").trim().toLowerCase(),
+  ].join("|");
+
+/** Only cache successful results so errors retry on the next attempt. */
+const isSuccessfulResult = <T>(res: TfsDiscoveryResult<T>): boolean => !res.error;
+
+export interface TfsQueryCacheOptions {
+  forceRefresh?: boolean;
+}
+
+export const listTfsFeatures = (
+  conn: TfsConnection,
+  teamAreaPaths?: string[],
+  configuredAreaPaths?: string[],
+  cacheOptions: TfsQueryCacheOptions = {},
+): Promise<TfsDiscoveryResult<TfsWorkItem>> =>
+  withTfsCache(
+    buildTfsCacheKey("features", [buildConnCacheKey(conn), teamAreaPaths ?? [], configuredAreaPaths ?? []]),
+    () => listTfsFeaturesUncached(conn, teamAreaPaths, configuredAreaPaths),
+    { forceRefresh: cacheOptions.forceRefresh, isCacheable: isSuccessfulResult },
+  );
+
+export const listTfsTasks = (
+  conn: TfsConnection,
+  configuredAreaPaths?: string[],
+  configuredIterationPaths?: string[],
+  cacheOptions: TfsQueryCacheOptions = {},
+): Promise<TfsDiscoveryResult<TfsWorkItem>> =>
+  withTfsCache(
+    buildTfsCacheKey("tasks", [buildConnCacheKey(conn), configuredAreaPaths ?? [], configuredIterationPaths ?? []]),
+    () => listTfsTasksUncached(conn, configuredAreaPaths, configuredIterationPaths),
+    { forceRefresh: cacheOptions.forceRefresh, isCacheable: isSuccessfulResult },
+  );
+
+export const fetchTfsBugsByIterations = (
+  conn: TfsConnection,
+  iterationPaths: string[],
+  externalSignal?: AbortSignal,
+  cacheOptions: TfsQueryCacheOptions = {},
+): Promise<TfsDiscoveryResult<TfsBug>> =>
+  withTfsCache(
+    buildTfsCacheKey("bugs", [buildConnCacheKey(conn), iterationPaths]),
+    () => fetchTfsBugsByIterationsUncached(conn, iterationPaths, externalSignal),
+    { forceRefresh: cacheOptions.forceRefresh, isCacheable: isSuccessfulResult },
+  );
+
+export const fetchTfsEpics = (
+  conn: TfsConnection,
+  options: FetchEpicsOptions,
+  externalSignal?: AbortSignal,
+  cacheOptions: TfsQueryCacheOptions = {},
+): Promise<TfsDiscoveryResult<TfsEpic>> =>
+  withTfsCache(
+    buildTfsCacheKey("epics", [
+      buildConnCacheKey(conn),
+      options.queryId ?? "",
+      options.tags ?? [],
+      options.areaPaths ?? [],
+    ]),
+    () => fetchTfsEpicsUncached(conn, options, externalSignal),
+    { forceRefresh: cacheOptions.forceRefresh, isCacheable: isSuccessfulResult },
+  );

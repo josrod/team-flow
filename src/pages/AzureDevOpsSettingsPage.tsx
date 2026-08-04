@@ -35,6 +35,7 @@ import {
   type TfsError,
   type TfsDiagnosticResult,
 } from "@/services/tfs";
+import { clearTfsResultCache } from "@/services/tfsResultCache";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { encryptPat, decryptPat } from "@/services/tfsPatVault";
 import { TfsPatDiagnosticsPanel } from "@/components/TfsPatDiagnosticsPanel";
@@ -539,6 +540,7 @@ export const AzureDevOpsSettingsPage = () => {
       // Settings changed → invalidate cached team area paths so the next
       // dashboard load picks up the new team/project mapping.
       clearTfsAreaPathCache();
+    clearTfsResultCache();
 
       // Saved → drop the local draft, the DB is the source of truth now.
       try {
@@ -585,6 +587,7 @@ export const AzureDevOpsSettingsPage = () => {
     }
 
     clearTfsAreaPathCache();
+    clearTfsResultCache();
 
     setServerUrl("");
     setCollection("");

@@ -63,7 +63,7 @@ export const WaitingPage = () => {
   const [search, setSearch] = useState("");
   const [openDevelopers, setOpenDevelopers] = useState<string[]>([]);
 
-  const load = async () => {
+  const load = async ({ forceRefresh = false }: { forceRefresh?: boolean } = {}) => {
     setLoading(true);
     setError(null);
     try {
@@ -121,8 +121,8 @@ export const WaitingPage = () => {
       const effectiveIters = userIters.length > 0 ? userIters : [RODAT_ITERATION_PATH];
 
       const [featRes, taskRes] = await Promise.all([
-        listTfsFeatures(conn, [], userAreas),
-        listTfsTasks(conn, userAreas, userIters),
+        listTfsFeatures(conn, [], userAreas, { forceRefresh }),
+        listTfsTasks(conn, userAreas, userIters, { forceRefresh }),
       ]);
       if (taskRes.error) {
         setError(taskRes.error.message);
@@ -195,7 +195,7 @@ export const WaitingPage = () => {
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">{t.waitingBadgeTooltip}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading} className="gap-2">
+          <Button variant="outline" size="sm" onClick={() => void load({ forceRefresh: true })} disabled={loading} className="gap-2">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             {t.bugsRefresh}
           </Button>

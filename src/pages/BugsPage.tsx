@@ -138,7 +138,7 @@ export const BugsPage = () => {
   const loadBugsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const LOAD_BUGS_TIMEOUT_MS = 20000;
 
-  const loadBugs = useCallback(async () => {
+  const loadBugs = useCallback(async (opts: { forceRefresh?: boolean } = {}) => {
     if (!settings || settings.iterationPaths.length === 0) return;
     // Cancel any in-flight request before starting a new one.
     loadBugsControllerRef.current?.abort();
@@ -158,6 +158,7 @@ export const BugsPage = () => {
       },
       settings.iterationPaths,
       controller.signal,
+      { forceRefresh: opts.forceRefresh },
     );
     if (loadBugsTimeoutRef.current) {
       clearTimeout(loadBugsTimeoutRef.current);
@@ -648,7 +649,7 @@ export const BugsPage = () => {
               </div>
             )}
           </div>
-          <Button onClick={loadBugs} disabled={loading || !settings || settings.iterationPaths.length === 0} variant="outline">
+          <Button onClick={() => void loadBugs({ forceRefresh: true })} disabled={loading || !settings || settings.iterationPaths.length === 0} variant="outline">
             {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             {t.bugsRefresh}
           </Button>

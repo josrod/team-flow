@@ -688,8 +688,8 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
       }
 
       const [featRes, taskRes] = await Promise.all([
-        listTfsFeatures(conn, teamAreaPaths, userAreas),
-        listTfsTasks(conn, userAreas, userIters),
+        listTfsFeatures(conn, teamAreaPaths, userAreas, { forceRefresh: options.forceAreaRefresh }),
+        listTfsTasks(conn, userAreas, userIters, { forceRefresh: options.forceAreaRefresh }),
       ]);
       const loadHadError = Boolean(featRes.error || taskRes.error);
       if (featRes.error) {
