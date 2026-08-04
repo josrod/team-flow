@@ -1286,6 +1286,7 @@ export const translations = {
     errTeamAreasUpdate: "Failed to update team areas list. Using latest cached version.",
     errPeopleUpdate: "Failed to update people list. Showing latest cached list.",
     errIncompleteAdoConfig: "Incomplete Azure DevOps configuration. Showing local data.",
+    errAdoConfigUnavailable: "Could not load the shared Azure DevOps configuration. Check that the functions service is reachable.",
     errAdoSignInRequired: "Azure DevOps data requires signing in as an administrator. Item links remain available.",
 
     hideHandover: "Hide handover",
