@@ -63,7 +63,7 @@ export const WaitingPage = () => {
   const [search, setSearch] = useState("");
   const [openDevelopers, setOpenDevelopers] = useState<string[]>([]);
 
-  const load = async () => {
+  const load = async ({ forceRefresh = false }: { forceRefresh?: boolean } = {}) => {
     setLoading(true);
     setError(null);
     try {
