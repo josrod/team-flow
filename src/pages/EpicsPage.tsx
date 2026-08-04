@@ -480,7 +480,7 @@ export const EpicsPage = () => {
               className="pl-9 w-64"
             />
           </div>
-          <Button onClick={loadEpics} disabled={loading} variant="outline">
+          <Button onClick={() => void loadEpics({ forceRefresh: true })} disabled={loading} variant="outline">
             {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             {t.epicsRefresh}
           </Button>

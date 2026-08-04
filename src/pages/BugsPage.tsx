@@ -649,7 +649,7 @@ export const BugsPage = () => {
               </div>
             )}
           </div>
-          <Button onClick={loadBugs} disabled={loading || !settings || settings.iterationPaths.length === 0} variant="outline">
+          <Button onClick={() => void loadBugs({ forceRefresh: true })} disabled={loading || !settings || settings.iterationPaths.length === 0} variant="outline">
             {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             {t.bugsRefresh}
           </Button>

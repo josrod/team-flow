@@ -35,6 +35,7 @@ import {
   type TfsError,
   type TfsDiagnosticResult,
 } from "@/services/tfs";
+import { clearTfsResultCache } from "@/services/tfsResultCache";
 import { TfsErrorPanel } from "@/components/TfsErrorPanel";
 import { encryptPat, decryptPat } from "@/services/tfsPatVault";
 import { TfsPatDiagnosticsPanel } from "@/components/TfsPatDiagnosticsPanel";
