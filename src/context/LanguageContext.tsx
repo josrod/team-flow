@@ -357,6 +357,7 @@ export const translations = {
     errTeamAreasUpdate: "No se pudo actualizar la lista de áreas del equipo. Se está usando la última versión en caché.",
     errPeopleUpdate: "No se pudo actualizar la lista de personas. Se está mostrando el último listado en caché.",
     errIncompleteAdoConfig: "Configuración de Azure DevOps incompleta. Mostrando datos locales.",
+    errAdoConfigUnavailable: "No se ha podido obtener la configuración compartida de Azure DevOps. Revisa que el servicio de funciones esté disponible.",
     errAdoSignInRequired: "Los datos de Azure DevOps requieren iniciar sesión como administrador. Los enlaces a los elementos siguen disponibles.",
 
     hideHandover: "Ocultar handover",
