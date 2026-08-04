@@ -98,20 +98,26 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "No Azure DevOps configuration available" }, 404);
   }
 
-  let pat: string;
-  try {
-    pat = await decryptPat(data.pat_encrypted, data.pat_iv);
-  } catch {
-    return jsonResponse({ error: "Could not decrypt the stored access token" }, 500);
+  // The "links" scope only builds "open in Azure DevOps" URLs, so the token is
+  // never decrypted nor returned for it.
+  let pat = "";
+  if (scope === "data") {
+    try {
+      pat = await decryptPat(data.pat_encrypted, data.pat_iv);
+    } catch {
+      return jsonResponse({ error: "Could not decrypt the stored access token" }, 500);
+    }
   }
 
   return jsonResponse({
+    scope,
     server_url: data.server_url,
     collection: data.collection,
     project: data.project,
     team: data.team,
-    pat_encrypted: pat,
+    pat_encrypted: scope === "data" ? pat : null,
     pat_iv: null,
+
     area_paths: data.area_paths ?? [],
     iteration_paths: data.iteration_paths ?? [],
     bugs_query_id: data.bugs_query_id ?? null,
