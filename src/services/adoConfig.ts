@@ -27,7 +27,8 @@ const asArray = (value: unknown): string[] =>
 
 /** Non-sensitive Azure DevOps config, resolved through the secure edge function. */
 export const loadPublicAdoConfig = async (): Promise<PublicAdoConfig | null> => {
-  const row = await loadSharedAdoSettings();
+  const row = await loadSharedAdoSettings("links");
+
   if (!row) return null;
   return {
     serverUrl: row.server_url ?? null,
