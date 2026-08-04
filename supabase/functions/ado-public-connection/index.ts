@@ -48,6 +48,24 @@ const decryptPat = async (ciphertext: string, iv: string | null): Promise<string
   return new TextDecoder().decode(plainBuf);
 };
 
+/** Only these request scopes are accepted; anything else is rejected. */
+const ALLOWED_SCOPES = ["links", "data"] as const;
+type Scope = (typeof ALLOWED_SCOPES)[number];
+
+const readScope = async (req: Request): Promise<Scope | null> => {
+  let raw: unknown = "data";
+  try {
+    const body = await req.json();
+    if (body && typeof body === "object" && "scope" in body) {
+      raw = (body as { scope: unknown }).scope ?? "data";
+    }
+  } catch {
+    // No body: keep the default scope.
+  }
+  if (typeof raw !== "string") return null;
+  return (ALLOWED_SCOPES as readonly string[]).includes(raw) ? (raw as Scope) : null;
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -57,7 +75,13 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Server misconfigured" }, 500);
   }
 
+  const scope = await readScope(req);
+  if (!scope) {
+    return jsonResponse({ error: "Unsupported scope" }, 400);
+  }
+
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
   const { data, error } = await admin
     .from("azure_devops_settings")
     .select(
