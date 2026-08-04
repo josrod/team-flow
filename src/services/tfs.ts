@@ -2037,7 +2037,7 @@ export interface FetchEpicsOptions {
   areaPaths?: string[];
 }
 
-export const fetchTfsEpics = async (
+const fetchTfsEpicsUncached = async (
   conn: TfsConnection,
   options: FetchEpicsOptions,
   externalSignal?: AbortSignal,
