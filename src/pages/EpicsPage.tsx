@@ -286,7 +286,7 @@ export const EpicsPage = () => {
     return settings.epicsAreaPaths.length > 0 ? settings.epicsAreaPaths : settings.areaPaths;
   }, [settings]);
 
-  const loadEpics = useCallback(async () => {
+  const loadEpics = useCallback(async (opts: { forceRefresh?: boolean } = {}) => {
     if (!settings) return;
     loadControllerRef.current?.abort();
     if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
@@ -309,6 +309,7 @@ export const EpicsPage = () => {
         areaPaths: effectiveAreaPaths,
       },
       controller.signal,
+      { forceRefresh: opts.forceRefresh },
     );
     if (loadTimeoutRef.current) {
       clearTimeout(loadTimeoutRef.current);
