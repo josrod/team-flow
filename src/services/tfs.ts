@@ -102,10 +102,61 @@ const buildAuthHeader = (pat: string): string => {
 };
 
 /**
+ * Read-only endpoint allowlist. The admin token travels to every visitor's
+ * browser, so we make the client itself incapable of issuing anything other
+ * than the read calls the app needs: only GET is allowed, plus POST on the
+ * WIQL query endpoint (Azure DevOps requires POST to run a query).
+ *
+ * This is a defence-in-depth guard against accidental or injected write calls;
+ * the authoritative restriction is the PAT scope configured in Azure DevOps
+ * (Work Items: Read + Project and Team: Read).
+ */
+const READ_ONLY_PATH_PATTERNS: RegExp[] = [
+  /\/_apis\/projectcollections(\/|\?|$)/i,
+  /\/_apis\/projects(\/|\?|$)/i,
+  /\/_apis\/wit\/wiql(\/|\?|$)/i,
+  /\/_apis\/wit\/workitems(\/|\?|$)/i,
+  /\/_apis\/wit\/queries(\/|\?|$)/i,
+  /\/_apis\/wit\/classificationnodes(\/|\?|$)/i,
+  /\/_apis\/work\/teamsettings\//i,
+];
+
+const WIQL_PATH_PATTERN = /\/_apis\/wit\/wiql(\/|\?|$)/i;
+
+export class TfsForbiddenEndpointError extends Error {
+  constructor(url: string) {
+    super(`Blocked non-read Azure DevOps request: ${url}`);
+    this.name = "TfsForbiddenEndpointError";
+  }
+}
+
+/** True when the URL + method pair is a known read-only Azure DevOps call. */
+export const isAllowedTfsRequest = (url: string, method = "GET"): boolean => {
+  let path: string;
+  try {
+    path = new URL(url).pathname;
+  } catch {
+    return false;
+  }
+  const verb = method.toUpperCase();
+  if (verb !== "GET" && verb !== "POST") return false;
+  if (verb === "POST" && !WIQL_PATH_PATTERN.test(path)) return false;
+  return READ_ONLY_PATH_PATTERNS.some((pattern) => pattern.test(path));
+};
+
+/**
  * Every upstream request goes straight from the browser to TFS: the server is
  * only reachable from the corporate network, so no cloud proxy can reach it.
+ * Requests outside the read-only allowlist are rejected before leaving the app.
  */
-const tfsFetch = (url: string, init?: RequestInit): Promise<Response> => fetch(url, init);
+const tfsFetch = (url: string, init?: RequestInit): Promise<Response> => {
+  if (!isAllowedTfsRequest(url, init?.method ?? "GET")) {
+    return Promise.reject(new TfsForbiddenEndpointError(url));
+  }
+  return fetch(url, init);
+};
+
+
 
 
 
