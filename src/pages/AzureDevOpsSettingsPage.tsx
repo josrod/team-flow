@@ -539,7 +539,7 @@ export const AzureDevOpsSettingsPage = () => {
       // Settings changed → invalidate cached team area paths so the next
       // dashboard load picks up the new team/project mapping.
       clearTfsAreaPathCache();
-      clearTfsResultCache();
+    clearTfsResultCache();
 
       // Saved → drop the local draft, the DB is the source of truth now.
       try {
@@ -586,7 +586,7 @@ export const AzureDevOpsSettingsPage = () => {
     }
 
     clearTfsAreaPathCache();
-      clearTfsResultCache();
+    clearTfsResultCache();
 
     setServerUrl("");
     setCollection("");
