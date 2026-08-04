@@ -296,6 +296,9 @@ export const translations = {
     adoTeamHint: "Filtra por equipo dentro del proyecto, si aplica",
     adoPat: "Personal Access Token (PAT)",
     adoPatHint: "Necesita permisos: Work Items (Read), Project & Team (Read), Work (Read)",
+    adoPatScopeHint:
+      "Usa solo esos permisos de lectura y una caducidad corta: el token se entrega a cualquier visitante de la intranet y la app bloquea cualquier petición que no sea de lectura.",
+
     adoTestConnection: "Probar conexión",
     adoConnectionOk: "Conexión exitosa",
     adoConnectionFailed: "Error de conexión",
@@ -1225,6 +1228,9 @@ export const translations = {
     adoTeamHint: "Filter by team inside the project, if applicable",
     adoPat: "Personal Access Token (PAT)",
     adoPatHint: "Requires permissions: Work Items (Read), Project & Team (Read), Work (Read)",
+    adoPatScopeHint:
+      "Use only those read permissions and a short expiry: the token is handed to every intranet visitor, and the app blocks any request that is not a read.",
+
     adoTestConnection: "Test connection",
     adoConnectionOk: "Connection successful",
     adoConnectionFailed: "Connection failed",

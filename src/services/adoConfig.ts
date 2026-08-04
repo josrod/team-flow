@@ -27,7 +27,8 @@ const asArray = (value: unknown): string[] =>
 
 /** Non-sensitive Azure DevOps config, resolved through the secure edge function. */
 export const loadPublicAdoConfig = async (): Promise<PublicAdoConfig | null> => {
-  const row = await loadSharedAdoSettings();
+  const row = await loadSharedAdoSettings("links");
+
   if (!row) return null;
   return {
     serverUrl: row.server_url ?? null,
@@ -84,29 +85,41 @@ export interface SharedAdoSettingsRow {
   epics_iteration_paths: string[];
 }
 
-let sharedSettingsPromise: Promise<SharedAdoSettingsRow | null> | null = null;
+/**
+ * Request scope validated by the edge function: "links" returns the config
+ * without the token (enough to build "open in Azure DevOps" URLs), "data"
+ * returns the token needed to query the intranet TFS server from the browser.
+ */
+export type AdoConfigScope = "links" | "data";
+
+const sharedSettingsPromises: Partial<Record<AdoConfigScope, Promise<SharedAdoSettingsRow | null>>> = {};
 
 /**
  * Loads the admin-configured Azure DevOps connection through the
  * `ado-public-connection` edge function so visitors without a session see the
- * same read-only data. Cached for the lifetime of the page.
+ * same read-only data. Cached per scope for the lifetime of the page.
  */
-export const loadSharedAdoSettings = async (): Promise<SharedAdoSettingsRow | null> => {
-  if (!sharedSettingsPromise) {
-    sharedSettingsPromise = (async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke<SharedAdoSettingsRow>(
-          "ado-public-connection",
-          { method: "POST" },
-        );
-        if (error || !data || !data.server_url || !data.pat_encrypted) return null;
-        return data;
-      } catch {
-        return null;
-      }
-    })();
-  }
-  return sharedSettingsPromise;
+export const loadSharedAdoSettings = async (
+  scope: AdoConfigScope = "data",
+): Promise<SharedAdoSettingsRow | null> => {
+  const cached = sharedSettingsPromises[scope];
+  if (cached) return cached;
+  const pending = (async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke<SharedAdoSettingsRow>(
+        "ado-public-connection",
+        { body: { scope } },
+      );
+      if (error || !data || !data.server_url) return null;
+      if (scope === "data" && !data.pat_encrypted) return null;
+      return data;
+    } catch {
+      return null;
+    }
+  })();
+  sharedSettingsPromises[scope] = pending;
+  return pending;
 };
+
 
 

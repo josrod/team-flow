@@ -815,6 +815,8 @@ export const AzureDevOpsSettingsPage = () => {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-1">{t.adoPatHint}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t.adoPatScopeHint}</p>
+
             </div>
 
             <Button
