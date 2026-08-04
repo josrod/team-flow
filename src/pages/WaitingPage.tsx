@@ -87,11 +87,13 @@ export const WaitingPage = () => {
           .maybeSingle();
         settings = data ?? null;
       }
+      let sharedMissing = false;
       if (!settings?.server_url || !settings?.collection || !settings?.project || !settings?.pat_encrypted) {
         settings = await loadSharedAdoSettings();
+        sharedMissing = !settings;
       }
       if (!settings?.server_url || !settings?.collection || !settings?.project || !settings?.pat_encrypted) {
-        setError(t.errIncompleteAdoConfig);
+        setError(sharedMissing ? t.errAdoConfigUnavailable : t.errIncompleteAdoConfig);
         return;
       }
       let plainPat: string;

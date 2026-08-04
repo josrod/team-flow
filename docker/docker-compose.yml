@@ -111,7 +111,10 @@ services:
       SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
       SUPABASE_DB_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
       ADO_PAT_ENC_KEY: ${ADO_PAT_ENC_KEY}
-      VERIFY_JWT: "true"
+      # JWT validation happens inside each function (tfs-pat-vault requires a
+      # session; ado-public-connection is public on purpose so visitors can
+      # read Azure DevOps data without signing in).
+      VERIFY_JWT: "false"
     volumes:
       - ../supabase/functions:/home/deno/functions:ro
 
