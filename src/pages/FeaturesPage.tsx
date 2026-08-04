@@ -631,12 +631,14 @@ export default function FeaturesPage({ view = "all" }: FeaturesPageProps = {}) {
           .maybeSingle();
         settings = data ?? undefined;
       }
+      let sharedMissing = false;
       if (!settings) {
         settings = (await loadSharedAdoSettings()) ?? undefined;
+        sharedMissing = !settings;
       }
 
       if (!settings?.server_url || !settings?.collection || !settings?.project || !settings?.pat_encrypted) {
-        setTfsError(t.errIncompleteAdoConfig);
+        setTfsError(sharedMissing ? t.errAdoConfigUnavailable : t.errIncompleteAdoConfig);
         setSource("local");
         return;
       }
