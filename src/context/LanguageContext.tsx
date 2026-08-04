@@ -296,6 +296,9 @@ export const translations = {
     adoTeamHint: "Filtra por equipo dentro del proyecto, si aplica",
     adoPat: "Personal Access Token (PAT)",
     adoPatHint: "Necesita permisos: Work Items (Read), Project & Team (Read), Work (Read)",
+    adoPatScopeHint:
+      "Usa solo esos permisos de lectura y una caducidad corta: el token se entrega a cualquier visitante de la intranet y la app bloquea cualquier petición que no sea de lectura.",
+
     adoTestConnection: "Probar conexión",
     adoConnectionOk: "Conexión exitosa",
     adoConnectionFailed: "Error de conexión",
