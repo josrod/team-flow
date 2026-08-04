@@ -3,6 +3,8 @@
 // network (or VPN) where the TFS server is reachable, and TFS must allow
 // CORS from the app origin.
 
+import { buildTfsCacheKey, withTfsCache } from "@/services/tfsResultCache";
+
 export interface TfsConnection {
   serverUrl: string;
   collection: string;
@@ -992,7 +994,7 @@ export const listTfsClassificationNodes = async (
  * When `teamAreaPaths` is empty/undefined, no area-path filter is applied
  * (used as a safe fallback when the team has no area mapping).
  */
-export const listTfsFeatures = async (
+const listTfsFeaturesUncached = async (
   conn: TfsConnection,
   teamAreaPaths?: string[],
   configuredAreaPaths?: string[],
@@ -1041,7 +1043,7 @@ ORDER BY [System.ChangedDate] DESC`;
  * List Tasks (and User Stories / Bugs) currently assigned in the project.
  * Hard-scoped to area `SDES\\Rodat` and iterations under `SDES\\Rodat\\4.4`.
  */
-export const listTfsTasks = async (
+const listTfsTasksUncached = async (
   conn: TfsConnection,
   configuredAreaPaths?: string[],
   configuredIterationPaths?: string[],
@@ -1463,7 +1465,7 @@ const escapeWiqlString = (value: string): string => value.replace(/'/g, "''");
 /**
  * Fetch all bugs whose iteration path is under any of the configured iteration paths.
  */
-export const fetchTfsBugsByIterations = async (
+const fetchTfsBugsByIterationsUncached = async (
   conn: TfsConnection,
   iterationPaths: string[],
   externalSignal?: AbortSignal,
