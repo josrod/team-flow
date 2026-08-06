@@ -515,7 +515,7 @@ Studio  → http://localhost:3001
 | DB | `db-shell` | `db:shell` | `psql` interactivo |
 | DB | `db-backup` | `db:backup` | Vuelca a `backups/backup_<fecha>.sql` |
 | DB | `db-restore F=…` | — | Restaura un backup concreto |
-| Functions | `functions-logs` | — | Logs de la Edge Function `tfs-pat-vault` |
+| Functions | `functions-logs` | — | Logs del Edge Runtime (`tfs-pat-vault`, `ado-public-connection`) |
 
 ### 13.4 Seed de datos
 
