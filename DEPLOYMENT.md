@@ -274,14 +274,39 @@ VITE_SUPABASE_PROJECT_ID="local"
 
 Estas variables son **públicas** (van al bundle). La `SERVICE_ROLE_KEY` no debe aparecer nunca en el frontend.
 
-### 5.2 Build
+### 5.2 Bloques de variables de `.env.example`
+
+El archivo `.env.example` de la raíz es la plantilla única de variables para desarrollo del SPA y, copiado a `docker/.env`, para el stack self-hosted. A continuación se describe qué hace cada bloque y en qué escenarios se usa.
+
+| Bloque | Variables | Qué hacen | ¿Cuándo se usan? |
+|---|---|---|---|
+| 1. Frontend (Vite) | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` | Conectan el SPA con el backend. Son públicas por diseño (van al bundle del navegador). | Siempre que se hace build del frontend (dev y prod). |
+| 2. Postgres | `POSTGRES_PASSWORD`, `DB_URL` | Credenciales del superusuario de Postgres y cadena de conexión para los scripts de base de datos (`make db-*`). | Solo self-hosted. No se usan en el bundle de Vite. |
+| 3. JWT compartido | `JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY`, `REALTIME_SECRET_KEY_BASE` | Firma y validación de tokens entre GoTrue, PostgREST, Realtime y Edge Functions. `JWT_SECRET` debe ser idéntico en todos los servicios. | Solo self-hosted. `ANON_KEY` es público; `SERVICE_ROLE_KEY` es secreto de backend. |
+| 4. URLs y Auth | `SITE_URL`, `PUBLIC_SUPABASE_URL`, `API_EXTERNAL_URL`, `GOTRUE_DISABLE_SIGNUP`, `GOTRUE_MAILER_AUTOCONFIRM`, `GOTRUE_SMTP_*` | Redirecciones de autenticación, URL pública del API gateway, control de registro y confirmación de email. | Solo self-hosted. Ajustar `SITE_URL` al dominio real desde el que se accede a la SPA. |
+| 5. Edge Functions | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ADO_PAT_ENC_KEY`, `VERIFY_JWT` | Inyectadas por el runtime de Supabase en producción gestionada; en self-hosted se definen en `docker/.env`. `ADO_PAT_ENC_KEY` cifra PATs de Azure DevOps. | `ADO_PAT_ENC_KEY` siempre (backend); `VERIFY_JWT=false` en local para permitir `ado-public-connection` pública. |
+| 6. Azure DevOps / TFS | `TFS_BASE_URL`, `PROXY_RATE_LIMIT_MAX_REQUESTS`, `PROXY_RATE_LIMIT_WINDOW_SECONDS` | Documentan el entorno TFS y límites de peticiones sobre la conexión compartida. La conexión real se guarda cifrada en la base de datos. | Opcional: variables de documentación/caché; no reemplazan la configuración en `/settings/azure-devops`. |
+
+#### Escenarios
+
+- **Desarrollo del SPA contra backend existente (p. ej. Lovable Cloud):** solo necesitas el bloque 1. Copia `.env.example` a `.env` y rellena `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY`.
+- **Stack self-hosted completo (Docker):** copia `.env.example` a `docker/.env` y rellena los bloques 1 a 6. El bloque 1 se reinyecta al build del contenedor `web`.
+- **Producción interna:** rota todos los secretos de los bloques 2, 3, 5 y SMTP (4); `VITE_*` apuntan al dominio del API gateway.
+
+#### Variables críticas a proteger
+
+- **Nunca** en el frontend: `SERVICE_ROLE_KEY`, `JWT_SECRET`, `ADO_PAT_ENC_KEY`.
+- **Respaldar en gestor de secretos**: `POSTGRES_PASSWORD`, `JWT_SECRET`, `ADO_PAT_ENC_KEY` (sin esta última los PATs cifrados son irrecuperables y hay que volver a introducirlos desde `/settings`).
+- **Públicas por diseño**: `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` (la seguridad viene de RLS, no de ocultar estas URLs).
+
+### 5.3 Build
 
 ```bash
 npm ci
 npm run build     # genera dist/
 ```
 
-### 5.3 Servir con SPA fallback
+### 5.4 Servir con SPA fallback
 
 **nginx**:
 
