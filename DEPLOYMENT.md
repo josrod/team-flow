@@ -18,13 +18,16 @@ La aplicación es un SPA React + Vite que hoy usa Lovable Cloud (Supabase gestio
                                                │
                      ┌─────────────────────────┼─────────────────────────┐
                      ▼                         ▼                         ▼
-             ┌───────────────┐        ┌────────────────┐        ┌────────────────┐
-             │  PostgreSQL   │        │  GoTrue (auth) │        │  Deno / Node   │
-             │  + PostgREST  │        │                │        │  Edge Function │
-             └───────────────┘        └────────────────┘        │  (tfs-pat-vault│
-                                                                │   + TFS proxy) │
-                                                                └────────────────┘
+             ┌───────────────┐        ┌────────────────┐        ┌──────────────────────┐
+             │  PostgreSQL   │        │  GoTrue (auth) │        │  Deno Edge Runtime   │
+             │  + PostgREST  │        │                │        │  - tfs-pat-vault     │
+             └───────────────┘        └────────────────┘        │  - ado-public-       │
+                                                                │    connection        │
+                                                                └──────────────────────┘
 ```
+
+El navegador consulta el TFS/Azure DevOps **directamente** (no hay proxy): la Edge Function `ado-public-connection` entrega la configuración compartida del admin y, sólo con scope `data`, el PAT descifrado. La SPA cachea los resultados en `sessionStorage` (TTL de 15 min y refresco en segundo plano cuando quedan menos de 3 min) mediante `src/services/tfsResultCache.ts`.
+
 
 Componentes a proveer localmente:
 
@@ -37,7 +40,7 @@ Componentes a proveer localmente:
 | Storage (si se usa) | Supabase Storage | `storage-api` self‑hosted | MinIO, S3 compatible |
 | Hosting SPA | CDN Lovable | nginx / Caddy / IIS con SPA fallback | Apache, Traefik |
 
-Se recomienda **Supabase self‑hosted** porque conserva 1:1 el esquema, RLS, migraciones (`supabase/migrations/*.sql`) y la Edge Function ya escrita (`supabase/functions/tfs-pat-vault`) sin reescribir código de cliente.
+Se recomienda **Supabase self‑hosted** porque conserva 1:1 el esquema, RLS, migraciones (`supabase/migrations/*.sql`) y las Edge Functions ya escritas (`supabase/functions/tfs-pat-vault`, `supabase/functions/ado-public-connection` y el helper compartido `supabase/functions/_shared/requireUser.ts`) sin reescribir código de cliente.
 
 ---
 
@@ -92,7 +95,7 @@ done
 ```
 
 Las migraciones incluyen:
-- Tablas: `teams`, `members`, `absences`, `handovers`, `work_topics`, `azure_devops_settings`, `user_roles`.
+- Tablas: `teams`, `members`, `absences`, `handovers`, `task_handover_notes`, `work_topics`, `azure_devops_settings`, `epic_versions`, `epic_version_assignments`, `user_roles`.
 - Enum `app_role` y función `has_role`.
 - Políticas RLS y `GRANT` para roles `authenticated` / `anon` / `service_role`.
 - Triggers `update_updated_at_column` y validaciones (`validate_bugs_query_id`, `validate_epics_query_id`).
@@ -108,7 +111,7 @@ Alternativa sin Supabase Auth: **Keycloak**. Requiere reescribir `src/context/Au
 
 ---
 
-## 4. Edge Function `tfs-pat-vault` y proxy TFS
+## 4. Edge Functions (`tfs-pat-vault`, `ado-public-connection`)
 
 La función `supabase/functions/tfs-pat-vault/index.ts` cifra/descifra PATs de Azure DevOps con AES‑GCM y valida el JWT del llamador.
 
@@ -136,9 +139,29 @@ deno run --allow-net --allow-env \
 
 O portar el archivo a **Node.js + Express** (sustituir `Deno.env` por `process.env`, `Deno.serve` por `app.listen`, e importar `@supabase/supabase-js` desde npm). Publica el servicio detrás del reverse proxy en `/functions/v1/tfs-pat-vault`.
 
-### 4.3 Proxy TFS (opcional pero recomendado)
+### 4.3 Conexión compartida `ado-public-connection`
 
-Si el navegador no puede alcanzar el TFS directamente (fuera de oficina, CORS, red segmentada), añade una Edge Function proxy `tfs-proxy` que reenvíe llamadas server‑side. El repo ya expone helpers en `src/services/tfs.ts` preparados para esta ruta.
+El proxy TFS se retiró: no funcionaba de forma fiable contra un TFS on‑premise segmentado. En su lugar, la función `supabase/functions/ado-public-connection/index.ts` publica la configuración de Azure DevOps del admin para que **cualquier visitante** (con o sin sesión) vea los mismos datos, consultando el TFS desde el navegador:
+
+- Scope `links` → devuelve sólo la metadata necesaria para construir enlaces "abrir en Azure DevOps". **No** entrega el PAT.
+- Scope `data` → devuelve además el PAT descifrado con `ADO_PAT_ENC_KEY` para ejecutar consultas de lectura.
+- Cualquier otro valor de `scope` se rechaza con `400 Unsupported scope`.
+
+Despliegue y requisitos:
+
+```bash
+supabase functions deploy ado-public-connection \
+  --project-ref <local-project-ref> \
+  --no-verify-jwt
+```
+
+Requiere `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` y `ADO_PAT_ENC_KEY` en el entorno de la función. En el stack Docker esto ya viene resuelto (`VERIFY_JWT: "false"` + router `supabase/functions/main/index.ts`).
+
+Endurecimiento recomendado:
+
+- Usa un PAT con **permisos mínimos** (sólo lectura de Work Items) y caducidad corta; rótalo periódicamente.
+- El cliente (`src/services/tfs.ts`) aplica una allowlist de sólo lectura: `GET` a endpoints verificados y `POST` únicamente para consultas WIQL.
+- La caché (`src/services/tfsResultCache.ts`) reduce la carga sobre el TFS; los botones de refresco fuerzan datos frescos y guardar los ajustes invalida la caché.
 
 ---
 
@@ -220,9 +243,11 @@ values ('<uuid del usuario>', 'admin');
 
 ## 7. Configuración de Azure DevOps / TFS
 
-- Entra como admin en `/settings/azure-devops`.
-- Rellena Server URL, Collection, Project, Team y PAT (se cifra con `ADO_PAT_ENC_KEY`).
-- Si el TFS está detrás de CORS restrictivo, consulta la guía integrada (`TfsCorsGuideDialog`) o usa el proxy `tfs-proxy` de la sección 4.3.
+- Entra como admin en `/settings/azure-devops` (la ruta está restringida a admin mediante `AdminRoute`).
+- Rellena Server URL, Collection, Project, Team y PAT (se cifra con `ADO_PAT_ENC_KEY`). Usa un PAT de sólo lectura de Work Items.
+- Configura los IDs de query: tareas, bugs (últimos 10 días, incluye estados `Resolved` y `Closed`) y épicas.
+- Si el TFS está detrás de CORS restrictivo, consulta la guía integrada (`TfsCorsGuideDialog`). El acceso es directo desde el navegador, así que el equipo necesita conectividad al TFS (VPN corporativa).
+- Guardar los ajustes invalida la caché de resultados TFS de la SPA.
 
 ---
 
@@ -272,7 +297,10 @@ Actualizaciones:
 - [ ] TLS válido en el reverse proxy.
 - [ ] Primer usuario admin creado en `user_roles`.
 - [ ] Backup automatizado y probado con un restore de prueba.
-- [ ] Conectividad SPA ↔ Supabase ↔ TFS verificada end‑to‑end.
+- [ ] Conectividad SPA ↔ Supabase ↔ TFS verificada end‑to‑end (con y sin sesión).
+- [ ] `ado-public-connection` responde a los scopes `links` y `data`, y rechaza otros valores.
+- [ ] Vistas Tasks, Bugs, Épicas y Waiting cargan datos y la caché de 15 min funciona.
+- [ ] `/settings` sólo accesible para el usuario admin.
 
 ---
 
@@ -402,7 +430,7 @@ docker compose logs -f <servicio>      # auth | rest | realtime | functions | ko
 | Preflight OK pero la petición real falla con CORS | `Access-Control-Allow-Headers` no incluye alguna cabecera enviada (`authorization`, `content-type`, `apikey`, `x-client-info`). | Amplía `Access-Control-Allow-Headers` en la función para cubrir todas las cabeceras del cliente. |
 | CORS falla sólo tras poner un reverse proxy con dominio nuevo | El proxy elimina cabeceras o el dominio no está en la lista. | Configura el proxy para preservar cabeceras `Authorization`/`apikey` y usa `Access-Control-Allow-Origin: *` sólo si no envías cookies. |
 
-### 12.4 Edge Functions (`tfs-pat-vault`)
+### 12.4 Edge Functions (`tfs-pat-vault`, `ado-public-connection`)
 
 | Síntoma | Causa | Solución |
 |---------|-------|----------|
@@ -487,7 +515,7 @@ Studio  → http://localhost:3001
 | DB | `db-shell` | `db:shell` | `psql` interactivo |
 | DB | `db-backup` | `db:backup` | Vuelca a `backups/backup_<fecha>.sql` |
 | DB | `db-restore F=…` | — | Restaura un backup concreto |
-| Functions | `functions-logs` | — | Logs de la Edge Function `tfs-pat-vault` |
+| Functions | `functions-logs` | — | Logs del Edge Runtime (`tfs-pat-vault`, `ado-public-connection`) |
 
 ### 13.4 Seed de datos
 
