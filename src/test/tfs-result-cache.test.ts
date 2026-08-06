@@ -49,3 +49,31 @@ describe("TFS result cache", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("stale-while-revalidate", () => {
+  beforeEach(() => {
+    clearTfsResultCache();
+  });
+
+  it("serves the stale value and refreshes in the background near expiry", async () => {
+    const key = buildTfsCacheKey("features", ["conn"]);
+    let calls = 0;
+    const fetcher = vi.fn(async () => ({ items: [++calls] }));
+
+    // TTL 200 ms with a 1 s revalidate window: the entry is already "near expiry".
+    writeTfsCache(key, { items: [0] }, 200);
+    const result = await withTfsCache(key, fetcher, { ttlMs: 200, revalidateThresholdMs: 1000 });
+    expect(result).toEqual({ items: [0] });
+
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
+    expect(readTfsCache(key)).toEqual({ items: [1] });
+  });
+
+  it("does not refresh while the entry is comfortably fresh", async () => {
+    const key = buildTfsCacheKey("bugs", ["fresh"]);
+    const fetcher = vi.fn(async () => ({ items: [1] }));
+    writeTfsCache(key, { items: [0] }, 60_000);
+    await withTfsCache(key, fetcher, { ttlMs: 60_000, revalidateThresholdMs: 1000 });
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+});

@@ -127,36 +127,65 @@ export interface WithTfsCacheOptions<T> {
   ttlMs?: number;
   /** Decide whether a result is worth caching (errors should return false). */
   isCacheable?: (value: T) => boolean;
+  /**
+   * Remaining lifetime under which the cached value is still served, but a
+   * background refresh is triggered (stale-while-revalidate). Defaults to
+   * `TFS_REVALIDATE_THRESHOLD_MS`. Set to 0 to disable.
+   */
+  revalidateThresholdMs?: number;
 }
+
+/** Below this remaining TTL a cached value is refreshed in the background. */
+export const TFS_REVALIDATE_THRESHOLD_MS = 3 * 60 * 1000; // 3 minutes
 
 /**
  * Run `fetcher` through the TTL cache, coalescing concurrent calls that share
- * the same key.
+ * the same key. When the cached entry is close to expiring, the stale value is
+ * returned immediately and a background refresh keeps the cache warm, so the
+ * next navigation never waits on TFS.
  */
 export const withTfsCache = async <T>(
   key: string,
   fetcher: () => Promise<T>,
   options: WithTfsCacheOptions<T> = {},
 ): Promise<T> => {
-  const { forceRefresh = false, ttlMs = TFS_CACHE_TTL_MS, isCacheable } = options;
+  const {
+    forceRefresh = false,
+    ttlMs = TFS_CACHE_TTL_MS,
+    isCacheable,
+    revalidateThresholdMs = TFS_REVALIDATE_THRESHOLD_MS,
+  } = options;
+
+  const runFetch = (): Promise<T> => {
+    const promise = (async () => {
+      const result = await fetcher();
+      if (!isCacheable || isCacheable(result)) writeTfsCache(key, result, ttlMs);
+      return result;
+    })();
+
+    inFlight.set(key, promise as Promise<unknown>);
+    void promise.catch(() => undefined).finally(() => {
+      if (inFlight.get(key) === (promise as Promise<unknown>)) inFlight.delete(key);
+    });
+    return promise;
+  };
 
   if (!forceRefresh) {
     const cached = readTfsCache<T>(key);
-    if (cached !== null) return cached;
+    if (cached !== null) {
+      const remaining = tfsCacheTimeToLive(key);
+      const shouldRevalidate =
+        revalidateThresholdMs > 0 && remaining > 0 && remaining <= revalidateThresholdMs;
+      if (shouldRevalidate && !inFlight.has(key)) {
+        // Fire and forget: failures leave the current entry in place.
+        void runFetch().catch(() => undefined);
+      }
+      return cached;
+    }
     const pending = inFlight.get(key) as Promise<T> | undefined;
     if (pending) return pending;
   }
 
-  const promise = (async () => {
-    const result = await fetcher();
-    if (!isCacheable || isCacheable(result)) writeTfsCache(key, result, ttlMs);
-    return result;
-  })();
-
-  inFlight.set(key, promise as Promise<unknown>);
-  try {
-    return await promise;
-  } finally {
-    if (inFlight.get(key) === (promise as Promise<unknown>)) inFlight.delete(key);
-  }
+  return runFetch();
 };
+
