@@ -430,7 +430,7 @@ docker compose logs -f <servicio>      # auth | rest | realtime | functions | ko
 | Preflight OK pero la petición real falla con CORS | `Access-Control-Allow-Headers` no incluye alguna cabecera enviada (`authorization`, `content-type`, `apikey`, `x-client-info`). | Amplía `Access-Control-Allow-Headers` en la función para cubrir todas las cabeceras del cliente. |
 | CORS falla sólo tras poner un reverse proxy con dominio nuevo | El proxy elimina cabeceras o el dominio no está en la lista. | Configura el proxy para preservar cabeceras `Authorization`/`apikey` y usa `Access-Control-Allow-Origin: *` sólo si no envías cookies. |
 
-### 12.4 Edge Functions (`tfs-pat-vault`)
+### 12.4 Edge Functions (`tfs-pat-vault`, `ado-public-connection`)
 
 | Síntoma | Causa | Solución |
 |---------|-------|----------|
