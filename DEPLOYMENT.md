@@ -40,7 +40,7 @@ Componentes a proveer localmente:
 | Storage (si se usa) | Supabase Storage | `storage-api` self‑hosted | MinIO, S3 compatible |
 | Hosting SPA | CDN Lovable | nginx / Caddy / IIS con SPA fallback | Apache, Traefik |
 
-Se recomienda **Supabase self‑hosted** porque conserva 1:1 el esquema, RLS, migraciones (`supabase/migrations/*.sql`) y la Edge Function ya escrita (`supabase/functions/tfs-pat-vault`) sin reescribir código de cliente.
+Se recomienda **Supabase self‑hosted** porque conserva 1:1 el esquema, RLS, migraciones (`supabase/migrations/*.sql`) y las Edge Functions ya escritas (`supabase/functions/tfs-pat-vault`, `supabase/functions/ado-public-connection` y el helper compartido `supabase/functions/_shared/requireUser.ts`) sin reescribir código de cliente.
 
 ---
 
