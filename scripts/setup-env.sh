@@ -131,12 +131,14 @@ set_env_value docker/.env REALTIME_SECRET_KEY_BASE "$REALTIME_SECRET_KEY_BASE"
 set_env_value docker/.env ANON_KEY "$ANON_KEY"
 set_env_value docker/.env SERVICE_ROLE_KEY "$SERVICE_ROLE_KEY"
 
-# URLs por defecto para desarrollo local.
-force_env_value docker/.env SITE_URL "http://localhost:8080"
-force_env_value docker/.env PUBLIC_SUPABASE_URL "http://localhost:8000"
+# URLs por defecto para desarrollo local (solo si aún son placeholders).
+set_env_value docker/.env SITE_URL "http://localhost:8080"
+set_env_value docker/.env PUBLIC_SUPABASE_URL "http://localhost:8000"
 
-# Sincroniza la clave pública del frontend con el ANON_KEY generado.
-force_env_value .env VITE_SUPABASE_PUBLISHABLE_KEY "$ANON_KEY"
+# Sincroniza la clave pública del frontend con el ANON_KEY de docker/.env
+# (generado arriba o ya existente), solo si el valor actual es placeholder.
+CURRENT_ANON_KEY="$(grep "^ANON_KEY=" docker/.env | cut -d= -f2-)"
+set_env_value .env VITE_SUPABASE_PUBLISHABLE_KEY "$CURRENT_ANON_KEY"
 
 # ---------------------------------------------------------------------------
 # Resumen
