@@ -363,6 +363,25 @@ teamflow.intranet.local {
 }
 ```
 
+### 5.5 Checklist rápido de verificación tras el setup
+
+Tras ejecutar `make setup` + `make bootstrap` (o `npm run local:up`), confirma estos puntos antes de dar el entorno por bueno.
+
+| # | Verificación | Comando / acción | Resultado esperado |
+|---|---|---|---|
+| 1 | **Containers arriba** | `make ps` o `npm run local:status` | Todos los servicios en `running`/`healthy`; ninguno en `Restarting`. |
+| 2 | **Conexión a Postgres** | `docker compose --env-file docker/.env -f docker/docker-compose.yml exec -T db psql -U postgres -d postgres -c "select version();"` | Devuelve la versión de PostgreSQL sin errores de autenticación. |
+| 3 | **Migraciones aplicadas** | `docker compose --env-file docker/.env -f docker/docker-compose.yml exec -T db psql -U postgres -d postgres -c "\dt public.*"` | Existen `absences`, `azure_devops_settings`, `epic_version_assignments`, `epic_versions`, `handovers`, `members`, `task_handover_notes`, `teams`, `user_roles`, `work_topics`. |
+| 4 | **RLS activo** | `docker compose --env-file docker/.env -f docker/docker-compose.yml exec -T db psql -U postgres -d postgres -c "select tablename, rowsecurity from pg_tables where schemaname='public' order by 1;"` | Todas las tablas públicas tienen `rowsecurity = t`. |
+| 5 | **Políticas presentes** | `docker compose --env-file docker/.env -f docker/docker-compose.yml exec -T db psql -U postgres -d postgres -c "select tablename, count(*) from pg_policies where schemaname='public' group by 1 order by 1;"` | Cada tabla pública tiene al menos una política. |
+| 6 | **Roles de Auth** | `docker compose --env-file docker/.env -f docker/docker-compose.yml exec -T db psql -U postgres -d postgres -c "select rolname from pg_roles where rolname in ('anon','authenticated','service_role');"` | Existen `anon`, `authenticated` y `service_role`. |
+| 7 | **JWT coherente** | Intenta registrarte en `http://localhost:8080` | El registro/inicio de sesión funciona sin `JWSError` ni `signature verification failed`. |
+| 8 | **SPA carga** | Abre `http://localhost:8080` | La app renderiza sin errores de `VITE_SUPABASE_URL` en consola. |
+| 9 | **Edge Functions responden** | `curl -s -X POST http://localhost:8000/functions/v1/ado-public-connection -H "Content-Type: application/json" -d '{"scope":"links"}' \| head -c 200` | Responde JSON (puede estar vacío, pero no `404`/`401`). |
+| 10 | **Datos de TFS visibles** | Configura el PAT en `/settings/azure-devops` y abre `/tasks`, `/bugs`, `/epics`, `/waiting` | Las vistas cargan items sin errores de red. |
+
+Si algún paso falla, consulta la **sección 12 (Troubleshooting)** buscando el síntoma correspondiente.
+
 ---
 
 ## 6. Datos iniciales y roles
