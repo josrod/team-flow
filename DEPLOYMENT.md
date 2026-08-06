@@ -1185,3 +1185,121 @@ inmediatamente desde la UI.
 - [ ] Sesión de navegador renovada (logout / limpiar `localStorage`).
 - [ ] Si cambió `ADO_PAT_ENC_KEY`: PAT reintroducido y vistas de TFS verificadas.
 - [ ] Archivos `.env.bak` / `docker/.env.bak` eliminados al confirmar que todo funciona.
+
+---
+
+## 17. Resetear la base de datos local y recuperar estado
+
+Guía para el entorno local con Docker Compose (proyecto `rosen-team-flow`,
+volumen de datos `rosen-team-flow_db-data`).
+
+### 17.1 Antes de resetear: guarda lo que puedas
+
+```bash
+make db-backup          # → backups/backup_<fecha>.sql
+```
+
+Un backup tarda segundos y es la única vía de recuperar datos tras un
+`down -v`. Hazlo siempre, incluso si crees que la base está corrupta: un dump
+parcial suele ser mejor que nada.
+
+### 17.2 Reset completo (borra todos los datos)
+
+```bash
+make db-reset
+```
+
+Ese target hace, en orden: `docker compose down -v` (elimina el volumen
+`db-data`), levanta solo el servicio `db`, espera a que acepte conexiones,
+aplica **todas** las migraciones de `supabase/migrations` en orden alfabético y
+carga `supabase/seed.sql`.
+
+Después vuelve a levantar el resto del stack:
+
+```bash
+make dev-up
+make ps                 # todos los servicios en estado "running"
+```
+
+Reset manual equivalente, si necesitas control paso a paso:
+
+```bash
+COMPOSE="docker compose --env-file docker/.env -f docker/docker-compose.yml"
+
+$COMPOSE down -v                        # borra contenedores + volúmenes
+docker volume ls | grep rosen-team-flow # comprueba que db-data ya no existe
+$COMPOSE up -d db                       # solo la base de datos
+$COMPOSE exec db pg_isready -U postgres # esperar "accepting connections"
+make db-migrate
+make db-seed
+$COMPOSE up -d                          # resto de servicios
+```
+
+> Un `make dev-down` **no** borra datos (conserva volúmenes). Solo `down -v` o
+> `docker volume rm rosen-team-flow_db-data` destruyen la base.
+
+### 17.3 Aplicar migraciones sin resetear
+
+Cuando solo hay migraciones nuevas y los datos son válidos:
+
+```bash
+make db-migrate
+```
+
+Las migraciones de este repo son idempotentes en su mayoría
+(`create table if not exists`, `drop policy if exists` antes de `create
+policy`), por lo que reaplicarlas todas es seguro. Si una falla por un objeto
+ya existente, aplica solo la nueva:
+
+```bash
+docker compose --env-file docker/.env -f docker/docker-compose.yml \
+  exec -T db psql -U postgres -d postgres \
+  < supabase/migrations/20260802163154_f6456ef6-c13d-4ba3-924b-87aeffb3dbe1.sql
+```
+
+Verificación post‑migración:
+
+```bash
+# Tablas presentes
+make db-shell -c "\dt public.*"
+
+# RLS activo en todas las tablas públicas (todas deben dar rowsecurity = t)
+docker compose --env-file docker/.env -f docker/docker-compose.yml \
+  exec -T db psql -U postgres -d postgres -c \
+  "select tablename, rowsecurity from pg_tables where schemaname='public' order by 1;"
+
+# Políticas por tabla
+docker compose --env-file docker/.env -f docker/docker-compose.yml \
+  exec -T db psql -U postgres -d postgres -c \
+  "select tablename, count(*) from pg_policies where schemaname='public' group by 1 order by 1;"
+```
+
+### 17.4 Recuperar estado inconsistente
+
+| Síntoma | Causa habitual | Recuperación |
+|---|---|---|
+| `relation "public.x" does not exist` en la app | Migración nueva sin aplicar | `make db-migrate` |
+| `permission denied for table x` | Falta el `GRANT` de esa tabla | Reaplica la migración de esa tabla; comprueba con `\dp public.x` |
+| Todo devuelve `401 invalid JWT` | `ANON_KEY` desfasado respecto a `JWT_SECRET` | Sección 16.2 (rotación del trío JWT) |
+| `db` reinicia en bucle | Volumen corrupto o versión de imagen cambiada | `make db-backup` (si arranca) → `make db-reset` |
+| Migración a medias (error a mitad de archivo) | SQL sin transacción | Restaura el backup previo y reaplica: `make db-restore F=backups/<archivo>.sql` |
+| Datos duplicados tras varios seeds | `db-seed` ejecutado más de una vez | `make db-reset` (reset limpio) |
+| Vistas de TFS vacías tras el reset | Se perdió el PAT cifrado en `azure_devops_settings` | Reintroduce el PAT en **Settings → Azure DevOps** |
+| No hay usuario admin tras el reset | Tabla `user_roles` vacía | Regístrate de nuevo y asigna el rol (sección 6) |
+
+Restaurar sobre una base ya inicializada:
+
+```bash
+make db-reset                                       # base limpia + esquema
+make db-restore F=backups/backup_20260806_120000.sql # datos del backup
+make dev-restart                                    # refrescar caché de PostgREST
+```
+
+### 17.5 Checklist después de un reset
+
+- [ ] `make ps`: todos los servicios `running`.
+- [ ] Migraciones aplicadas y `rowsecurity = t` en todas las tablas públicas.
+- [ ] Usuario admin creado y con rol en `user_roles`.
+- [ ] PAT de Azure DevOps reintroducido desde **Settings**.
+- [ ] Vistas **Tasks**, **Bugs**, **Epics**, **Absences** y **Workload** cargan sin errores.
+- [ ] Caché de TFS del navegador limpiada (`sessionStorage`) si ves datos antiguos.
