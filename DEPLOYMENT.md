@@ -846,3 +846,204 @@ bun run build
 ```
 
 Si estos cinco comandos pasan en tu máquina, el pipeline pasará también.
+
+---
+
+## 15. Despliegue en staging y producción
+
+Esta sección describe el flujo recomendado para publicar la aplicación en dos entornos controlados: **staging** (validación previa) y **producción** (uso real del equipo). La guía asume que el backend ya está desplegado siguiendo las secciones 3 y 11, y que el pipeline de CI (sección 14) está activo.
+
+> ⚠️ Principio fundamental: **los cambios de base de datos se aplican antes que el frontend**. Si publicas una SPA que depende de una tabla o columna que aún no existe en el backend, los usuarios verán errores de lectura/escritura.
+
+### 15.1 Entornos y roles
+
+| Entorno | Propósito | Rama | Aprobación manual |
+|---------|-----------|------|-------------------|
+| `staging` | Validar migraciones, integración TFS y traducciones antes de tocar producción | `main` o `release/*` | Opcional |
+| `production` | Versión estable usada por el equipo | `main` (solo commits taggeados) | Recomendada (`environment: production` en CI) |
+
+Para cada entorno necesitas:
+
+- Un backend con su propia base de datos y secretos (idealmente instancias separadas; si usas el mismo stack, por lo menos un `docker/.env` distinto).
+- Un archivo `.env` de build del frontend con las variables `VITE_*` apuntando al backend de ese entorno.
+- Acceso a TFS/Azure DevOps desde la red del backend (Edge Functions) y desde la red de los usuarios (navegador, que llama directamente a TFS).
+
+### 15.2 Configurar variables de entorno por entorno
+
+Crea dos archivos fuera de control de versiones, uno por entorno. Ambos derivan de `.env.example` (sección 5.2):
+
+```bash
+.env.staging
+.env.production
+```
+
+#### Frontend: variables obligatorias
+
+```bash
+# .env.staging / .env.production
+VITE_SUPABASE_URL=https://teamflow-api-staging.intranet.rosen.local
+VITE_SUPABASE_PUBLISHABLE_KEY=eyJ...
+VITE_SUPABASE_PROJECT_ID=rosen-team-flow-staging
+```
+
+> **Diferencia clave con desarrollo local**: `VITE_SUPABASE_URL` apunta a la URL pública del API gateway del entorno (Kong, Supabase o proxy inverso), **no** a `localhost:8000`.
+
+#### Backend (self-hosted): variables de `docker/.env`
+
+```bash
+# docker/.env.staging / docker/.env.production
+POSTGRES_PASSWORD=<mínimo 24 chars, único por entorno>
+JWT_SECRET=<mínimo 32 chars, único por entorno>
+ANON_KEY=<JWT firmado con este JWT_SECRET>
+SERVICE_ROLE_KEY=<JWT firmado con este JWT_SECRET>
+REALTIME_SECRET_KEY_BASE=<64 chars aleatorios>
+SITE_URL=https://teamflow-staging.intranet.rosen.local
+PUBLIC_SUPABASE_URL=https://teamflow-api-staging.intranet.rosen.local
+ADO_PAT_ENC_KEY=<64 hex chars, único por entorno; respáldalo en un vault>
+GOTRUE_DISABLE_SIGNUP=false   # ciérralo después de dar de alta al equipo
+GOTRUE_MAILER_AUTOCONFIRM=true
+```
+
+> 🔐 **Nunca reutilices `JWT_SECRET`, `ADO_PAT_ENC_KEY` o claves de base de datos entre staging y producción**. Si se filtra un entorno, el otro debe seguir aislado.
+
+### 15.3 Flujo de despliegue staging
+
+1. **Preparar la versión**
+
+   ```bash
+   git checkout main
+   git pull origin main
+   git tag -a v1.4.0-rc.1 -m "Staging candidate v1.4.0-rc.1"
+   git push origin v1.4.0-rc.1
+   ```
+
+2. **Aplicar migraciones de base de datos**
+
+   ```bash
+   export DB_URL=postgres://postgres:<pwd>@db-staging:5432/postgres
+   make db-migrate DB_URL=$DB_URL
+   # o con Supabase CLI:
+   # supabase db push --db-url "$DB_URL"
+   ```
+
+3. **Verificar el backend**
+
+   ```bash
+   curl -sf https://teamflow-api-staging.intranet.rosen.local/rest/v1/
+   curl -sf https://teamflow-api-staging.intranet.rosen.local/functions/v1/ado-public-connection/links
+   ```
+
+   El segundo endpoint debe devolver `200` incluso sin autenticar (es el endpoint público de lectura de configuración compartida).
+
+4. **Compilar el frontend**
+
+   ```bash
+   bun install --frozen-lockfile
+   cp .env.staging .env
+   bun run build
+   ```
+
+   Vite inyecta los valores de `.env` en el bundle. Verifica que el `dist` no contenga URLs de `localhost`:
+
+   ```bash
+   rg -F "localhost" dist/ || echo "OK: no hay referencias locales"
+   ```
+
+5. **Publicar en el servidor de staging**
+
+   ```bash
+   rsync -az --delete dist/ deploy@teamflow-staging.intranet.rosen.local:/var/www/teamflow/
+   # o despliegue en S3/bucket interno:
+   # aws s3 sync dist/ s3://teamflow-staging-static/ --delete
+   ```
+
+6. **Ejecutar la checklist de verificación (sección 15.5)**.
+
+### 15.4 Flujo de despliegue producción
+
+Repite los pasos de staging con `production` y añade:
+
+1. **Bloqueo de registro**: si el equipo ya está dado de alta, establece `GOTRUE_DISABLE_SIGNUP=true` en `docker/.env.production` y reinicia el servicio `auth`.
+
+2. **Promoción de admin (solo primera vez)**
+
+   Regístrate en la aplicación desde el navegador, obtén tu UUID de usuario y promuévete a admin:
+
+   ```sql
+   psql "$DB_URL_PROD" -c "INSERT INTO public.user_roles (user_id, role) VALUES ('<tu-uuid>', 'admin');"
+   ```
+
+3. **Configurar la conexión TFS desde `/settings`** con la cuenta de servicio de solo lectura de Azure DevOps.
+
+4. **Habilitar backups automáticos** de la base de datos:
+
+   ```bash
+   make db-backup DB_URL="$DB_URL_PROD"  # manual; automatiza con cron/systemd
+   ```
+
+5. **Publicar con el artefacto del CI** en lugar de compilar localmente:
+
+   ```bash
+   # Descarga el artefacto `dist` del workflow de CI y sincronízalo:
+   rsync -az --delete dist/ deploy@teamflow.intranet.rosen.local:/var/www/teamflow/
+   ```
+
+### 15.5 Checklist de verificación final
+
+Antes de dar por bueno un despliegue, ejecuta estas comprobaciones.
+
+#### Backend / base de datos
+
+- [ ] `VITE_SUPABASE_URL` responde con `200` en `/rest/v1/`.
+- [ ] Todos los servicios de Docker están `healthy` (`docker compose ps`).
+- [ ] Las tablas públicas tienen RLS activado (`rowsecurity = t`).
+- [ ] Existe al menos un usuario admin en `public.user_roles`.
+- [ ] `GOTRUE_DISABLE_SIGNUP` está en `true` en producción tras el alta inicial.
+- [ ] El endpoint `/functions/v1/ado-public-connection/links` devuelve JSON sin error.
+- [ ] El endpoint `/functions/v1/ado-public-connection/data` rechaza solicitudes sin el scope adecuado (intenta llamarlo directamente con `curl`, debe devolver 403 o 400).
+
+#### Frontend
+
+- [ ] La SPA carga en `https://teamflow[-staging].intranet.rosen.local` sin errores 404.
+- [ ] No hay referencias a `localhost` en el bundle de producción.
+- [ ] El login funciona con el usuario admin.
+- [ ] Las páginas de solo lectura (`/tasks`, `/bugs`, `/epics`, `/waiting`) muestran datos TFS para usuarios no autenticados o autenticados no admin.
+- [ ] `/settings` solo es accesible para el usuario admin.
+- [ ] Las acciones de escritura (crear ausencia, guardar PAT, asignar versión a épica) están ocultas o deshabilitadas para no admins.
+- [ ] La aplicación muestra el idioma seleccionado (es/en) sin etiquetas sin traducir.
+
+#### TFS / Azure DevOps
+
+- [ ] La página de Tasks muestra bugs y tareas con sus estados (Open, Closed, Resolved, In Progress, etc.).
+- [ ] Las columnas **Changed date** y **Closed date** se renderizan con formato `DD/MM/YYYY`.
+- [ ] La caché de TFS (`sessionStorage`) reduce las peticiones: abre la consola del navegador, refresca la página y comprueba que no se repitan llamadas idénticas en menos de 15 min.
+- [ ] El botón de refrescar fuerza una nueva petición y actualiza los datos.
+
+#### Seguridad
+
+- [ ] `SERVICE_ROLE_KEY` y `ADO_PAT_ENC_KEY` no aparecen en el código fuente ni en los logs del contenedor `web`.
+- [ ] Las cabeceras de seguridad (`Content-Security-Policy`, `X-Frame-Options`, etc.) están presentes en la respuesta de nginx.
+- [ ] `bun audit --audit-level=high` no reporta vulnerabilidades críticas sin resolver.
+
+### 15.6 Rollback
+
+Si el despliegue falla:
+
+1. **Frontend**: vuelve al último `dist` estable con el backup de tu sistema de despliegue (rsync, S3 versionado, etc.).
+2. **Backend / datos**: restaura el último backup de base de datos:
+
+   ```bash
+   make db-restore F=backups/backup_20260806_120000.sql DB_URL="$DB_URL"
+   ```
+
+3. **Edge Functions**: si el fallo es en una función, basta con reiniciar el servicio `functions` tras corregir el código:
+
+   ```bash
+   make dev-restart-svc S=functions
+   ```
+
+4. **Variables de entorno**: si el problema es un valor erróneo en `.env`, corrígelo, reconstruye el contenedor `web` y reinicia:
+
+   ```bash
+   docker compose --env-file docker/.env -f docker/docker-compose.yml up -d --build web
+   ```
