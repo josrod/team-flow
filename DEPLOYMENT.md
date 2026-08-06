@@ -297,7 +297,10 @@ Actualizaciones:
 - [ ] TLS válido en el reverse proxy.
 - [ ] Primer usuario admin creado en `user_roles`.
 - [ ] Backup automatizado y probado con un restore de prueba.
-- [ ] Conectividad SPA ↔ Supabase ↔ TFS verificada end‑to‑end.
+- [ ] Conectividad SPA ↔ Supabase ↔ TFS verificada end‑to‑end (con y sin sesión).
+- [ ] `ado-public-connection` responde a los scopes `links` y `data`, y rechaza otros valores.
+- [ ] Vistas Tasks, Bugs, Épicas y Waiting cargan datos y la caché de 15 min funciona.
+- [ ] `/settings` sólo accesible para el usuario admin.
 
 ---
 
