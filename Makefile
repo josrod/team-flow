@@ -32,9 +32,8 @@ help: ## Muestra esta ayuda
 setup: env keys install ## Setup completo: .env + claves + dependencias
 	@echo "✔ Setup listo. Siguiente: 'make bootstrap' para levantar todo."
 
-env: ## Crea .env y docker/.env desde las plantillas si no existen
-	@[ -f .env ] || cp .env.example .env && echo "· .env creado (revísalo)"
-	@[ -f docker/.env ] || cp docker/.env.example docker/.env && echo "· docker/.env creado (revísalo)"
+env: ## Crea/actualiza .env y docker/.env con valores mínimos para local
+	@bash scripts/setup-env.sh
 
 keys: ## Genera secretos aleatorios (JWT_SECRET, ADO_PAT_ENC_KEY, ...)
 	@echo "POSTGRES_PASSWORD=$$(openssl rand -hex 24)"
