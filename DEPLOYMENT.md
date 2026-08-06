@@ -642,7 +642,73 @@ Errores comunes mientras se ejecuta `make setup`, `make env` o el primer `make d
 
 Si tras seguir la tabla el problema persiste, comparte el bloque de `docker compose logs` del servicio afectado y la petición/respuesta (URL, método, status y payload) para diagnosticar más a fondo.
 
+### 12.9 Fallos del checklist de verificación (containers, migraciones, RLS y roles JWT)
+
+Ordenado igual que el checklist de la sección 5.5: si un punto falla, busca aquí la causa típica y aplica los pasos de corrección.
+
+#### 12.9.1 Containers
+
+| Síntoma | Causa típica | Pasos de corrección |
+|---------|--------------|---------------------|
+| `make ps` muestra un servicio en `Exited (1)` | Variable de entorno obligatoria vacía o mal formada en `docker/.env`. | 1) `make dev-logs-svc S=<servicio>` y lee las últimas 30 líneas. 2) Corrige la variable señalada. 3) `make dev-restart-svc S=<servicio>`. |
+| Un servicio queda en `Restarting` en bucle | Dependencia no lista (normalmente `db`) o crash al arrancar. | 1) Comprueba `db` primero: `docker compose -f docker/docker-compose.yml --env-file docker/.env exec -T db pg_isready -U postgres`. 2) Cuando `db` responda, `make dev-restart-svc S=<servicio>`. |
+| `db` sano pero `rest`/`auth` no responden por Kong | Kong arrancó antes que los upstreams y cacheó DNS. | `make dev-restart-svc S=kong` y repite el checklist. |
+| Cambié `docker/.env` y no se aplica | Compose no relee el entorno con un simple restart. | `make dev-down && make dev-up` (recrea los contenedores). Para el frontend además se rehace el build: las `VITE_*` se inyectan en tiempo de compilación. |
+| `no space left on device` | Volúmenes e imágenes antiguas acumuladas. | `docker system prune` y, si los datos son descartables, `docker volume prune`. |
+
+#### 12.9.2 Migraciones
+
+| Síntoma | Causa típica | Pasos de corrección |
+|---------|--------------|---------------------|
+| Una tabla del checklist no existe | La migración que la crea no se aplicó o falló a mitad. | 1) `make db-shell` → `\dt public.*`. 2) Reaplica en orden: `for f in supabase/migrations/*.sql; do docker compose -f docker/docker-compose.yml --env-file docker/.env exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < "$f"; done`. 3) Revisa el primer error que aparezca; los siguientes suelen ser consecuencia. |
+| `relation "…" already exists` | Migración reejecutada sin `IF NOT EXISTS`. | Es inofensivo si el objeto ya está correcto. Para un estado limpio y reproducible usa `make db-reset` (sección 17). |
+| `permission denied for schema public` | Se ejecuta como rol no privilegiado. | Ejecuta siempre con `-U postgres` dentro del contenedor `db`. |
+| El orden de las migraciones se rompe | Nombres sin prefijo de timestamp. | Renombra el archivo con el patrón `<timestamp>_<descripcion>.sql`; el shell las expande alfabéticamente y el timestamp garantiza el orden. |
+| Migraciones OK pero la SPA sigue con el esquema viejo | Tipos generados desactualizados o PostgREST con el esquema en caché. | 1) `make dev-restart-svc S=rest` (recarga el schema cache). 2) Recarga la SPA con caché limpia. |
+
+#### 12.9.3 RLS y políticas
+
+| Síntoma | Causa típica | Pasos de corrección |
+|---------|--------------|---------------------|
+| `rowsecurity = f` en alguna tabla de `public` | Falta el `ALTER TABLE … ENABLE ROW LEVEL SECURITY` de la migración. | `ALTER TABLE public.<tabla> ENABLE ROW LEVEL SECURITY;` y añade el statement a la migración correspondiente para que sea reproducible. |
+| La tabla devuelve `[]` con un usuario válido | RLS activo pero sin política de lectura que aplique a ese rol. | 1) Lista las políticas: `SELECT tablename, policyname, roles, cmd FROM pg_policies WHERE schemaname='public';`. 2) Comprueba que exista una política `SELECT` para `authenticated`. |
+| `new row violates row-level security policy` al escribir | La columna de propiedad no se rellena con el usuario autenticado, o falta `WITH CHECK`. | Asegura que el insert envía el `user_id` del usuario en sesión y que la política `INSERT` tiene un `WITH CHECK` coherente con el `USING` del `SELECT`. |
+| `infinite recursion detected in policy` | La política consulta la misma tabla a la que se aplica. | Extrae la comprobación a una función `SECURITY DEFINER` (p. ej. `public.has_role`) y úsala en la política. |
+| Un visitante sin login ve datos que no debería | Existe una política permisiva para `anon` o un `GRANT SELECT … TO anon`. | 1) Revisa `pg_policies` filtrando por `roles`. 2) Elimina la política de `anon` y ejecuta `REVOKE SELECT ON public.<tabla> FROM anon;`. |
+
+#### 12.9.4 Permisos de roles JWT
+
+| Síntoma | Causa típica | Pasos de corrección |
+|---------|--------------|---------------------|
+| `permission denied for table <tabla>` (aunque RLS permita) | Faltan los `GRANT` del Data API sobre la tabla. | `GRANT SELECT, INSERT, UPDATE, DELETE ON public.<tabla> TO authenticated;` y `GRANT ALL ON public.<tabla> TO service_role;`. Añade `GRANT SELECT … TO anon` solo si la tabla debe ser pública. |
+| `JWSError` / `invalid signature` en cualquier llamada | `ANON_KEY` firmado con un `JWT_SECRET` distinto al de PostgREST/GoTrue. | Regenera el trío con `make env` y recrea los contenedores (`make dev-down && make dev-up`). Ver sección 16. |
+| `role "anon" does not exist` | La DB no tiene los roles base de Supabase. | Usa la imagen `supabase/postgres` (los incluye) o aplica el bootstrap de roles antes de las migraciones del proyecto. |
+| El JWT no lleva el rol esperado (`role` ausente o `anon` estando logueado) | El cliente envía `apikey` pero no `Authorization: Bearer <access_token>`. | Usa siempre el cliente de `@/integrations/supabase/client`; no construyas fetches manuales contra la Data API. |
+| Un usuario logueado no ve acciones de admin | No tiene fila en `public.user_roles` con `role = 'admin'`. | `INSERT INTO public.user_roles (user_id, role) VALUES ('<uuid>', 'admin') ON CONFLICT DO NOTHING;` (obtén el uuid con `SELECT id, email FROM auth.users;`). |
+| Una Edge Function escribe pero recibe error de RLS | Se usa `ANON_KEY` en lugar de `SUPABASE_SERVICE_ROLE_KEY`, o se hizo sign-in en el cliente de servicio. | Crea un cliente separado con `SUPABASE_SERVICE_ROLE_KEY` para las escrituras privilegiadas y no ejecutes login sobre él. |
+
+Comandos rápidos de diagnóstico:
+
+```bash
+# RLS activo por tabla
+make db-shell -c "\
+  SELECT relname, relrowsecurity FROM pg_class c \
+  JOIN pg_namespace n ON n.oid=c.relnamespace \
+  WHERE n.nspname='public' AND c.relkind='r' ORDER BY relname;"
+
+# Políticas existentes
+make db-shell -c "SELECT tablename, policyname, roles, cmd FROM pg_policies WHERE schemaname='public' ORDER BY tablename;"
+
+# Grants por rol
+make db-shell -c "\
+  SELECT table_name, grantee, string_agg(privilege_type, ',') AS privs \
+  FROM information_schema.role_table_grants \
+  WHERE table_schema='public' AND grantee IN ('anon','authenticated','service_role') \
+  GROUP BY 1,2 ORDER BY 1,2;"
+```
+
 ---
+
 
 ## 13. Automatización con Make / npm
 
