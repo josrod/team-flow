@@ -243,9 +243,11 @@ values ('<uuid del usuario>', 'admin');
 
 ## 7. Configuración de Azure DevOps / TFS
 
-- Entra como admin en `/settings/azure-devops`.
-- Rellena Server URL, Collection, Project, Team y PAT (se cifra con `ADO_PAT_ENC_KEY`).
-- Si el TFS está detrás de CORS restrictivo, consulta la guía integrada (`TfsCorsGuideDialog`) o usa el proxy `tfs-proxy` de la sección 4.3.
+- Entra como admin en `/settings/azure-devops` (la ruta está restringida a admin mediante `AdminRoute`).
+- Rellena Server URL, Collection, Project, Team y PAT (se cifra con `ADO_PAT_ENC_KEY`). Usa un PAT de sólo lectura de Work Items.
+- Configura los IDs de query: tareas, bugs (últimos 10 días, incluye estados `Resolved` y `Closed`) y épicas.
+- Si el TFS está detrás de CORS restrictivo, consulta la guía integrada (`TfsCorsGuideDialog`). El acceso es directo desde el navegador, así que el equipo necesita conectividad al TFS (VPN corporativa).
+- Guardar los ajustes invalida la caché de resultados TFS de la SPA.
 
 ---
 
