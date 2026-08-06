@@ -264,7 +264,25 @@ Endurecimiento recomendado:
 
 ### 5.1 Variables de entorno
 
-Crea `.env.production` con los valores locales:
+Crea `.env.production` con los valores locales, o ejecuta el script de setup automatizado
+para generar `.env` (SPA) y `docker/.env` (stack self-hosted) con los secretos mínimos
+necesarios:
+
+```bash
+bash scripts/setup-env.sh
+# o
+npm run setup:env
+# o
+make env
+```
+
+Este script copia `.env.example` → `.env` y `docker/.env.example` → `docker/.env`, y
+genera automáticamente: `JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY`,
+`REALTIME_SECRET_KEY_BASE`, `POSTGRES_PASSWORD` y `ADO_PAT_ENC_KEY`. Si los archivos ya
+existen, sólo reemplaza los valores que siguen siendo placeholders (`CAMBIAR_*`),
+conservando las personalizaciones del usuario.
+
+Para un build manual, crea `.env.production` con:
 
 ```env
 VITE_SUPABASE_URL="https://supabase.intranet.local"

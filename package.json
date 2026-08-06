@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "setup": "make setup",
+    "setup:env": "bash scripts/setup-env.sh",
     "keys": "make keys",
     "stack:up": "make up",
     "stack:down": "make down",
