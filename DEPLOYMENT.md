@@ -647,6 +647,12 @@ Studio  → http://localhost:3001
 | Stack | `up` / `down` / `restart` / `ps` | `stack:up` / `stack:down` | Control del `docker-compose` |
 | Stack | `logs S=<svc>` | `stack:logs` | Sigue logs de un servicio (`auth`, `functions`…) |
 | Stack | `bootstrap` | `stack:bootstrap` | One‑shot: up + migraciones + seed |
+| Dev Docker | `dev-up` | `dev:up` | Levanta el entorno de desarrollo en background (`docker compose up -d --build`) |
+| Dev Docker | `dev-down` | `dev:down` | Detiene el entorno de desarrollo |
+| Dev Docker | `dev-restart` | `dev:restart` | Reinicia todos los servicios del entorno |
+| Dev Docker | `dev-restart-svc S=<svc>` | `dev:restart:svc` | Reinicia un servicio específico (ej. `auth`, `functions`) |
+| Dev Docker | `dev-logs` | `dev:logs` | Sigue logs de **todos** los servicios |
+| Dev Docker | `dev-logs-svc S=<svc>` | `dev:logs:svc` | Sigue logs de un servicio específico |
 | DB | `db-migrate` | `db:migrate` | Aplica `supabase/migrations/*.sql` en orden |
 | DB | `db-seed` | `db:seed` | Carga `supabase/seed.sql` (2 equipos + 3 miembros + 1 ausencia) |
 | DB | `db-reset` | `db:reset` | ⚠ Borra el volumen y rehace todo |
