@@ -59,8 +59,14 @@ export const computeWip = (items: readonly WipItem[]): WipBreakdown => {
     const norm = normalizeState(it.state);
     if (norm !== "active" && norm !== "pending") continue;
     const bug = isBugType(it.type);
-    if (norm === "active") bug ? activeBugs++ : activeTasks++;
-    else bug ? pendingBugs++ : pendingTasks++;
+    if (norm === "active") {
+      if (bug) activeBugs++;
+      else activeTasks++;
+    } else if (bug) {
+      pendingBugs++;
+    } else {
+      pendingTasks++;
+    }
   }
   return {
     activeTasks,
