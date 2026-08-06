@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -39,7 +40,7 @@ vi.mock("@/context/AuthContext", () => ({
     isAdmin: true,
     signOut: vi.fn(),
   }),
-  AuthProvider: ({ children }: any) => <>{children}</>
+  AuthProvider: ({ children }: { children: ReactNode }) => <>{children}</>
 }));
 
 describe("Language Switching", () => {

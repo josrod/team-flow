@@ -195,7 +195,6 @@ export const EpicDetailDrawer = ({
               ) : detail?.description ? (
                 <div
                   className="prose prose-sm dark:prose-invert max-w-none text-sm [&_a]:text-primary"
-                  // eslint-disable-next-line react/no-danger
                   dangerouslySetInnerHTML={{ __html: sanitizeRichText(detail.description) }}
                 />
               ) : (

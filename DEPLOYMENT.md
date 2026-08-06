@@ -622,3 +622,68 @@ VALUES ('<uuid_del_usuario_recien_registrado>', 'admin');
 ```
 
 Amplía el seed con datos propios (más equipos, handovers, work topics) manteniendo la estructura `ON CONFLICT` para que siga siendo replicable.
+
+---
+
+## 14. Integración continua (CI) antes de desplegar
+
+El pipeline vive en `.github/workflows/ci.yml` y se ejecuta en cada push y pull
+request contra `main`, además de manualmente (`workflow_dispatch`).
+
+### 14.1 Jobs
+
+| Job | Comando | Bloquea el deploy |
+|-----|---------|-------------------|
+| `lint` | `bun run lint` (ESLint) | Sí |
+| `typecheck` | `bunx tsc --noEmit -p tsconfig.app.json` | Sí |
+| `test` | `bunx vitest run` (29 suites) | Sí |
+| `build` | `bun run build` + sube el artefacto `dist` | Sí |
+| `audit` | `bun audit --audit-level=high` | No (informativo) |
+| `deploy` | Descarga `dist`, verifica y publica | — |
+
+`lint`, `typecheck`, `test` y `build` corren en paralelo. El job `deploy`
+declara `needs: [lint, typecheck, test, build]`, así que solo arranca si los
+cuatro terminan en verde, y además exige `push` sobre `main` (los pull requests
+nunca despliegan).
+
+### 14.2 Variables y secretos del repositorio
+
+El build de Vite necesita las variables `VITE_*` presentes. El workflow usa
+valores de ejemplo por defecto y los sobrescribe con secrets si existen:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_SUPABASE_PROJECT_ID`
+
+Configúralos en *Settings → Secrets and variables → Actions*. Para el paso de
+publicación añade también las credenciales de tu destino (por ejemplo
+`SSH_PRIVATE_KEY`, `DEPLOY_HOST`). Nunca pongas `SERVICE_ROLE_KEY` ni
+`ADO_PAT_ENC_KEY` en el workflow del frontend: son secretos de backend.
+
+El job `deploy` usa `environment: production`, de modo que puedes exigir
+aprobación manual en *Settings → Environments → production*.
+
+### 14.3 Adaptar el paso de despliegue
+
+El último paso es un placeholder. Sustitúyelo por tu destino real, por ejemplo:
+
+```yaml
+- name: Publish to internal server
+  run: rsync -az --delete dist/ deploy@teamflow.intranet.rosen.local:/var/www/teamflow/
+```
+
+Recuerda que los cambios de base de datos no van en este workflow: aplica las
+migraciones (sección 5) antes de publicar un frontend que dependa de tablas
+nuevas.
+
+### 14.4 Reproducir el CI en local
+
+```bash
+bun install --frozen-lockfile
+bun run lint
+bunx tsc --noEmit -p tsconfig.app.json
+bunx vitest run
+bun run build
+```
+
+Si estos cinco comandos pasan en tu máquina, el pipeline pasará también.
