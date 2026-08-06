@@ -95,7 +95,7 @@ done
 ```
 
 Las migraciones incluyen:
-- Tablas: `teams`, `members`, `absences`, `handovers`, `work_topics`, `azure_devops_settings`, `user_roles`.
+- Tablas: `teams`, `members`, `absences`, `handovers`, `task_handover_notes`, `work_topics`, `azure_devops_settings`, `epic_versions`, `epic_version_assignments`, `user_roles`.
 - Enum `app_role` y función `has_role`.
 - Políticas RLS y `GRANT` para roles `authenticated` / `anon` / `service_role`.
 - Triggers `update_updated_at_column` y validaciones (`validate_bugs_query_id`, `validate_epics_query_id`).
