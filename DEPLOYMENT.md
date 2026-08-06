@@ -672,6 +672,99 @@ VALUES ('<uuid_del_usuario_recien_registrado>', 'admin');
 
 Amplía el seed con datos propios (más equipos, handovers, work topics) manteniendo la estructura `ON CONFLICT` para que siga siendo replicable.
 
+### 13.5 Reiniciar servicios y ver logs del entorno de desarrollo
+
+Durante el desarrollo local es normal tener que reiniciar un servicio o inspeccionar logs. El `Makefile` expone comandos específicos para ambas tareas sin tener que recordar la ruta del `docker-compose.yml` ni el `--env-file`.
+
+#### Levantar el entorno de desarrollo
+
+El primer arranque —o tras cambiar imágenes/Dockerfile— debe incluir build:
+
+```bash
+make dev-up       # docker compose up -d --build
+# o
+npm run dev:up
+```
+
+Esto levanta **todos** los servicios del `docker/docker-compose.yml` en background. Si solo quieres ver el estado:
+
+```bash
+make ps           # o: docker compose -f docker/docker-compose.yml --env-file docker/.env ps
+```
+
+#### Reiniciar servicios
+
+- **Todos los servicios** (útil tras cambiar variables en `docker/.env` o imágenes base):
+
+  ```bash
+  make dev-restart
+  # o
+  npm run dev:restart
+  ```
+
+- **Un solo servicio** (más rápido y selectivo). Ejemplos comunes:
+
+  ```bash
+  make dev-restart-svc S=auth       # GoTrue / autenticación
+  make dev-restart-svc S=functions  # Edge Runtime
+  make dev-restart-svc S=rest       # PostgREST
+  make dev-restart-svc S=db         # Postgres (⚠ corta conexiones activas)
+  make dev-restart-svc S=kong       # API gateway
+  ```
+
+  Alias con npm:
+
+  ```bash
+  npm run dev:restart:svc -- auth
+  ```
+
+> Nota: si modificas `docker/.env`, un `restart` no es suficiente para algunos servicios que leen la variable en tiempo de arranque. En ese caso usa `make dev-down && make dev-up` o `make dev-restart-svc S=<svc>` para el contenedor afectado.
+
+#### Ver logs
+
+- **Todos los servicios a la vez** (útil en el primer arranque o para detectar qué contenedor falla):
+
+  ```bash
+  make dev-logs
+  # o
+  npm run dev:logs
+  ```
+
+- **Un solo servicio** (recomendado una vez identificado el área):
+
+  ```bash
+  make dev-logs-svc S=auth
+  make dev-logs-svc S=functions
+  make dev-logs-svc S=rest
+  make dev-logs-svc S=db
+  make dev-logs-svc S=web
+  ```
+
+  Alias con npm:
+
+  ```bash
+  npm run dev:logs:svc -- functions
+  ```
+
+Para salir de los logs, pulsa `Ctrl+C`. El flag `-f` (follow) sigue la salida en tiempo real; si prefieres ver las últimas líneas sin seguir, usa `docker compose -f docker/docker-compose.yml --env-file docker/.env logs --tail=100 <servicio>`.
+
+#### Flujo típico de debugging
+
+```bash
+# 1. Comprobar que todo está corriendo
+make ps
+
+# 2. Si algo no responde, ver logs de todos
+make dev-logs
+
+# 3. Identificar el servicio problemático (p. ej. auth) y reiniciarlo
+make dev-restart-svc S=auth
+make dev-logs-svc S=auth
+
+# 4. Si cambió una variable de entorno, bajar y volver a subir
+make dev-down && make dev-up
+```
+
 ---
 
 ## 14. Integración continua (CI) antes de desplegar
