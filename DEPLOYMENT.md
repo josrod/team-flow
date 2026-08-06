@@ -1047,3 +1047,141 @@ Si el despliegue falla:
    ```bash
    docker compose --env-file docker/.env -f docker/docker-compose.yml up -d --build web
    ```
+
+---
+
+## 16. Rotación y regeneración de secretos
+
+Esta sección explica cómo rotar `JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY` y
+`ADO_PAT_ENC_KEY` sin romper el entorno de desarrollo, y qué archivos hay que
+actualizar en cada caso (`.env` en la raíz y `docker/.env`).
+
+### 16.1 Mapa de secretos y dónde vive cada uno
+
+| Secreto | Archivo(s) | Consumidores | Rotación independiente |
+|---|---|---|---|
+| `JWT_SECRET` | `docker/.env` | `auth`, `rest`, `realtime`, `storage`, `functions` (Kong/GoTrue firman y validan JWT) | No: obliga a regenerar `ANON_KEY` y `SERVICE_ROLE_KEY` |
+| `ANON_KEY` | `docker/.env` + `.env` (`VITE_SUPABASE_PUBLISHABLE_KEY`) | Gateway y frontend (cliente público) | No: debe estar firmado con el `JWT_SECRET` vigente |
+| `SERVICE_ROLE_KEY` | `docker/.env` | Edge Functions y scripts administrativos | No: firmado con el `JWT_SECRET` vigente |
+| `ADO_PAT_ENC_KEY` | `docker/.env` (secret de las Edge Functions) | `tfs-pat-vault`, `ado-public-connection` | Sí, pero invalida los PAT ya cifrados |
+
+Regla de oro: **`JWT_SECRET`, `ANON_KEY` y `SERVICE_ROLE_KEY` forman un trío
+atómico**. Si cambias el primero, los otros dos deben regenerarse en la misma
+operación; de lo contrario todas las peticiones responderán `401 invalid JWT`.
+
+### 16.2 Rotar el trío JWT (`JWT_SECRET` + `ANON_KEY` + `SERVICE_ROLE_KEY`)
+
+El script `scripts/setup-env.sh` ya genera los tres valores de forma coherente
+(firma los JWT con el `JWT_SECRET` nuevo y sincroniza el `ANON_KEY` con el
+frontend). Para rotarlos basta con borrar los valores actuales y volver a
+ejecutarlo:
+
+```bash
+# 1. Copia de seguridad de los archivos de entorno
+cp .env .env.bak && cp docker/.env docker/.env.bak
+
+# 2. Marcar los tres valores para regeneración
+sed -i \
+  -e 's/^JWT_SECRET=.*/JWT_SECRET=CAMBIAR_JWT_SECRET/' \
+  -e 's/^ANON_KEY=.*/ANON_KEY=CAMBIAR_ANON_KEY/' \
+  -e 's/^SERVICE_ROLE_KEY=.*/SERVICE_ROLE_KEY=CAMBIAR_SERVICE_ROLE_KEY/' \
+  docker/.env
+
+sed -i 's/^VITE_SUPABASE_PUBLISHABLE_KEY=.*/VITE_SUPABASE_PUBLISHABLE_KEY=CAMBIAR_ANON_KEY/' .env
+
+# 3. Regenerar (solo toca los valores CAMBIAR_*)
+npm run setup:env       # o: make env
+
+# 4. Aplicar en el stack: los servicios leen las variables al arrancar
+make dev-down && make dev-up
+```
+
+Verificación:
+
+```bash
+# El gateway debe aceptar el ANON_KEY nuevo
+curl -s -o /dev/null -w '%{http_code}\n' \
+  -H "apikey: $(grep '^ANON_KEY=' docker/.env | cut -d= -f2)" \
+  http://localhost:8000/rest/v1/teams?select=id
+# 200 → correcto | 401 → el ANON_KEY no coincide con el JWT_SECRET
+```
+
+> Efecto colateral esperado: **todas las sesiones activas se invalidan**. Cierra
+> sesión y vuelve a entrar en el navegador (o limpia `localStorage`) tras la
+> rotación. Los usuarios, contraseñas y datos no se pierden.
+
+### 16.3 Rotar solo `ANON_KEY` o `SERVICE_ROLE_KEY`
+
+Solo tiene sentido si el `JWT_SECRET` sigue siendo válido (por ejemplo, se filtró
+la clave pública en un repositorio). Hay que firmar el nuevo token con el
+`JWT_SECRET` actual:
+
+```bash
+JWT_SECRET=$(grep '^JWT_SECRET=' docker/.env | cut -d= -f2) \
+node -e '
+const crypto = require("crypto");
+const secret = process.env.JWT_SECRET;
+const role = process.argv[1];            // anon | service_role
+const now = Math.floor(Date.now() / 1000);
+const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
+const head = b64({ alg: "HS256", typ: "JWT" });
+const body = b64({ role, iss: "supabase", iat: now, exp: now + 60 * 60 * 24 * 365 * 10 });
+const sig = crypto.createHmac("sha256", secret).update(`${head}.${body}`).digest("base64url");
+console.log(`${head}.${body}.${sig}`);
+' anon
+```
+
+Luego actualiza el valor:
+
+- `ANON_KEY` → en `docker/.env` **y** en `.env` como `VITE_SUPABASE_PUBLISHABLE_KEY`
+  (deben ser idénticos; si no, el frontend recibirá `401`).
+- `SERVICE_ROLE_KEY` → solo en `docker/.env`.
+
+Y reinicia los servicios afectados:
+
+```bash
+make dev-restart-svc S=kong
+make dev-restart-svc S=functions
+```
+
+### 16.4 Rotar `ADO_PAT_ENC_KEY`
+
+Esta clave cifra los PAT de Azure DevOps con AES‑256‑GCM. **Rotarla hace
+ilegibles los PAT ya guardados**, así que el procedimiento incluye volver a
+introducir el token desde la UI.
+
+```bash
+# 1. Generar una clave nueva de 32 bytes (64 hex)
+NEW_KEY=$(openssl rand -hex 32)
+
+# 2. Actualizar docker/.env
+sed -i "s/^ADO_PAT_ENC_KEY=.*/ADO_PAT_ENC_KEY=${NEW_KEY}/" docker/.env
+
+# 3. Reiniciar las Edge Functions para que tomen el secret nuevo
+make dev-restart-svc S=functions
+```
+
+Después, en la aplicación:
+
+1. Entra con la cuenta admin en **Settings → Azure DevOps**.
+2. Vuelve a pegar el PAT y guarda: se cifrará con la clave nueva.
+3. Comprueba que las vistas **Tasks**, **Bugs** y **Epics** cargan datos.
+
+Si prefieres evitar el corte de servicio, descifra y vuelve a cifrar antes de
+rotar: guarda el PAT en un gestor de contraseñas, rota la clave y regrábalo
+inmediatamente desde la UI.
+
+> En Lovable Cloud, `ADO_PAT_ENC_KEY` no está en ningún archivo: se gestiona como
+> secret del proyecto. La rotación consiste en actualizar el secret y repetir los
+> pasos 1‑3 de la lista anterior.
+
+### 16.5 Checklist de rotación
+
+- [ ] Backup de `.env` y `docker/.env` hecho antes de tocar nada.
+- [ ] Si cambió `JWT_SECRET`: `ANON_KEY` y `SERVICE_ROLE_KEY` regenerados en la misma pasada.
+- [ ] `ANON_KEY` idéntico en `docker/.env` y en `VITE_SUPABASE_PUBLISHABLE_KEY` de `.env`.
+- [ ] Stack reiniciado (`make dev-down && make dev-up`) o servicios concretos con `make dev-restart-svc`.
+- [ ] Frontend reconstruido si cambió cualquier variable `VITE_*`.
+- [ ] Sesión de navegador renovada (logout / limpiar `localStorage`).
+- [ ] Si cambió `ADO_PAT_ENC_KEY`: PAT reintroducido y vistas de TFS verificadas.
+- [ ] Archivos `.env.bak` / `docker/.env.bak` eliminados al confirmar que todo funciona.
