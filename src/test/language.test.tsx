@@ -39,7 +39,7 @@ vi.mock("@/context/AuthContext", () => ({
     isAdmin: true,
     signOut: vi.fn(),
   }),
-  AuthProvider: ({ children }: any) => <>{children}</>
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
 
 describe("Language Switching", () => {

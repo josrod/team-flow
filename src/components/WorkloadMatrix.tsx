@@ -258,7 +258,7 @@ export function WorkloadMatrix({ tasks, showAllTasks = false, onShowAllTasksChan
             
             <div className="flex items-center space-x-2 mr-2">
               <Label className="text-xs text-muted-foreground uppercase tracking-wide hidden sm:block">{t.sortBy}</Label>
-              <Select value={sortOrder} onValueChange={(val: any) => setSortOrder(val)}>
+              <Select value={sortOrder} onValueChange={(val) => setSortOrder(val as "default" | "tasks-desc" | "tasks-asc")}>
                 <SelectTrigger className="w-[140px] h-9 text-sm">
                   <SelectValue placeholder={t.sortBy} />
                 </SelectTrigger>

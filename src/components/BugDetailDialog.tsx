@@ -163,7 +163,6 @@ export const BugDetailDialog = ({ bug, open, onOpenChange, connection }: BugDeta
                 <div
                   className="prose prose-sm dark:prose-invert max-w-none text-sm [&_a]:text-primary"
                   // Sanitized via DOMPurify to neutralise stored XSS from ADO.
-                  // eslint-disable-next-line react/no-danger
                   dangerouslySetInnerHTML={{ __html: sanitizeRichText(detail.description) }}
                 />
               ) : (
@@ -177,7 +176,6 @@ export const BugDetailDialog = ({ bug, open, onOpenChange, connection }: BugDeta
                 <div
                   className="prose prose-sm dark:prose-invert max-w-none text-sm [&_a]:text-primary"
                   // Sanitized via DOMPurify to neutralise stored XSS from ADO.
-                  // eslint-disable-next-line react/no-danger
                   dangerouslySetInnerHTML={{ __html: sanitizeRichText(detail.reproSteps) }}
                 />
               </div>
