@@ -96,9 +96,9 @@ else
   cp .env.example .env
 fi
 
-# Valores mínimos para desarrollo local SPA.
-force_env_value .env VITE_SUPABASE_URL "http://localhost:8000"
-force_env_value .env VITE_SUPABASE_PROJECT_ID "local"
+# Valores mínimos para desarrollo local SPA (solo si aún son placeholders).
+set_env_value .env VITE_SUPABASE_URL "http://localhost:8000"
+set_env_value .env VITE_SUPABASE_PROJECT_ID "local"
 
 # ---------------------------------------------------------------------------
 # 2. docker/.env (stack self-hosted completo)
