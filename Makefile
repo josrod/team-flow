@@ -16,6 +16,7 @@ SEED_FILE       := supabase/seed.sql
 .DEFAULT_GOAL := help
 .PHONY: help setup env keys install dev build test lint \
         up down restart ps logs \
+        dev-up dev-down dev-restart dev-restart-svc dev-logs dev-logs-svc \
         db-migrate db-seed db-reset db-shell db-backup db-restore \
         functions-logs bootstrap clean
 
@@ -78,6 +79,29 @@ ps: ## Estado de los contenedores
 	$(COMPOSE) ps
 
 logs: ## Sigue logs (uso: make logs S=auth)
+	$(COMPOSE) logs -f $(S)
+
+## ---------------------------------------------------------------------------
+## Entorno de desarrollo con Docker Compose
+## ---------------------------------------------------------------------------
+dev-up: ## Levanta el entorno de desarrollo en background (con build si cambia)
+	$(COMPOSE) up -d --build
+
+dev-down: ## Detiene el entorno de desarrollo (conserva volúmenes)
+	$(COMPOSE) down
+
+dev-restart: ## Reinicia todos los servicios del entorno de desarrollo
+	$(COMPOSE) restart
+
+dev-restart-svc: ## Reinicia un servicio específico (uso: make dev-restart-svc S=auth)
+	@[ -n "$(S)" ] || (echo "Uso: make dev-restart-svc S=<servicio>"; exit 1)
+	$(COMPOSE) restart $(S)
+
+dev-logs: ## Sigue logs de todos los servicios del entorno de desarrollo
+	$(COMPOSE) logs -f
+
+dev-logs-svc: ## Sigue logs de un servicio específico (uso: make dev-logs-svc S=auth)
+	@[ -n "$(S)" ] || (echo "Uso: make dev-logs-svc S=<servicio>"; exit 1)
 	$(COMPOSE) logs -f $(S)
 
 ## ---------------------------------------------------------------------------
