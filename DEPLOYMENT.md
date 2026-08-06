@@ -18,12 +18,19 @@ La aplicación es un SPA React + Vite que hoy usa Lovable Cloud (Supabase gestio
                                                │
                      ┌─────────────────────────┼─────────────────────────┐
                      ▼                         ▼                         ▼
-             ┌───────────────┐        ┌────────────────┐        ┌────────────────┐
-             │  PostgreSQL   │        │  GoTrue (auth) │        │  Deno / Node   │
-             │  + PostgREST  │        │                │        │  Edge Function │
-             └───────────────┘        └────────────────┘        │  (tfs-pat-vault│
-                                                                │   + TFS proxy) │
-                                                                └────────────────┘
+             ┌───────────────┐        ┌────────────────┐        ┌──────────────────────┐
+             │  PostgreSQL   │        │  GoTrue (auth) │        │  Deno Edge Runtime   │
+             │  + PostgREST  │        │                │        │  - tfs-pat-vault     │
+             └───────────────┘        └────────────────┘        │  - ado-public-       │
+                                                                │    connection        │
+                                                                └──────────────────────┘
+
+El navegador consulta el TFS/Azure DevOps **directamente** (no hay proxy): la Edge
+Function `ado-public-connection` entrega la configuración compartida del admin y,
+sólo con scope `data`, el PAT descifrado. La SPA cachea los resultados en
+`sessionStorage` (15 min de TTL, refresco en segundo plano a partir de los 12 min)
+mediante `src/services/tfsResultCache.ts`.
+
 ```
 
 Componentes a proveer localmente:
