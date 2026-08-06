@@ -80,25 +80,120 @@ Verifica en `http://<host>:8000` (Studio) que Postgres, Auth (GoTrue), PostgREST
 
 ### 3.2 Aplicar migraciones del proyecto
 
-Todas las migraciones necesarias están versionadas en `supabase/migrations/`. Aplícalas en orden:
+Todas las migraciones están versionadas en `supabase/migrations/` con el patrón
+`<AAAAMMDDHHMMSS>_<uuid>.sql`. **El orden alfabético es el orden cronológico**, así que
+basta con aplicarlas de la primera a la última; cada una es idempotente respecto a las
+anteriores pero **no** se debe reordenar ni editar una migración ya aplicada.
 
 ```bash
 # Opción A: Supabase CLI (recomendada)
 npm i -g supabase
-supabase link --project-ref <local-project-ref>   # o usar db push directo
 supabase db push --db-url postgres://postgres:<pwd>@<host>:5432/postgres
 
-# Opción B: psql directo
-for f in supabase/migrations/*.sql; do
-  psql "postgres://postgres:<pwd>@<host>:5432/postgres" -f "$f"
+# Opción B: psql directo, en orden
+for f in $(ls supabase/migrations/*.sql | sort); do
+  echo "→ $f"
+  psql "postgres://postgres:<pwd>@<host>:5432/postgres" -v ON_ERROR_STOP=1 -f "$f" || break
 done
+
+# Opción C: stack Docker de este repo (aplica todas + seed)
+make db-migrate        # o: npm run local:up
 ```
 
-Las migraciones incluyen:
-- Tablas: `teams`, `members`, `absences`, `handovers`, `task_handover_notes`, `work_topics`, `azure_devops_settings`, `epic_versions`, `epic_version_assignments`, `user_roles`.
-- Enum `app_role` y función `has_role`.
-- Políticas RLS y `GRANT` para roles `authenticated` / `anon` / `service_role`.
-- Triggers `update_updated_at_column` y validaciones (`validate_bugs_query_id`, `validate_epics_query_id`).
+#### Qué crean las migraciones
+
+| Objeto | Contenido |
+| --- | --- |
+| `teams`, `members` | Equipos y personas (ids de texto, `login_name` para el match con Azure DevOps) |
+| `absences`, `handovers` | Ausencias y traspasos (`topic_ids` como array de texto) |
+| `work_topics` | Temas de trabajo por miembro |
+| `task_handover_notes` | Notas y checklist por tarea (`kind`, `done`, `author_id`) |
+| `azure_devops_settings` | Conexión TFS por admin: PAT cifrado (`pat_encrypted`, `pat_iv`), queries de bugs y épicas, área/iteración |
+| `epic_versions` | Catálogo de versiones de entrega (`name`, `color_key`, `sort_order`) |
+| `epic_version_assignments` | Relación épica de Azure DevOps ↔ versión (única por épica) |
+| `user_roles` + enum `app_role` | Roles de usuario, con la función `has_role(uuid, app_role)` `SECURITY DEFINER` |
+
+Cada tabla incluye en la misma migración: `GRANT` a `authenticated` / `service_role`,
+`ENABLE ROW LEVEL SECURITY`, políticas (lectura para usuarios autenticados, escritura solo
+para admin vía `has_role`) y trigger `update_updated_at_column`. Las validaciones de
+`bugs_query_id` / `epics_query_id` se aplican con los triggers
+`validate_bugs_query_id` y `validate_epics_query_id`.
+
+#### Verificar que la migración fue correcta
+
+```bash
+psql "$DB_URL" -c "\dt public.*"
+psql "$DB_URL" -c "select tablename, rowsecurity from pg_tables where schemaname='public';"
+# Todas deben tener rowsecurity = t
+psql "$DB_URL" -c "select tablename, count(*) from pg_policies where schemaname='public' group by 1;"
+psql "$DB_URL" -c "select proname from pg_proc where pronamespace='public'::regnamespace;"
+```
+
+Si una consulta desde la SPA devuelve `permission denied for table X`, falta el `GRANT`:
+
+```sql
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.<tabla> TO authenticated;
+GRANT ALL ON public.<tabla> TO service_role;
+```
+
+#### Añadir una tabla nueva
+
+Crea un fichero nuevo (no edites los existentes) con el mismo patrón de nombre y este orden
+obligatorio de sentencias:
+
+```sql
+-- supabase/migrations/20260807090000_add_release_notes.sql
+CREATE TABLE public.release_notes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  version_id uuid NOT NULL REFERENCES public.epic_versions(id) ON DELETE CASCADE,
+  body text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.release_notes TO authenticated;
+GRANT ALL ON public.release_notes TO service_role;
+
+ALTER TABLE public.release_notes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can read release notes"
+  ON public.release_notes FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Admins can write release notes"
+  ON public.release_notes FOR ALL TO authenticated
+  USING (has_role(auth.uid(), 'admin'::app_role))
+  WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
+
+CREATE TRIGGER release_notes_updated_at
+  BEFORE UPDATE ON public.release_notes
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+```
+
+Después regenera los tipos del cliente:
+
+```bash
+supabase gen types typescript --db-url "$DB_URL" > src/integrations/supabase/types.ts
+```
+
+#### Scripts de base de datos disponibles
+
+```bash
+make db-migrate               # aplica supabase/migrations/*.sql en orden
+make db-seed                  # carga supabase/seed.sql (equipos, miembros y ausencia de ejemplo)
+make db-reset                 # ⚠ borra el volumen, migra y siembra de nuevo
+make db-shell                 # psql interactivo
+make db-backup                # backups/backup_<fecha>.sql
+make db-restore F=backups/x.sql
+./scripts/local-up.sh --reset # reset + up + migraciones + seed
+./scripts/local-up.sh --no-seed
+```
+
+`supabase/seed.sql` es idempotente (`ON CONFLICT DO NOTHING`) y **no** crea usuarios: tras
+registrarte, promuévete a admin con
+`INSERT INTO public.user_roles (user_id, role) VALUES ('<tu-uuid>', 'admin');`.
+
+Rollback: no hay migraciones inversas. Para volver atrás, restaura el último backup
+(`make db-restore`) o ejecuta `make db-reset` si los datos son descartables.
+
 
 ### 3.3 Configurar Auth
 
