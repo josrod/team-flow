@@ -16,6 +16,7 @@ SEED_FILE       := supabase/seed.sql
 .DEFAULT_GOAL := help
 .PHONY: help setup env keys install dev build test lint \
         up down restart ps logs \
+        dev-up dev-down dev-restart dev-restart-svc dev-logs dev-logs-svc \
         db-migrate db-seed db-reset db-shell db-backup db-restore \
         functions-logs bootstrap clean
 
