@@ -111,7 +111,7 @@ Alternativa sin Supabase Auth: **Keycloak**. Requiere reescribir `src/context/Au
 
 ---
 
-## 4. Edge Function `tfs-pat-vault` y proxy TFS
+## 4. Edge Functions (`tfs-pat-vault`, `ado-public-connection`)
 
 La función `supabase/functions/tfs-pat-vault/index.ts` cifra/descifra PATs de Azure DevOps con AES‑GCM y valida el JWT del llamador.
 
