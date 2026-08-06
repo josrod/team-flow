@@ -139,9 +139,29 @@ deno run --allow-net --allow-env \
 
 O portar el archivo a **Node.js + Express** (sustituir `Deno.env` por `process.env`, `Deno.serve` por `app.listen`, e importar `@supabase/supabase-js` desde npm). Publica el servicio detrás del reverse proxy en `/functions/v1/tfs-pat-vault`.
 
-### 4.3 Proxy TFS (opcional pero recomendado)
+### 4.3 Conexión compartida `ado-public-connection`
 
-Si el navegador no puede alcanzar el TFS directamente (fuera de oficina, CORS, red segmentada), añade una Edge Function proxy `tfs-proxy` que reenvíe llamadas server‑side. El repo ya expone helpers en `src/services/tfs.ts` preparados para esta ruta.
+El proxy TFS se retiró: no funcionaba de forma fiable contra un TFS on‑premise segmentado. En su lugar, la función `supabase/functions/ado-public-connection/index.ts` publica la configuración de Azure DevOps del admin para que **cualquier visitante** (con o sin sesión) vea los mismos datos, consultando el TFS desde el navegador:
+
+- Scope `links` → devuelve sólo la metadata necesaria para construir enlaces "abrir en Azure DevOps". **No** entrega el PAT.
+- Scope `data` → devuelve además el PAT descifrado con `ADO_PAT_ENC_KEY` para ejecutar consultas de lectura.
+- Cualquier otro valor de `scope` se rechaza con `400 Unsupported scope`.
+
+Despliegue y requisitos:
+
+```bash
+supabase functions deploy ado-public-connection \
+  --project-ref <local-project-ref> \
+  --no-verify-jwt
+```
+
+Requiere `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` y `ADO_PAT_ENC_KEY` en el entorno de la función. En el stack Docker esto ya viene resuelto (`VERIFY_JWT: "false"` + router `supabase/functions/main/index.ts`).
+
+Endurecimiento recomendado:
+
+- Usa un PAT con **permisos mínimos** (sólo lectura de Work Items) y caducidad corta; rótalo periódicamente.
+- El cliente (`src/services/tfs.ts`) aplica una allowlist de sólo lectura: `GET` a endpoints verificados y `POST` únicamente para consultas WIQL.
+- La caché (`src/services/tfsResultCache.ts`) reduce la carga sobre el TFS; los botones de refresco fuerzan datos frescos y guardar los ajustes invalida la caché.
 
 ---
 
