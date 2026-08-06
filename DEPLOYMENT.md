@@ -604,6 +604,23 @@ docker compose logs -f <servicio>      # auth | rest | realtime | functions | ko
 | Migraciones fallan con `permission denied for schema public` | Ejecutas como usuario no privilegiado. | Corre las migraciones como `postgres`: `docker compose exec -T db psql -U postgres -d postgres < <archivo>`. |
 | Datos perdidos tras `docker compose down` | Añadiste `-v` y borraste el volumen. | Restaura con `pg_dump` previo. Automatiza backups (sección 11.5). |
 
+### 12.8 Setup inicial y variables de entorno
+
+Errores comunes mientras se ejecuta `make setup`, `make env` o el primer `make dev-up`.
+
+| Síntoma | Causa habitual | Solución |
+|---------|----------------|----------|
+| `make env` no genera `ANON_KEY` / `SERVICE_ROLE_KEY` | Falta `node` o `openssl` en PATH, o `JWT_SECRET` no se generó. | Instala Node.js 20+ y openssl. Revisa que `scripts/setup-env.sh` no devuelva errores rojos. |
+| `JWTSecretInvalid` / `invalid token` / `JWSError` en el navegador o en `rest` | `ANON_KEY` y `SERVICE_ROLE_KEY` no fueron firmados con el mismo `JWT_SECRET` que usa GoTrue/PostgREST. | Ejecuta `make env` de nuevo para regenerar el trío (`JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY`) o verifica que `docker/.env` tenga el mismo `JWT_SECRET` en `auth`, `rest`, `realtime` y en los JWT. |
+| `Cannot read properties of undefined (reading 'auth')` al abrir la SPA | `VITE_SUPABASE_URL` o `VITE_SUPABASE_PUBLISHABLE_KEY` no están en el bundle. | Asegúrate de que `docker/.env` tenga `VITE_SUPABASE_PUBLISHABLE_KEY` igual al `ANON_KEY` local, y reconstruye el contenedor `web`: `make dev-down && make dev-up` o `make dev-restart-svc S=web`. |
+| `Failed to connect to postgres` / `connection refused` al arrancar | Postgres aún no está listo o el puerto `5432` está ocupado por otro servicio. | Espera 10-20 s; si persiste, revisa `make ps`. Si hay otro Postgres local, cámbialo o cambia el mapeo de puertos en `docker/docker-compose.yml`. |
+| `bind: address already in use` para `8000`, `8080` o `3001` | Otro proceso ocupa el puerto. | Identifica el proceso con `lsof -i :8000` (o `netstat -ano` en Windows) y deténlo, o cambia los puertos en `docker/.env` (`KONG_HTTP_PORT`, `STUDIO_PORT`, y el mapeo del servicio `web`). |
+| `authentication failed for user "postgres"` | `POSTGRES_PASSWORD` en `docker/.env` no coincide con la contraseña ya inicializada en el volumen. | Si los datos son descartables, ejecuta `make dev-down` y borra el volumen: `docker compose -f docker/docker-compose.yml --env-file docker/.env down -v`, luego `make dev-up`. Si no, restablece la contraseña en el contenedor. |
+| `Missing ADO_PAT_ENC_KEY` en los logs de `functions` | `ADO_PAT_ENC_KEY` no está definida o no tiene 64 caracteres hex. | Ejecuta `make env` o genera una con `openssl rand -hex 32`. Luego `make dev-restart-svc S=functions`. |
+| El setup automático sobrescribe mis valores de producción | `scripts/setup-env.sh` solo reemplaza placeholders `CAMBIAR_*`, pero si los valores reales coinciden con el patrón se cambiarían. | Revisa `.env` y `docker/.env` antes de ejecutar el script en producción. En producción, edita las variables a mano en lugar de usar `make env`. |
+| `docker compose` no reconoce el comando | Docker Compose v1 (`docker-compose`) en lugar de v2 (`docker compose`). | Actualiza Docker Desktop o Docker Engine a 24+ con Compose plugin. En Linux alternativamente crea un alias: `alias docker-compose='docker compose'`. |
+| `docker/.env` no existe y `make dev-up` falla | No se ejecutó `make env` previamente. | Corre `make env` primero para copiar `docker/.env.example` → `docker/.env` y generar secretos. |
+
 Si tras seguir la tabla el problema persiste, comparte el bloque de `docker compose logs` del servicio afectado y la petición/respuesta (URL, método, status y payload) para diagnosticar más a fondo.
 
 ---
