@@ -29,7 +29,7 @@ help: ## Muestra esta ayuda
 ## ---------------------------------------------------------------------------
 ## Setup inicial
 ## ---------------------------------------------------------------------------
-setup: env keys install ## Setup completo: .env + claves + dependencias
+setup: env install ## Setup completo: .env + dependencias
 	@echo "✔ Setup listo. Siguiente: 'make bootstrap' para levantar todo."
 
 env: ## Crea/actualiza .env y docker/.env con valores mínimos para local
