@@ -1,5 +1,7 @@
 # Deployment Guide — Local installation
 
+> Language: [Español](./DEPLOYMENT.md) · **English**
+
 This guide describes how to deploy **ROSEN CUSW Team Flow** on a local infrastructure (on-premise or self-hosted), replacing **Lovable Cloud** with equivalent services that you can operate yourself.
 
 The application is a React + Vite SPA that today uses Lovable Cloud (managed Supabase) for authentication, database, Edge Functions and secrets. To run everything locally you need to replicate those four blocks.
