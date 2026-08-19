@@ -57,10 +57,10 @@ export function ImportHistoryPanel({ kind, refreshKey = 0 }: Props) {
       : "—";
 
   const errorLabel = (code: string) => {
-    const [row, key] = code.split("|");
-    const message = (t as unknown as Record<string, string>)[`importRowError_${key}`] ?? key;
-    return t.importHistoryRowError.replace("{row}", row).replace("{reason}", message);
+    const [row] = code.split("|");
+    return t.importRowWarningMissing.replace("{row}", row);
   };
+
 
   return (
     <Card>
