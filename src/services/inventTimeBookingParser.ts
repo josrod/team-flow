@@ -124,8 +124,10 @@ export function parseTimeBookingMatrix(
     persons: persons.size,
     projects: projects.size,
     warnings,
+    rowsProcessed,
     sourceFileName,
   };
+
 }
 
 export async function parseTimeBookingFile(file: File): Promise<TimeBookingParseResult> {
