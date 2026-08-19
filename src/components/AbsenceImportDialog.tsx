@@ -387,7 +387,23 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
 
     // Persist login → member mappings used in this import for future reuse
     rememberLoginMappings(loginAssignments);
+
+    // Audit trail: record who imported what and with which row errors
+    const allDates = inventResult.absences.flatMap((a) => [a.startDate, a.endDate]).sort();
+    void recordImport({
+      kind: "absences",
+      sourceFileName: fileName,
+      rangeFrom: allDates[0] ?? null,
+      rangeTo: allDates[allDates.length - 1] ?? null,
+      rowsProcessed: inventResult.rowsProcessed,
+      importedCount: imported,
+      skippedCount: inventResult.skipped,
+      personsCount: new Set(inventResult.absences.map((a) => a.memberId)).size,
+      rowErrors: inventResult.warnings,
+    });
+
     toast.success(`📥 ${imported} ${t.importSuccess}`);
+
     onImported?.({
       imported,
       skipped: inventResult.skipped,
