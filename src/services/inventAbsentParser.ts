@@ -174,6 +174,7 @@ export function parseInventAbsentMatrix(matrix: unknown[][], members: TeamMember
   const parsed: InventAbsentRow[] = [];
   const warnings: string[] = [];
   let skipped = 0;
+  let rowsProcessed = 0;
 
   for (let i = 1; i < matrix.length; i++) {
     const r = matrix[i];
@@ -187,6 +188,9 @@ export function parseInventAbsentMatrix(matrix: unknown[][], members: TeamMember
 
     // Fully empty row: skip silently.
     if (!workDate && !userLoginName && !activityKind) continue;
+
+    rowsProcessed++;
+
 
     if (!workDate || !userLoginName || !activityKind) {
       warnings.push(`${excelRow}|absenceMissingCore`);
