@@ -1,5 +1,6 @@
 import { read as readXlsx, utils as xlsxUtils } from "xlsx";
-import { format, isValid, parseISO, differenceInCalendarDays } from "date-fns";
+import { parseISO, differenceInCalendarDays } from "date-fns";
+import { asIsoDate, asNumber, asText } from "@/lib/inventValues";
 import type { AbsenceType, TeamMember } from "@/types";
 
 export interface InventAbsentRow {
@@ -16,12 +17,18 @@ export interface ParsedAbsence {
   type: AbsenceType;
   startDate: string;
   endDate: string;
+  /** Total booked hours across the range. */
+  hours: number;
+  /** Distinct INVENT activity kinds behind the range. */
+  activities: string[];
 }
 
 export interface AbsenceRange {
   type: AbsenceType;
   startDate: string;
   endDate: string;
+  hours: number;
+  activities: string[];
 }
 
 export interface UnmatchedRow {
@@ -34,9 +41,12 @@ export interface ParseResult {
   absences: ParsedAbsence[];
   unmatched: UnmatchedRow[];
   skipped: number;
+  /** Per-row warnings encoded as `{excelRow}|{code}` for translation in the UI. */
+  warnings: string[];
 }
 
-const EXCLUDED_KINDS = new Set(["public holiday", "training", "working hours"]);
+/** Activity kinds that are not absences at all. */
+const EXCLUDED_KINDS = ["public holiday", "training", "working hours", "home office"];
 
 const ACTIVITY_TO_TYPE: Record<string, AbsenceType> = {
   vacation: "vacation",
@@ -50,48 +60,21 @@ function mapActivityKind(kind: string): AbsenceType | null {
   return ACTIVITY_TO_TYPE[kind.toLowerCase().trim()] ?? null;
 }
 
-function oaDateToIso(oa: number): string | null {
-  // Excel OADate epoch — 25569 days between 1899-12-30 and 1970-01-01
-  const ms = Math.round((oa - 25569) * 86400 * 1000);
-  const d = new Date(ms);
-  return isValid(d) ? format(d, "yyyy-MM-dd") : null;
-}
-
-function parseCellDate(raw: unknown): string | null {
-  if (raw == null || raw === "") return null;
-  if (typeof raw === "number") return oaDateToIso(raw);
-  if (raw instanceof Date) return isValid(raw) ? format(raw, "yyyy-MM-dd") : null;
-  const s = String(raw).trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
-    const d = parseISO(s);
-    return isValid(d) ? format(d, "yyyy-MM-dd") : null;
-  }
-  const num = Number(s);
-  if (!Number.isNaN(num) && num > 10000) return oaDateToIso(num);
-  // dd/MM/yyyy or dd.MM.yyyy
-  const m = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
-  if (m) {
-    const [, dd, mm, yyyy] = m;
-    const d = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
-    return isValid(d) ? format(d, "yyyy-MM-dd") : null;
-  }
-  return null;
-}
+const isExcludedKind = (kind: string) => {
+  const lower = kind.toLowerCase();
+  return EXCLUDED_KINDS.some((excluded) => lower.includes(excluded));
+};
 
 interface ReducedRow {
   workDate: string;
   duration: number;
   activityKind: string;
+  activities: string[];
 }
 
-function findMember(
-  loginName: string,
-  members: TeamMember[]
-): TeamMember | undefined {
+function findMember(loginName: string, members: TeamMember[]): TeamMember | undefined {
   const lower = loginName.toLowerCase();
-  const byLogin = members.find(
-    (m) => m.loginName && m.loginName.toLowerCase() === lower
-  );
+  const byLogin = members.find((m) => m.loginName && m.loginName.toLowerCase() === lower);
   if (byLogin) return byLogin;
   // Fallback by full name match
   return members.find((m) => m.name.toLowerCase() === lower);
@@ -142,7 +125,7 @@ export async function validateInventAbsentFile(file: File): Promise<InventValida
   }
 
   for (const { col, name } of EXPECTED_HEADERS) {
-    const cell = String(headerRow[col] ?? "").trim().toLowerCase();
+    const cell = asText(headerRow[col]).toLowerCase();
     if (cell !== name.toLowerCase()) {
       const colLetter = String.fromCharCode(65 + col);
       errors.push(
@@ -160,10 +143,8 @@ export async function validateInventAbsentFile(file: File): Promise<InventValida
   });
 
   const sample = dataRows.slice(0, 50);
-  const hasAnyDate = sample.some((r) => Array.isArray(r) && parseCellDate(r[1]) !== null);
-  const hasAnyPerson = sample.some(
-    (r) => Array.isArray(r) && String(r[2] ?? "").trim().length > 0
-  );
+  const hasAnyDate = sample.some((r) => Array.isArray(r) && asIsoDate(r[1]) !== null);
+  const hasAnyPerson = sample.some((r) => Array.isArray(r) && asText(r[2]).length > 0);
 
   if (sample.length === 0) {
     errors.push("El archivo no contiene filas de datos después de los encabezados.");
@@ -181,64 +162,60 @@ export async function validateInventAbsentFile(file: File): Promise<InventValida
   return { ok: errors.length === 0, errors };
 }
 
-export async function parseInventAbsentFile(
-  file: File,
-  members: TeamMember[]
-): Promise<ParseResult> {
-  const buffer = await file.arrayBuffer();
-  const wb = readXlsx(new Uint8Array(buffer), { type: "array", cellDates: false });
-  const sheet = wb.Sheets[wb.SheetNames[0]];
-  // header: 1 returns array-of-arrays. range: 1 skips the header row (row index 0)
-  const rows = xlsxUtils.sheet_to_json<unknown[]>(sheet, {
-    header: 1,
-    range: 1,
-    defval: "",
-    blankrows: false,
-  });
-
+/**
+ * Pure parser over the sheet matrix (row 0 is the header). Columns follow the
+ * INVENT Absences export by position: B work date, C person, D duration,
+ * E activity kind.
+ */
+export function parseInventAbsentMatrix(matrix: unknown[][], members: TeamMember[]): ParseResult {
   const parsed: InventAbsentRow[] = [];
+  const warnings: string[] = [];
   let skipped = 0;
 
-  for (const r of rows) {
+  for (let i = 1; i < matrix.length; i++) {
+    const r = matrix[i];
+    const excelRow = i + 1;
     if (!Array.isArray(r) || r.length === 0) continue;
-    const workDate = parseCellDate(r[1]);
-    const userLoginName = String(r[2] ?? "").trim();
-    const durationRaw = r[3];
-    const duration =
-      typeof durationRaw === "number"
-        ? durationRaw
-        : Number(String(durationRaw ?? "").replace(",", "."));
-    const activityKind = String(r[4] ?? "").trim();
 
-    if (!workDate || !userLoginName || Number.isNaN(duration)) {
+    const workDate = asIsoDate(r[1]);
+    const userLoginName = asText(r[2]);
+    const activityKind = asText(r[4]);
+    const duration = asNumber(r[3]);
+
+    // Fully empty row: skip silently.
+    if (!workDate && !userLoginName && !activityKind) continue;
+
+    if (!workDate || !userLoginName || !activityKind) {
+      warnings.push(`${excelRow}|absenceMissingCore`);
       skipped++;
       continue;
     }
-    const kindLower = activityKind.toLowerCase();
-    if (EXCLUDED_KINDS.has(kindLower) || duration === 0) {
+
+    if (isExcludedKind(activityKind) || duration === 0) {
       skipped++;
       continue;
     }
     parsed.push({ workDate, userLoginName, duration, activityKind });
   }
 
-  // Group by user + day (sum duration, keep first non-excluded activityKind)
+  // Group by user + day (sum duration, accumulate distinct activity kinds)
   const perUserDay = new Map<string, ReducedRow>();
   for (const row of parsed) {
     const key = `${row.userLoginName.toLowerCase()}|${row.workDate}`;
     const existing = perUserDay.get(key);
     if (existing) {
       existing.duration += row.duration;
+      if (!existing.activities.includes(row.activityKind)) existing.activities.push(row.activityKind);
     } else {
       perUserDay.set(key, {
         workDate: row.workDate,
         duration: row.duration,
         activityKind: row.activityKind,
+        activities: [row.activityKind],
       });
     }
   }
 
-  // Group by user → consecutive day ranges of same type
   const perUser = new Map<string, ReducedRow[]>();
   for (const [key, value] of perUserDay) {
     const login = key.split("|")[0];
@@ -255,25 +232,38 @@ export async function parseInventAbsentFile(
     let groupStart = items[0];
     let groupEnd = items[0];
     let groupType = mapActivityKind(items[0].activityKind);
+    let groupHours = items[0].duration;
+    let groupActivities = [...items[0].activities];
 
     const flush = (start: ReducedRow, end: ReducedRow, type: AbsenceType | null) => {
       if (!type) return;
-      ranges.push({ type, startDate: start.workDate, endDate: end.workDate });
+      ranges.push({
+        type,
+        startDate: start.workDate,
+        endDate: end.workDate,
+        hours: Math.round(groupHours * 100) / 100,
+        activities: [...groupActivities],
+      });
     };
 
     for (let i = 1; i < items.length; i++) {
       const current = items[i];
       const currentType = mapActivityKind(current.activityKind);
-      const prevDate = parseISO(groupEnd.workDate);
       const isConsecutive =
-        differenceInCalendarDays(parseISO(current.workDate), prevDate) === 1;
+        differenceInCalendarDays(parseISO(current.workDate), parseISO(groupEnd.workDate)) === 1;
       if (isConsecutive && currentType === groupType) {
         groupEnd = current;
+        groupHours += current.duration;
+        for (const activity of current.activities) {
+          if (!groupActivities.includes(activity)) groupActivities.push(activity);
+        }
       } else {
         flush(groupStart, groupEnd, groupType);
         groupStart = current;
         groupEnd = current;
         groupType = currentType;
+        groupHours = current.duration;
+        groupActivities = [...current.activities];
       }
     }
     flush(groupStart, groupEnd, groupType);
@@ -284,8 +274,7 @@ export async function parseInventAbsentFile(
     items.sort((a, b) => a.workDate.localeCompare(b.workDate));
 
     const originalLogin =
-      parsed.find((p) => p.userLoginName.toLowerCase() === loginLower)
-        ?.userLoginName ?? loginLower;
+      parsed.find((p) => p.userLoginName.toLowerCase() === loginLower)?.userLoginName ?? loginLower;
 
     const ranges = computeRanges(items);
     const member = findMember(originalLogin, members);
@@ -307,12 +296,26 @@ export async function parseInventAbsentFile(
         type: r.type,
         startDate: r.startDate,
         endDate: r.endDate,
+        hours: r.hours,
+        activities: r.activities,
       });
     }
   }
 
-  return { absences, unmatched, skipped };
+  return { absences, unmatched, skipped, warnings };
 }
 
-
-
+export async function parseInventAbsentFile(
+  file: File,
+  members: TeamMember[]
+): Promise<ParseResult> {
+  const buffer = await file.arrayBuffer();
+  const wb = readXlsx(new Uint8Array(buffer), { type: "array", cellDates: false });
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  const matrix = xlsxUtils.sheet_to_json<unknown[]>(sheet, {
+    header: 1,
+    defval: null,
+    blankrows: false,
+  });
+  return parseInventAbsentMatrix(matrix, members);
+}

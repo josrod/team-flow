@@ -16,8 +16,10 @@ export type Database = {
     Tables: {
       absences: {
         Row: {
+          activities: string[]
           created_at: string
           end_date: string
+          hours: number | null
           id: string
           member_id: string
           start_date: string
@@ -25,8 +27,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          activities?: string[]
           created_at?: string
           end_date: string
+          hours?: number | null
           id: string
           member_id: string
           start_date: string
@@ -34,8 +38,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          activities?: string[]
           created_at?: string
           end_date?: string
+          hours?: number | null
           id?: string
           member_id?: string
           start_date?: string
@@ -401,6 +407,107 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      time_booking_imports: {
+        Row: {
+          created_at: string
+          id: string
+          imported_count: number
+          persons_count: number
+          projects_count: number
+          source_file_name: string
+          user_id: string
+          warnings: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          imported_count?: number
+          persons_count?: number
+          projects_count?: number
+          source_file_name: string
+          user_id: string
+          warnings?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          imported_count?: number
+          persons_count?: number
+          projects_count?: number
+          source_file_name?: string
+          user_id?: string
+          warnings?: Json
+        }
+        Relationships: []
+      }
+      time_bookings: {
+        Row: {
+          activity_group: string
+          activity_kind: string
+          activity_type: string
+          booking_no: number
+          created_at: string
+          delivery_no: number | null
+          delivery_position: number | null
+          duration: number
+          id: string
+          member_id: string | null
+          organization: string
+          person: string
+          project_code: string
+          remarks: string | null
+          task_name: string
+          updated_at: string
+          work_date: string | null
+        }
+        Insert: {
+          activity_group?: string
+          activity_kind?: string
+          activity_type?: string
+          booking_no?: number
+          created_at?: string
+          delivery_no?: number | null
+          delivery_position?: number | null
+          duration?: number
+          id?: string
+          member_id?: string | null
+          organization?: string
+          person: string
+          project_code?: string
+          remarks?: string | null
+          task_name?: string
+          updated_at?: string
+          work_date?: string | null
+        }
+        Update: {
+          activity_group?: string
+          activity_kind?: string
+          activity_type?: string
+          booking_no?: number
+          created_at?: string
+          delivery_no?: number | null
+          delivery_position?: number | null
+          duration?: number
+          id?: string
+          member_id?: string | null
+          organization?: string
+          person?: string
+          project_code?: string
+          remarks?: string | null
+          task_name?: string
+          updated_at?: string
+          work_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_bookings_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

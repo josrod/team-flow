@@ -22,7 +22,7 @@ type WorkTopicRow = {
   id: string; member_id: string; name: string; description: string;
   status: WorkTopic["status"]; reassigned_from: string | null;
 };
-type AbsenceRow = { id: string; member_id: string; type: Absence["type"]; start_date: string; end_date: string };
+type AbsenceRow = { id: string; member_id: string; type: Absence["type"]; start_date: string; end_date: string; hours?: number | string | null; activities?: string[] | null };
 type HandoverRow = {
   id: string; from_member_id: string; to_member_id: string; absence_id: string;
   topic_ids: string[]; notes: string; handover_date: string;
@@ -43,7 +43,10 @@ const mapWorkTopic = (r: WorkTopicRow): WorkTopic => ({
 const mapAbsence = (r: AbsenceRow): Absence => ({
   id: r.id, memberId: r.member_id, type: r.type,
   startDate: r.start_date, endDate: r.end_date,
+  hours: r.hours == null ? null : Number(r.hours),
+  activities: r.activities ?? [],
 });
+
 const mapHandover = (r: HandoverRow): Handover => ({
   id: r.id, fromMemberId: r.from_member_id, toMemberId: r.to_member_id,
   absenceId: r.absence_id, topicIds: r.topic_ids ?? [], notes: r.notes,
@@ -62,7 +65,9 @@ const topicToRow = (t: Omit<WorkTopic, "id"> & { id?: string }) => ({
 const absenceToRow = (a: Omit<Absence, "id"> & { id?: string }) => ({
   id: a.id, member_id: a.memberId, type: a.type,
   start_date: a.startDate, end_date: a.endDate,
+  hours: a.hours ?? null, activities: a.activities ?? [],
 });
+
 const handoverToRow = (h: Omit<Handover, "id"> & { id?: string }) => ({
   id: h.id, from_member_id: h.fromMemberId, to_member_id: h.toMemberId,
   absence_id: h.absenceId, topic_ids: h.topicIds, notes: h.notes,
