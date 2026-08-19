@@ -65,7 +65,9 @@ const topicToRow = (t: Omit<WorkTopic, "id"> & { id?: string }) => ({
 const absenceToRow = (a: Omit<Absence, "id"> & { id?: string }) => ({
   id: a.id, member_id: a.memberId, type: a.type,
   start_date: a.startDate, end_date: a.endDate,
+  hours: a.hours ?? null, activities: a.activities ?? [],
 });
+
 const handoverToRow = (h: Omit<Handover, "id"> & { id?: string }) => ({
   id: h.id, from_member_id: h.fromMemberId, to_member_id: h.toMemberId,
   absence_id: h.absenceId, topic_ids: h.topicIds, notes: h.notes,
