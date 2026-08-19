@@ -22,7 +22,7 @@ type WorkTopicRow = {
   id: string; member_id: string; name: string; description: string;
   status: WorkTopic["status"]; reassigned_from: string | null;
 };
-type AbsenceRow = { id: string; member_id: string; type: Absence["type"]; start_date: string; end_date: string };
+type AbsenceRow = { id: string; member_id: string; type: Absence["type"]; start_date: string; end_date: string; hours?: number | string | null; activities?: string[] | null };
 type HandoverRow = {
   id: string; from_member_id: string; to_member_id: string; absence_id: string;
   topic_ids: string[]; notes: string; handover_date: string;
