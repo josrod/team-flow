@@ -25,8 +25,11 @@ export interface TimeBookingParseResult {
   projects: number;
   /** Row-level warnings, each prefixed with the Excel row number. */
   warnings: string[];
+  /** Data rows read from the sheet, including skipped ones. */
+  rowsProcessed: number;
   sourceFileName: string;
 }
+
 
 /**
  * Column positions are fixed by the INVENT export: headers are localised but
