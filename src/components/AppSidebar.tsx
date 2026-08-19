@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Download, Upload, Settings, LogOut, LogIn, Layers, ListChecks, Bug, Target, Hourglass, FileText, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Download, Upload, Settings, LogOut, LogIn, Layers, ListChecks, Bug, Target, Hourglass, FileText, Clock, type LucideIcon } from "lucide-react";
 import cuswLogo from "@/assets/cusw-logo.png";
 import { NavLink } from "@/components/NavLink";
 import { Link } from "react-router-dom";
