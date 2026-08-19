@@ -50,6 +50,7 @@ const App = () => (
                   <Route path="/tasks" element={<AppLayout><TasksPage /></AppLayout>} />
                   <Route path="/bugs" element={<AppLayout><BugsPage /></AppLayout>} />
                   <Route path="/waiting" element={<AppLayout><WaitingPage /></AppLayout>} />
+                  <Route path="/digest" element={<AppLayout><DigestPage /></AppLayout>} />
                   <Route path="/epics" element={<AppLayout><EpicsPage /></AppLayout>} />
                   <Route path="/pulse" element={<AppLayout><TeamPulseDashboard /></AppLayout>} />
                   <Route path="/features" element={<AppLayout><FeaturesPage view="features" /></AppLayout>} />
