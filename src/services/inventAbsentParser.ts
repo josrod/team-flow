@@ -41,9 +41,12 @@ export interface ParseResult {
   absences: ParsedAbsence[];
   unmatched: UnmatchedRow[];
   skipped: number;
+  /** Data rows read from the sheet, including skipped ones. */
+  rowsProcessed: number;
   /** Per-row warnings encoded as `{excelRow}|{code}` for translation in the UI. */
   warnings: string[];
 }
+
 
 /** Activity kinds that are not absences at all. */
 const EXCLUDED_KINDS = ["public holiday", "training", "working hours", "home office"];
