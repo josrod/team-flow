@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Bell, AlertTriangle, Users, ShieldAlert } from "lucide-react";
+import { Bell, AlertTriangle, Users, ShieldAlert, Hourglass } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useApp } from "@/context/AppContext";
 import { useLang } from "@/context/LanguageContext";
 import { Button } from "@/components/ui/button";
@@ -7,10 +8,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useWaitingBoard } from "@/hooks/use-waiting-board";
+import { findStaleWaitingItems, STALE_WAITING_DAYS } from "@/lib/waitingAlerts";
 
 interface Notification {
   id: string;
-  type: "no-handover" | "coverage-gap" | "upcoming-no-handover";
+  type: "no-handover" | "coverage-gap" | "upcoming-no-handover" | "stale-waiting";
   icon: typeof AlertTriangle;
   title: string;
   description: string;
@@ -20,6 +23,7 @@ interface Notification {
 export function NotificationBell() {
   const { absences, handovers, members, teams, workTopics } = useApp();
   const { t } = useLang();
+  const { items: waitingItems } = useWaitingBoard();
   const [open, setOpen] = useState(false);
 
   const notifications = useMemo<Notification[]>(() => {
@@ -130,8 +134,24 @@ export function NotificationBell() {
       }
     }
 
+    // Blocked dependencies with no movement for too long
+    const staleWaiting = findStaleWaitingItems(waitingItems, STALE_WAITING_DAYS);
+    for (const item of staleWaiting.slice(0, 5)) {
+      alerts.push({
+        id: `stale-waiting-${item.id}`,
+        type: "stale-waiting",
+        icon: Hourglass,
+        title: t.notifStaleWaiting,
+        description: t.notifStaleWaitingDesc
+          .replace("{title}", item.title)
+          .replace("{days}", item.staleDays === undefined ? "?" : String(item.staleDays))
+          .replace("{dependency}", item.dependency ?? t.waitingDependencyUnknown),
+        severity: "warning",
+      });
+    }
+
     return alerts;
-  }, [absences, handovers, members, teams, workTopics, t]);
+  }, [absences, handovers, members, teams, workTopics, waitingItems, t]);
 
   const errorCount = notifications.filter((n) => n.severity === "error").length;
   const warningCount = notifications.filter((n) => n.severity === "warning").length;
@@ -197,6 +217,15 @@ export function NotificationBell() {
             </div>
           )}
         </ScrollArea>
+        <div className="border-t px-4 py-2">
+          <Link
+            to="/digest"
+            onClick={() => setOpen(false)}
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            {t.notifStaleWaitingSummary}
+          </Link>
+        </div>
       </PopoverContent>
     </Popover>
   );
