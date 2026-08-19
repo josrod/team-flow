@@ -1,6 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { TeamMember } from "@/types";
 import type { ParsedTimeBooking } from "@/services/inventTimeBookingParser";
+import { recordImport } from "@/services/importHistoryService";
+
 
 export interface TimeBooking {
   id: string;
