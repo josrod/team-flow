@@ -136,23 +136,43 @@ export const hoursByPerson = (bookings: TimeBooking[]) => groupBy(bookings, (b) 
 export const hoursByProject = (bookings: TimeBooking[]) => groupBy(bookings, (b) => b.projectCode);
 export const hoursByActivity = (bookings: TimeBooking[]) => groupBy(bookings, (b) => b.activityKind);
 
+/** ISO week key (`YYYY-Www`) for an ISO date string. */
+export const isoWeekKey = (isoDate: string): string => {
+  const date = new Date(`${isoDate}T00:00:00Z`);
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const week = Math.ceil(((date.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
+  return `${date.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+};
+
+/** Monday–Sunday ISO date range for an ISO week key (`YYYY-Www`). */
+export const isoWeekRange = (weekKey: string): { from: string; to: string } => {
+  const [yearPart, weekPart] = weekKey.split("-W");
+  const year = Number(yearPart);
+  const week = Number(weekPart);
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const jan4Day = jan4.getUTCDay() || 7;
+  const monday = new Date(jan4);
+  monday.setUTCDate(jan4.getUTCDate() - (jan4Day - 1) + (week - 1) * 7);
+  const sunday = new Date(monday);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+  return { from: monday.toISOString().slice(0, 10), to: sunday.toISOString().slice(0, 10) };
+};
+
 /** Hours per ISO week, ascending, for the trend chart. */
 export const hoursByWeek = (bookings: TimeBooking[]): GroupedHours[] => {
   const map = new Map<string, GroupedHours>();
   for (const booking of bookings) {
     if (!booking.workDate) continue;
-    const date = new Date(`${booking.workDate}T00:00:00Z`);
-    const day = date.getUTCDay() || 7;
-    date.setUTCDate(date.getUTCDate() + 4 - day);
-    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-    const week = Math.ceil(((date.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
-    const key = `${date.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+    const key = isoWeekKey(booking.workDate);
     const entry = map.get(key);
     if (entry) entry.hours += booking.duration;
     else map.set(key, { key, label: key, hours: booking.duration });
   }
   return [...map.values()].sort((a, b) => a.key.localeCompare(b.key));
 };
+
 
 export const fetchTimeBookings = async (): Promise<TimeBooking[]> => {
   const { data, error } = await supabase

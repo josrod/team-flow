@@ -9,8 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TimeBookingImportDialog } from "@/components/TimeBookingImportDialog";
+import {
+  TimeBookingDrilldownDialog,
+  type DrilldownSelection,
+} from "@/components/TimeBookingDrilldownDialog";
 import { BookingOverlapAlerts } from "@/components/BookingOverlapAlerts";
 import { ImportHistoryPanel } from "@/components/ImportHistoryPanel";
+
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
 import { useLang } from "@/context/LanguageContext";
@@ -24,6 +29,8 @@ import {
   hoursByPerson,
   hoursByProject,
   hoursByWeek,
+  isoWeekKey,
+  isoWeekRange,
   summarizeTimeBookings,
   type TimeBooking,
   type TimeBookingFilters,
@@ -57,6 +64,7 @@ export function TimeBookingPage() {
   const [loading, setLoading] = useState(true);
   const [importOpen, setImportOpen] = useState(false);
   const [historyKey, setHistoryKey] = useState(0);
+  const [drilldown, setDrilldown] = useState<DrilldownSelection | null>(null);
   const [filters, setFilters] = useState<TimeBookingFilters>(emptyFilters);
   const [visible, setVisible] = useState(PAGE_SIZE);
 
@@ -97,6 +105,49 @@ export function TimeBookingPage() {
       [key]: key === "deliveryNo" ? (value ? Number(value) : null) : value,
     }));
   };
+
+  /** Recharts click payloads are loosely typed; read the grouped label defensively. */
+  const labelOf = (entry: unknown): string => {
+    const candidate = entry as { label?: string; payload?: { label?: string } } | null;
+    return candidate?.label ?? candidate?.payload?.label ?? "";
+  };
+
+  const matchesDimension = (
+    booking: TimeBooking,
+    dimension: DrilldownSelection["dimension"],
+    label: string
+  ): boolean => {
+    const value = label.toLowerCase();
+    if (dimension === "person") return booking.person.toLowerCase() === value;
+    if (dimension === "project") return booking.projectCode.toLowerCase() === value;
+    if (dimension === "activity") return (booking.activityKind || "—").toLowerCase() === value;
+    return booking.workDate ? isoWeekKey(booking.workDate) === label : false;
+  };
+
+  const openDrilldown = (dimension: DrilldownSelection["dimension"], label: string) => {
+    if (!label) return;
+    setDrilldown({
+      dimension,
+      label,
+      bookings: filtered.filter((b) => matchesDimension(b, dimension, label)),
+    });
+  };
+
+  const applyDrilldownFilter = (selection: DrilldownSelection) => {
+    setVisible(PAGE_SIZE);
+    setFilters((prev) => {
+      if (selection.dimension === "week") {
+        const { from, to } = isoWeekRange(selection.label);
+        return { ...prev, from, to };
+      }
+      if (selection.dimension === "person") return { ...prev, person: selection.label };
+      if (selection.dimension === "project") return { ...prev, project: selection.label };
+      return { ...prev, activityKind: selection.label };
+    });
+    setDrilldown(null);
+    toast.success(t.timeBookingFilterApplied);
+  };
+
 
   const kpis = [
     { label: t.timeBookingHours, value: formatHours(totals.hours) },
@@ -191,6 +242,7 @@ export function TimeBookingPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">{t.timeBookingByPerson}</CardTitle>
+            <CardDescription className="text-xs">{t.timeBookingChartHint}</CardDescription>
           </CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -199,7 +251,13 @@ export function TimeBookingPage() {
                 <XAxis type="number" tick={{ fontSize: 11 }} />
                 <YAxis type="category" dataKey="label" width={110} tick={{ fontSize: 11 }} />
                 <ChartTooltip formatter={(value: number) => formatHours(value)} />
-                <Bar dataKey="hours" fill="hsl(var(--chart-1))" radius={[0, 4, 4, 0]} />
+                <Bar
+                  dataKey="hours"
+                  fill="hsl(var(--chart-1))"
+                  radius={[0, 4, 4, 0]}
+                  className="cursor-pointer"
+                  onClick={(entry: unknown) => openDrilldown("person", labelOf(entry))}
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -208,6 +266,7 @@ export function TimeBookingPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">{t.timeBookingByProject}</CardTitle>
+            <CardDescription className="text-xs">{t.timeBookingChartHint}</CardDescription>
           </CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -216,7 +275,13 @@ export function TimeBookingPage() {
                 <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={0} angle={-15} height={50} textAnchor="end" />
                 <YAxis tick={{ fontSize: 11 }} />
                 <ChartTooltip formatter={(value: number) => formatHours(value)} />
-                <Bar dataKey="hours" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey="hours"
+                  fill="hsl(var(--chart-2))"
+                  radius={[4, 4, 0, 0]}
+                  className="cursor-pointer"
+                  onClick={(entry: unknown) => openDrilldown("project", labelOf(entry))}
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -225,11 +290,20 @@ export function TimeBookingPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">{t.timeBookingByActivity}</CardTitle>
+            <CardDescription className="text-xs">{t.timeBookingChartHint}</CardDescription>
           </CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={byActivity} dataKey="hours" nameKey="label" innerRadius={45} outerRadius={80}>
+                <Pie
+                  data={byActivity}
+                  dataKey="hours"
+                  nameKey="label"
+                  innerRadius={45}
+                  outerRadius={80}
+                  className="cursor-pointer"
+                  onClick={(entry: unknown) => openDrilldown("activity", labelOf(entry))}
+                >
                   {byActivity.map((entry, index) => (
                     <Cell key={entry.key} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
@@ -244,20 +318,43 @@ export function TimeBookingPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">{t.timeBookingByWeek}</CardTitle>
+            <CardDescription className="text-xs">{t.timeBookingChartHint}</CardDescription>
           </CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={byWeek} margin={{ left: 8, right: 16 }}>
+              <LineChart
+                data={byWeek}
+                margin={{ left: 8, right: 16 }}
+                className="cursor-pointer"
+                onClick={(state: unknown) => {
+                  const label = (state as { activeLabel?: string } | null)?.activeLabel;
+                  if (label) openDrilldown("week", label);
+                }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="label" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <ChartTooltip formatter={(value: number) => formatHours(value)} />
-                <Line type="monotone" dataKey="hours" stroke="hsl(var(--chart-3))" strokeWidth={2} dot={false} />
+                <Line
+                  type="monotone"
+                  dataKey="hours"
+                  stroke="hsl(var(--chart-3))"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
+
+      <TimeBookingDrilldownDialog
+        selection={drilldown}
+        onOpenChange={(open) => !open && setDrilldown(null)}
+        onApplyFilter={applyDrilldownFilter}
+      />
+
 
       <Card>
         <CardHeader className="pb-2 flex-row items-center justify-between">
