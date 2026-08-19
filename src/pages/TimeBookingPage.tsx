@@ -191,6 +191,7 @@ export function TimeBookingPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">{t.timeBookingByPerson}</CardTitle>
+            <CardDescription className="text-xs">{t.timeBookingChartHint}</CardDescription>
           </CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -199,7 +200,13 @@ export function TimeBookingPage() {
                 <XAxis type="number" tick={{ fontSize: 11 }} />
                 <YAxis type="category" dataKey="label" width={110} tick={{ fontSize: 11 }} />
                 <ChartTooltip formatter={(value: number) => formatHours(value)} />
-                <Bar dataKey="hours" fill="hsl(var(--chart-1))" radius={[0, 4, 4, 0]} />
+                <Bar
+                  dataKey="hours"
+                  fill="hsl(var(--chart-1))"
+                  radius={[0, 4, 4, 0]}
+                  className="cursor-pointer"
+                  onClick={(entry: unknown) => openDrilldown("person", labelOf(entry))}
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -208,6 +215,7 @@ export function TimeBookingPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">{t.timeBookingByProject}</CardTitle>
+            <CardDescription className="text-xs">{t.timeBookingChartHint}</CardDescription>
           </CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -216,7 +224,13 @@ export function TimeBookingPage() {
                 <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={0} angle={-15} height={50} textAnchor="end" />
                 <YAxis tick={{ fontSize: 11 }} />
                 <ChartTooltip formatter={(value: number) => formatHours(value)} />
-                <Bar dataKey="hours" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey="hours"
+                  fill="hsl(var(--chart-2))"
+                  radius={[4, 4, 0, 0]}
+                  className="cursor-pointer"
+                  onClick={(entry: unknown) => openDrilldown("project", labelOf(entry))}
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -225,11 +239,20 @@ export function TimeBookingPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">{t.timeBookingByActivity}</CardTitle>
+            <CardDescription className="text-xs">{t.timeBookingChartHint}</CardDescription>
           </CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={byActivity} dataKey="hours" nameKey="label" innerRadius={45} outerRadius={80}>
+                <Pie
+                  data={byActivity}
+                  dataKey="hours"
+                  nameKey="label"
+                  innerRadius={45}
+                  outerRadius={80}
+                  className="cursor-pointer"
+                  onClick={(entry: unknown) => openDrilldown("activity", labelOf(entry))}
+                >
                   {byActivity.map((entry, index) => (
                     <Cell key={entry.key} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
@@ -244,20 +267,43 @@ export function TimeBookingPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">{t.timeBookingByWeek}</CardTitle>
+            <CardDescription className="text-xs">{t.timeBookingChartHint}</CardDescription>
           </CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={byWeek} margin={{ left: 8, right: 16 }}>
+              <LineChart
+                data={byWeek}
+                margin={{ left: 8, right: 16 }}
+                className="cursor-pointer"
+                onClick={(state: unknown) => {
+                  const label = (state as { activeLabel?: string } | null)?.activeLabel;
+                  if (label) openDrilldown("week", label);
+                }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="label" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <ChartTooltip formatter={(value: number) => formatHours(value)} />
-                <Line type="monotone" dataKey="hours" stroke="hsl(var(--chart-3))" strokeWidth={2} dot={false} />
+                <Line
+                  type="monotone"
+                  dataKey="hours"
+                  stroke="hsl(var(--chart-3))"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
+
+      <TimeBookingDrilldownDialog
+        selection={drilldown}
+        onOpenChange={(open) => !open && setDrilldown(null)}
+        onApplyFilter={applyDrilldownFilter}
+      />
+
 
       <Card>
         <CardHeader className="pb-2 flex-row items-center justify-between">
