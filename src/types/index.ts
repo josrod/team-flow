@@ -28,7 +28,12 @@ export interface Absence {
   type: AbsenceType;
   startDate: string; // ISO date
   endDate: string;   // ISO date
+  /** Booked hours from the INVENT import, when available. */
+  hours?: number | null;
+  /** INVENT activity kinds behind the absence. */
+  activities?: string[];
 }
+
 
 export interface Handover {
   id: string;
