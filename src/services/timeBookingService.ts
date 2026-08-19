@@ -1,0 +1,244 @@
+import { supabase } from "@/integrations/supabase/client";
+import type { TeamMember } from "@/types";
+import type { ParsedTimeBooking } from "@/services/inventTimeBookingParser";
+
+export interface TimeBooking {
+  id: string;
+  workDate: string | null;
+  person: string;
+  memberId: string | null;
+  bookingNo: number;
+  duration: number;
+  organization: string;
+  projectCode: string;
+  taskName: string;
+  activityKind: string;
+  activityGroup: string;
+  activityType: string;
+  remarks: string | null;
+  deliveryNo: number | null;
+  deliveryPosition: number | null;
+}
+
+interface TimeBookingRow {
+  id: string;
+  work_date: string | null;
+  person: string;
+  member_id: string | null;
+  booking_no: number;
+  duration: number | string;
+  organization: string;
+  project_code: string;
+  task_name: string;
+  activity_kind: string;
+  activity_group: string;
+  activity_type: string;
+  remarks: string | null;
+  delivery_no: number | null;
+  delivery_position: number | null;
+}
+
+const mapRow = (row: TimeBookingRow): TimeBooking => ({
+  id: row.id,
+  workDate: row.work_date,
+  person: row.person,
+  memberId: row.member_id,
+  bookingNo: Number(row.booking_no),
+  duration: Number(row.duration),
+  organization: row.organization,
+  projectCode: row.project_code,
+  taskName: row.task_name,
+  activityKind: row.activity_kind,
+  activityGroup: row.activity_group,
+  activityType: row.activity_type,
+  remarks: row.remarks,
+  deliveryNo: row.delivery_no,
+  deliveryPosition: row.delivery_position,
+});
+
+/** Resolves an INVENT person string to a team member (login name, then full name). */
+export const matchMemberId = (person: string, members: TeamMember[]): string | null => {
+  const lower = person.toLowerCase().trim();
+  if (!lower) return null;
+  const byLogin = members.find((m) => m.loginName && m.loginName.toLowerCase() === lower);
+  if (byLogin) return byLogin.id;
+  const byName = members.find((m) => m.name.toLowerCase() === lower);
+  return byName?.id ?? null;
+};
+
+export interface TimeBookingFilters {
+  person?: string;
+  project?: string;
+  task?: string;
+  activityKind?: string;
+  deliveryNo?: number | null;
+  from?: string;
+  to?: string;
+}
+
+const contains = (value: string, term?: string) =>
+  !term || value.toLowerCase().includes(term.toLowerCase().trim());
+
+/** Client-side filtering: partial case-insensitive text, exact delivery, inclusive dates. */
+export const filterTimeBookings = (
+  bookings: TimeBooking[],
+  filters: TimeBookingFilters
+): TimeBooking[] =>
+  bookings.filter((b) => {
+    if (!contains(b.person, filters.person)) return false;
+    if (!contains(b.projectCode, filters.project)) return false;
+    if (!contains(b.taskName, filters.task)) return false;
+    if (!contains(b.activityKind, filters.activityKind)) return false;
+    if (filters.deliveryNo != null && b.deliveryNo !== filters.deliveryNo) return false;
+    if (filters.from && (!b.workDate || b.workDate < filters.from)) return false;
+    if (filters.to && (!b.workDate || b.workDate > filters.to)) return false;
+    return true;
+  });
+
+export interface TimeBookingTotals {
+  hours: number;
+  bookings: number;
+  persons: number;
+  projects: number;
+}
+
+export const summarizeTimeBookings = (bookings: TimeBooking[]): TimeBookingTotals => ({
+  hours: bookings.reduce((sum, b) => sum + b.duration, 0),
+  bookings: bookings.length,
+  persons: new Set(bookings.map((b) => b.person.toLowerCase())).size,
+  projects: new Set(bookings.map((b) => b.projectCode.toLowerCase())).size,
+});
+
+export interface GroupedHours {
+  key: string;
+  label: string;
+  hours: number;
+}
+
+const groupBy = (
+  bookings: TimeBooking[],
+  pick: (booking: TimeBooking) => string
+): GroupedHours[] => {
+  const map = new Map<string, GroupedHours>();
+  for (const booking of bookings) {
+    const label = pick(booking) || "—";
+    const key = label.toLowerCase();
+    const entry = map.get(key);
+    if (entry) entry.hours += booking.duration;
+    else map.set(key, { key, label, hours: booking.duration });
+  }
+  return [...map.values()].sort((a, b) => b.hours - a.hours);
+};
+
+export const hoursByPerson = (bookings: TimeBooking[]) => groupBy(bookings, (b) => b.person);
+export const hoursByProject = (bookings: TimeBooking[]) => groupBy(bookings, (b) => b.projectCode);
+export const hoursByActivity = (bookings: TimeBooking[]) => groupBy(bookings, (b) => b.activityKind);
+
+/** Hours per ISO week, ascending, for the trend chart. */
+export const hoursByWeek = (bookings: TimeBooking[]): GroupedHours[] => {
+  const map = new Map<string, GroupedHours>();
+  for (const booking of bookings) {
+    if (!booking.workDate) continue;
+    const date = new Date(`${booking.workDate}T00:00:00Z`);
+    const day = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - day);
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    const week = Math.ceil(((date.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
+    const key = `${date.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+    const entry = map.get(key);
+    if (entry) entry.hours += booking.duration;
+    else map.set(key, { key, label: key, hours: booking.duration });
+  }
+  return [...map.values()].sort((a, b) => a.key.localeCompare(b.key));
+};
+
+export const fetchTimeBookings = async (): Promise<TimeBooking[]> => {
+  const { data, error } = await supabase
+    .from("time_bookings")
+    .select("*")
+    .order("work_date", { ascending: false })
+    .limit(20000);
+  if (error) throw error;
+  return (data as TimeBookingRow[]).map(mapRow);
+};
+
+export interface TimeBookingImportSummary {
+  imported: number;
+  replaced: number;
+  persons: number;
+  projects: number;
+}
+
+const CHUNK = 500;
+
+/**
+ * Replaces every booking of the imported (person, work date) pairs and inserts
+ * the parsed rows, so re-importing the same export never duplicates data.
+ */
+export const importTimeBookings = async (
+  items: ParsedTimeBooking[],
+  members: TeamMember[],
+  sourceFileName: string,
+  counts: { persons: number; projects: number; warnings: string[] }
+): Promise<TimeBookingImportSummary> => {
+  const persons = [...new Set(items.map((i) => i.person))];
+  const dates = [...new Set(items.map((i) => i.workDate).filter((d): d is string => !!d))];
+
+  let replaced = 0;
+  if (persons.length && dates.length) {
+    const from = dates.reduce((min, d) => (d < min ? d : min), dates[0]);
+    const to = dates.reduce((max, d) => (d > max ? d : max), dates[0]);
+    const { data: existing, error: countError } = await supabase
+      .from("time_bookings")
+      .select("id", { count: "exact" })
+      .in("person", persons)
+      .gte("work_date", from)
+      .lte("work_date", to);
+    if (countError) throw countError;
+    replaced = existing?.length ?? 0;
+
+    const { error: deleteError } = await supabase
+      .from("time_bookings")
+      .delete()
+      .in("person", persons)
+      .gte("work_date", from)
+      .lte("work_date", to);
+    if (deleteError) throw deleteError;
+  }
+
+  const rows = items.map((item) => ({
+    work_date: item.workDate,
+    person: item.person,
+    member_id: matchMemberId(item.person, members),
+    booking_no: item.bookingNo,
+    duration: item.duration,
+    organization: item.organization,
+    project_code: item.projectCode,
+    task_name: item.taskName,
+    activity_kind: item.activityKind,
+    activity_group: item.activityGroup,
+    activity_type: item.activityType,
+    remarks: item.remarks ?? null,
+    delivery_no: item.deliveryNo ?? null,
+    delivery_position: item.deliveryPosition ?? null,
+  }));
+
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const { error } = await supabase.from("time_bookings").insert(rows.slice(i, i + CHUNK));
+    if (error) throw error;
+  }
+
+  const { data: user } = await supabase.auth.getUser();
+  if (user?.user) {
+    await supabase.from("time_booking_imports").insert({
+      user_id: user.user.id,
+      source_file_name: sourceFileName,
+      imported_count: rows.length,
+      persons_count: counts.persons,
+      projects_count: counts.projects,
+      warnings: counts.warnings,
+    });
+  }
+
+  return { imported: rows.length, replaced, persons: counts.persons, projects: counts.projects };
+};
