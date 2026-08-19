@@ -309,7 +309,7 @@ export function parseInventAbsentMatrix(matrix: unknown[][], members: TeamMember
     }
   }
 
-  return { absences, unmatched, skipped, warnings };
+  return { absences, unmatched, skipped, rowsProcessed, warnings };
 }
 
 export async function parseInventAbsentFile(
