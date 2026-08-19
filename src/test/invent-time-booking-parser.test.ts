@@ -35,7 +35,7 @@ describe("inventValues", () => {
   it("parses European decimals and Excel serials", () => {
     expect(asNumber("8,50")).toBe(8.5);
     expect(asNumber("nope")).toBe(0);
-    expect(asIsoDate(46083)).toBe("2026-03-01");
+    expect(asIsoDate(46082)).toBe("2026-03-01");
     expect(asIsoDate("01.03.2026")).toBe("2026-03-01");
     expect(asIsoDate("2026-03-01")).toBe("2026-03-01");
     expect(asIsoDate("")).toBeNull();
