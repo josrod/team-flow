@@ -14,7 +14,7 @@ import {
   buildWeeklyDigestText,
   STALE_WAITING_DAYS,
 } from "@/lib/waitingAlerts";
-import { NO_THEME_KEY, UNASSIGNED_KEY } from "@/lib/waitingGroups";
+import { NO_THEME_KEY } from "@/lib/waitingGroups";
 
 const THRESHOLD_STORAGE_KEY = "rosen.digest.staleDays.v1";
 
@@ -228,8 +228,6 @@ export const DigestPage = () => {
           </pre>
         </CardContent>
       </Card>
-
-      <p className="sr-only">{UNASSIGNED_KEY}</p>
     </div>
   );
 };
