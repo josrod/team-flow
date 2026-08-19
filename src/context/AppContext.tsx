@@ -43,7 +43,10 @@ const mapWorkTopic = (r: WorkTopicRow): WorkTopic => ({
 const mapAbsence = (r: AbsenceRow): Absence => ({
   id: r.id, memberId: r.member_id, type: r.type,
   startDate: r.start_date, endDate: r.end_date,
+  hours: r.hours == null ? null : Number(r.hours),
+  activities: r.activities ?? [],
 });
+
 const mapHandover = (r: HandoverRow): Handover => ({
   id: r.id, fromMemberId: r.from_member_id, toMemberId: r.to_member_id,
   absenceId: r.absence_id, topicIds: r.topic_ids ?? [], notes: r.notes,
