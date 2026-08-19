@@ -320,7 +320,17 @@ export function TimeBookingPage() {
         </CardContent>
       </Card>
 
-      <TimeBookingImportDialog open={importOpen} onOpenChange={setImportOpen} onImported={() => void load()} />
+      {isAdmin && <ImportHistoryPanel refreshKey={historyKey} />}
+
+      <TimeBookingImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={() => {
+          void load();
+          setHistoryKey((k) => k + 1);
+        }}
+      />
+
     </div>
   );
 }
