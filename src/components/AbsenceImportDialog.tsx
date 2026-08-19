@@ -16,6 +16,8 @@ import { read as readXlsx, utils as xlsxUtils } from "xlsx";
 import { parseISO, isValid, format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { parseInventAbsentFile, validateInventAbsentFile, type ParseResult } from "@/services/inventAbsentParser";
+import { formatHours, formatIsoDay } from "@/lib/inventValues";
+
 import { loadLoginMappings, rememberLoginMappings } from "@/services/loginMappingStore";
 import { previewImportJson } from "@/lib/validation";
 import { buildJsonImportPreview } from "@/lib/absencesJsonImport";
