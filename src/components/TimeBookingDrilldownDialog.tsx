@@ -86,7 +86,7 @@ export function TimeBookingDrilldownDialog({ selection, onOpenChange, onApplyFil
 
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-            {t.close}
+            {t.closeBtn}
           </Button>
           <Button size="sm" onClick={() => selection && onApplyFilter(selection)}>
             <Filter className="h-4 w-4 mr-2" />
