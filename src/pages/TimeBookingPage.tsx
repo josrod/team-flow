@@ -9,8 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TimeBookingImportDialog } from "@/components/TimeBookingImportDialog";
+import {
+  TimeBookingDrilldownDialog,
+  type DrilldownSelection,
+} from "@/components/TimeBookingDrilldownDialog";
 import { BookingOverlapAlerts } from "@/components/BookingOverlapAlerts";
 import { ImportHistoryPanel } from "@/components/ImportHistoryPanel";
+
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
 import { useLang } from "@/context/LanguageContext";
