@@ -83,6 +83,8 @@ export function AppSidebar() {
     { title: t.epics, url: "/epics", icon: Target },
     { title: t.waitingViewTitle, url: "/waiting", icon: Hourglass },
     { title: t.digestTitle, url: "/digest", icon: FileText },
+    { title: t.timeBookingTitle, url: "/time-booking", icon: Clock },
+
     { title: t.workload, url: "/workload", icon: CalendarDays },
     { title: "Azure DevOps", url: "/settings/azure-devops", icon: Settings, adminOnly: true },
 
