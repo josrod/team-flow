@@ -9,9 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TimeBookingImportDialog } from "@/components/TimeBookingImportDialog";
+import { BookingOverlapAlerts } from "@/components/BookingOverlapAlerts";
+import { ImportHistoryPanel } from "@/components/ImportHistoryPanel";
+import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
 import { useLang } from "@/context/LanguageContext";
+import { findBookingAbsenceOverlaps } from "@/lib/bookingOverlaps";
 import { formatHours, formatIsoDay } from "@/lib/inventValues";
+
 import {
   fetchTimeBookings,
   filterTimeBookings,
