@@ -21,6 +21,8 @@ import AzureDevOpsSettingsPage from "./pages/AzureDevOpsSettingsPage";
 import { BugsPage } from "./pages/BugsPage";
 import { EpicsPage } from "./pages/EpicsPage";
 import { WaitingPage } from "./pages/WaitingPage";
+import { DigestPage } from "./pages/DigestPage";
+
 
 import AuthPage from "./pages/AuthPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
