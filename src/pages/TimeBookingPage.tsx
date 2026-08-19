@@ -84,6 +84,11 @@ export function TimeBookingPage() {
   const byProject = useMemo(() => hoursByProject(filtered).slice(0, 8), [filtered]);
   const byActivity = useMemo(() => hoursByActivity(filtered).slice(0, 6), [filtered]);
   const byWeek = useMemo(() => hoursByWeek(filtered), [filtered]);
+  const overlaps = useMemo(
+    () => findBookingAbsenceOverlaps(absences, filtered, members),
+    [absences, filtered, members]
+  );
+
 
   const updateFilter = (key: keyof TimeBookingFilters, value: string) => {
     setVisible(PAGE_SIZE);
