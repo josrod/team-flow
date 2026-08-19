@@ -141,6 +141,9 @@ export function TimeBookingPage() {
         ))}
       </div>
 
+      <BookingOverlapAlerts overlaps={overlaps} />
+
+
       <Card>
         <CardContent className="grid gap-3 pt-6 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1">
