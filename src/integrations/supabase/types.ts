@@ -265,6 +265,57 @@ export type Database = {
           },
         ]
       }
+      import_history: {
+        Row: {
+          created_at: string
+          id: string
+          imported_count: number
+          kind: string
+          persons_count: number
+          projects_count: number
+          range_from: string | null
+          range_to: string | null
+          row_errors: Json
+          rows_processed: number
+          skipped_count: number
+          source_file_name: string
+          user_email: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          imported_count?: number
+          kind: string
+          persons_count?: number
+          projects_count?: number
+          range_from?: string | null
+          range_to?: string | null
+          row_errors?: Json
+          rows_processed?: number
+          skipped_count?: number
+          source_file_name: string
+          user_email?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          imported_count?: number
+          kind?: string
+          persons_count?: number
+          projects_count?: number
+          range_from?: string | null
+          range_to?: string | null
+          row_errors?: Json
+          rows_processed?: number
+          skipped_count?: number
+          source_file_name?: string
+          user_email?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       members: {
         Row: {
           avatar: string | null
@@ -405,39 +456,6 @@ export type Database = {
           source?: string
           team_id?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      time_booking_imports: {
-        Row: {
-          created_at: string
-          id: string
-          imported_count: number
-          persons_count: number
-          projects_count: number
-          source_file_name: string
-          user_id: string
-          warnings: Json
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          imported_count?: number
-          persons_count?: number
-          projects_count?: number
-          source_file_name: string
-          user_id: string
-          warnings?: Json
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          imported_count?: number
-          persons_count?: number
-          projects_count?: number
-          source_file_name?: string
-          user_id?: string
-          warnings?: Json
         }
         Relationships: []
       }

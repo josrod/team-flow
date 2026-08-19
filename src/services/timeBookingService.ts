@@ -1,6 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { TeamMember } from "@/types";
 import type { ParsedTimeBooking } from "@/services/inventTimeBookingParser";
+import { recordImport } from "@/services/importHistoryService";
+
 
 export interface TimeBooking {
   id: string;
@@ -171,23 +173,35 @@ export interface TimeBookingImportSummary {
 
 const CHUNK = 500;
 
+export interface TimeBookingImportMeta {
+  persons: number;
+  projects: number;
+  /** Per-row issues encoded as `{excelRow}|{code}`. */
+  warnings: string[];
+  /** Data rows read from the sheet, including skipped ones. */
+  rowsProcessed: number;
+}
+
 /**
- * Replaces every booking of the imported (person, work date) pairs and inserts
- * the parsed rows, so re-importing the same export never duplicates data.
+ * Replaces every booking of the imported persons within the imported date range
+ * and inserts the parsed rows, so re-importing the same export never duplicates
+ * data. Also appends an entry to the import history.
  */
 export const importTimeBookings = async (
   items: ParsedTimeBooking[],
   members: TeamMember[],
   sourceFileName: string,
-  counts: { persons: number; projects: number; warnings: string[] }
+  meta: TimeBookingImportMeta
 ): Promise<TimeBookingImportSummary> => {
   const persons = [...new Set(items.map((i) => i.person))];
   const dates = [...new Set(items.map((i) => i.workDate).filter((d): d is string => !!d))];
 
   let replaced = 0;
+  let from: string | null = null;
+  let to: string | null = null;
   if (persons.length && dates.length) {
-    const from = dates.reduce((min, d) => (d < min ? d : min), dates[0]);
-    const to = dates.reduce((max, d) => (d > max ? d : max), dates[0]);
+    from = dates.reduce((min, d) => (d < min ? d : min), dates[0]);
+    to = dates.reduce((max, d) => (d > max ? d : max), dates[0]);
     const { data: existing, error: countError } = await supabase
       .from("time_bookings")
       .select("id", { count: "exact" })
@@ -228,17 +242,19 @@ export const importTimeBookings = async (
     if (error) throw error;
   }
 
-  const { data: user } = await supabase.auth.getUser();
-  if (user?.user) {
-    await supabase.from("time_booking_imports").insert({
-      user_id: user.user.id,
-      source_file_name: sourceFileName,
-      imported_count: rows.length,
-      persons_count: counts.persons,
-      projects_count: counts.projects,
-      warnings: counts.warnings,
-    });
-  }
+  await recordImport({
+    kind: "time_booking",
+    sourceFileName,
+    rangeFrom: from,
+    rangeTo: to,
+    rowsProcessed: meta.rowsProcessed,
+    importedCount: rows.length,
+    skippedCount: Math.max(meta.rowsProcessed - rows.length, 0),
+    personsCount: meta.persons,
+    projectsCount: meta.projects,
+    rowErrors: meta.warnings,
+  });
 
-  return { imported: rows.length, replaced, persons: counts.persons, projects: counts.projects };
+  return { imported: rows.length, replaced, persons: meta.persons, projects: meta.projects };
 };
+

@@ -9,9 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TimeBookingImportDialog } from "@/components/TimeBookingImportDialog";
+import { BookingOverlapAlerts } from "@/components/BookingOverlapAlerts";
+import { ImportHistoryPanel } from "@/components/ImportHistoryPanel";
+import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
 import { useLang } from "@/context/LanguageContext";
+import { findBookingAbsenceOverlaps } from "@/lib/bookingOverlaps";
 import { formatHours, formatIsoDay } from "@/lib/inventValues";
+
 import {
   fetchTimeBookings,
   filterTimeBookings,
@@ -47,11 +52,14 @@ const emptyFilters: TimeBookingFilters = {
 export function TimeBookingPage() {
   const { t } = useLang();
   const { isAdmin } = useAuth();
+  const { members, absences } = useApp();
   const [bookings, setBookings] = useState<TimeBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [importOpen, setImportOpen] = useState(false);
+  const [historyKey, setHistoryKey] = useState(0);
   const [filters, setFilters] = useState<TimeBookingFilters>(emptyFilters);
   const [visible, setVisible] = useState(PAGE_SIZE);
+
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,6 +84,11 @@ export function TimeBookingPage() {
   const byProject = useMemo(() => hoursByProject(filtered).slice(0, 8), [filtered]);
   const byActivity = useMemo(() => hoursByActivity(filtered).slice(0, 6), [filtered]);
   const byWeek = useMemo(() => hoursByWeek(filtered), [filtered]);
+  const overlaps = useMemo(
+    () => findBookingAbsenceOverlaps(absences, filtered, members),
+    [absences, filtered, members]
+  );
+
 
   const updateFilter = (key: keyof TimeBookingFilters, value: string) => {
     setVisible(PAGE_SIZE);
@@ -127,6 +140,9 @@ export function TimeBookingPage() {
           </Card>
         ))}
       </div>
+
+      <BookingOverlapAlerts overlaps={overlaps} />
+
 
       <Card>
         <CardContent className="grid gap-3 pt-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -307,7 +323,17 @@ export function TimeBookingPage() {
         </CardContent>
       </Card>
 
-      <TimeBookingImportDialog open={importOpen} onOpenChange={setImportOpen} onImported={() => void load()} />
+      {isAdmin && <ImportHistoryPanel refreshKey={historyKey} />}
+
+      <TimeBookingImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={() => {
+          void load();
+          setHistoryKey((k) => k + 1);
+        }}
+      />
+
     </div>
   );
 }

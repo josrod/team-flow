@@ -25,8 +25,11 @@ export interface TimeBookingParseResult {
   projects: number;
   /** Row-level warnings, each prefixed with the Excel row number. */
   warnings: string[];
+  /** Data rows read from the sheet, including skipped ones. */
+  rowsProcessed: number;
   sourceFileName: string;
 }
+
 
 /**
  * Column positions are fixed by the INVENT export: headers are localised but
@@ -67,6 +70,7 @@ export function parseTimeBookingMatrix(
   const warnings: string[] = [];
   const persons = new Set<string>();
   const projects = new Set<string>();
+  let rowsProcessed = 0;
 
   for (let i = 1; i < matrix.length; i++) {
     const row = matrix[i];
@@ -81,10 +85,13 @@ export function parseTimeBookingMatrix(
     // Fully empty row: skip silently.
     if (!workDate && !person && !projectCode && !taskName) continue;
 
+    rowsProcessed++;
+
     if (!person || !projectCode || !taskName) {
       warnings.push(`${excelRow}|missingCore`);
       continue;
     }
+
 
     const bookingNo = asNumber(row[COL.bookingNo]);
     const deliveryNo = asOptionalInt(row[COL.deliveryNo]);
@@ -117,8 +124,10 @@ export function parseTimeBookingMatrix(
     persons: persons.size,
     projects: projects.size,
     warnings,
+    rowsProcessed,
     sourceFileName,
   };
+
 }
 
 export async function parseTimeBookingFile(file: File): Promise<TimeBookingParseResult> {

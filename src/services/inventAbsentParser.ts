@@ -41,9 +41,12 @@ export interface ParseResult {
   absences: ParsedAbsence[];
   unmatched: UnmatchedRow[];
   skipped: number;
+  /** Data rows read from the sheet, including skipped ones. */
+  rowsProcessed: number;
   /** Per-row warnings encoded as `{excelRow}|{code}` for translation in the UI. */
   warnings: string[];
 }
+
 
 /** Activity kinds that are not absences at all. */
 const EXCLUDED_KINDS = ["public holiday", "training", "working hours", "home office"];
@@ -171,6 +174,7 @@ export function parseInventAbsentMatrix(matrix: unknown[][], members: TeamMember
   const parsed: InventAbsentRow[] = [];
   const warnings: string[] = [];
   let skipped = 0;
+  let rowsProcessed = 0;
 
   for (let i = 1; i < matrix.length; i++) {
     const r = matrix[i];
@@ -184,6 +188,9 @@ export function parseInventAbsentMatrix(matrix: unknown[][], members: TeamMember
 
     // Fully empty row: skip silently.
     if (!workDate && !userLoginName && !activityKind) continue;
+
+    rowsProcessed++;
+
 
     if (!workDate || !userLoginName || !activityKind) {
       warnings.push(`${excelRow}|absenceMissingCore`);
@@ -302,7 +309,7 @@ export function parseInventAbsentMatrix(matrix: unknown[][], members: TeamMember
     }
   }
 
-  return { absences, unmatched, skipped, warnings };
+  return { absences, unmatched, skipped, rowsProcessed, warnings };
 }
 
 export async function parseInventAbsentFile(
