@@ -637,6 +637,25 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
               </Button>
             </div>
 
+            {inventResult.warnings.length > 0 && (
+              <div className="rounded-lg border border-warning/40 bg-warning/5 p-2 max-h-24 overflow-auto">
+                <p className="text-xs font-medium flex items-center gap-1">
+                  <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+                  {t.importRowWarningsTitle.replace("{n}", String(inventResult.warnings.length))}
+                </p>
+                <ul className="mt-1 space-y-0.5">
+                  {inventResult.warnings.slice(0, 30).map((w) => {
+                    const [row] = w.split("|");
+                    return (
+                      <li key={w} className="text-[11px] text-muted-foreground">
+                        {t.importRowWarningMissing.replace("{row}", row)}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
             <ScrollArea className="flex-1 min-h-0 border rounded-lg">
               <Table>
                 <TableHeader>
@@ -646,6 +665,7 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
                     <TableHead className="text-xs py-1 px-2">{t.type}</TableHead>
                     <TableHead className="text-xs py-1 px-2">{t.start}</TableHead>
                     <TableHead className="text-xs py-1 px-2">{t.end}</TableHead>
+                    <TableHead className="text-xs py-1 px-2">{t.timeBookingHours}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -654,10 +674,12 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
                       <TableCell className="text-xs py-1 px-2 font-mono">{a.loginName}</TableCell>
                       <TableCell className="text-xs py-1 px-2">{a.memberName}</TableCell>
                       <TableCell className="text-xs py-1 px-2">{a.type}</TableCell>
-                      <TableCell className="text-xs py-1 px-2">{a.startDate}</TableCell>
-                      <TableCell className="text-xs py-1 px-2">{a.endDate}</TableCell>
+                      <TableCell className="text-xs py-1 px-2">{formatIsoDay(a.startDate)}</TableCell>
+                      <TableCell className="text-xs py-1 px-2">{formatIsoDay(a.endDate)}</TableCell>
+                      <TableCell className="text-xs py-1 px-2 tabular-nums">{formatHours(a.hours)}</TableCell>
                     </TableRow>
                   ))}
+
                   {inventResult.unmatched.map((u, i) => {
                     const assigned = loginAssignments[u.loginName];
                     return (
