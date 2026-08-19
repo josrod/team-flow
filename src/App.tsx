@@ -22,6 +22,8 @@ import { BugsPage } from "./pages/BugsPage";
 import { EpicsPage } from "./pages/EpicsPage";
 import { WaitingPage } from "./pages/WaitingPage";
 import { DigestPage } from "./pages/DigestPage";
+import { TimeBookingPage } from "./pages/TimeBookingPage";
+
 
 
 import AuthPage from "./pages/AuthPage";
