@@ -357,6 +357,8 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
         type: a.type,
         startDate: a.startDate,
         endDate: a.endDate,
+        hours: a.hours,
+        activities: a.activities,
       });
       imported++;
     }
@@ -374,10 +376,13 @@ export function AbsenceImportDialog({ open, onOpenChange, onImported }: { open: 
           type: r.type,
           startDate: r.startDate,
           endDate: r.endDate,
+          hours: r.hours,
+          activities: r.activities,
         });
         imported++;
       }
     }
+
     // Persist login → member mappings used in this import for future reuse
     rememberLoginMappings(loginAssignments);
     toast.success(`📥 ${imported} ${t.importSuccess}`);
