@@ -29,6 +29,8 @@ import {
   hoursByPerson,
   hoursByProject,
   hoursByWeek,
+  isoWeekKey,
+  isoWeekRange,
   summarizeTimeBookings,
   type TimeBooking,
   type TimeBookingFilters,
@@ -62,6 +64,7 @@ export function TimeBookingPage() {
   const [loading, setLoading] = useState(true);
   const [importOpen, setImportOpen] = useState(false);
   const [historyKey, setHistoryKey] = useState(0);
+  const [drilldown, setDrilldown] = useState<DrilldownSelection | null>(null);
   const [filters, setFilters] = useState<TimeBookingFilters>(emptyFilters);
   const [visible, setVisible] = useState(PAGE_SIZE);
 
