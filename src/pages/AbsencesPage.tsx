@@ -13,6 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Download, Upload, Palmtree, Pencil, Stethoscope, Trash2, Plane, FolderKanban, Baby, FileText } from "lucide-react";
 import { AbsenceImportDialog, type ImportResultSummary } from "@/components/AbsenceImportDialog";
+import { ImportHistoryPanel } from "@/components/ImportHistoryPanel";
 import { AbsenceHandoverSummaryDialog } from "@/components/AbsenceHandoverSummaryDialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { format, differenceInDays, eachDayOfInterval, startOfMonth, endOfMonth, parseISO, addMonths, subMonths } from "date-fns";
@@ -581,10 +582,14 @@ export default function AbsencesPage() {
           </motion.div>
         </TabsContent>
       </Tabs>
+      {isAdmin && <ImportHistoryPanel kind="absences" refreshKey={historyKey} />}
       <AbsenceImportDialog
         open={importOpen}
         onOpenChange={setImportOpen}
-        onImported={setLastImport}
+        onImported={(summary) => {
+          setLastImport(summary);
+          setHistoryKey((key) => key + 1);
+        }}
       />
       <AbsenceHandoverSummaryDialog
         open={!!summaryAbsence}
