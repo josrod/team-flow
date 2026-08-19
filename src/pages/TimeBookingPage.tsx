@@ -103,6 +103,49 @@ export function TimeBookingPage() {
     }));
   };
 
+  /** Recharts click payloads are loosely typed; read the grouped label defensively. */
+  const labelOf = (entry: unknown): string => {
+    const candidate = entry as { label?: string; payload?: { label?: string } } | null;
+    return candidate?.label ?? candidate?.payload?.label ?? "";
+  };
+
+  const matchesDimension = (
+    booking: TimeBooking,
+    dimension: DrilldownSelection["dimension"],
+    label: string
+  ): boolean => {
+    const value = label.toLowerCase();
+    if (dimension === "person") return booking.person.toLowerCase() === value;
+    if (dimension === "project") return booking.projectCode.toLowerCase() === value;
+    if (dimension === "activity") return (booking.activityKind || "—").toLowerCase() === value;
+    return booking.workDate ? isoWeekKey(booking.workDate) === label : false;
+  };
+
+  const openDrilldown = (dimension: DrilldownSelection["dimension"], label: string) => {
+    if (!label) return;
+    setDrilldown({
+      dimension,
+      label,
+      bookings: filtered.filter((b) => matchesDimension(b, dimension, label)),
+    });
+  };
+
+  const applyDrilldownFilter = (selection: DrilldownSelection) => {
+    setVisible(PAGE_SIZE);
+    setFilters((prev) => {
+      if (selection.dimension === "week") {
+        const { from, to } = isoWeekRange(selection.label);
+        return { ...prev, from, to };
+      }
+      if (selection.dimension === "person") return { ...prev, person: selection.label };
+      if (selection.dimension === "project") return { ...prev, project: selection.label };
+      return { ...prev, activityKind: selection.label };
+    });
+    setDrilldown(null);
+    toast.success(t.timeBookingFilterApplied);
+  };
+
+
   const kpis = [
     { label: t.timeBookingHours, value: formatHours(totals.hours) },
     { label: t.timeBookingBookings, value: String(totals.bookings) },
