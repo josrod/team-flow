@@ -52,11 +52,14 @@ const emptyFilters: TimeBookingFilters = {
 export function TimeBookingPage() {
   const { t } = useLang();
   const { isAdmin } = useAuth();
+  const { members, absences } = useApp();
   const [bookings, setBookings] = useState<TimeBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [importOpen, setImportOpen] = useState(false);
+  const [historyKey, setHistoryKey] = useState(0);
   const [filters, setFilters] = useState<TimeBookingFilters>(emptyFilters);
   const [visible, setVisible] = useState(PAGE_SIZE);
+
 
   const load = useCallback(async () => {
     setLoading(true);
