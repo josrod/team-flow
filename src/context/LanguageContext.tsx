@@ -528,6 +528,11 @@ export const translations = {
     timeBookingByProject: "Horas por proyecto",
     timeBookingByActivity: "Horas por actividad",
     timeBookingByWeek: "Horas por semana",
+    timeBookingChartHint: "Haz clic en el gráfico para ver el detalle",
+    timeBookingDrilldownSummary: "{n} reservas · {hours} h en la selección actual",
+    timeBookingApplyAsFilter: "Aplicar como filtro",
+    timeBookingFilterApplied: "Filtro aplicado desde el gráfico",
+
     timeBookingFilterPerson: "Persona",
     timeBookingFilterProject: "Código de proyecto",
     timeBookingFilterTask: "Tarea",
