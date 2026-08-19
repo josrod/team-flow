@@ -69,7 +69,9 @@ export function TimeBookingImportDialog({ open, onOpenChange, onImported }: Prop
         persons: result.persons,
         projects: result.projects,
         warnings: result.warnings,
+        rowsProcessed: result.rowsProcessed,
       });
+
       toast.success(
         t.timeBookingImportSuccess
           .replace("{n}", String(summary.imported))
