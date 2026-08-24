@@ -87,7 +87,16 @@ export function TimeBookingPage() {
     void load();
   }, [load]);
 
-  const filtered = useMemo(() => filterTimeBookings(bookings, filters), [bookings, filters]);
+  // Scope every metric, chart and drill-down table to internal teams (RODAT, Processing).
+  const externalKeys = useMemo(() => externalPersonKeys(members, teams), [members, teams]);
+  const internalBookings = useMemo(
+    () => filterInternalByPerson(bookings, externalKeys),
+    [bookings, externalKeys]
+  );
+  const filtered = useMemo(
+    () => filterTimeBookings(internalBookings, filters),
+    [internalBookings, filters]
+  );
   const totals = useMemo(() => summarizeTimeBookings(filtered), [filtered]);
   const byPerson = useMemo(() => hoursByPerson(filtered).slice(0, 12), [filtered]);
   const byProject = useMemo(() => hoursByProject(filtered).slice(0, 8), [filtered]);
