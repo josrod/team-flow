@@ -154,7 +154,7 @@ const Index = () => {
       </motion.div>
 
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
-        {teams.map((team) => {
+        {internalTeams.map((team) => {
           const stats = teamStats(team.id);
           const TeamIcon = getTeamIcon(team.icon);
           const saveEdit = () => {
