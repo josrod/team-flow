@@ -60,7 +60,7 @@ const emptyFilters: TimeBookingFilters = {
 export function TimeBookingPage() {
   const { t } = useLang();
   const { isAdmin } = useAuth();
-  const { members, absences } = useApp();
+  const { members, teams, absences } = useApp();
   const [bookings, setBookings] = useState<TimeBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [importOpen, setImportOpen] = useState(false);
