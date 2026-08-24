@@ -34,7 +34,9 @@ const item = {
 };
 
 export default function HandoversPage() {
-  const { teams, members, absences, workTopics, handovers, addHandover, updateHandover, deleteHandover } = useApp();
+  const { teams: allTeams, members: allMembers, absences, workTopics, handovers, addHandover, updateHandover, deleteHandover } = useApp();
+  const teams = useMemo(() => filterInternalTeams(allTeams), [allTeams]);
+  const members = useMemo(() => filterInternalMembers(allMembers, teams), [allMembers, teams]);
   const { isAdmin } = useAuth();
 
   const { t } = useLang();
