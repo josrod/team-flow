@@ -13,6 +13,8 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { teamNameSchema } from "@/lib/validation";
+import { filterInternalTeams } from "@/lib/internalTeams";
+
 import { toast } from "sonner";
 
 const container = {
