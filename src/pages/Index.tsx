@@ -13,6 +13,8 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { teamNameSchema } from "@/lib/validation";
+import { filterInternalTeams } from "@/lib/internalTeams";
+
 import { toast } from "sonner";
 
 const container = {
@@ -71,6 +73,10 @@ const Index = () => {
   }, []);
 
   const today = new Date().toISOString().split("T")[0];
+
+  // External teams are excluded from the dashboard team cards and capacity.
+  const internalTeams = filterInternalTeams(teams);
+
 
   const filteredMembers = search
     ? members.filter((m) => m.name.toLowerCase().includes(search.toLowerCase()))
@@ -148,7 +154,7 @@ const Index = () => {
       </motion.div>
 
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
-        {teams.map((team) => {
+        {internalTeams.map((team) => {
           const stats = teamStats(team.id);
           const TeamIcon = getTeamIcon(team.icon);
           const saveEdit = () => {

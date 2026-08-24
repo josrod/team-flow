@@ -6,6 +6,8 @@ import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, AreaChart, Area } fro
 import { Users, UserCheck, ArrowRightLeft, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { useMemo } from "react";
+import { filterInternalMembers, filterInternalTeams } from "@/lib/internalTeams";
+
 
 const item = {
   hidden: { opacity: 0, y: 16 },
@@ -18,12 +20,23 @@ export function AnalyticsPanel() {
 
   const today = new Date().toISOString().split("T")[0];
 
+  // Capacity metrics only consider internal teams (external teams excluded).
+  const internalTeams = useMemo(() => filterInternalTeams(teams), [teams]);
+  const internalMembers = useMemo(
+    () => filterInternalMembers(members, internalTeams),
+    [members, internalTeams]
+  );
+  const internalAbsences = useMemo(() => {
+    const memberIds = new Set(internalMembers.map((m) => m.id));
+    return absences.filter((a) => memberIds.has(a.memberId));
+  }, [absences, internalMembers]);
+
   const metrics = useMemo(() => {
-    const totalMembers = members.length;
-    const availableCount = members.filter((m) => getMemberStatus(m.id) === "available").length;
+    const totalMembers = internalMembers.length;
+    const availableCount = internalMembers.filter((m) => getMemberStatus(m.id) === "available").length;
     const capacityPct = totalMembers > 0 ? Math.round((availableCount / totalMembers) * 100) : 0;
 
-    const activeAbsences = absences.filter((a) => a.startDate <= today && a.endDate >= today);
+    const activeAbsences = internalAbsences.filter((a) => a.startDate <= today && a.endDate >= today);
     const absencesWithHandover = activeAbsences.filter((a) =>
       handovers.some((h) => h.absenceId === a.id)
     );
@@ -32,26 +45,26 @@ export function AnalyticsPanel() {
       : 100;
 
     const activeHandovers = handovers.filter((h) => {
-      const absence = absences.find((a) => a.id === h.absenceId);
+      const absence = internalAbsences.find((a) => a.id === h.absenceId);
       return absence && absence.endDate >= today;
     });
 
     return { totalMembers, availableCount, capacityPct, handoverRate, activeHandovers: activeHandovers.length, totalAbsences: activeAbsences.length };
-  }, [members, absences, handovers, getMemberStatus, today]);
+  }, [internalMembers, internalAbsences, handovers, getMemberStatus, today]);
 
   // Team capacity bar chart data
   const teamCapacityData = useMemo(() => {
-    return teams.map((team) => {
-      const teamMembers = members.filter((m) => m.teamId === team.id);
+    return internalTeams.map((team) => {
+      const teamMembers = internalMembers.filter((m) => m.teamId === team.id);
       const available = teamMembers.filter((m) => getMemberStatus(m.id) === "available").length;
       const absent = teamMembers.length - available;
       return { name: team.name.length > 10 ? team.name.slice(0, 10) + "…" : team.name, available, absent };
     });
-  }, [teams, members, getMemberStatus]);
+  }, [internalTeams, internalMembers, getMemberStatus]);
 
   // Absence type pie chart
   const absenceTypeData = useMemo(() => {
-    const activeAbsences = absences.filter((a) => a.startDate <= today && a.endDate >= today);
+    const activeAbsences = internalAbsences.filter((a) => a.startDate <= today && a.endDate >= today);
     const vacation = activeAbsences.filter((a) => a.type === "vacation").length;
     const sick = activeAbsences.filter((a) => a.type === "sick-leave").length;
     const workTravel = activeAbsences.filter((a) => a.type === "work-travel").length;
@@ -64,7 +77,7 @@ export function AnalyticsPanel() {
       { name: t.otherProject, value: otherProject, fill: "hsl(var(--status-other-project))" },
       { name: t.parentalLeave, value: parentalLeave, fill: "hsl(var(--status-parental-leave))" },
     ].filter((d) => d.value > 0);
-  }, [absences, today, t]);
+  }, [internalAbsences, today, t]);
 
   // Absence trend: next 14 days
   const absenceTrendData = useMemo(() => {
@@ -73,11 +86,12 @@ export function AnalyticsPanel() {
       const d = new Date();
       d.setDate(d.getDate() + i);
       const iso = d.toISOString().split("T")[0];
-      const count = absences.filter((a) => a.startDate <= iso && a.endDate >= iso).length;
+      const count = internalAbsences.filter((a) => a.startDate <= iso && a.endDate >= iso).length;
       days.push({ date: iso, label: `${d.getDate()}/${d.getMonth() + 1}`, count });
     }
     return days;
-  }, [absences]);
+  }, [internalAbsences]);
+
 
   const capacityChartConfig: ChartConfig = {
     available: { label: t.available, color: "hsl(var(--status-available))" },
