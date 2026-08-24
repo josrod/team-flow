@@ -20,6 +20,7 @@ import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
 import { useLang } from "@/context/LanguageContext";
 import { findBookingAbsenceOverlaps } from "@/lib/bookingOverlaps";
+import { externalPersonKeys, filterInternalByPerson } from "@/lib/internalTeams";
 import { formatHours, formatIsoDay } from "@/lib/inventValues";
 
 import {
@@ -59,7 +60,7 @@ const emptyFilters: TimeBookingFilters = {
 export function TimeBookingPage() {
   const { t } = useLang();
   const { isAdmin } = useAuth();
-  const { members, absences } = useApp();
+  const { members, teams, absences } = useApp();
   const [bookings, setBookings] = useState<TimeBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [importOpen, setImportOpen] = useState(false);
@@ -86,7 +87,16 @@ export function TimeBookingPage() {
     void load();
   }, [load]);
 
-  const filtered = useMemo(() => filterTimeBookings(bookings, filters), [bookings, filters]);
+  // Scope every metric, chart and drill-down table to internal teams (RODAT, Processing).
+  const externalKeys = useMemo(() => externalPersonKeys(members, teams), [members, teams]);
+  const internalBookings = useMemo(
+    () => filterInternalByPerson(bookings, externalKeys),
+    [bookings, externalKeys]
+  );
+  const filtered = useMemo(
+    () => filterTimeBookings(internalBookings, filters),
+    [internalBookings, filters]
+  );
   const totals = useMemo(() => summarizeTimeBookings(filtered), [filtered]);
   const byPerson = useMemo(() => hoursByPerson(filtered).slice(0, 12), [filtered]);
   const byProject = useMemo(() => hoursByProject(filtered).slice(0, 8), [filtered]);
@@ -369,7 +379,7 @@ export function TimeBookingPage() {
             <div className="flex items-center justify-center py-10">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
-          ) : bookings.length === 0 ? (
+          ) : internalBookings.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">{t.timeBookingEmpty}</p>
           ) : filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">{t.timeBookingNoResults}</p>
