@@ -379,7 +379,7 @@ export function TimeBookingPage() {
             <div className="flex items-center justify-center py-10">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
-          ) : bookings.length === 0 ? (
+          ) : internalBookings.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">{t.timeBookingEmpty}</p>
           ) : filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">{t.timeBookingNoResults}</p>
