@@ -23,6 +23,7 @@ import { validateHandoverTopicIds } from "@/lib/handoverValidation";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Handover } from "@/types";
+import { filterInternalMembers, filterInternalTeams } from "@/lib/internalTeams";
 
 const container = {
   hidden: { opacity: 0 },
