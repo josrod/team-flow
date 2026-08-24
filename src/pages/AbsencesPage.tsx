@@ -22,9 +22,12 @@ import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { AbsenceType, Absence } from "@/types";
 import { motion } from "framer-motion";
+import { filterInternalMembers, filterInternalTeams } from "@/lib/internalTeams";
 
 export default function AbsencesPage() {
-  const { teams, members, absences, addAbsence, updateAbsence, deleteAbsence } = useApp();
+  const { teams: allTeams, members: allMembers, absences, addAbsence, updateAbsence, deleteAbsence } = useApp();
+  const teams = useMemo(() => filterInternalTeams(allTeams), [allTeams]);
+  const members = useMemo(() => filterInternalMembers(allMembers, teams), [allMembers, teams]);
   const { isAdmin } = useAuth();
 
   const { t, lang } = useLang();
