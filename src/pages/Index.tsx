@@ -72,6 +72,10 @@ const Index = () => {
 
   const today = new Date().toISOString().split("T")[0];
 
+  // External teams are excluded from the dashboard team cards and capacity.
+  const internalTeams = filterInternalTeams(teams);
+
+
   const filteredMembers = search
     ? members.filter((m) => m.name.toLowerCase().includes(search.toLowerCase()))
     : [];
