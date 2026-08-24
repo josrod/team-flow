@@ -119,7 +119,7 @@ export function AnalyticsPanel() {
   return (
     <div className="space-y-6">
       <motion.div variants={item}>
-        <h2 className="text-xl font-display font-semibold mb-4 flex items-center gap-2">
+        <h2 className="text-xl font-display font-semibold mb-1 flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <TrendingUp className="h-4 w-4 text-primary" />
           </div>
