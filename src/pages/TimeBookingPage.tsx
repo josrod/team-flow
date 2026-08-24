@@ -20,6 +20,7 @@ import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
 import { useLang } from "@/context/LanguageContext";
 import { findBookingAbsenceOverlaps } from "@/lib/bookingOverlaps";
+import { externalPersonKeys, filterInternalByPerson } from "@/lib/internalTeams";
 import { formatHours, formatIsoDay } from "@/lib/inventValues";
 
 import {
