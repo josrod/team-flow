@@ -125,6 +125,7 @@ export function AnalyticsPanel() {
           </div>
           {t.analyticsTitle}
         </h2>
+        <p className="text-xs text-muted-foreground">{t.analyticsInternalScope}</p>
       </motion.div>
 
       {/* Summary KPIs */}
