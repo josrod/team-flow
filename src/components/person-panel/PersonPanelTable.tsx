@@ -9,7 +9,7 @@ import { useLang } from "@/context/LanguageContext";
 import { BacklogTable } from "@/components/backlog/BacklogTable";
 import { formatHours } from "@/lib/inventValues";
 import type { BacklogCardItem } from "@/lib/backlogBoard";
-import type { PersonPanelRow, PersonRisk } from "@/lib/personPanel";
+import type { DeviationFlag, PersonPanelRow, PersonRisk } from "@/lib/personPanel";
 
 interface PersonPanelTableProps {
   rows: PersonPanelRow[];
@@ -21,6 +21,18 @@ const riskStyles: Record<PersonRisk, string> = {
   high: "bg-status-sick/15 text-status-sick",
   medium: "bg-status-vacation/15 text-status-vacation",
   none: "bg-status-available/15 text-status-available",
+};
+
+const deviationStyles: Record<DeviationFlag, string> = {
+  under: "bg-status-sick/15 text-status-sick",
+  over: "bg-status-vacation/15 text-status-vacation",
+  ok: "bg-status-available/15 text-status-available",
+};
+
+const deviationTextStyles: Record<DeviationFlag, string> = {
+  under: "text-status-sick",
+  over: "text-status-vacation",
+  ok: "text-status-available",
 };
 
 
@@ -35,6 +47,13 @@ export const PersonPanelTable = ({ rows, teamNameById, onSelectCard }: PersonPan
     none: t.personPanelRiskNone,
   };
 
+  const deviationLabels: Record<DeviationFlag, string> = {
+    under: t.personPanelDeviationUnder,
+    over: t.personPanelDeviationOver,
+    ok: t.personPanelDeviationOk,
+  };
+
+
   const RiskIcon = (risk: PersonRisk) =>
     risk === "high" ? AlertTriangle : risk === "medium" ? ShieldAlert : CircleDot;
 
@@ -47,10 +66,14 @@ export const PersonPanelTable = ({ rows, teamNameById, onSelectCard }: PersonPan
       <Table>
         <TableHeader className="sticky top-0 bg-card">
           <TableRow>
-            <TableHead className="w-[26%]">{t.personPanelPerson}</TableHead>
+            <TableHead className="w-[20%]">{t.personPanelPerson}</TableHead>
             <TableHead>{t.personPanelItems}</TableHead>
-            <TableHead className="w-[18%]">{t.personPanelProgress}</TableHead>
+            <TableHead className="w-[14%]">{t.personPanelProgress}</TableHead>
+            <TableHead>{t.personPanelPlanCapacity}</TableHead>
+            <TableHead>{t.personPanelPlanEstimate}</TableHead>
             <TableHead>{t.personPanelHours}</TableHead>
+            <TableHead className="w-[14%]">{t.personPanelWeeklyProgress}</TableHead>
+            <TableHead>{t.personPanelDeviation}</TableHead>
             <TableHead>{t.personPanelAbsence}</TableHead>
             <TableHead>{t.personPanelBlockers}</TableHead>
             <TableHead>{t.personPanelClosed}</TableHead>
@@ -110,6 +133,14 @@ export const PersonPanelTable = ({ rows, teamNameById, onSelectCard }: PersonPan
                       </span>
                     )}
                   </TableCell>
+                  <TableCell className="py-2 text-sm">{formatHours(row.plannedCapacityHours)}</TableCell>
+                  <TableCell className="py-2 text-sm">
+                    {row.plannedEstimateHours > 0 ? (
+                      formatHours(row.plannedEstimateHours)
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="py-2 text-sm">
                     {formatHours(row.hours)}
                     {row.hoursDelta !== 0 && (
@@ -122,6 +153,36 @@ export const PersonPanelTable = ({ rows, teamNameById, onSelectCard }: PersonPan
                         {row.hoursDelta > 0 ? "+" : ""}
                         {String(row.hoursDelta).replace(".", ",")}
                       </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="py-2">
+                    {row.weeklyProgressPercent === null ? (
+                      <span className="text-[11px] text-muted-foreground">—</span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <Progress
+                          value={Math.min(100, row.weeklyProgressPercent)}
+                          className="h-1.5 w-16"
+                        />
+                        <span className="whitespace-nowrap text-[11px] text-muted-foreground">
+                          {row.weeklyProgressPercent}%
+                        </span>
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="py-2">
+                    {row.deviationPercent === null ? (
+                      <span className="text-[11px] text-muted-foreground">—</span>
+                    ) : (
+                      <Badge
+                        variant="secondary"
+                        className={cn("gap-1", deviationStyles[row.deviationFlag])}
+                        title={deviationLabels[row.deviationFlag]}
+                      >
+                        {row.deviationHours > 0 ? "+" : ""}
+                        {String(row.deviationHours).replace(".", ",")} h ({row.deviationPercent > 0 ? "+" : ""}
+                        {row.deviationPercent}%)
+                      </Badge>
                     )}
                   </TableCell>
                   <TableCell className="py-2 text-sm">
@@ -148,8 +209,29 @@ export const PersonPanelTable = ({ rows, teamNameById, onSelectCard }: PersonPan
                 </TableRow>
                 {isOpen && (
                   <TableRow>
-                    <TableCell colSpan={8} className="bg-muted/30 p-3">
+                    <TableCell colSpan={12} className="bg-muted/30 p-3">
                       <div className="mb-2 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+                        <span>
+                          {t.personPanelBreakdownCapacity.replace(
+                            "{hours}",
+                            formatHours(row.plannedCapacityHours),
+                          )}
+                        </span>
+                        <span>
+                          {t.personPanelBreakdownAbsence.replace("{days}", String(row.absenceDays))}
+                        </span>
+                        <span>
+                          {t.personPanelBreakdownEstimate.replace(
+                            "{hours}",
+                            formatHours(row.plannedEstimateHours),
+                          )}
+                        </span>
+                        <span>
+                          {t.personPanelBreakdownBooked.replace("{hours}", formatHours(row.hours))}
+                        </span>
+                        <span className={cn(deviationTextStyles[row.deviationFlag])}>
+                          {deviationLabels[row.deviationFlag]}
+                        </span>
                         <span>
                           {t.personPanelReadyToClose.replace("{count}", String(row.readyToClose))}
                         </span>

@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Clock, ShieldAlert, TrendingUp } from "lucide-react";
+import { AlertTriangle, CalendarClock, CheckCircle2, Clock, ListChecks, ShieldAlert, TrendingUp } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { useLang } from "@/context/LanguageContext";
@@ -18,12 +18,30 @@ export const PersonKpiCards = ({ kpis }: PersonKpiCardsProps) => {
 
   const cards = [
     {
+      key: "planCapacity",
+      icon: CalendarClock,
+      label: t.personPanelKpiPlanCapacity,
+      value: formatHours(kpis.plannedCapacityHours),
+    },
+    {
+      key: "planEstimate",
+      icon: ListChecks,
+      label: t.personPanelKpiPlanEstimate,
+      value: formatHours(kpis.plannedEstimateHours),
+    },
+    {
       key: "hours",
       icon: Clock,
       label: t.personPanelKpiHours,
       value: formatHours(kpis.hours),
       delta: formatDelta(kpis.hoursDelta, " h"),
       positive: kpis.hoursDelta >= 0,
+    },
+    {
+      key: "deviating",
+      icon: AlertTriangle,
+      label: t.personPanelKpiDeviating,
+      value: `${kpis.deviating}/${kpis.people}`,
     },
     {
       key: "closed",
@@ -54,7 +72,7 @@ export const PersonKpiCards = ({ kpis }: PersonKpiCardsProps) => {
   ];
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {cards.map(({ key, icon: Icon, label, value, delta, positive }) => (
         <Card key={key}>
           <CardContent className="space-y-1 p-4">

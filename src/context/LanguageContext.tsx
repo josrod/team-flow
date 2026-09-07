@@ -195,6 +195,21 @@ export const translations = {
     personPanelReadyToClose: "Listos para cerrar: {count}",
     personPanelWaiting: "En espera: {count}",
     personPanelHint: "Los datos de TFS se actualizan automáticamente cada 5 minutos.",
+    personPanelSortDeviation: "Mayor desviación",
+    personPanelPlanCapacity: "Plan (capacidad)",
+    personPanelPlanEstimate: "Plan (TFS)",
+    personPanelWeeklyProgress: "Avance semanal",
+    personPanelDeviation: "Desviación",
+    personPanelDeviationUnder: "Por debajo del plan",
+    personPanelDeviationOver: "Por encima del plan",
+    personPanelDeviationOk: "Dentro del plan",
+    personPanelKpiPlanCapacity: "Horas planificadas (capacidad)",
+    personPanelKpiPlanEstimate: "Horas planificadas (TFS)",
+    personPanelKpiDeviating: "Personas desviadas (±15 %)",
+    personPanelBreakdownCapacity: "Capacidad: {hours} h",
+    personPanelBreakdownAbsence: "Ausencias descontadas: {days} d",
+    personPanelBreakdownEstimate: "Estimación TFS: {hours} h",
+    personPanelBreakdownBooked: "Registradas: {hours} h",
 
 
 
@@ -1373,6 +1388,21 @@ export const translations = {
     personPanelReadyToClose: "Ready to close: {count}",
     personPanelWaiting: "Waiting: {count}",
     personPanelHint: "TFS data refreshes automatically every 5 minutes.",
+    personPanelSortDeviation: "Largest deviation",
+    personPanelPlanCapacity: "Plan (capacity)",
+    personPanelPlanEstimate: "Plan (TFS)",
+    personPanelWeeklyProgress: "Weekly progress",
+    personPanelDeviation: "Deviation",
+    personPanelDeviationUnder: "Below plan",
+    personPanelDeviationOver: "Above plan",
+    personPanelDeviationOk: "Within plan",
+    personPanelKpiPlanCapacity: "Planned hours (capacity)",
+    personPanelKpiPlanEstimate: "Planned hours (TFS)",
+    personPanelKpiDeviating: "People off plan (±15%)",
+    personPanelBreakdownCapacity: "Capacity: {hours} h",
+    personPanelBreakdownAbsence: "Absence days deducted: {days}",
+    personPanelBreakdownEstimate: "TFS estimate: {hours} h",
+    personPanelBreakdownBooked: "Booked: {hours} h",
 
 
 

@@ -33,6 +33,9 @@ export interface PanelAlert {
 
 export type PersonRisk = "high" | "medium" | "none";
 
+/** Booked hours compared to planned capacity: under, over or within threshold. */
+export type DeviationFlag = "under" | "over" | "ok";
+
 export interface PersonPanelRow {
   memberId: string;
   name: string;
@@ -52,6 +55,15 @@ export interface PersonPanelRow {
   hours: number;
   hoursPreviousWeek: number;
   hoursDelta: number;
+  /** Planned hours from weekly capacity minus absence days. */
+  plannedCapacityHours: number;
+  /** Planned hours from TFS estimates of the person's active child tasks. */
+  plannedEstimateHours: number;
+  /** Booked hours over planned capacity, in percent. */
+  weeklyProgressPercent: number | null;
+  deviationHours: number;
+  deviationPercent: number | null;
+  deviationFlag: DeviationFlag;
   absenceDays: number;
   absenceTypes: string[];
   blockers: number;
@@ -63,6 +75,10 @@ export interface PersonPanelKpis {
   hours: number;
   hoursPreviousWeek: number;
   hoursDelta: number;
+  plannedCapacityHours: number;
+  plannedEstimateHours: number;
+  /** People whose booked hours deviate beyond the threshold. */
+  deviating: number;
   closedItems: number;
   closedItemsPreviousWeek: number;
   averageProgress: number | null;
@@ -89,6 +105,8 @@ export interface BuildPersonPanelInput {
   memberIdFor: (person: string) => string | null;
   /** Expected booked hours per full working week. Defaults to 40. */
   targetWeeklyHours?: number;
+  /** Relative deviation (0-1) tolerated before flagging. Defaults to 0.15. */
+  deviationThreshold?: number;
 }
 
 const ACTIVE_COLUMNS = new Set(["open", "refinement", "inProgress", "testing"]);
@@ -138,6 +156,27 @@ export const absenceDaysInWeek = (
   return { days: Math.min(days, 5), types: [...types] };
 };
 
+/** Estimated hours per member from active child tasks (estimate, else remaining). */
+export const estimateHoursByMember = (
+  cards: readonly BacklogCardItem[],
+  memberIdFor: (person: string) => string | null,
+): Map<string, number> => {
+  const byMember = new Map<string, number>();
+  cards.forEach((card) => {
+    card.children.forEach((child) => {
+      if (!ACTIVE_COLUMNS.has(child.column)) return;
+      const name = child.assignedTo?.trim();
+      if (!name) return;
+      const id = memberIdFor(name);
+      if (!id) return;
+      const estimate = child.originalEstimate ?? child.remainingWork ?? 0;
+      if (estimate <= 0) return;
+      byMember.set(id, (byMember.get(id) ?? 0) + estimate);
+    });
+  });
+  return byMember;
+};
+
 const riskFor = (
   row: Omit<PersonPanelRow, "risk">,
   expectedHours: number,
@@ -147,7 +186,7 @@ const riskFor = (
   const lowHours = expectedHours > 0 && row.hours < expectedHours * 0.6 && row.itemsActive > 0;
   if (row.blockers > 0 && (lowProgress || noHours)) return "high";
   if (noHours) return "high";
-  if (row.blockers > 0 || lowHours || lowProgress) return "medium";
+  if (row.blockers > 0 || lowHours || lowProgress || row.deviationFlag !== "ok") return "medium";
   return "none";
 };
 
@@ -161,6 +200,7 @@ export const buildPersonPanel = ({
   weekKey,
   memberIdFor,
   targetWeeklyHours = 40,
+  deviationThreshold = 0.15,
 }: BuildPersonPanelInput): PersonPanelResult => {
   const { from, to } = isoWeekRange(weekKey);
   const previousWeek = previousIsoWeekKey(weekKey);
@@ -205,6 +245,8 @@ export const buildPersonPanel = ({
     blockersByMember.set(id, set);
   });
 
+  const estimateByMember = estimateHoursByMember(cards, memberIdFor);
+
   const rows: PersonPanelRow[] = members.map((member) => {
     const memberCards = (cardsByMember.get(member.id) ?? []).slice().sort((a, b) => b.id - a.id);
     const active = memberCards.filter((card) => ACTIVE_COLUMNS.has(card.column));
@@ -224,7 +266,19 @@ export const buildPersonPanel = ({
     );
     const hours = round1(hoursByMember.get(member.id) ?? 0);
     const hoursPreviousWeek = round1(previousHoursByMember.get(member.id) ?? 0);
-    const expectedHours = (targetWeeklyHours / 5) * Math.max(0, 5 - absenceDays);
+    const expectedHours = round1((targetWeeklyHours / 5) * Math.max(0, 5 - absenceDays));
+    const plannedEstimateHours = round1(estimateByMember.get(member.id) ?? 0);
+    const deviationHours = round1(hours - expectedHours);
+    const deviationPercent =
+      expectedHours > 0 ? Math.round((deviationHours / expectedHours) * 100) : null;
+    const deviationFlag: DeviationFlag =
+      deviationPercent === null
+        ? "ok"
+        : deviationPercent > deviationThreshold * 100
+          ? "over"
+          : deviationPercent < -deviationThreshold * 100
+            ? "under"
+            : "ok";
 
     const base: Omit<PersonPanelRow, "risk"> = {
       memberId: member.id,
@@ -249,6 +303,13 @@ export const buildPersonPanel = ({
       hours,
       hoursPreviousWeek,
       hoursDelta: round1(hours - hoursPreviousWeek),
+      plannedCapacityHours: expectedHours,
+      plannedEstimateHours,
+      weeklyProgressPercent:
+        expectedHours > 0 ? Math.round((hours / expectedHours) * 100) : null,
+      deviationHours,
+      deviationPercent,
+      deviationFlag,
       absenceDays,
       absenceTypes,
       blockers: blockersByMember.get(member.id)?.size ?? 0,
@@ -279,6 +340,9 @@ export const buildPersonPanel = ({
     hours,
     hoursPreviousWeek,
     hoursDelta: round1(hours - hoursPreviousWeek),
+    plannedCapacityHours: round1(rows.reduce((sum, row) => sum + row.plannedCapacityHours, 0)),
+    plannedEstimateHours: round1(rows.reduce((sum, row) => sum + row.plannedEstimateHours, 0)),
+    deviating: rows.filter((row) => row.deviationFlag !== "ok").length,
     closedItems: new Set(
       rows.flatMap((row) =>
         row.cards
@@ -300,7 +364,7 @@ export const buildPersonPanel = ({
   return { weekKey, weekFrom: from, weekTo: to, rows, kpis };
 };
 
-export type PersonPanelSort = "risk" | "progress" | "hours" | "blockers" | "name";
+export type PersonPanelSort = "risk" | "progress" | "hours" | "blockers" | "deviation" | "name";
 
 const riskWeight: Record<PersonRisk, number> = { high: 2, medium: 1, none: 0 };
 
@@ -319,6 +383,12 @@ export const sortPersonRows = (
       return list.sort((a, b) => a.hours - b.hours || a.name.localeCompare(b.name));
     case "blockers":
       return list.sort((a, b) => b.blockers - a.blockers || a.name.localeCompare(b.name));
+    case "deviation":
+      return list.sort(
+        (a, b) =>
+          Math.abs(b.deviationPercent ?? 0) - Math.abs(a.deviationPercent ?? 0) ||
+          a.name.localeCompare(b.name),
+      );
     case "name":
       return list.sort((a, b) => a.name.localeCompare(b.name));
     default:

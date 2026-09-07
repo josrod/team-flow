@@ -124,6 +124,68 @@ describe("buildPersonPanel", () => {
     expect(result.rows[0].risk).toBe("high");
     expect(result.kpis.atRisk).toBe(1);
   });
+
+  it("plans capacity from absences, sums TFS estimates and flags deviation", () => {
+    const result = buildPersonPanel({
+      members,
+      weekKey,
+      memberIdFor,
+      cards: [
+        card({
+          id: 50,
+          assignedTo: "Ana Ruiz",
+          childrenTotal: 2,
+          childrenDone: 0,
+          children: [
+            { id: 51, title: "a", state: "Active", column: "inProgress", workItemType: "Task", assignedTo: "Ana Ruiz", originalEstimate: 12, htmlUrl: "" },
+            { id: 52, title: "b", state: "Active", column: "open", workItemType: "Task", assignedTo: "Ana Ruiz", remainingWork: 3, htmlUrl: "" },
+          ],
+        }),
+        card({ id: 53, assignedTo: "Luis Gomez" }),
+      ],
+      alerts: [],
+      bookings: [
+        { person: "Ana Ruiz", memberId: "m1", workDate: "2026-03-03", duration: 40 },
+        { person: "Luis Gomez", memberId: "m2", workDate: "2026-03-03", duration: 12 },
+      ],
+      absences: [
+        { memberId: "m2", type: "vacation", startDate: "2026-03-02", endDate: "2026-03-03" },
+      ],
+    });
+
+    const ana = result.rows.find((row) => row.memberId === "m1");
+    const luis = result.rows.find((row) => row.memberId === "m2");
+
+    expect(ana?.plannedCapacityHours).toBe(40);
+    expect(ana?.plannedEstimateHours).toBe(15);
+    expect(ana?.weeklyProgressPercent).toBe(100);
+    expect(ana?.deviationFlag).toBe("ok");
+
+    expect(luis?.plannedCapacityHours).toBe(24);
+    expect(luis?.plannedEstimateHours).toBe(0);
+    expect(luis?.deviationHours).toBe(-12);
+    expect(luis?.deviationPercent).toBe(-50);
+    expect(luis?.deviationFlag).toBe("under");
+
+    expect(result.kpis.plannedCapacityHours).toBe(64);
+    expect(result.kpis.plannedEstimateHours).toBe(15);
+    expect(result.kpis.deviating).toBe(1);
+  });
+
+  it("flags booked hours above the plan as over", () => {
+    const result = buildPersonPanel({
+      members: [members[0]],
+      weekKey,
+      memberIdFor,
+      cards: [card({ id: 60, assignedTo: "Ana Ruiz" })],
+      alerts: [],
+      bookings: [{ person: "Ana Ruiz", memberId: "m1", workDate: "2026-03-03", duration: 50 }],
+      absences: [],
+    });
+
+    expect(result.rows[0].deviationFlag).toBe("over");
+    expect(result.rows[0].deviationPercent).toBe(25);
+  });
 });
 
 describe("absenceDaysInWeek", () => {
@@ -154,5 +216,6 @@ describe("sortPersonRows", () => {
 
     expect(sortPersonRows(rows, "progress")[0].memberId).toBe("m2");
     expect(sortPersonRows(rows, "name")[0].name).toBe("Ana Ruiz");
+    expect(sortPersonRows(rows, "deviation").length).toBe(2);
   });
 });
