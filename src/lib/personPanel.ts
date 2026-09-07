@@ -156,6 +156,27 @@ export const absenceDaysInWeek = (
   return { days: Math.min(days, 5), types: [...types] };
 };
 
+/** Estimated hours per member from active child tasks (estimate, else remaining). */
+export const estimateHoursByMember = (
+  cards: readonly BacklogCardItem[],
+  memberIdFor: (person: string) => string | null,
+): Map<string, number> => {
+  const byMember = new Map<string, number>();
+  cards.forEach((card) => {
+    card.children.forEach((child) => {
+      if (!ACTIVE_COLUMNS.has(child.column)) return;
+      const name = child.assignedTo?.trim();
+      if (!name) return;
+      const id = memberIdFor(name);
+      if (!id) return;
+      const estimate = child.originalEstimate ?? child.remainingWork ?? 0;
+      if (estimate <= 0) return;
+      byMember.set(id, (byMember.get(id) ?? 0) + estimate);
+    });
+  });
+  return byMember;
+};
+
 const riskFor = (
   row: Omit<PersonPanelRow, "risk">,
   expectedHours: number,
@@ -165,7 +186,7 @@ const riskFor = (
   const lowHours = expectedHours > 0 && row.hours < expectedHours * 0.6 && row.itemsActive > 0;
   if (row.blockers > 0 && (lowProgress || noHours)) return "high";
   if (noHours) return "high";
-  if (row.blockers > 0 || lowHours || lowProgress) return "medium";
+  if (row.blockers > 0 || lowHours || lowProgress || row.deviationFlag !== "ok") return "medium";
   return "none";
 };
 
