@@ -47,10 +47,14 @@ export const PersonPanelTable = ({ rows, teamNameById, onSelectCard }: PersonPan
       <Table>
         <TableHeader className="sticky top-0 bg-card">
           <TableRow>
-            <TableHead className="w-[26%]">{t.personPanelPerson}</TableHead>
+            <TableHead className="w-[20%]">{t.personPanelPerson}</TableHead>
             <TableHead>{t.personPanelItems}</TableHead>
-            <TableHead className="w-[18%]">{t.personPanelProgress}</TableHead>
+            <TableHead className="w-[14%]">{t.personPanelProgress}</TableHead>
+            <TableHead>{t.personPanelPlanCapacity}</TableHead>
+            <TableHead>{t.personPanelPlanEstimate}</TableHead>
             <TableHead>{t.personPanelHours}</TableHead>
+            <TableHead className="w-[14%]">{t.personPanelWeeklyProgress}</TableHead>
+            <TableHead>{t.personPanelDeviation}</TableHead>
             <TableHead>{t.personPanelAbsence}</TableHead>
             <TableHead>{t.personPanelBlockers}</TableHead>
             <TableHead>{t.personPanelClosed}</TableHead>
