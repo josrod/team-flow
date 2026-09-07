@@ -1388,6 +1388,21 @@ export const translations = {
     personPanelReadyToClose: "Ready to close: {count}",
     personPanelWaiting: "Waiting: {count}",
     personPanelHint: "TFS data refreshes automatically every 5 minutes.",
+    personPanelSortDeviation: "Largest deviation",
+    personPanelPlanCapacity: "Plan (capacity)",
+    personPanelPlanEstimate: "Plan (TFS)",
+    personPanelWeeklyProgress: "Weekly progress",
+    personPanelDeviation: "Deviation",
+    personPanelDeviationUnder: "Below plan",
+    personPanelDeviationOver: "Above plan",
+    personPanelDeviationOk: "Within plan",
+    personPanelKpiPlanCapacity: "Planned hours (capacity)",
+    personPanelKpiPlanEstimate: "Planned hours (TFS)",
+    personPanelKpiDeviating: "People off plan (±15%)",
+    personPanelBreakdownCapacity: "Capacity: {hours} h",
+    personPanelBreakdownAbsence: "Absence days deducted: {days}",
+    personPanelBreakdownEstimate: "TFS estimate: {hours} h",
+    personPanelBreakdownBooked: "Booked: {hours} h",
 
 
 
