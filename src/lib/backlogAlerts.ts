@@ -23,6 +23,8 @@ export interface BacklogAlert {
   htmlUrl: string;
   /** Days since the item last changed in Azure DevOps. */
   staleDays?: number;
+  /** Parent backlog item, set on child-task alerts. */
+  parentItemId?: number;
 }
 
 export interface AbsentOwner {
@@ -113,6 +115,7 @@ export const buildBacklogAlerts = (
           detail: card.title,
           htmlUrl: child.htmlUrl || card.htmlUrl,
           staleDays,
+          parentItemId: card.id,
         });
       });
 
@@ -201,8 +204,8 @@ export const groupAlertsByItem = (alerts: readonly BacklogAlert[]): BacklogAlert
   const groups = new Map<number, BacklogAlertGroup>();
   alerts.forEach((alert) => {
     // Child-task alerts carry the parent title in `detail`.
-    const isChild = alert.kind === "unassignedChild";
-    const key = isChild ? alert.itemId : alert.itemId;
+    const key = alert.parentItemId ?? alert.itemId;
+    const isChild = alert.parentItemId !== undefined;
     const existing = groups.get(key);
     if (existing) {
       existing.alerts.push(alert);
@@ -210,7 +213,7 @@ export const groupAlertsByItem = (alerts: readonly BacklogAlert[]): BacklogAlert
       return;
     }
     groups.set(key, {
-      itemId: alert.itemId,
+      itemId: key,
       title: isChild ? (alert.detail ?? alert.title) : alert.title,
       workItemType: alert.workItemType,
       state: alert.state,
