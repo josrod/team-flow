@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Clock, ShieldAlert, TrendingUp } from "lucide-react";
+import { AlertTriangle, CalendarClock, CheckCircle2, Clock, ListChecks, ShieldAlert, TrendingUp } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { useLang } from "@/context/LanguageContext";
