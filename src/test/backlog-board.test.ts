@@ -9,6 +9,9 @@ import {
   toSwimlane,
   parseTags,
   UNASSIGNED_KEY,
+  completionRatio,
+  completionPercent,
+  summarizeProgress,
 } from "@/lib/backlogBoard";
 import type { TfsWorkItem } from "@/services/tfs";
 
@@ -93,5 +96,41 @@ describe("buildBacklogCards", () => {
   it("falls back to unassigned when nobody owns the work", () => {
     const cards = buildBacklogCards([pbi({ id: 9 })], []);
     expect(groupByPerson(cards)[0].person).toBe(UNASSIGNED_KEY);
+  });
+});
+
+describe("completion and progress summary", () => {
+  const card = (
+    id: number,
+    column: "open" | "inProgress" | "closed",
+    done: number,
+    total: number,
+  ) =>
+    ({
+      id,
+      column,
+      childrenDone: done,
+      childrenTotal: total,
+    }) as unknown as BacklogCardItem;
+
+  it("returns null completion without child tasks", () => {
+    expect(completionRatio(card(1, "open", 0, 0))).toBeNull();
+    expect(completionPercent(card(1, "open", 0, 0))).toBeNull();
+  });
+
+  it("computes closed children over total children", () => {
+    expect(completionRatio(card(2, "inProgress", 1, 4))).toBe(0.25);
+    expect(completionPercent(card(2, "inProgress", 1, 3))).toBe(33);
+  });
+
+  it("averages active items and counts items ready to close", () => {
+    const summary = summarizeProgress([
+      card(1, "inProgress", 2, 4),
+      card(2, "open", 3, 3),
+      card(3, "closed", 1, 1),
+      card(4, "open", 0, 0),
+    ]);
+    expect(summary.averagePercent).toBe(75);
+    expect(summary.readyToClose).toBe(1);
   });
 });
