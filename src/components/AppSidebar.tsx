@@ -83,6 +83,7 @@ export function AppSidebar() {
     { title: t.epics, url: "/epics", icon: Target },
     { title: t.waitingViewTitle, url: "/waiting", icon: Hourglass },
     { title: t.blockers, url: "/blockers", icon: ShieldAlert },
+    { title: t.personPanel, url: "/team-load", icon: Users },
     { title: t.digestTitle, url: "/digest", icon: FileText },
     { title: t.timeBookingTitle, url: "/time-booking", icon: Clock },
 
