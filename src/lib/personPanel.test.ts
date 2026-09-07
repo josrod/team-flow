@@ -216,5 +216,6 @@ describe("sortPersonRows", () => {
 
     expect(sortPersonRows(rows, "progress")[0].memberId).toBe("m2");
     expect(sortPersonRows(rows, "name")[0].name).toBe("Ana Ruiz");
+    expect(sortPersonRows(rows, "deviation").length).toBe(2);
   });
 });
