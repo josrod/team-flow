@@ -33,6 +33,9 @@ export interface PanelAlert {
 
 export type PersonRisk = "high" | "medium" | "none";
 
+/** Booked hours compared to planned capacity: under, over or within threshold. */
+export type DeviationFlag = "under" | "over" | "ok";
+
 export interface PersonPanelRow {
   memberId: string;
   name: string;
@@ -52,6 +55,15 @@ export interface PersonPanelRow {
   hours: number;
   hoursPreviousWeek: number;
   hoursDelta: number;
+  /** Planned hours from weekly capacity minus absence days. */
+  plannedCapacityHours: number;
+  /** Planned hours from TFS estimates of the person's active child tasks. */
+  plannedEstimateHours: number;
+  /** Booked hours over planned capacity, in percent. */
+  weeklyProgressPercent: number | null;
+  deviationHours: number;
+  deviationPercent: number | null;
+  deviationFlag: DeviationFlag;
   absenceDays: number;
   absenceTypes: string[];
   blockers: number;
@@ -63,6 +75,10 @@ export interface PersonPanelKpis {
   hours: number;
   hoursPreviousWeek: number;
   hoursDelta: number;
+  plannedCapacityHours: number;
+  plannedEstimateHours: number;
+  /** People whose booked hours deviate beyond the threshold. */
+  deviating: number;
   closedItems: number;
   closedItemsPreviousWeek: number;
   averageProgress: number | null;
@@ -89,6 +105,8 @@ export interface BuildPersonPanelInput {
   memberIdFor: (person: string) => string | null;
   /** Expected booked hours per full working week. Defaults to 40. */
   targetWeeklyHours?: number;
+  /** Relative deviation (0-1) tolerated before flagging. Defaults to 0.15. */
+  deviationThreshold?: number;
 }
 
 const ACTIVE_COLUMNS = new Set(["open", "refinement", "inProgress", "testing"]);
