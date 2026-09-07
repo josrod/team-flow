@@ -4,6 +4,7 @@ import { Bug, ChevronDown, ChevronRight, ExternalLink, ListChecks, Square } from
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/context/LanguageContext";
+import { BacklogProgress } from "@/components/backlog/BacklogProgress";
 import type { BacklogCardItem, BoardColumn } from "@/lib/backlogBoard";
 
 const columnAccent: Record<BoardColumn, string> = {
@@ -81,6 +82,7 @@ export const BacklogCard = ({ card, hideAssignee = false }: BacklogCardProps) =>
               ))}
             </div>
           )}
+          {hasChildren && <BacklogProgress card={card} compact className="mt-2" />}
           {hasChildren && (
             <>
               <button
