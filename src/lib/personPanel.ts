@@ -383,6 +383,12 @@ export const sortPersonRows = (
       return list.sort((a, b) => a.hours - b.hours || a.name.localeCompare(b.name));
     case "blockers":
       return list.sort((a, b) => b.blockers - a.blockers || a.name.localeCompare(b.name));
+    case "deviation":
+      return list.sort(
+        (a, b) =>
+          Math.abs(b.deviationPercent ?? 0) - Math.abs(a.deviationPercent ?? 0) ||
+          a.name.localeCompare(b.name),
+      );
     case "name":
       return list.sort((a, b) => a.name.localeCompare(b.name));
     default:
