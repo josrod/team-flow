@@ -87,6 +87,31 @@ export const translations = {
     backlogOpenInAdo: "Abrir en Azure DevOps",
     backlogColumnEmpty: "Nada aquí",
 
+    // Sincronización y alertas del panel principal
+    backlogSyncTitle: "Backlog en vivo (Azure DevOps)",
+    backlogSyncSubtitle: "Sincronización automática de PBI, tareas hijas y avances, sin importaciones manuales.",
+    backlogSyncSyncing: "Sincronizando...",
+    backlogSyncedAt: "Actualizado a las {time}",
+    backlogSyncNever: "Sin sincronizar todavía",
+    backlogSyncError: "No se han podido sincronizar los datos de Azure DevOps.",
+    backlogSyncNow: "Sincronizar ahora",
+    backlogSyncOpenBoard: "Ver tablero",
+    backlogSyncActiveItems: "PBI activos",
+    backlogSyncInProgress: "En progreso",
+    backlogSyncChildTasks: "Tareas hijas activas",
+    backlogSyncDone: "Tareas hijas completadas",
+    backlogAlertsTitle: "Alertas del backlog",
+    backlogAlertsNone: "Sin alertas: todo el trabajo activo tiene responsable y nada está bloqueado.",
+    backlogAlertUnassignedItem: "PBI sin responsable",
+    backlogAlertUnassignedChild: "Tarea hija sin responsable",
+    backlogAlertAbsentOwner: "Responsable ausente",
+    backlogAlertDependency: "Bloqueado por dependencia",
+    backlogAlertUntil: "hasta {date}",
+    backlogAlertsShowAll: "Ver todas las alertas ({count})",
+    backlogAlertsShowLess: "Ver menos",
+
+
+
     tasks: "Tareas",
     workload: "Carga & Capacidad",
     pulse: "Pulse",
