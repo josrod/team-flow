@@ -15,6 +15,7 @@ const card = (overrides: Partial<BacklogCardItem> = {}): BacklogCardItem => ({
   waiting: false,
   children: [],
   childrenDone: 0,
+  childrenTotal: 0,
   htmlUrl: "https://tfs/_workitems/edit/1",
   ...overrides,
 });
