@@ -13,13 +13,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useLang } from "@/context/LanguageContext";
-import type { Member } from "@/types";
+import type { TeamMember } from "@/types";
 
 interface SuggestOwnerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   itemLabel: string;
-  members: Member[];
+  members: TeamMember[];
   saving?: boolean;
   onSubmit: (input: { memberId: string; reason: string }) => void;
 }
