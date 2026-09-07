@@ -77,7 +77,7 @@ export function AppSidebar() {
     })),
     { title: t.absences, url: "/absences", icon: CalendarDays },
     { title: t.handovers, url: "/handovers", icon: ArrowRightLeft },
-    { title: t.features, url: "/features", icon: Layers },
+    { title: t.backlogTitle, url: "/features", icon: KanbanSquare },
     { title: t.tasks, url: "/tasks", icon: ListChecks },
     { title: t.bugs, url: "/bugs", icon: Bug },
     { title: t.epics, url: "/epics", icon: Target },
