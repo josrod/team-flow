@@ -21,6 +21,10 @@ export interface BacklogAlert {
   /** Extra context: child task title, absence end date or dependency tags. */
   detail?: string;
   htmlUrl: string;
+  /** Days since the item last changed in Azure DevOps. */
+  staleDays?: number;
+  /** Parent backlog item, set on child-task alerts. */
+  parentItemId?: number;
 }
 
 export interface AbsentOwner {
@@ -30,16 +34,37 @@ export interface AbsentOwner {
   until?: string;
 }
 
+export interface BlockerReviewKey {
+  itemId: number;
+  kind: BacklogAlertKind;
+  person?: string | null;
+}
+
 export interface BacklogAlertOptions {
   /** Returns absence info when the given assignee is currently away. */
   absenceFor?: (person: string) => AbsentOwner | undefined;
   /** Tags that mark an external dependency. Defaults to ["waiting"]. */
   dependencyTags?: readonly string[];
+  /** Active "reviewed" marks: matching alerts are hidden. */
+  reviewed?: readonly BlockerReviewKey[];
 }
 
 const ACTIVE_COLUMNS = new Set(["open", "refinement", "inProgress", "testing"]);
 
 const isActive = (column: string): boolean => ACTIVE_COLUMNS.has(column);
+
+/** Whole days since the given ISO date, or undefined when unknown. */
+export const daysSince = (iso: string | undefined, now: Date = new Date()): number | undefined => {
+  if (!iso) return undefined;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return Math.max(0, Math.floor((now.getTime() - date.getTime()) / 86_400_000));
+};
+
+const sameKey = (alert: BacklogAlert, key: BlockerReviewKey): boolean =>
+  alert.itemId === key.itemId &&
+  alert.kind === key.kind &&
+  (key.person ?? "").trim().toLowerCase() === (alert.person ?? "").trim().toLowerCase();
 
 /**
  * Builds the dashboard alert list from live backlog cards. Only active work is
@@ -47,12 +72,13 @@ const isActive = (column: string): boolean => ACTIVE_COLUMNS.has(column);
  */
 export const buildBacklogAlerts = (
   cards: readonly BacklogCardItem[],
-  { absenceFor, dependencyTags = ["waiting"] }: BacklogAlertOptions = {},
+  { absenceFor, dependencyTags = ["waiting"], reviewed = [] }: BacklogAlertOptions = {},
 ): BacklogAlert[] => {
   const alerts: BacklogAlert[] = [];
 
   cards.forEach((card) => {
     if (!isActive(card.column)) return;
+    const staleDays = daysSince(card.changedDate);
     const owner = card.assignedTo?.trim();
 
     // 1. Backlog item without an owner (nobody on the item nor on its children).
@@ -70,6 +96,7 @@ export const buildBacklogAlerts = (
         workItemType: card.workItemType,
         state: card.state,
         htmlUrl: card.htmlUrl,
+        staleDays,
       });
     }
 
@@ -87,6 +114,8 @@ export const buildBacklogAlerts = (
           state: child.state,
           detail: card.title,
           htmlUrl: child.htmlUrl || card.htmlUrl,
+          staleDays,
+          parentItemId: card.id,
         });
       });
 
@@ -106,6 +135,7 @@ export const buildBacklogAlerts = (
         person,
         detail: absence.until,
         htmlUrl: card.htmlUrl,
+        staleDays,
       });
     });
 
@@ -126,11 +156,17 @@ export const buildBacklogAlerts = (
         person: owner,
         detail: otherTags.join(", ") || undefined,
         htmlUrl: card.htmlUrl,
+        staleDays,
       });
     }
   });
 
-  return alerts.sort((a, b) => {
+  const visible =
+    reviewed.length === 0
+      ? alerts
+      : alerts.filter((alert) => !reviewed.some((key) => sameKey(alert, key)));
+
+  return visible.sort((a, b) => {
     if (a.severity !== b.severity) return a.severity === "high" ? -1 : 1;
     if (a.kind !== b.kind) return a.kind.localeCompare(b.kind);
     return a.itemId - b.itemId;
@@ -150,4 +186,45 @@ export const countAlertsByKind = (
     counts[alert.kind] += 1;
   });
   return counts;
+};
+
+export interface BacklogAlertGroup {
+  itemId: number;
+  title: string;
+  workItemType: string;
+  state: string;
+  htmlUrl: string;
+  alerts: BacklogAlert[];
+  /** Highest severity inside the group. */
+  severity: BacklogAlertSeverity;
+}
+
+/** Groups alerts by backlog item so the blockers page can show one card per PBI. */
+export const groupAlertsByItem = (alerts: readonly BacklogAlert[]): BacklogAlertGroup[] => {
+  const groups = new Map<number, BacklogAlertGroup>();
+  alerts.forEach((alert) => {
+    // Child-task alerts carry the parent title in `detail`.
+    const key = alert.parentItemId ?? alert.itemId;
+    const isChild = alert.parentItemId !== undefined;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.alerts.push(alert);
+      if (alert.severity === "high") existing.severity = "high";
+      return;
+    }
+    groups.set(key, {
+      itemId: key,
+      title: isChild ? (alert.detail ?? alert.title) : alert.title,
+      workItemType: alert.workItemType,
+      state: alert.state,
+      htmlUrl: alert.htmlUrl,
+      alerts: [alert],
+      severity: alert.severity,
+    });
+  });
+  return Array.from(groups.values()).sort((a, b) => {
+    if (a.severity !== b.severity) return a.severity === "high" ? -1 : 1;
+    if (a.alerts.length !== b.alerts.length) return b.alerts.length - a.alerts.length;
+    return a.itemId - b.itemId;
+  });
 };

@@ -79,6 +79,7 @@ export interface BacklogChild {
   assignedTo?: string;
   assignedToEmail?: string;
   remainingWork?: number;
+  completedWork?: number;
   htmlUrl: string;
 }
 
@@ -101,6 +102,8 @@ export interface BacklogCardItem {
   children: BacklogChild[];
   /** Child tasks already in a closed/done column. */
   childrenDone: number;
+  /** Total number of child tasks. */
+  childrenTotal: number;
   htmlUrl: string;
 }
 
@@ -126,6 +129,7 @@ export const buildBacklogCards = (
       assignedTo: child.assignedTo,
       assignedToEmail: child.assignedToEmail,
       remainingWork: child.remainingWork,
+      completedWork: child.completedWork,
       htmlUrl: buildHtmlUrl(baseUrl, child.id),
     });
     childrenByParent.set(child.parentId, list);
@@ -152,6 +156,7 @@ export const buildBacklogCards = (
       closedDate: item.closedDate,
       children: kids,
       childrenDone: kids.filter((c) => c.column === "closed").length,
+      childrenTotal: kids.length,
       htmlUrl: buildHtmlUrl(baseUrl, item.id),
     };
   });
@@ -253,4 +258,38 @@ export const groupByPerson = (cards: readonly BacklogCardItem[]): PersonGroup[] 
     if (b.inProgress !== a.inProgress) return b.inProgress - a.inProgress;
     return a.person.localeCompare(b.person);
   });
+};
+
+/**
+ * Completion of a backlog item: closed child tasks over total child tasks.
+ * Returns `null` when the item has no child tasks, so the UI can say
+ * "no child tasks" instead of showing a misleading 0%.
+ */
+export const completionRatio = (
+  card: Pick<BacklogCardItem, "childrenDone" | "childrenTotal">,
+): number | null => (card.childrenTotal > 0 ? card.childrenDone / card.childrenTotal : null);
+
+/** Completion as a rounded percentage, or `null` without child tasks. */
+export const completionPercent = (
+  card: Pick<BacklogCardItem, "childrenDone" | "childrenTotal">,
+): number | null => {
+  const ratio = completionRatio(card);
+  return ratio === null ? null : Math.round(ratio * 100);
+};
+
+export interface BacklogProgressSummary {
+  /** Average completion of active (non closed) items that have child tasks. */
+  averagePercent: number | null;
+  /** Active items whose child tasks are all done — candidates to be closed. */
+  readyToClose: number;
+}
+
+export const summarizeProgress = (
+  cards: readonly BacklogCardItem[],
+): BacklogProgressSummary => {
+  const active = cards.filter((card) => card.column !== "closed" && card.childrenTotal > 0);
+  const readyToClose = active.filter((card) => card.childrenDone === card.childrenTotal).length;
+  if (active.length === 0) return { averagePercent: null, readyToClose };
+  const total = active.reduce((sum, card) => sum + (completionRatio(card) ?? 0), 0);
+  return { averagePercent: Math.round((total / active.length) * 100), readyToClose };
 };

@@ -674,6 +674,7 @@ export interface TfsWorkItem {
   effort?: number;
   originalEstimate?: number;
   remainingWork?: number;
+  completedWork?: number;
   changedDate?: string;
   closedDate?: string;
 }
@@ -732,6 +733,7 @@ const mapRawToWorkItem = (raw: RawWorkItem): TfsWorkItem => {
     effort: typeof f["Microsoft.VSTS.Scheduling.Effort"] === "number" ? f["Microsoft.VSTS.Scheduling.Effort"] : undefined,
     originalEstimate: typeof f["Microsoft.VSTS.Scheduling.OriginalEstimate"] === "number" ? f["Microsoft.VSTS.Scheduling.OriginalEstimate"] : undefined,
     remainingWork: typeof f["Microsoft.VSTS.Scheduling.RemainingWork"] === "number" ? f["Microsoft.VSTS.Scheduling.RemainingWork"] : undefined,
+    completedWork: typeof f["Microsoft.VSTS.Scheduling.CompletedWork"] === "number" ? f["Microsoft.VSTS.Scheduling.CompletedWork"] : undefined,
     changedDate: typeof f["System.ChangedDate"] === "string" ? (f["System.ChangedDate"] as string) : undefined,
     closedDate: typeof f["Microsoft.VSTS.Common.ClosedDate"] === "string" ? (f["Microsoft.VSTS.Common.ClosedDate"] as string) : undefined,
   };
@@ -2250,7 +2252,10 @@ const buildBacklogWiql = (
   // Active work is always included; closed/done work only inside the recent window.
   const stateClause = `(
       [System.State] NOT IN ('Closed','Done','Completed','Removed','Cut')
-      OR [System.ChangedDate] >= @today - ${closedWindowDays}
+      OR (
+        [System.State] IN ('Closed','Done','Completed','Cut')
+        AND [System.ChangedDate] >= @today - ${closedWindowDays}
+      )
     )`;
   return `SELECT [System.Id] FROM WorkItems
 WHERE [System.TeamProject] = '${escapeWiqlString(project)}'
@@ -2278,6 +2283,7 @@ const BACKLOG_FIELDS = [
   "Microsoft.VSTS.Common.Priority",
   "Microsoft.VSTS.Scheduling.Effort",
   "Microsoft.VSTS.Scheduling.RemainingWork",
+  "Microsoft.VSTS.Scheduling.CompletedWork",
 ];
 
 export interface BacklogItemsOptions {

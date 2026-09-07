@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Download, Upload, Settings, KanbanSquare, LogOut, LogIn, ListChecks, Bug, Target, Hourglass, FileText, Clock, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, ArrowRightLeft, RotateCcw, Shield, Cpu, Rocket, Globe, Wrench, Database, Server, Download, Upload, Settings, KanbanSquare, LogOut, LogIn, ListChecks, Bug, Target, Hourglass, FileText, Clock, ShieldAlert, type LucideIcon } from "lucide-react";
 import cuswLogo from "@/assets/cusw-logo.png";
 import { NavLink } from "@/components/NavLink";
 import { Link } from "react-router-dom";
@@ -82,6 +82,7 @@ export function AppSidebar() {
     { title: t.bugs, url: "/bugs", icon: Bug },
     { title: t.epics, url: "/epics", icon: Target },
     { title: t.waitingViewTitle, url: "/waiting", icon: Hourglass },
+    { title: t.blockers, url: "/blockers", icon: ShieldAlert },
     { title: t.digestTitle, url: "/digest", icon: FileText },
     { title: t.timeBookingTitle, url: "/time-booking", icon: Clock },
 

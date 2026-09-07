@@ -148,6 +148,56 @@ export type Database = {
         }
         Relationships: []
       }
+      backlog_blocker_reviews: {
+        Row: {
+          alert_kind: string
+          created_at: string
+          expires_at: string
+          id: string
+          item_id: number
+          person: string | null
+          reason: string | null
+          reviewed_at: string
+          reviewed_by: string | null
+          suggested_member_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          alert_kind: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          item_id: number
+          person?: string | null
+          reason?: string | null
+          reviewed_at?: string
+          reviewed_by?: string | null
+          suggested_member_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alert_kind?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          item_id?: number
+          person?: string | null
+          reason?: string | null
+          reviewed_at?: string
+          reviewed_by?: string | null
+          suggested_member_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backlog_blocker_reviews_suggested_member_id_fkey"
+            columns: ["suggested_member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       epic_version_assignments: {
         Row: {
           created_at: string

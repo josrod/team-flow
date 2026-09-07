@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, ExternalLink, KanbanSquare, RefreshCw, UserX } from "lucide-react";
+import { AlertTriangle, ExternalLink, KanbanSquare, RefreshCw, ShieldAlert, UserX } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,9 @@ import { useBacklogSync } from "@/hooks/use-backlog-sync";
 import { buildBacklogAlerts, type BacklogAlert, type BacklogAlertKind } from "@/lib/backlogAlerts";
 import { buildAssigneeIndex, resolveMember } from "@/lib/assigneeMatch";
 import { filterInternalMembers, filterInternalTeams } from "@/lib/internalTeams";
+import { summarizeProgress, type BacklogCardItem } from "@/lib/backlogBoard";
+import { BacklogTable } from "@/components/backlog/BacklogTable";
+import { BacklogDetailDialog } from "@/components/backlog/BacklogDetailDialog";
 
 const VISIBLE_ALERTS = 6;
 
@@ -29,6 +32,7 @@ export const BacklogSyncPanel = () => {
   const { teams, members, absences } = useApp();
   const { cards, loading, error, lastSyncedAt, reload } = useBacklogSync();
   const [expanded, setExpanded] = useState(false);
+  const [selected, setSelected] = useState<BacklogCardItem | null>(null);
 
   const internalMembers = useMemo(
     () => filterInternalMembers(members, filterInternalTeams(teams)),
@@ -59,7 +63,15 @@ export const BacklogSyncPanel = () => {
       0,
     );
     const childDone = cards.reduce((total, card) => total + card.childrenDone, 0);
-    return { active: active.length, inProgress, childTasks, childDone };
+    const progress = summarizeProgress(cards);
+    return {
+      active: active.length,
+      inProgress,
+      childTasks,
+      childDone,
+      averagePercent: progress.averagePercent,
+      readyToClose: progress.readyToClose,
+    };
   }, [cards]);
 
   const alertLabels: Record<BacklogAlertKind, string> = {
@@ -104,6 +116,12 @@ export const BacklogSyncPanel = () => {
             {t.backlogSyncNow}
           </Button>
           <Button asChild variant="ghost" size="sm">
+            <Link to="/blockers">
+              <ShieldAlert className="mr-2 h-4 w-4" />
+              {t.blockersTitle}
+            </Link>
+          </Button>
+          <Button asChild variant="ghost" size="sm">
             <Link to="/features">
               <KanbanSquare className="mr-2 h-4 w-4" />
               {t.backlogSyncOpenBoard}
@@ -121,18 +139,35 @@ export const BacklogSyncPanel = () => {
             ))}
           </div>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {[
-              { label: t.backlogSyncActiveItems, value: stats.active },
-              { label: t.backlogSyncInProgress, value: stats.inProgress },
-              { label: t.backlogSyncChildTasks, value: stats.childTasks },
-              { label: t.backlogSyncDone, value: stats.childDone },
+              { label: t.backlogSyncActiveItems, value: String(stats.active) },
+              { label: t.backlogSyncInProgress, value: String(stats.inProgress) },
+              { label: t.backlogSyncChildTasks, value: String(stats.childTasks) },
+              { label: t.backlogSyncDone, value: String(stats.childDone) },
+              {
+                label: t.backlogAvgProgress,
+                value: stats.averagePercent === null ? "—" : `${stats.averagePercent}%`,
+              },
+              { label: t.backlogReadyToClose, value: String(stats.readyToClose) },
             ].map((stat) => (
               <div key={stat.label} className="rounded-lg bg-muted/40 p-3">
                 <p className="font-display text-xl font-semibold">{stat.value}</p>
                 <p className="text-xs text-muted-foreground">{stat.label}</p>
               </div>
             ))}
+          </div>
+        )}
+
+        {cards.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                {t.backlogTableTitle}
+              </h3>
+              <p className="text-xs text-muted-foreground">{t.backlogTableHint}</p>
+            </div>
+            <BacklogTable cards={cards} onSelect={setSelected} />
           </div>
         )}
 
@@ -203,6 +238,12 @@ export const BacklogSyncPanel = () => {
           )}
         </div>
       </CardContent>
+
+      <BacklogDetailDialog
+        card={selected}
+        open={selected !== null}
+        onOpenChange={(open) => !open && setSelected(null)}
+      />
     </Card>
   );
 };
