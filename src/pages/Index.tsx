@@ -3,6 +3,8 @@ import { useAuth } from "@/context/AuthContext";
 
 import { useLang } from "@/context/LanguageContext";
 import { AnalyticsPanel } from "@/components/AnalyticsPanel";
+import { BacklogSyncPanel } from "@/components/BacklogSyncPanel";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -491,10 +493,16 @@ const Index = () => {
         )}
       </motion.div>
 
+      {/* Live backlog sync and alerts */}
+      <motion.div variants={item}>
+        <BacklogSyncPanel />
+      </motion.div>
+
       {/* Analytics Panel */}
       <motion.div variants={item}>
         <AnalyticsPanel />
       </motion.div>
+
     </motion.div>
   );
 };
