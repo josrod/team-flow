@@ -16,6 +16,8 @@ import TeamPage from "./pages/TeamPage";
 import AbsencesPage from "./pages/AbsencesPage";
 import HandoversPage from "./pages/HandoversPage";
 import FeaturesPage from "./pages/FeaturesPage";
+import BacklogItemsPage from "./pages/BacklogItemsPage";
+
 import TasksPage from "./pages/TasksPage";
 import AzureDevOpsSettingsPage from "./pages/AzureDevOpsSettingsPage";
 import { BugsPage } from "./pages/BugsPage";
