@@ -190,8 +190,29 @@ export const PersonPanelTable = ({ rows, teamNameById, onSelectCard }: PersonPan
                 </TableRow>
                 {isOpen && (
                   <TableRow>
-                    <TableCell colSpan={8} className="bg-muted/30 p-3">
+                    <TableCell colSpan={12} className="bg-muted/30 p-3">
                       <div className="mb-2 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+                        <span>
+                          {t.personPanelBreakdownCapacity.replace(
+                            "{hours}",
+                            formatHours(row.plannedCapacityHours),
+                          )}
+                        </span>
+                        <span>
+                          {t.personPanelBreakdownAbsence.replace("{days}", String(row.absenceDays))}
+                        </span>
+                        <span>
+                          {t.personPanelBreakdownEstimate.replace(
+                            "{hours}",
+                            formatHours(row.plannedEstimateHours),
+                          )}
+                        </span>
+                        <span>
+                          {t.personPanelBreakdownBooked.replace("{hours}", formatHours(row.hours))}
+                        </span>
+                        <span className={cn(deviationTextStyles[row.deviationFlag])}>
+                          {deviationLabels[row.deviationFlag]}
+                        </span>
                         <span>
                           {t.personPanelReadyToClose.replace("{count}", String(row.readyToClose))}
                         </span>
