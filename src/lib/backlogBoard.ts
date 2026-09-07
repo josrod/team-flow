@@ -78,6 +78,7 @@ export interface BacklogChild {
   workItemType: string;
   assignedTo?: string;
   assignedToEmail?: string;
+  originalEstimate?: number;
   remainingWork?: number;
   completedWork?: number;
   htmlUrl: string;
@@ -128,6 +129,7 @@ export const buildBacklogCards = (
       workItemType: child.workItemType,
       assignedTo: child.assignedTo,
       assignedToEmail: child.assignedToEmail,
+      originalEstimate: child.originalEstimate,
       remainingWork: child.remainingWork,
       completedWork: child.completedWork,
       htmlUrl: buildHtmlUrl(baseUrl, child.id),

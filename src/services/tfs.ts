@@ -2282,6 +2282,7 @@ const BACKLOG_FIELDS = [
   "Microsoft.VSTS.Common.Severity",
   "Microsoft.VSTS.Common.Priority",
   "Microsoft.VSTS.Scheduling.Effort",
+  "Microsoft.VSTS.Scheduling.OriginalEstimate",
   "Microsoft.VSTS.Scheduling.RemainingWork",
   "Microsoft.VSTS.Scheduling.CompletedWork",
 ];
