@@ -340,6 +340,9 @@ export const buildPersonPanel = ({
     hours,
     hoursPreviousWeek,
     hoursDelta: round1(hours - hoursPreviousWeek),
+    plannedCapacityHours: round1(rows.reduce((sum, row) => sum + row.plannedCapacityHours, 0)),
+    plannedEstimateHours: round1(rows.reduce((sum, row) => sum + row.plannedEstimateHours, 0)),
+    deviating: rows.filter((row) => row.deviationFlag !== "ok").length,
     closedItems: new Set(
       rows.flatMap((row) =>
         row.cards
@@ -361,7 +364,7 @@ export const buildPersonPanel = ({
   return { weekKey, weekFrom: from, weekTo: to, rows, kpis };
 };
 
-export type PersonPanelSort = "risk" | "progress" | "hours" | "blockers" | "name";
+export type PersonPanelSort = "risk" | "progress" | "hours" | "blockers" | "deviation" | "name";
 
 const riskWeight: Record<PersonRisk, number> = { high: 2, medium: 1, none: 0 };
 
