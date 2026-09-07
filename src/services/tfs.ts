@@ -2225,3 +2225,134 @@ export const fetchTfsEpics = (
     () => fetchTfsEpicsUncached(conn, options, externalSignal),
     { forceRefresh: cacheOptions.forceRefresh, isCacheable: isSuccessfulResult },
   );
+
+// ---------------------------------------------------------------------------
+// Backlog items board — Product Backlog Items and Bugs of the configured
+// scope plus their child tasks, mirroring the TFS "Backlog items" board.
+// ---------------------------------------------------------------------------
+
+const buildBacklogWiql = (
+  project: string,
+  areaPaths: string[],
+  iterationPaths: string[],
+  closedWindowDays: number,
+): string => {
+  const areaList = areaPaths.filter((p) => p.trim().length > 0);
+  const iterList = iterationPaths.filter((p) => p.trim().length > 0);
+  const areas = areaList.length > 0 ? areaList : [RODAT_AREA_PATH];
+  const iters = iterList.length > 0 ? iterList : [RODAT_ITERATION_PATH];
+  const areaClause = `(${areas
+    .map((p) => `[System.AreaPath] UNDER '${escapeWiqlString(p)}'`)
+    .join(" OR ")})`;
+  const iterClause = `(${iters
+    .map((p) => `[System.IterationPath] UNDER '${escapeWiqlString(p)}'`)
+    .join(" OR ")})`;
+  // Active work is always included; closed/done work only inside the recent window.
+  const stateClause = `(
+      [System.State] NOT IN ('Closed','Done','Completed','Removed','Cut')
+      OR [System.ChangedDate] >= @today - ${closedWindowDays}
+    )`;
+  return `SELECT [System.Id] FROM WorkItems
+WHERE [System.TeamProject] = '${escapeWiqlString(project)}'
+  AND [System.WorkItemType] IN ('Product Backlog Item','Bug')
+  AND [System.State] <> 'Removed'
+  AND ${areaClause}
+  AND ${iterClause}
+  AND ${stateClause}
+ORDER BY [System.ChangedDate] DESC`;
+};
+
+const BACKLOG_FIELDS = [
+  "System.Id",
+  "System.Title",
+  "System.State",
+  "System.WorkItemType",
+  "System.AssignedTo",
+  "System.Parent",
+  "System.IterationPath",
+  "System.AreaPath",
+  "System.Tags",
+  "System.ChangedDate",
+  "Microsoft.VSTS.Common.ClosedDate",
+  "Microsoft.VSTS.Common.Severity",
+  "Microsoft.VSTS.Common.Priority",
+  "Microsoft.VSTS.Scheduling.Effort",
+  "Microsoft.VSTS.Scheduling.RemainingWork",
+];
+
+export interface BacklogItemsOptions {
+  areaPaths?: string[];
+  iterationPaths?: string[];
+  /** How many days back closed/done items stay visible. Defaults to 10. */
+  closedWindowDays?: number;
+}
+
+const listTfsBacklogItemsUncached = (
+  conn: TfsConnection,
+  options: BacklogItemsOptions,
+): Promise<TfsDiscoveryResult<TfsWorkItem>> =>
+  runWiqlAndFetch(
+    conn,
+    buildBacklogWiql(
+      conn.project.trim(),
+      options.areaPaths ?? [],
+      options.iterationPaths ?? [],
+      options.closedWindowDays ?? 10,
+    ),
+    BACKLOG_FIELDS,
+  );
+
+/** Product Backlog Items and Bugs for the board view (cached). */
+export const listTfsBacklogItems = (
+  conn: TfsConnection,
+  options: BacklogItemsOptions = {},
+  cacheOptions: TfsQueryCacheOptions = {},
+): Promise<TfsDiscoveryResult<TfsWorkItem>> =>
+  withTfsCache(
+    buildTfsCacheKey("backlogItems", [
+      buildConnCacheKey(conn),
+      options.areaPaths ?? [],
+      options.iterationPaths ?? [],
+      options.closedWindowDays ?? 10,
+    ]),
+    () => listTfsBacklogItemsUncached(conn, options),
+    { forceRefresh: cacheOptions.forceRefresh, isCacheable: isSuccessfulResult },
+  );
+
+const listTfsChildTasksUncached = async (
+  conn: TfsConnection,
+  parentIds: number[],
+): Promise<TfsDiscoveryResult<TfsWorkItem>> => {
+  const ids = Array.from(new Set(parentIds.filter((id) => Number.isFinite(id))));
+  if (ids.length === 0) return { items: [] };
+
+  const all: TfsWorkItem[] = [];
+  // WIQL has a practical limit on the IN clause size, so query in batches.
+  for (let i = 0; i < ids.length; i += 200) {
+    const batch = ids.slice(i, i + 200);
+    const wiql = `SELECT [System.Id] FROM WorkItems
+WHERE [System.TeamProject] = '${escapeWiqlString(conn.project.trim())}'
+  AND [System.State] <> 'Removed'
+  AND [System.Parent] IN (${batch.join(",")})
+ORDER BY [System.Id] ASC`;
+    const res = await runWiqlAndFetch(conn, wiql, BACKLOG_FIELDS);
+    if (res.error) return { items: all, error: res.error };
+    all.push(...res.items);
+  }
+  return { items: all };
+};
+
+/** Child work items (tasks, bugs…) of the given backlog item ids (cached). */
+export const listTfsChildTasks = (
+  conn: TfsConnection,
+  parentIds: number[],
+  cacheOptions: TfsQueryCacheOptions = {},
+): Promise<TfsDiscoveryResult<TfsWorkItem>> =>
+  withTfsCache(
+    buildTfsCacheKey("childTasks", [
+      buildConnCacheKey(conn),
+      Array.from(new Set(parentIds)).sort((a, b) => a - b),
+    ]),
+    () => listTfsChildTasksUncached(conn, parentIds),
+    { forceRefresh: cacheOptions.forceRefresh, isCacheable: isSuccessfulResult },
+  );

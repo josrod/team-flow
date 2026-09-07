@@ -16,6 +16,8 @@ import TeamPage from "./pages/TeamPage";
 import AbsencesPage from "./pages/AbsencesPage";
 import HandoversPage from "./pages/HandoversPage";
 import FeaturesPage from "./pages/FeaturesPage";
+import BacklogItemsPage from "./pages/BacklogItemsPage";
+
 import TasksPage from "./pages/TasksPage";
 import AzureDevOpsSettingsPage from "./pages/AzureDevOpsSettingsPage";
 import { BugsPage } from "./pages/BugsPage";
@@ -57,7 +59,7 @@ const App = () => (
 
                   <Route path="/epics" element={<AppLayout><EpicsPage /></AppLayout>} />
                   <Route path="/pulse" element={<AppLayout><TeamPulseDashboard /></AppLayout>} />
-                  <Route path="/features" element={<AppLayout><FeaturesPage view="features" /></AppLayout>} />
+                  <Route path="/features" element={<AppLayout><BacklogItemsPage /></AppLayout>} />
                   <Route path="/absences" element={<AppLayout><AbsencesPage /></AppLayout>} />
                   <Route path="/workload" element={<AppLayout><FeaturesPage view="workload" /></AppLayout>} />
 
