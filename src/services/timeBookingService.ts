@@ -2,6 +2,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { TeamMember } from "@/types";
 import type { ParsedTimeBooking } from "@/services/inventTimeBookingParser";
 import { recordImport } from "@/services/importHistoryService";
+import { isoWeekKey } from "@/lib/isoWeek";
+
 
 
 export interface TimeBooking {
@@ -136,29 +138,11 @@ export const hoursByPerson = (bookings: TimeBooking[]) => groupBy(bookings, (b) 
 export const hoursByProject = (bookings: TimeBooking[]) => groupBy(bookings, (b) => b.projectCode);
 export const hoursByActivity = (bookings: TimeBooking[]) => groupBy(bookings, (b) => b.activityKind);
 
-/** ISO week key (`YYYY-Www`) for an ISO date string. */
-export const isoWeekKey = (isoDate: string): string => {
-  const date = new Date(`${isoDate}T00:00:00Z`);
-  const day = date.getUTCDay() || 7;
-  date.setUTCDate(date.getUTCDate() + 4 - day);
-  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-  const week = Math.ceil(((date.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
-  return `${date.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
-};
+// ISO week helpers live in a pure module and are re-exported for convenience.
+export { isoWeekRange, previousIsoWeekKey, currentIsoWeekKey } from "@/lib/isoWeek";
+export { isoWeekKey };
 
-/** Monday–Sunday ISO date range for an ISO week key (`YYYY-Www`). */
-export const isoWeekRange = (weekKey: string): { from: string; to: string } => {
-  const [yearPart, weekPart] = weekKey.split("-W");
-  const year = Number(yearPart);
-  const week = Number(weekPart);
-  const jan4 = new Date(Date.UTC(year, 0, 4));
-  const jan4Day = jan4.getUTCDay() || 7;
-  const monday = new Date(jan4);
-  monday.setUTCDate(jan4.getUTCDate() - (jan4Day - 1) + (week - 1) * 7);
-  const sunday = new Date(monday);
-  sunday.setUTCDate(monday.getUTCDate() + 6);
-  return { from: monday.toISOString().slice(0, 10), to: sunday.toISOString().slice(0, 10) };
-};
+
 
 /** Hours per ISO week, ascending, for the trend chart. */
 export const hoursByWeek = (bookings: TimeBooking[]): GroupedHours[] => {
