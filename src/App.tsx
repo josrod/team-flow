@@ -23,6 +23,7 @@ import AzureDevOpsSettingsPage from "./pages/AzureDevOpsSettingsPage";
 import { BugsPage } from "./pages/BugsPage";
 import { EpicsPage } from "./pages/EpicsPage";
 import { WaitingPage } from "./pages/WaitingPage";
+import { BlockersPage } from "./pages/BlockersPage";
 import { DigestPage } from "./pages/DigestPage";
 import { TimeBookingPage } from "./pages/TimeBookingPage";
 
@@ -54,6 +55,7 @@ const App = () => (
                   <Route path="/tasks" element={<AppLayout><TasksPage /></AppLayout>} />
                   <Route path="/bugs" element={<AppLayout><BugsPage /></AppLayout>} />
                   <Route path="/waiting" element={<AppLayout><WaitingPage /></AppLayout>} />
+                  <Route path="/blockers" element={<AppLayout><BlockersPage /></AppLayout>} />
                   <Route path="/digest" element={<AppLayout><DigestPage /></AppLayout>} />
                   <Route path="/time-booking" element={<AppLayout><TimeBookingPage /></AppLayout>} />
 
