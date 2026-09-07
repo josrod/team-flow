@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildBacklogAlerts, countAlertsByKind
-  groupAlertsByItem,
-} from "@/lib/backlogAlerts";
+import { buildBacklogAlerts, countAlertsByKind, groupAlertsByItem } from "@/lib/backlogAlerts";
 import type { BacklogCardItem } from "@/lib/backlogBoard";
 
 const card = (overrides: Partial<BacklogCardItem> = {}): BacklogCardItem => ({
