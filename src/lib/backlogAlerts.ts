@@ -21,6 +21,8 @@ export interface BacklogAlert {
   /** Extra context: child task title, absence end date or dependency tags. */
   detail?: string;
   htmlUrl: string;
+  /** Days since the item last changed in Azure DevOps. */
+  staleDays?: number;
 }
 
 export interface AbsentOwner {
@@ -30,11 +32,19 @@ export interface AbsentOwner {
   until?: string;
 }
 
+export interface BlockerReviewKey {
+  itemId: number;
+  kind: BacklogAlertKind;
+  person?: string | null;
+}
+
 export interface BacklogAlertOptions {
   /** Returns absence info when the given assignee is currently away. */
   absenceFor?: (person: string) => AbsentOwner | undefined;
   /** Tags that mark an external dependency. Defaults to ["waiting"]. */
   dependencyTags?: readonly string[];
+  /** Active "reviewed" marks: matching alerts are hidden. */
+  reviewed?: readonly BlockerReviewKey[];
 }
 
 const ACTIVE_COLUMNS = new Set(["open", "refinement", "inProgress", "testing"]);
