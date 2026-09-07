@@ -491,10 +491,16 @@ const Index = () => {
         )}
       </motion.div>
 
+      {/* Live backlog sync and alerts */}
+      <motion.div variants={item}>
+        <BacklogSyncPanel />
+      </motion.div>
+
       {/* Analytics Panel */}
       <motion.div variants={item}>
         <AnalyticsPanel />
       </motion.div>
+
     </motion.div>
   );
 };
