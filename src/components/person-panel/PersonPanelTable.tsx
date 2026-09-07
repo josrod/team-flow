@@ -9,7 +9,7 @@ import { useLang } from "@/context/LanguageContext";
 import { BacklogTable } from "@/components/backlog/BacklogTable";
 import { formatHours } from "@/lib/inventValues";
 import type { BacklogCardItem } from "@/lib/backlogBoard";
-import type { PersonPanelRow, PersonRisk } from "@/lib/personPanel";
+import type { DeviationFlag, PersonPanelRow, PersonRisk } from "@/lib/personPanel";
 
 interface PersonPanelTableProps {
   rows: PersonPanelRow[];
@@ -23,6 +23,18 @@ const riskStyles: Record<PersonRisk, string> = {
   none: "bg-status-available/15 text-status-available",
 };
 
+const deviationStyles: Record<DeviationFlag, string> = {
+  under: "bg-status-sick/15 text-status-sick",
+  over: "bg-status-vacation/15 text-status-vacation",
+  ok: "bg-status-available/15 text-status-available",
+};
+
+const deviationTextStyles: Record<DeviationFlag, string> = {
+  under: "text-status-sick",
+  over: "text-status-vacation",
+  ok: "text-status-available",
+};
+
 
 /** One row per person: assigned TFS work, progress, hours, absence and blockers. */
 export const PersonPanelTable = ({ rows, teamNameById, onSelectCard }: PersonPanelTableProps) => {
@@ -34,6 +46,13 @@ export const PersonPanelTable = ({ rows, teamNameById, onSelectCard }: PersonPan
     medium: t.personPanelRiskMedium,
     none: t.personPanelRiskNone,
   };
+
+  const deviationLabels: Record<DeviationFlag, string> = {
+    under: t.personPanelDeviationUnder,
+    over: t.personPanelDeviationOver,
+    ok: t.personPanelDeviationOk,
+  };
+
 
   const RiskIcon = (risk: PersonRisk) =>
     risk === "high" ? AlertTriangle : risk === "medium" ? ShieldAlert : CircleDot;
