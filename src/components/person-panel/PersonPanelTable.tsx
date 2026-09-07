@@ -112,15 +112,17 @@ export const PersonPanelTable = ({ rows, teamNameById, onSelectCard }: PersonPan
                   </TableCell>
                   <TableCell className="py-2 text-sm">
                     {formatHours(row.hours)}
-                    <span
-                      className={cn(
-                        "ml-1 text-[11px]",
-                        row.hoursDelta >= 0 ? "text-status-available" : "text-status-sick",
-                      )}
-                    >
-                      {row.hoursDelta > 0 ? "+" : ""}
-                      {String(row.hoursDelta).replace(".", ",")}
-                    </span>
+                    {row.hoursDelta !== 0 && (
+                      <span
+                        className={cn(
+                          "ml-1 text-[11px]",
+                          row.hoursDelta > 0 ? "text-status-available" : "text-status-sick",
+                        )}
+                      >
+                        {row.hoursDelta > 0 ? "+" : ""}
+                        {String(row.hoursDelta).replace(".", ",")}
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="py-2 text-sm">
                     {row.absenceDays > 0
