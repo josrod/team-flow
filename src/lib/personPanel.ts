@@ -245,6 +245,8 @@ export const buildPersonPanel = ({
     blockersByMember.set(id, set);
   });
 
+  const estimateByMember = estimateHoursByMember(cards, memberIdFor);
+
   const rows: PersonPanelRow[] = members.map((member) => {
     const memberCards = (cardsByMember.get(member.id) ?? []).slice().sort((a, b) => b.id - a.id);
     const active = memberCards.filter((card) => ACTIVE_COLUMNS.has(card.column));
@@ -264,7 +266,19 @@ export const buildPersonPanel = ({
     );
     const hours = round1(hoursByMember.get(member.id) ?? 0);
     const hoursPreviousWeek = round1(previousHoursByMember.get(member.id) ?? 0);
-    const expectedHours = (targetWeeklyHours / 5) * Math.max(0, 5 - absenceDays);
+    const expectedHours = round1((targetWeeklyHours / 5) * Math.max(0, 5 - absenceDays));
+    const plannedEstimateHours = round1(estimateByMember.get(member.id) ?? 0);
+    const deviationHours = round1(hours - expectedHours);
+    const deviationPercent =
+      expectedHours > 0 ? Math.round((deviationHours / expectedHours) * 100) : null;
+    const deviationFlag: DeviationFlag =
+      deviationPercent === null
+        ? "ok"
+        : deviationPercent > deviationThreshold * 100
+          ? "over"
+          : deviationPercent < -deviationThreshold * 100
+            ? "under"
+            : "ok";
 
     const base: Omit<PersonPanelRow, "risk"> = {
       memberId: member.id,
@@ -289,6 +303,13 @@ export const buildPersonPanel = ({
       hours,
       hoursPreviousWeek,
       hoursDelta: round1(hours - hoursPreviousWeek),
+      plannedCapacityHours: expectedHours,
+      plannedEstimateHours,
+      weeklyProgressPercent:
+        expectedHours > 0 ? Math.round((hours / expectedHours) * 100) : null,
+      deviationHours,
+      deviationPercent,
+      deviationFlag,
       absenceDays,
       absenceTypes,
       blockers: blockersByMember.get(member.id)?.size ?? 0,
