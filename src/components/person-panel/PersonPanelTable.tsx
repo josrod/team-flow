@@ -114,6 +114,14 @@ export const PersonPanelTable = ({ rows, teamNameById, onSelectCard }: PersonPan
                       </span>
                     )}
                   </TableCell>
+                  <TableCell className="py-2 text-sm">{formatHours(row.plannedCapacityHours)}</TableCell>
+                  <TableCell className="py-2 text-sm">
+                    {row.plannedEstimateHours > 0 ? (
+                      formatHours(row.plannedEstimateHours)
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="py-2 text-sm">
                     {formatHours(row.hours)}
                     {row.hoursDelta !== 0 && (
@@ -126,6 +134,36 @@ export const PersonPanelTable = ({ rows, teamNameById, onSelectCard }: PersonPan
                         {row.hoursDelta > 0 ? "+" : ""}
                         {String(row.hoursDelta).replace(".", ",")}
                       </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="py-2">
+                    {row.weeklyProgressPercent === null ? (
+                      <span className="text-[11px] text-muted-foreground">—</span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <Progress
+                          value={Math.min(100, row.weeklyProgressPercent)}
+                          className="h-1.5 w-16"
+                        />
+                        <span className="whitespace-nowrap text-[11px] text-muted-foreground">
+                          {row.weeklyProgressPercent}%
+                        </span>
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="py-2">
+                    {row.deviationPercent === null ? (
+                      <span className="text-[11px] text-muted-foreground">—</span>
+                    ) : (
+                      <Badge
+                        variant="secondary"
+                        className={cn("gap-1", deviationStyles[row.deviationFlag])}
+                        title={deviationLabels[row.deviationFlag]}
+                      >
+                        {row.deviationHours > 0 ? "+" : ""}
+                        {String(row.deviationHours).replace(".", ",")} h ({row.deviationPercent > 0 ? "+" : ""}
+                        {row.deviationPercent}%)
+                      </Badge>
                     )}
                   </TableCell>
                   <TableCell className="py-2 text-sm">
