@@ -200,6 +200,7 @@ export const buildPersonPanel = ({
   weekKey,
   memberIdFor,
   targetWeeklyHours = 40,
+  deviationThreshold = 0.15,
 }: BuildPersonPanelInput): PersonPanelResult => {
   const { from, to } = isoWeekRange(weekKey);
   const previousWeek = previousIsoWeekKey(weekKey);
