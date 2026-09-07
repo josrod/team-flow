@@ -7,51 +7,27 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 import { useLang } from "@/context/LanguageContext";
 import { useApp } from "@/context/AppContext";
-import { supabase } from "@/integrations/supabase/client";
-import { TfsErrorPanel } from "@/components/TfsErrorPanel";
-import { decryptPat } from "@/services/tfsPatVault";
-import { loadSharedAdoSettings } from "@/services/adoConfig";
-import { listTfsBacklogItems, listTfsChildTasks, type TfsConnection, type TfsError } from "@/services/tfs";
+import { useBacklogSync } from "@/hooks/use-backlog-sync";
 import { buildAssigneeIndex, resolveMember } from "@/lib/assigneeMatch";
 import { filterInternalMembers, filterInternalTeams } from "@/lib/internalTeams";
 import { BacklogBoard } from "@/components/backlog/BacklogBoard";
 import { BacklogByPerson } from "@/components/backlog/BacklogByPerson";
-import { buildBacklogCards, isRecentlyClosed, type BacklogCardItem } from "@/lib/backlogBoard";
+import type { BacklogCardItem } from "@/lib/backlogBoard";
 
 const ALL = "__all__";
 const VIEW_KEY = "rosen.backlogView.v1";
 
 type BacklogView = "board" | "person";
 
-interface BacklogSettings {
-  conn: TfsConnection;
-  areaPaths: string[];
-  iterationPaths: string[];
-  baseUrl: string;
-}
-
-const buildBaseUrl = (conn: TfsConnection): string => {
-  const server = conn.serverUrl.replace(/\/+$/, "");
-  const collection = conn.collection.trim();
-  const project = conn.project.trim();
-  return [server, collection, project].filter(Boolean).join("/");
-};
-
 const BacklogItemsPage = () => {
   const { t } = useLang();
   const { teams, members } = useApp();
-
-  const [settings, setSettings] = useState<BacklogSettings | null>(null);
-  const [settingsLoading, setSettingsLoading] = useState(true);
-  const [cards, setCards] = useState<BacklogCardItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<TfsError | null>(null);
+  const { cards, loading, error, reload } = useBacklogSync();
 
   const [view, setView] = useState<BacklogView>(() =>
     (localStorage.getItem(VIEW_KEY) as BacklogView | null) === "person" ? "person" : "board",
@@ -66,95 +42,6 @@ const BacklogItemsPage = () => {
   useEffect(() => {
     localStorage.setItem(VIEW_KEY, view);
   }, [view]);
-
-  useEffect(() => {
-    const loadSettings = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      let data: Record<string, unknown> | null = null;
-      if (user) {
-        const { data: own } = await supabase
-          .from("azure_devops_settings")
-          .select("*")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        data = (own as Record<string, unknown> | null) ?? null;
-      }
-      // Visitors without an admin session read the shared read-only configuration.
-      if (!data) {
-        data = (await loadSharedAdoSettings()) as unknown as Record<string, unknown> | null;
-      }
-      if (data) {
-        const raw = data as unknown as {
-          server_url: string | null;
-          collection: string | null;
-          project: string;
-          team: string | null;
-          pat_encrypted: string;
-          pat_iv: string | null;
-          area_paths?: string[] | null;
-          iteration_paths?: string[] | null;
-        };
-        try {
-          const plainPat = await decryptPat(raw.pat_encrypted, raw.pat_iv);
-          const conn: TfsConnection = {
-            serverUrl: raw.server_url ?? "",
-            collection: raw.collection ?? "",
-            project: raw.project,
-            team: raw.team ?? undefined,
-            pat: plainPat,
-          };
-          setSettings({
-            conn,
-            areaPaths: Array.isArray(raw.area_paths) ? raw.area_paths : [],
-            iterationPaths: Array.isArray(raw.iteration_paths) ? raw.iteration_paths : [],
-            baseUrl: buildBaseUrl(conn),
-          });
-        } catch {
-          setSettings(null);
-        }
-      }
-      setSettingsLoading(false);
-    };
-    loadSettings();
-  }, []);
-
-  const loadBacklog = useCallback(
-    async (opts: { forceRefresh?: boolean } = {}) => {
-      if (!settings) return;
-      setLoading(true);
-      setError(null);
-      const itemsResult = await listTfsBacklogItems(
-        settings.conn,
-        { areaPaths: settings.areaPaths, iterationPaths: settings.iterationPaths },
-        { forceRefresh: opts.forceRefresh },
-      );
-      if (itemsResult.error) {
-        setError(itemsResult.error);
-        setCards([]);
-        setLoading(false);
-        return;
-      }
-      // Closed items are only relevant inside the recent window.
-      const visible = itemsResult.items.filter(
-        (item) => item.state.toLowerCase().includes("closed") === false || isRecentlyClosed(item),
-      );
-      const childResult = await listTfsChildTasks(
-        settings.conn,
-        visible.map((item) => item.id),
-        { forceRefresh: opts.forceRefresh },
-      );
-      if (childResult.error) setError(childResult.error);
-      setCards(buildBacklogCards(visible, childResult.items, settings.baseUrl));
-      setLoading(false);
-    },
-    [settings],
-  );
-
-  useEffect(() => {
-    if (settings) loadBacklog();
-  }, [settings, loadBacklog]);
 
   const internalTeams = useMemo(() => filterInternalTeams(teams), [teams]);
   const internalMembers = useMemo(
@@ -205,22 +92,13 @@ const BacklogItemsPage = () => {
     });
   }, [cards, search, team, person, type, tag, waitingOnly, teamIdForCard]);
 
-  if (settingsLoading) {
-    return (
-      <div className="space-y-4 p-6">
-        <Skeleton className="h-9 w-64" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  }
-
-  if (!settings) {
+  if (!loading && cards.length === 0 && error) {
     return (
       <div className="p-6">
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
             <AlertCircle className="h-8 w-8 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">{t.backlogNoConnection}</p>
+            <p className="text-sm text-muted-foreground">{error}</p>
             <Button asChild variant="outline" size="sm">
               <Link to="/settings/azure-devops">
                 <Settings className="mr-2 h-4 w-4" />
@@ -261,7 +139,7 @@ const BacklogItemsPage = () => {
               {t.backlogViewPerson}
             </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={() => loadBacklog({ forceRefresh: true })} disabled={loading}>
+          <Button variant="outline" size="sm" onClick={() => reload({ forceRefresh: true })} disabled={loading}>
             <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
             {t.backlogRefresh}
           </Button>
@@ -362,7 +240,7 @@ const BacklogItemsPage = () => {
         </CardContent>
       </Card>
 
-      {error && <TfsErrorPanel error={error} />}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       {loading && cards.length === 0 ? (
         <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
