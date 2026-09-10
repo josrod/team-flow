@@ -1411,6 +1411,14 @@ export const translations = {
     personPanelBreakdownAbsence: "Absence days deducted: {days}",
     personPanelBreakdownEstimate: "TFS estimate: {hours} h",
     personPanelBreakdownBooked: "Booked: {hours} h",
+    personPanelActualHours: "Real hours",
+    personPanelHandoverHours: "Handover hours",
+    personPanelKpiActualHours: "Real hours (booked + absence)",
+    personPanelKpiHandoverHours: "Handover hours",
+    personPanelBreakdownAbsenceHours: "Absence hours: {hours} h",
+    personPanelBreakdownActual: "Real: {hours} h",
+    personPanelBreakdownHandover: "Handover: {hours} h",
+    personPanelSortActualHours: "Fewest real hours",
 
 
 
