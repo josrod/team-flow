@@ -72,6 +72,8 @@ export const PersonPanelTable = ({ rows, teamNameById, onSelectCard }: PersonPan
             <TableHead>{t.personPanelPlanCapacity}</TableHead>
             <TableHead>{t.personPanelPlanEstimate}</TableHead>
             <TableHead>{t.personPanelHours}</TableHead>
+            <TableHead>{t.personPanelActualHours}</TableHead>
+            <TableHead>{t.personPanelHandoverHours}</TableHead>
             <TableHead className="w-[14%]">{t.personPanelWeeklyProgress}</TableHead>
             <TableHead>{t.personPanelDeviation}</TableHead>
             <TableHead>{t.personPanelAbsence}</TableHead>
