@@ -60,6 +60,12 @@ export interface PersonPanelRow {
   hours: number;
   hoursPreviousWeek: number;
   hoursDelta: number;
+  /** Absence hours falling inside the week (INVENT hours, else 8 h per day). */
+  absenceHours: number;
+  /** Booked hours plus absence hours: the person's real accounted time. */
+  actualHours: number;
+  /** Booked hours whose activity marks a handover to another person. */
+  handoverHours: number;
   /** Planned hours from weekly capacity minus absence days. */
   plannedCapacityHours: number;
   /** Planned hours from TFS estimates of the person's active child tasks. */
