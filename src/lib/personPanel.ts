@@ -439,6 +439,8 @@ export const sortPersonRows = (
       );
     case "hours":
       return list.sort((a, b) => a.hours - b.hours || a.name.localeCompare(b.name));
+    case "actualHours":
+      return list.sort((a, b) => a.actualHours - b.actualHours || a.name.localeCompare(b.name));
     case "blockers":
       return list.sort((a, b) => b.blockers - a.blockers || a.name.localeCompare(b.name));
     case "deviation":
