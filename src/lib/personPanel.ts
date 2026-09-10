@@ -150,13 +150,34 @@ export const cardMemberIds = (
   return [...ids];
 };
 
-/** Working days of a member's absences that fall inside the given week. */
+/** Activity words marking booked time as a handover to another person. */
+const HANDOVER_KEYWORDS = [
+  "handover",
+  "hand-over",
+  "hand over",
+  "traspaso",
+  "ubergabe",
+  "übergabe",
+  "knowledge transfer",
+  "transferencia",
+];
+
+/** True when a booking's activity fields mark it as handover time. */
+export const isHandoverBooking = (booking: PanelBooking): boolean => {
+  const haystack = `${booking.activityKind ?? ""} ${booking.activityGroup ?? ""} ${booking.activityType ?? ""}`
+    .toLowerCase();
+  return HANDOVER_KEYWORDS.some((keyword) => haystack.includes(keyword));
+};
+
+/** Working days and hours of a member's absences that fall inside the given week. */
 export const absenceDaysInWeek = (
   absences: readonly PanelAbsence[],
   from: string,
   to: string,
-): { days: number; types: string[] } => {
+  hoursPerDay = 8,
+): { days: number; types: string[]; hours: number } => {
   let days = 0;
+  let hours = 0;
   const types = new Set<string>();
   absences.forEach((absence) => {
     const start = absence.startDate > from ? absence.startDate : from;
@@ -166,8 +187,14 @@ export const absenceDaysInWeek = (
     if (overlap <= 0) return;
     days += overlap;
     types.add(absence.type);
+    const totalDays = workingDaysBetween(absence.startDate, absence.endDate);
+    const bookedHours = typeof absence.hours === "number" && absence.hours > 0 ? absence.hours : null;
+    hours +=
+      bookedHours !== null && totalDays > 0
+        ? (bookedHours / totalDays) * overlap
+        : overlap * hoursPerDay;
   });
-  return { days: Math.min(days, 5), types: [...types] };
+  return { days: Math.min(days, 5), types: [...types], hours: round1(hours) };
 };
 
 /** Estimated hours per member from active child tasks (estimate, else remaining). */
