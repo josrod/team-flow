@@ -16,6 +16,8 @@ export interface PanelAbsence {
   type: string;
   startDate: string;
   endDate: string;
+  /** Booked absence hours from the INVENT import, when available. */
+  hours?: number | null;
 }
 
 export interface PanelBooking {
@@ -23,6 +25,9 @@ export interface PanelBooking {
   memberId: string | null;
   workDate: string | null;
   duration: number;
+  activityKind?: string;
+  activityGroup?: string;
+  activityType?: string;
 }
 
 export interface PanelAlert {
