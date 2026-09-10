@@ -258,6 +258,7 @@ export const buildPersonPanel = ({
 
   const hoursByMember = new Map<string, number>();
   const previousHoursByMember = new Map<string, number>();
+  const handoverHoursByMember = new Map<string, number>();
   bookings.forEach((booking) => {
     if (!booking.workDate) return;
     const id = booking.memberId ?? memberIdFor(booking.person);
@@ -266,6 +267,9 @@ export const buildPersonPanel = ({
     const target = key === weekKey ? hoursByMember : key === previousWeek ? previousHoursByMember : null;
     if (!target) return;
     target.set(id, (target.get(id) ?? 0) + booking.duration);
+    if (key === weekKey && isHandoverBooking(booking)) {
+      handoverHoursByMember.set(id, (handoverHoursByMember.get(id) ?? 0) + booking.duration);
+    }
   });
 
   const absencesByMember = new Map<string, PanelAbsence[]>();
