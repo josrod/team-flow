@@ -415,7 +415,14 @@ export const buildPersonPanel = ({
   return { weekKey, weekFrom: from, weekTo: to, rows, kpis };
 };
 
-export type PersonPanelSort = "risk" | "progress" | "hours" | "blockers" | "deviation" | "name";
+export type PersonPanelSort =
+  | "risk"
+  | "progress"
+  | "hours"
+  | "actualHours"
+  | "blockers"
+  | "deviation"
+  | "name";
 
 const riskWeight: Record<PersonRisk, number> = { high: 2, medium: 1, none: 0 };
 
