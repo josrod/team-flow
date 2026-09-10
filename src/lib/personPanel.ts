@@ -348,6 +348,9 @@ export const buildPersonPanel = ({
       hours,
       hoursPreviousWeek,
       hoursDelta: round1(hours - hoursPreviousWeek),
+      absenceHours,
+      actualHours: round1(hours + absenceHours),
+      handoverHours: round1(handoverHoursByMember.get(member.id) ?? 0),
       plannedCapacityHours: expectedHours,
       plannedEstimateHours,
       weeklyProgressPercent:
