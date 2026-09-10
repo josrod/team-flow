@@ -186,6 +186,67 @@ describe("buildPersonPanel", () => {
     expect(result.rows[0].deviationFlag).toBe("over");
     expect(result.rows[0].deviationPercent).toBe(25);
   });
+
+  it("adds absence hours to real hours and isolates handover activity", () => {
+    const result = buildPersonPanel({
+      members,
+      weekKey,
+      memberIdFor,
+      cards: [],
+      alerts: [],
+      bookings: [
+        {
+          person: "Ana Ruiz",
+          memberId: "m1",
+          workDate: "2026-03-03",
+          duration: 6,
+          activityKind: "Working hours",
+        },
+        {
+          person: "Ana Ruiz",
+          memberId: "m1",
+          workDate: "2026-03-04",
+          duration: 2,
+          activityKind: "Handover",
+        },
+        {
+          person: "Luis Gomez",
+          memberId: "m2",
+          workDate: "2026-03-04",
+          duration: 8,
+          activityType: "Traspaso de tareas",
+        },
+      ],
+      absences: [
+        { memberId: "m2", type: "vacation", startDate: "2026-03-02", endDate: "2026-03-03", hours: 16 },
+      ],
+    });
+
+    const ana = result.rows.find((row) => row.memberId === "m1");
+    const luis = result.rows.find((row) => row.memberId === "m2");
+
+    expect(ana?.hours).toBe(8);
+    expect(ana?.absenceHours).toBe(0);
+    expect(ana?.actualHours).toBe(8);
+    expect(ana?.handoverHours).toBe(2);
+
+    expect(luis?.absenceHours).toBe(16);
+    expect(luis?.actualHours).toBe(24);
+    expect(luis?.handoverHours).toBe(8);
+
+    expect(result.kpis.actualHours).toBe(32);
+    expect(result.kpis.handoverHours).toBe(10);
+    expect(sortPersonRows(result.rows, "actualHours")[0].memberId).toBe("m1");
+  });
+
+  it("falls back to a full day when an absence has no booked hours", () => {
+    const { hours } = absenceDaysInWeek(
+      [{ memberId: "m1", type: "sick-leave", startDate: "2026-03-02", endDate: "2026-03-03" }],
+      "2026-03-02",
+      "2026-03-08",
+    );
+    expect(hours).toBe(16);
+  });
 });
 
 describe("absenceDaysInWeek", () => {

@@ -16,6 +16,8 @@ export interface PanelAbsence {
   type: string;
   startDate: string;
   endDate: string;
+  /** Booked absence hours from the INVENT import, when available. */
+  hours?: number | null;
 }
 
 export interface PanelBooking {
@@ -23,6 +25,9 @@ export interface PanelBooking {
   memberId: string | null;
   workDate: string | null;
   duration: number;
+  activityKind?: string;
+  activityGroup?: string;
+  activityType?: string;
 }
 
 export interface PanelAlert {
@@ -55,6 +60,12 @@ export interface PersonPanelRow {
   hours: number;
   hoursPreviousWeek: number;
   hoursDelta: number;
+  /** Absence hours falling inside the week (INVENT hours, else 8 h per day). */
+  absenceHours: number;
+  /** Booked hours plus absence hours: the person's real accounted time. */
+  actualHours: number;
+  /** Booked hours whose activity marks a handover to another person. */
+  handoverHours: number;
   /** Planned hours from weekly capacity minus absence days. */
   plannedCapacityHours: number;
   /** Planned hours from TFS estimates of the person's active child tasks. */
@@ -75,6 +86,9 @@ export interface PersonPanelKpis {
   hours: number;
   hoursPreviousWeek: number;
   hoursDelta: number;
+  absenceHours: number;
+  actualHours: number;
+  handoverHours: number;
   plannedCapacityHours: number;
   plannedEstimateHours: number;
   /** People whose booked hours deviate beyond the threshold. */
@@ -136,13 +150,34 @@ export const cardMemberIds = (
   return [...ids];
 };
 
-/** Working days of a member's absences that fall inside the given week. */
+/** Activity words marking booked time as a handover to another person. */
+const HANDOVER_KEYWORDS = [
+  "handover",
+  "hand-over",
+  "hand over",
+  "traspaso",
+  "ubergabe",
+  "übergabe",
+  "knowledge transfer",
+  "transferencia",
+];
+
+/** True when a booking's activity fields mark it as handover time. */
+export const isHandoverBooking = (booking: PanelBooking): boolean => {
+  const haystack = `${booking.activityKind ?? ""} ${booking.activityGroup ?? ""} ${booking.activityType ?? ""}`
+    .toLowerCase();
+  return HANDOVER_KEYWORDS.some((keyword) => haystack.includes(keyword));
+};
+
+/** Working days and hours of a member's absences that fall inside the given week. */
 export const absenceDaysInWeek = (
   absences: readonly PanelAbsence[],
   from: string,
   to: string,
-): { days: number; types: string[] } => {
+  hoursPerDay = 8,
+): { days: number; types: string[]; hours: number } => {
   let days = 0;
+  let hours = 0;
   const types = new Set<string>();
   absences.forEach((absence) => {
     const start = absence.startDate > from ? absence.startDate : from;
@@ -152,8 +187,14 @@ export const absenceDaysInWeek = (
     if (overlap <= 0) return;
     days += overlap;
     types.add(absence.type);
+    const totalDays = workingDaysBetween(absence.startDate, absence.endDate);
+    const bookedHours = typeof absence.hours === "number" && absence.hours > 0 ? absence.hours : null;
+    hours +=
+      bookedHours !== null && totalDays > 0
+        ? (bookedHours / totalDays) * overlap
+        : overlap * hoursPerDay;
   });
-  return { days: Math.min(days, 5), types: [...types] };
+  return { days: Math.min(days, 5), types: [...types], hours: round1(hours) };
 };
 
 /** Estimated hours per member from active child tasks (estimate, else remaining). */
@@ -217,6 +258,7 @@ export const buildPersonPanel = ({
 
   const hoursByMember = new Map<string, number>();
   const previousHoursByMember = new Map<string, number>();
+  const handoverHoursByMember = new Map<string, number>();
   bookings.forEach((booking) => {
     if (!booking.workDate) return;
     const id = booking.memberId ?? memberIdFor(booking.person);
@@ -225,6 +267,9 @@ export const buildPersonPanel = ({
     const target = key === weekKey ? hoursByMember : key === previousWeek ? previousHoursByMember : null;
     if (!target) return;
     target.set(id, (target.get(id) ?? 0) + booking.duration);
+    if (key === weekKey && isHandoverBooking(booking)) {
+      handoverHoursByMember.set(id, (handoverHoursByMember.get(id) ?? 0) + booking.duration);
+    }
   });
 
   const absencesByMember = new Map<string, PanelAbsence[]>();
@@ -259,11 +304,11 @@ export const buildPersonPanel = ({
               withChildren.length) *
               100,
           );
-    const { days: absenceDays, types: absenceTypes } = absenceDaysInWeek(
-      absencesByMember.get(member.id) ?? [],
-      from,
-      to,
-    );
+    const {
+      days: absenceDays,
+      types: absenceTypes,
+      hours: absenceHours,
+    } = absenceDaysInWeek(absencesByMember.get(member.id) ?? [], from, to, targetWeeklyHours / 5);
     const hours = round1(hoursByMember.get(member.id) ?? 0);
     const hoursPreviousWeek = round1(previousHoursByMember.get(member.id) ?? 0);
     const expectedHours = round1((targetWeeklyHours / 5) * Math.max(0, 5 - absenceDays));
@@ -303,6 +348,9 @@ export const buildPersonPanel = ({
       hours,
       hoursPreviousWeek,
       hoursDelta: round1(hours - hoursPreviousWeek),
+      absenceHours,
+      actualHours: round1(hours + absenceHours),
+      handoverHours: round1(handoverHoursByMember.get(member.id) ?? 0),
       plannedCapacityHours: expectedHours,
       plannedEstimateHours,
       weeklyProgressPercent:
@@ -340,6 +388,9 @@ export const buildPersonPanel = ({
     hours,
     hoursPreviousWeek,
     hoursDelta: round1(hours - hoursPreviousWeek),
+    absenceHours: round1(rows.reduce((sum, row) => sum + row.absenceHours, 0)),
+    actualHours: round1(rows.reduce((sum, row) => sum + row.actualHours, 0)),
+    handoverHours: round1(rows.reduce((sum, row) => sum + row.handoverHours, 0)),
     plannedCapacityHours: round1(rows.reduce((sum, row) => sum + row.plannedCapacityHours, 0)),
     plannedEstimateHours: round1(rows.reduce((sum, row) => sum + row.plannedEstimateHours, 0)),
     deviating: rows.filter((row) => row.deviationFlag !== "ok").length,
@@ -364,7 +415,14 @@ export const buildPersonPanel = ({
   return { weekKey, weekFrom: from, weekTo: to, rows, kpis };
 };
 
-export type PersonPanelSort = "risk" | "progress" | "hours" | "blockers" | "deviation" | "name";
+export type PersonPanelSort =
+  | "risk"
+  | "progress"
+  | "hours"
+  | "actualHours"
+  | "blockers"
+  | "deviation"
+  | "name";
 
 const riskWeight: Record<PersonRisk, number> = { high: 2, medium: 1, none: 0 };
 
@@ -381,6 +439,8 @@ export const sortPersonRows = (
       );
     case "hours":
       return list.sort((a, b) => a.hours - b.hours || a.name.localeCompare(b.name));
+    case "actualHours":
+      return list.sort((a, b) => a.actualHours - b.actualHours || a.name.localeCompare(b.name));
     case "blockers":
       return list.sort((a, b) => b.blockers - a.blockers || a.name.localeCompare(b.name));
     case "deviation":

@@ -181,6 +181,7 @@ export function PersonPanelPage() {
               <SelectItem value="risk">{t.personPanelSortRisk}</SelectItem>
               <SelectItem value="progress">{t.personPanelSortProgress}</SelectItem>
               <SelectItem value="hours">{t.personPanelSortHours}</SelectItem>
+              <SelectItem value="actualHours">{t.personPanelSortActualHours}</SelectItem>
               <SelectItem value="blockers">{t.personPanelSortBlockers}</SelectItem>
               <SelectItem value="deviation">{t.personPanelSortDeviation}</SelectItem>
               <SelectItem value="name">{t.personPanelSortName}</SelectItem>

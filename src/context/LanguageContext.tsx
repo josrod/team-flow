@@ -210,6 +210,14 @@ export const translations = {
     personPanelBreakdownAbsence: "Ausencias descontadas: {days} d",
     personPanelBreakdownEstimate: "Estimación TFS: {hours} h",
     personPanelBreakdownBooked: "Registradas: {hours} h",
+    personPanelActualHours: "Horas reales",
+    personPanelHandoverHours: "Horas de handover",
+    personPanelKpiActualHours: "Horas reales (registradas + ausencias)",
+    personPanelKpiHandoverHours: "Horas de handover",
+    personPanelBreakdownAbsenceHours: "Horas de ausencia: {hours} h",
+    personPanelBreakdownActual: "Reales: {hours} h",
+    personPanelBreakdownHandover: "Handover: {hours} h",
+    personPanelSortActualHours: "Menos horas reales",
 
 
 
@@ -1403,6 +1411,14 @@ export const translations = {
     personPanelBreakdownAbsence: "Absence days deducted: {days}",
     personPanelBreakdownEstimate: "TFS estimate: {hours} h",
     personPanelBreakdownBooked: "Booked: {hours} h",
+    personPanelActualHours: "Real hours",
+    personPanelHandoverHours: "Handover hours",
+    personPanelKpiActualHours: "Real hours (booked + absence)",
+    personPanelKpiHandoverHours: "Handover hours",
+    personPanelBreakdownAbsenceHours: "Absence hours: {hours} h",
+    personPanelBreakdownActual: "Real: {hours} h",
+    personPanelBreakdownHandover: "Handover: {hours} h",
+    personPanelSortActualHours: "Fewest real hours",
 
 
 
