@@ -304,11 +304,11 @@ export const buildPersonPanel = ({
               withChildren.length) *
               100,
           );
-    const { days: absenceDays, types: absenceTypes } = absenceDaysInWeek(
-      absencesByMember.get(member.id) ?? [],
-      from,
-      to,
-    );
+    const {
+      days: absenceDays,
+      types: absenceTypes,
+      hours: absenceHours,
+    } = absenceDaysInWeek(absencesByMember.get(member.id) ?? [], from, to, targetWeeklyHours / 5);
     const hours = round1(hoursByMember.get(member.id) ?? 0);
     const hoursPreviousWeek = round1(previousHoursByMember.get(member.id) ?? 0);
     const expectedHours = round1((targetWeeklyHours / 5) * Math.max(0, 5 - absenceDays));
