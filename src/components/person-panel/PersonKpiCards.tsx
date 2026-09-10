@@ -1,4 +1,13 @@
-import { AlertTriangle, CalendarClock, CheckCircle2, Clock, ListChecks, ShieldAlert, TrendingUp } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarClock,
+  CheckCircle2,
+  Clock,
+  ListChecks,
+  Repeat,
+  ShieldAlert,
+  TrendingUp,
+} from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { useLang } from "@/context/LanguageContext";
@@ -36,6 +45,18 @@ export const PersonKpiCards = ({ kpis }: PersonKpiCardsProps) => {
       value: formatHours(kpis.hours),
       delta: formatDelta(kpis.hoursDelta, " h"),
       positive: kpis.hoursDelta >= 0,
+    },
+    {
+      key: "actualHours",
+      icon: Clock,
+      label: t.personPanelKpiActualHours,
+      value: formatHours(kpis.actualHours),
+    },
+    {
+      key: "handoverHours",
+      icon: Repeat,
+      label: t.personPanelKpiHandoverHours,
+      value: formatHours(kpis.handoverHours),
     },
     {
       key: "deviating",
