@@ -157,6 +157,14 @@ export const PersonPanelTable = ({ rows, teamNameById, onSelectCard }: PersonPan
                       </span>
                     )}
                   </TableCell>
+                  <TableCell className="py-2 text-sm">{formatHours(row.actualHours)}</TableCell>
+                  <TableCell className="py-2 text-sm">
+                    {row.handoverHours > 0 ? (
+                      formatHours(row.handoverHours)
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="py-2">
                     {row.weeklyProgressPercent === null ? (
                       <span className="text-[11px] text-muted-foreground">—</span>
@@ -211,7 +219,7 @@ export const PersonPanelTable = ({ rows, teamNameById, onSelectCard }: PersonPan
                 </TableRow>
                 {isOpen && (
                   <TableRow>
-                    <TableCell colSpan={12} className="bg-muted/30 p-3">
+                    <TableCell colSpan={14} className="bg-muted/30 p-3">
                       <div className="mb-2 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
                         <span>
                           {t.personPanelBreakdownCapacity.replace(
@@ -230,6 +238,24 @@ export const PersonPanelTable = ({ rows, teamNameById, onSelectCard }: PersonPan
                         </span>
                         <span>
                           {t.personPanelBreakdownBooked.replace("{hours}", formatHours(row.hours))}
+                        </span>
+                        <span>
+                          {t.personPanelBreakdownAbsenceHours.replace(
+                            "{hours}",
+                            formatHours(row.absenceHours),
+                          )}
+                        </span>
+                        <span>
+                          {t.personPanelBreakdownActual.replace(
+                            "{hours}",
+                            formatHours(row.actualHours),
+                          )}
+                        </span>
+                        <span>
+                          {t.personPanelBreakdownHandover.replace(
+                            "{hours}",
+                            formatHours(row.handoverHours),
+                          )}
                         </span>
                         <span className={cn(deviationTextStyles[row.deviationFlag])}>
                           {deviationLabels[row.deviationFlag]}
