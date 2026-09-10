@@ -86,6 +86,9 @@ export interface PersonPanelKpis {
   hours: number;
   hoursPreviousWeek: number;
   hoursDelta: number;
+  absenceHours: number;
+  actualHours: number;
+  handoverHours: number;
   plannedCapacityHours: number;
   plannedEstimateHours: number;
   /** People whose booked hours deviate beyond the threshold. */
