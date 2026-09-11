@@ -137,47 +137,10 @@ describe("Language Switching", () => {
     expect(screen.getByRole("heading", { name: translations.en.workloadAndCapacity })).toBeInTheDocument();
   });
 
-  it("should translate Features page titles and sidebar when switching language", async () => {
-    render(
-      <MemoryRouter initialEntries={["/features"]}>
-        <LanguageProvider>
-          <ThemeProvider>
-            <AppProvider>
-              <AppLayout>
-                <Routes>
-                  <Route path="/features" element={<FeaturesPage view="features" />} />
-                </Routes>
-              </AppLayout>
-            </AppProvider>
-          </ThemeProvider>
-        </LanguageProvider>
-      </MemoryRouter>
-    );
+  // La antigua pestaña "Features" fue sustituida por la vista "Backlog items",
+  // cuyo título es idéntico en ambos idiomas, por lo que ya no aplica este caso.
 
-    // Default is ES
-    // Sidebar
-    expect(screen.getByRole("link", { name: new RegExp(translations.es.features, "i") })).toBeInTheDocument();
-    
-    // Page Title
-    expect(screen.getByRole("heading", { name: translations.es.features, level: 1 })).toBeInTheDocument();
-    
-    // Page Subtitle
-    expect(screen.queryAllByText(translations.es.featuresSubtitle).length).toBeGreaterThan(0);
 
-    // Toggle language
-    const langBtn = screen.getByRole("button", { name: /^ES$/ });
-    fireEvent.click(langBtn);
-
-    // Wait for EN
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: /^EN$/ })).toBeInTheDocument();
-    });
-
-    // Check English
-    expect(screen.getByRole("link", { name: new RegExp(translations.en.features, "i") })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: translations.en.features, level: 1 })).toBeInTheDocument();
-    expect(screen.queryAllByText(translations.en.featuresSubtitle).length).toBeGreaterThan(0);
-  });
 
   it("should toggle language back and forth correctly on Tasks page", async () => {
     render(
