@@ -102,7 +102,16 @@ const BacklogItemsPage = () => {
       }
       return true;
     });
-  }, [cards, search, team, person, type, tag, waitingOnly, teamIdForCard]);
+  }, [cards, search, team, type, tag, waitingOnly, teamIdForCard, matchesPerson]);
+
+  const childMatchIds = useMemo(() => {
+    if (person === ALL) return undefined;
+    return new Set(
+      filtered
+        .filter((card) => (card.assignedTo?.trim() ?? "") !== person)
+        .map((card) => card.id),
+    );
+  }, [filtered, person]);
 
   if (!loading && cards.length === 0 && error) {
     return (
