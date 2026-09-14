@@ -60,6 +60,9 @@ const BacklogItemsPage = () => {
     const set = new Set<string>();
     cards.forEach((card) => {
       if (card.assignedTo?.trim()) set.add(card.assignedTo.trim());
+      card.children.forEach((child) => {
+        if (child.assignedTo?.trim()) set.add(child.assignedTo.trim());
+      });
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [cards]);
