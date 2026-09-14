@@ -60,6 +60,9 @@ const BacklogItemsPage = () => {
     const set = new Set<string>();
     cards.forEach((card) => {
       if (card.assignedTo?.trim()) set.add(card.assignedTo.trim());
+      card.children.forEach((child) => {
+        if (child.assignedTo?.trim()) set.add(child.assignedTo.trim());
+      });
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [cards]);
@@ -76,11 +79,20 @@ const BacklogItemsPage = () => {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [cards]);
 
+  const matchesPerson = useCallback(
+    (card: BacklogCardItem): boolean => {
+      if (person === ALL) return true;
+      if ((card.assignedTo?.trim() ?? "") === person) return true;
+      return card.children.some((child) => (child.assignedTo?.trim() ?? "") === person);
+    },
+    [person],
+  );
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return cards.filter((card) => {
       if (team !== ALL && teamIdForCard(card) !== team) return false;
-      if (person !== ALL && (card.assignedTo?.trim() ?? "") !== person) return false;
+      if (!matchesPerson(card)) return false;
       if (type !== ALL && card.workItemType !== type) return false;
       if (tag !== ALL && !card.tags.includes(tag)) return false;
       if (waitingOnly && !card.waiting) return false;
@@ -90,7 +102,16 @@ const BacklogItemsPage = () => {
       }
       return true;
     });
-  }, [cards, search, team, person, type, tag, waitingOnly, teamIdForCard]);
+  }, [cards, search, team, type, tag, waitingOnly, teamIdForCard, matchesPerson]);
+
+  const childMatchIds = useMemo(() => {
+    if (person === ALL) return undefined;
+    return new Set(
+      filtered
+        .filter((card) => (card.assignedTo?.trim() ?? "") !== person)
+        .map((card) => card.id),
+    );
+  }, [filtered, person]);
 
   if (!loading && cards.length === 0 && error) {
     return (
@@ -250,7 +271,7 @@ const BacklogItemsPage = () => {
       ) : filtered.length === 0 ? (
         <p className="py-16 text-center text-sm text-muted-foreground">{t.backlogEmpty}</p>
       ) : view === "board" ? (
-        <BacklogBoard cards={filtered} />
+        <BacklogBoard cards={filtered} childMatchIds={childMatchIds} />
       ) : (
         <BacklogByPerson cards={filtered} />
       )}

@@ -19,9 +19,11 @@ interface BacklogCardProps {
   card: BacklogCardItem;
   /** Hide the assignee line when the card is already grouped under a person. */
   hideAssignee?: boolean;
+  /** Card appears only because one of its child tasks belongs to the filtered person. */
+  childMatch?: boolean;
 }
 
-export const BacklogCard = ({ card, hideAssignee = false }: BacklogCardProps) => {
+export const BacklogCard = ({ card, hideAssignee = false, childMatch = false }: BacklogCardProps) => {
   const { t } = useLang();
   const [open, setOpen] = useState(false);
   const TypeIcon = card.isBug ? Bug : Square;
@@ -55,6 +57,11 @@ export const BacklogCard = ({ card, hideAssignee = false }: BacklogCardProps) =>
           </p>
           {!hideAssignee && card.assignedTo && (
             <p className="mt-1 text-xs text-muted-foreground truncate">{card.assignedTo}</p>
+          )}
+          {childMatch && (
+            <Badge variant="outline" className="mt-1 px-1.5 py-0 text-[10px] font-normal">
+              {t.backlogChildAssigned}
+            </Badge>
           )}
           <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
             <dt>State</dt>
