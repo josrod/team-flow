@@ -271,7 +271,7 @@ const BacklogItemsPage = () => {
       ) : filtered.length === 0 ? (
         <p className="py-16 text-center text-sm text-muted-foreground">{t.backlogEmpty}</p>
       ) : view === "board" ? (
-        <BacklogBoard cards={filtered} />
+        <BacklogBoard cards={filtered} childMatchIds={childMatchIds} />
       ) : (
         <BacklogByPerson cards={filtered} />
       )}
