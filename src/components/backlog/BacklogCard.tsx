@@ -58,6 +58,11 @@ export const BacklogCard = ({ card, hideAssignee = false, childMatch = false }: 
           {!hideAssignee && card.assignedTo && (
             <p className="mt-1 text-xs text-muted-foreground truncate">{card.assignedTo}</p>
           )}
+          {childMatch && (
+            <Badge variant="outline" className="mt-1 px-1.5 py-0 text-[10px] font-normal">
+              {t.backlogChildAssigned}
+            </Badge>
+          )}
           <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
             <dt>State</dt>
             <dd className="text-foreground">{card.state}</dd>
