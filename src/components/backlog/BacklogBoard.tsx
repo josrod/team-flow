@@ -4,9 +4,11 @@ import { BOARD_COLUMNS, groupIntoBoard, type BacklogCardItem, type BoardColumn, 
 
 interface BacklogBoardProps {
   cards: BacklogCardItem[];
+  /** Ids of cards shown only because a child task belongs to the filtered person. */
+  childMatchIds?: ReadonlySet<number>;
 }
 
-export const BacklogBoard = ({ cards }: BacklogBoardProps) => {
+export const BacklogBoard = ({ cards, childMatchIds }: BacklogBoardProps) => {
   const { t } = useLang();
   const grid = groupIntoBoard(cards);
 
@@ -58,7 +60,13 @@ export const BacklogBoard = ({ cards }: BacklogBoardProps) => {
                         {t.backlogColumnEmpty}
                       </p>
                     ) : (
-                      grid[lane][column].map((card) => <BacklogCard key={card.id} card={card} />)
+                      grid[lane][column].map((card) => (
+                        <BacklogCard
+                          key={card.id}
+                          card={card}
+                          childMatch={childMatchIds?.has(card.id)}
+                        />
+                      ))
                     )}
                   </div>
                 ))}

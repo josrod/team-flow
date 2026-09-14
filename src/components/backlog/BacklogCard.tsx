@@ -19,9 +19,11 @@ interface BacklogCardProps {
   card: BacklogCardItem;
   /** Hide the assignee line when the card is already grouped under a person. */
   hideAssignee?: boolean;
+  /** Card appears only because one of its child tasks belongs to the filtered person. */
+  childMatch?: boolean;
 }
 
-export const BacklogCard = ({ card, hideAssignee = false }: BacklogCardProps) => {
+export const BacklogCard = ({ card, hideAssignee = false, childMatch = false }: BacklogCardProps) => {
   const { t } = useLang();
   const [open, setOpen] = useState(false);
   const TypeIcon = card.isBug ? Bug : Square;
