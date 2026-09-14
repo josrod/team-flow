@@ -79,11 +79,20 @@ const BacklogItemsPage = () => {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [cards]);
 
+  const matchesPerson = useCallback(
+    (card: BacklogCardItem): boolean => {
+      if (person === ALL) return true;
+      if ((card.assignedTo?.trim() ?? "") === person) return true;
+      return card.children.some((child) => (child.assignedTo?.trim() ?? "") === person);
+    },
+    [person],
+  );
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return cards.filter((card) => {
       if (team !== ALL && teamIdForCard(card) !== team) return false;
-      if (person !== ALL && (card.assignedTo?.trim() ?? "") !== person) return false;
+      if (!matchesPerson(card)) return false;
       if (type !== ALL && card.workItemType !== type) return false;
       if (tag !== ALL && !card.tags.includes(tag)) return false;
       if (waitingOnly && !card.waiting) return false;
